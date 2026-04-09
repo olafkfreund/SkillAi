@@ -1,0 +1,12 @@
+// Barrel export — import schema tables from here
+export * from './tenants'
+export * from './users'
+export * from './agencies'
+export * from './roles'
+export * from './candidates'
+export * from './scores'
+export * from './notes'
+export * from './interview-packs'
+export * from './interview-questions'
+export * from './code-challenges'
+export * from './tenant-settings'
