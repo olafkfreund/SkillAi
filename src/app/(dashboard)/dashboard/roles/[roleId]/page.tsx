@@ -7,24 +7,12 @@ import { withTenant } from '@/db'
 import { roles, scores, candidates, customers } from '@/db/schema'
 import { DownloadPdfButton } from '@/components/export/download-pdf-button'
 import { archiveRole, regenerateRoleTags } from '@/actions/roles'
+import { removeCandidateFromRole } from '@/actions/scores'
 import { hasRole } from '@/lib/auth/require-role'
 import { RoleTagsPanel } from '@/components/roles/role-tags-panel'
+import { RoleCandidateCard } from '@/components/roles/role-candidate-card'
 
 type Props = { params: Promise<{ roleId: string }> }
-
-function ScorePill({ label, score }: { label: string; score: number | null }) {
-  if (score === null) return null
-  const color =
-    score >= 75 ? 'bg-emerald-950 text-emerald-400 border-emerald-800' :
-    score >= 50 ? 'bg-blue-950 text-blue-400 border-blue-800' :
-    'bg-zinc-800 text-zinc-400 border-zinc-600'
-  return (
-    <span className={`inline-flex items-center gap-1 text-xs border rounded px-1.5 py-0.5 ${color}`}>
-      <span className="text-zinc-500">{label}</span>
-      <span className="font-medium">{score}</span>
-    </span>
-  )
-}
 
 export default async function RoleDetailPage({ params }: Props) {
   const { roleId } = await params
@@ -185,42 +173,23 @@ export default async function RoleDetailPage({ params }: Props) {
         ) : (
           <div className="grid gap-2">
             {scoredCandidates.map((c) => (
-              <Link
+              <RoleCandidateCard
                 key={c.scoreId}
-                href={`/dashboard/candidates/${c.candidateId}?roleId=${roleId}`}
-                className="flex items-center justify-between rounded-xl bg-zinc-900 border border-zinc-700
-                           px-5 py-4 hover:border-blue-500 hover:shadow-sm transition-all"
-              >
-                <div>
-                  <p className="font-medium text-zinc-100">
-                    {c.firstName} {c.lastName}
-                    {c.email && <span className="font-normal text-zinc-500 text-sm ml-2">{c.email}</span>}
-                  </p>
-                  {c.scoreStatus === 'complete' && c.technicalScore !== null && (
-                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <ScorePill label="Tech" score={c.technicalScore} />
-                      <ScorePill label="Exp" score={c.experienceScore} />
-                      <ScorePill label="Fit" score={c.culturalFitScore} />
-                      <ScorePill label="Comm" score={c.communicationScore} />
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 ml-4 flex-shrink-0">
-                  {c.scoreStatus === 'pending' || c.scoreStatus === 'processing' ? (
-                    <span className="text-xs bg-amber-950 text-amber-400 border border-amber-800
-                                     px-2 py-0.5 rounded-full">
-                      Scoring…
-                    </span>
-                  ) : c.scoreStatus === 'complete' && c.overallScore !== null ? (
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-zinc-100">{c.overallScore}</p>
-                      <p className="text-xs text-zinc-500">/ 100</p>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-red-400">Failed</span>
-                  )}
-                </div>
-              </Link>
+                scoreId={c.scoreId}
+                roleId={roleId}
+                candidateId={c.candidateId}
+                firstName={c.firstName}
+                lastName={c.lastName}
+                email={c.email}
+                scoreStatus={c.scoreStatus}
+                overallScore={c.overallScore}
+                technicalScore={c.technicalScore}
+                experienceScore={c.experienceScore}
+                culturalFitScore={c.culturalFitScore}
+                communicationScore={c.communicationScore}
+                canEdit={canEdit}
+                removeAction={removeCandidateFromRole}
+              />
             ))}
           </div>
         )}

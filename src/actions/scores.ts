@@ -2,10 +2,11 @@
 
 import { headers } from 'next/headers'
 import { eq, and } from 'drizzle-orm'
-import { db, withTenant } from '@/db'
+import { withTenant } from '@/db'
 import { scores } from '@/db/schema'
 import { triggerScoring } from '@/lib/ai/scoring'
 import { requireRole } from '@/lib/auth/require-role'
+import { revalidatePath } from 'next/cache'
 import type { UserRole } from '@/lib/auth/types'
 
 export async function rescoreCandidate(
@@ -73,4 +74,24 @@ export async function rescoreCandidate(
   triggerScoring(candidateId, roleId, tenantId).catch(console.error)
 
   return { success: true }
+}
+
+export async function removeCandidateFromRole(
+  scoreId: string,
+  roleId: string
+): Promise<void> {
+  const headersList = await headers()
+  const tenantId = headersList.get('x-tenant-id')
+  const userRole = headersList.get('x-user-role') as UserRole | null
+
+  if (!tenantId) throw new Error('Unauthorized')
+  requireRole(userRole ?? undefined, 'recruiter')
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .delete(scores)
+      .where(and(eq(scores.id, scoreId), eq(scores.tenantId, tenantId)))
+  })
+
+  revalidatePath(`/dashboard/roles/${roleId}`)
 }
