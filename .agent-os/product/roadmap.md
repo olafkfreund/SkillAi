@@ -11,7 +11,7 @@
 
 ### Must-Have Features
 
-- [ ] Project scaffold — Next.js 15 + TypeScript + Drizzle + PostgreSQL + Docker Compose `S`
+- [x] Project scaffold — Next.js 16 + TypeScript + Drizzle + PostgreSQL + Docker Compose `S`
 - [ ] Database schema — tenants, users, candidates, roles, scores, agencies, notes `S`
 - [ ] Auth — Auth.js v5 with credentials, JWT, role-based middleware `S`
 - [ ] CV upload — drag-and-drop upload, PDF/DOCX parsing, text extraction `M`
@@ -20,6 +20,7 @@
 - [ ] AI ranking engine — Claude structured output scoring per dimension `M`
 - [ ] Ranked candidate list UI — sortable table with overall score + dimension scores `M`
 - [ ] Single candidate profile view — full CV text, scores, AI reasoning `S`
+- [ ] Interview question + code test generator — AI-generated personalised question pack per candidate+role `M`
 
 ### Should-Have Features
 
