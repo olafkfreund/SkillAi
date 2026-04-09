@@ -7,13 +7,14 @@ import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { after } from 'next/server'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { db, withTenant } from '@/db'
 import { candidates, scores } from '@/db/schema'
 import { parseFile, ParseError } from '@/lib/parsers'
 import { triggerScoring } from '@/lib/ai/scoring'
 import { requireRole } from '@/lib/auth/require-role'
+import { writeAuditLog } from '@/lib/audit'
 import type { FileType } from '@/lib/parsers'
 import type { UserRole } from '@/lib/auth/types'
 import type { CandidateStatus } from '@/db/schema/candidates'
@@ -155,6 +156,14 @@ export async function createCandidate(
     })
   })
 
+  // Audit: candidate created
+  await writeAuditLog(tenantId, {
+    action: 'candidate.created',
+    entityType: 'candidate',
+    entityId: candidateId,
+    entityLabel: `${parsed.data.firstName} ${parsed.data.lastName}`,
+  })
+
   // Fire-and-forget scoring (non-blocking)
   triggerScoring(candidateId, parsed.data.roleId, tenantId).catch(console.error)
 
@@ -201,7 +210,70 @@ export async function updateCandidateStatus(
       .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
   })
 
+  // Audit: status changed
+  await writeAuditLog(tenantId, {
+    action: 'candidate.status_changed',
+    entityType: 'candidate',
+    entityId: candidateId,
+    metadata: { newStatus: status },
+  })
+
   revalidatePath(`/dashboard/candidates/${candidateId}`)
+}
+
+// ---------------------------------------------------------------------------
+// bulkUpdateCandidateStatus — update status for multiple candidates at once
+// ---------------------------------------------------------------------------
+
+const VALID_STATUSES: CandidateStatus[] = [
+  'new', 'shortlisted', 'interviewing', 'offered', 'hired', 'rejected',
+]
+
+export async function bulkUpdateCandidateStatus(
+  candidateIds: string[],
+  status: CandidateStatus
+): Promise<{ success: boolean; updated: number; error?: string }> {
+  const headersList = await headers()
+  const tenantId = headersList.get('x-tenant-id')
+  const userRole = headersList.get('x-user-role') as UserRole | null
+
+  if (!tenantId) return { success: false, updated: 0, error: 'Unauthorized' }
+
+  try {
+    requireRole(userRole ?? undefined, 'recruiter')
+  } catch {
+    return { success: false, updated: 0, error: 'Forbidden: recruiters and admins only' }
+  }
+
+  if (!Array.isArray(candidateIds) || candidateIds.length === 0) {
+    return { success: false, updated: 0, error: 'No candidates selected' }
+  }
+
+  if (candidateIds.length > 200) {
+    return { success: false, updated: 0, error: 'Cannot update more than 200 candidates at once' }
+  }
+
+  if (!VALID_STATUSES.includes(status)) {
+    return { success: false, updated: 0, error: `Invalid status: ${status}` }
+  }
+
+  const result = await withTenant(tenantId, async (tx) => {
+    const updated = await tx
+      .update(candidates)
+      .set({ status })
+      .where(
+        and(
+          inArray(candidates.id, candidateIds),
+          eq(candidates.tenantId, tenantId)
+        )
+      )
+      .returning({ id: candidates.id })
+
+    return updated.length
+  })
+
+  revalidatePath('/dashboard/candidates')
+  return { success: true, updated: result }
 }
 
 // ---------------------------------------------------------------------------
@@ -322,6 +394,13 @@ export async function archiveCandidate(candidateId: string): Promise<void> {
       .update(candidates)
       .set({ isActive: false })
       .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
+  })
+
+  // Audit: candidate archived
+  await writeAuditLog(tenantId, {
+    action: 'candidate.archived',
+    entityType: 'candidate',
+    entityId: candidateId,
   })
 
   redirect('/dashboard/candidates')
