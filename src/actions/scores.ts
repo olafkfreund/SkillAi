@@ -6,6 +6,7 @@ import { withTenant } from '@/db'
 import { scores } from '@/db/schema'
 import { triggerScoring } from '@/lib/ai/scoring'
 import { requireRole } from '@/lib/auth/require-role'
+import { writeAuditLog } from '@/lib/audit'
 import { revalidatePath } from 'next/cache'
 import type { UserRole } from '@/lib/auth/types'
 
@@ -91,6 +92,14 @@ export async function removeCandidateFromRole(
     await tx
       .delete(scores)
       .where(and(eq(scores.id, scoreId), eq(scores.tenantId, tenantId)))
+  })
+
+  // Audit: score removed
+  await writeAuditLog(tenantId, {
+    action: 'score.removed',
+    entityType: 'score',
+    entityId: scoreId,
+    metadata: { roleId },
   })
 
   revalidatePath(`/dashboard/roles/${roleId}`)

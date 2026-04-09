@@ -11,6 +11,8 @@ import { removeCandidateFromRole } from '@/actions/scores'
 import { hasRole } from '@/lib/auth/require-role'
 import { RoleTagsPanel } from '@/components/roles/role-tags-panel'
 import { RoleCandidateCard } from '@/components/roles/role-candidate-card'
+import { SuggestCandidatesPanel } from '@/components/roles/suggest-candidates-panel'
+import { ShortlistSummaryPanel } from '@/components/roles/shortlist-summary-panel'
 
 type Props = { params: Promise<{ roleId: string }> }
 
@@ -163,6 +165,12 @@ export default async function RoleDetailPage({ params }: Props) {
         <p className="text-zinc-400 whitespace-pre-wrap text-sm">{role.requirements}</p>
       </div>
 
+      {/* Auto-suggest matching candidates from archive */}
+      <SuggestCandidatesPanel
+        roleId={roleId}
+        roleText={[role.title, role.description, role.requirements].filter(Boolean).join('\n')}
+      />
+
       {/* Candidates shortlist */}
       <div>
         <h2 className="font-semibold text-zinc-100 mb-3">
@@ -194,6 +202,9 @@ export default async function RoleDetailPage({ params }: Props) {
           </div>
         )}
       </div>
+
+      {/* AI Shortlist Hiring Recommendation — only when ≥2 candidates scored */}
+      {scoredCandidates.length >= 2 && <ShortlistSummaryPanel roleId={roleId} />}
     </div>
   )
 }
