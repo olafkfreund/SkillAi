@@ -17,6 +17,7 @@ import { StatusSelector } from '@/components/candidates/status-selector'
 import { CvDisplay } from '@/components/candidates/cv-display'
 import { EditDetailsForm } from '@/components/candidates/edit-details-form'
 import { InterviewCalendar } from '@/components/candidates/interview-calendar'
+import { RoleHistoryPanel } from '@/components/candidates/role-history-panel'
 import { archiveCandidate } from '@/actions/candidates'
 import { hasRole } from '@/lib/auth/require-role'
 import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
@@ -54,11 +55,25 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
       .from(scores)
       .innerJoin(roles, eq(scores.roleId, roles.id))
       .where(eq(scores.candidateId, candidateId))
+      .orderBy(desc(scores.updatedAt))
   )
 
   const activeScore = roleId
     ? candidateScores.find((s) => s.score.roleId === roleId)
     : candidateScores[0]
+
+  const roleHistory = candidateScores.map((s) => ({
+    scoreId: s.score.id,
+    roleId: s.role.id,
+    roleTitle: s.role.title,
+    overallScore: s.score.overallScore,
+    scoreStatus: s.score.scoreStatus,
+    technicalScore: s.score.technicalScore,
+    experienceScore: s.score.experienceScore,
+    culturalFitScore: s.score.culturalFitScore,
+    communicationScore: s.score.communicationScore,
+    scoredAt: s.score.updatedAt,
+  }))
 
   const candidateNotes = await withTenant(tenantId, async (tx) =>
     tx
@@ -237,6 +252,9 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
           )}
         </div>
       ) : null}
+
+      {/* Role history */}
+      <RoleHistoryPanel roleHistory={roleHistory} />
 
       {/* Web intelligence */}
       <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">

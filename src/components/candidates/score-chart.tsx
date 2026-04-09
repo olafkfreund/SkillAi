@@ -1,6 +1,7 @@
 'use client'
 
 import type { Score } from '@/db/schema'
+import { ScoreExpandModal } from './score-expand-modal'
 
 type DimensionRow = {
   label: string
@@ -55,9 +56,15 @@ export function ScoreChart({ score }: Props) {
               style={{ width: `${dim.score ?? 0}%` }}
             />
           </div>
-          {dim.reasoning && (
+          {dim.reasoning && dim.score !== null ? (
+            <ScoreExpandModal
+              dimension={dim.label}
+              score={dim.score}
+              reasoning={dim.reasoning}
+            />
+          ) : dim.reasoning ? (
             <p className="mt-1.5 text-xs text-zinc-500">{dim.reasoning}</p>
-          )}
+          ) : null}
         </div>
       ))}
     </div>
