@@ -33,6 +33,7 @@ export async function GET(
       .innerJoin(candidates, eq(scores.candidateId, candidates.id))
       .where(and(eq(scores.roleId, roleId), eq(scores.scoreStatus, 'complete')))
       .orderBy(desc(scores.overallScore))
+      .limit(100)
   )
 
   const agencyIds = [...new Set(candidateScores.map((r) => r.candidate.agencyId).filter(Boolean))] as string[]

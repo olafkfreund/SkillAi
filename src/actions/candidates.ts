@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { db, withTenant } from '@/db'
@@ -156,6 +157,21 @@ export async function createCandidate(
 
   // Fire-and-forget scoring (non-blocking)
   triggerScoring(candidateId, parsed.data.roleId, tenantId).catch(console.error)
+
+  // Fire-and-forget embedding generation (non-blocking, after response is sent)
+  after(async () => {
+    try {
+      const { generateEmbedding } = await import('@/lib/ai/embeddings')
+      const embedding = await generateEmbedding(cvText, tenantId)
+      if (embedding) {
+        await withTenant(tenantId, async (tx) => {
+          await tx.update(candidates).set({ embedding: JSON.stringify(embedding) }).where(eq(candidates.id, candidateId))
+        })
+      }
+    } catch (err) {
+      console.error('[embedding] Failed to generate embedding for candidate:', candidateId, err)
+    }
+  })
 
   return { success: true, candidateId }
 }

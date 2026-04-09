@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
-import { desc, eq, and, gte } from 'drizzle-orm'
+import { desc, eq, and, gte, count } from 'drizzle-orm'
 import { withTenant } from '@/db'
 import { candidates, scores, agencies } from '@/db/schema'
 
@@ -13,8 +13,12 @@ export async function GET(request: Request) {
   const roleId = searchParams.get('roleId')
   const minScore = searchParams.get('minScore') ? Number(searchParams.get('minScore')) : undefined
 
+  // Pagination params — limit capped at 200, default 50
+  const parsedLimit = Math.min(Math.max(1, Number(searchParams.get('limit') ?? 50)), 200)
+  const parsedOffset = Math.max(0, Number(searchParams.get('offset') ?? 0))
+
   const result = await withTenant(tenantId, async (tx) => {
-    let query = tx
+    const rows = await tx
       .select({
         id: candidates.id,
         firstName: candidates.firstName,
@@ -37,14 +41,25 @@ export async function GET(request: Request) {
         )
       )
       .orderBy(desc(scores.overallScore), desc(candidates.createdAt))
+      .limit(parsedLimit)
+      .offset(parsedOffset)
 
-    return query
+    const [{ value: totalCount }] = await tx
+      .select({ value: count() })
+      .from(candidates)
+
+    return { rows, totalCount }
   })
 
   const filtered =
     minScore !== undefined
-      ? result.filter((r) => r.overallScore !== null && r.overallScore >= minScore)
-      : result
+      ? result.rows.filter((r) => r.overallScore !== null && r.overallScore >= minScore)
+      : result.rows
 
-  return NextResponse.json(filtered)
+  return NextResponse.json({
+    candidates: filtered,
+    total: result.totalCount,
+    limit: parsedLimit,
+    offset: parsedOffset,
+  })
 }
