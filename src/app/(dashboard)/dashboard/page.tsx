@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { desc, eq, and, gte, count } from 'drizzle-orm'
+import { desc, eq, and, gte, count, sql } from 'drizzle-orm'
 import {
   BriefcaseIcon,
   UsersIcon,
@@ -10,7 +10,7 @@ import {
 
 import { auth } from '@/lib/auth'
 import { withTenant } from '@/db'
-import { roles, candidates, scores, interviewPacks } from '@/db/schema'
+import { roles, candidates, scores, interviewPacks, agencies } from '@/db/schema'
 
 export const metadata = { title: 'Dashboard — SkillAI' }
 
@@ -54,49 +54,58 @@ export default async function DashboardPage() {
       .where(eq(interviewPacks.generationStatus, 'complete'))
   )
 
-  // ── Recent roles ─────────────────────────────────────────────────────────
+  // ── Recent roles (with candidate count via scores) ───────────────────────
   const recentRoles = await withTenant(tenantId, async (tx) =>
     tx
-      .select({ id: roles.id, title: roles.title, createdAt: roles.createdAt })
+      .select({
+        id:             roles.id,
+        title:          roles.title,
+        createdAt:      roles.createdAt,
+        candidateCount: sql<number>`cast(count(${scores.id}) as integer)`,
+      })
       .from(roles)
+      .leftJoin(scores, eq(scores.roleId, roles.id))
       .where(eq(roles.isActive, true))
+      .groupBy(roles.id)
       .orderBy(desc(roles.createdAt))
       .limit(5)
   )
 
-  // ── Top candidates by overall score ──────────────────────────────────────
+  // ── Top candidates this week by overall score ────────────────────────────
   const topCandidates = await withTenant(tenantId, async (tx) =>
     tx
       .select({
-        candidateId: candidates.id,
-        firstName:   candidates.firstName,
-        lastName:    candidates.lastName,
+        candidateId:  candidates.id,
+        firstName:    candidates.firstName,
+        lastName:     candidates.lastName,
         overallScore: scores.overallScore,
-        roleId:      roles.id,
-        roleTitle:   roles.title,
+        roleId:       roles.id,
+        roleTitle:    roles.title,
       })
       .from(scores)
       .innerJoin(candidates, eq(scores.candidateId, candidates.id))
       .innerJoin(roles, eq(scores.roleId, roles.id))
-      .where(eq(scores.scoreStatus, 'complete'))
+      .where(and(eq(scores.scoreStatus, 'complete'), gte(scores.updatedAt, sevenDaysAgo)))
       .orderBy(desc(scores.overallScore))
       .limit(5)
   )
 
-  // ── Recent uploads ────────────────────────────────────────────────────────
+  // ── Recent uploads (with agency name) ────────────────────────────────────
   const recentUploads = await withTenant(tenantId, async (tx) =>
     tx
       .select({
-        id:        candidates.id,
-        firstName: candidates.firstName,
-        lastName:  candidates.lastName,
-        status:    candidates.status,
-        createdAt: candidates.createdAt,
+        id:         candidates.id,
+        firstName:  candidates.firstName,
+        lastName:   candidates.lastName,
+        status:     candidates.status,
+        createdAt:  candidates.createdAt,
+        agencyName: agencies.name,
       })
       .from(candidates)
+      .leftJoin(agencies, eq(candidates.agencyId, agencies.id))
       .where(eq(candidates.isActive, true))
       .orderBy(desc(candidates.createdAt))
-      .limit(5)
+      .limit(8)
   )
 
   return (
@@ -179,9 +188,14 @@ export default async function DashboardPage() {
                     href={`/dashboard/roles/${role.id}`}
                     className="flex items-center justify-between group"
                   >
-                    <span className="text-sm text-zinc-200 group-hover:text-white transition-colors truncate pr-2">
-                      {role.title}
-                    </span>
+                    <div className="min-w-0 pr-2">
+                      <span className="text-sm text-zinc-200 group-hover:text-white transition-colors truncate block">
+                        {role.title}
+                      </span>
+                      <span className="text-xs text-zinc-500">
+                        {role.candidateCount} candidate{role.candidateCount === 1 ? '' : 's'}
+                      </span>
+                    </div>
                     <time className="text-xs text-zinc-500 whitespace-nowrap">
                       {new Date(role.createdAt).toLocaleDateString()}
                     </time>
@@ -192,11 +206,11 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* Top Candidates */}
+        {/* Top Candidates This Week */}
         <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide">
-              Top Candidates
+              Top Candidates This Week
             </h2>
             <Link
               href="/dashboard/candidates"
@@ -207,7 +221,7 @@ export default async function DashboardPage() {
           </div>
 
           {topCandidates.length === 0 ? (
-            <p className="text-sm text-zinc-500 py-4 text-center">No scored candidates yet.</p>
+            <p className="text-sm text-zinc-500 py-4 text-center">No scored candidates this week.</p>
           ) : (
             <ul className="divide-y divide-zinc-800">
               {topCandidates.map((c) => (
@@ -260,12 +274,13 @@ export default async function DashboardPage() {
                       <p className="text-sm text-zinc-200 group-hover:text-white transition-colors truncate">
                         {c.firstName} {c.lastName}
                       </p>
-                      <time className="text-xs text-zinc-500">
-                        {new Date(c.createdAt).toLocaleDateString()}
-                      </time>
+                      <p className="text-xs text-zinc-500 truncate">
+                        {c.agencyName ?? 'Direct'} ·{' '}
+                        <time>{new Date(c.createdAt).toLocaleDateString()}</time>
+                      </p>
                     </div>
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${STATUS_BADGE[c.status] ?? 'bg-zinc-700 text-zinc-300'}`}
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize whitespace-nowrap ${STATUS_BADGE[c.status] ?? 'bg-zinc-700 text-zinc-300'}`}
                     >
                       {c.status}
                     </span>
