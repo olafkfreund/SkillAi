@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { SparklesIcon, Loader2Icon, RefreshCwIcon } from 'lucide-react'
 import { getShortlistSummary } from '@/actions/shortlist-summary'
+import ReactMarkdown from 'react-markdown'
 
 type Props = {
   roleId: string
@@ -77,7 +78,9 @@ export function ShortlistSummaryPanel({ roleId }: Props) {
 
       {summary && (
         <div className="rounded-xl bg-violet-950/30 border border-violet-800 p-5">
-          <p className="whitespace-pre-wrap text-sm text-zinc-300 leading-relaxed">{summary}</p>
+          <div className="text-sm text-zinc-300 leading-relaxed space-y-3 [&_h1]:text-base [&_h1]:font-semibold [&_h1]:text-zinc-100 [&_h1]:mb-1 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-zinc-100 [&_h2]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-zinc-200 [&_strong]:text-zinc-100 [&_strong]:font-semibold [&_ul]:space-y-1 [&_ul]:pl-4 [&_ul>li]:list-disc [&_ul>li]:marker:text-violet-400 [&_ol]:space-y-1 [&_ol]:pl-4 [&_ol>li]:list-decimal [&_ol>li]:marker:text-violet-400 [&_p]:leading-relaxed">
+            <ReactMarkdown>{summary}</ReactMarkdown>
+          </div>
         </div>
       )}
     </div>
