@@ -11,6 +11,9 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       UPLOAD_DIR: /app/uploads
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      BRAVE_SEARCH_API_KEY: ${BRAVE_SEARCH_API_KEY}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
     volumes:
       - uploads_data:/app/uploads
     depends_on:

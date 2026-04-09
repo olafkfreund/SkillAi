@@ -7,7 +7,7 @@ import { Loader2Icon } from 'lucide-react'
 type Props = {
   candidateId: string
   roleId: string
-  currentStatus: 'pending' | 'processing'
+  currentStatus: 'pending' | 'processing' | 'complete' | 'failed'
 }
 
 export function ScorePolling({ candidateId, roleId, currentStatus }: Props) {
@@ -37,13 +37,13 @@ export function ScorePolling({ candidateId, roleId, currentStatus }: Props) {
   }, [candidateId, roleId, status, router])
 
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-200 px-5 py-4 mb-6">
-      <Loader2Icon className="h-5 w-5 text-amber-500 animate-spin flex-shrink-0" />
+    <div className="flex items-center gap-3 rounded-xl bg-amber-950 border border-amber-800 px-5 py-4 mb-6">
+      <Loader2Icon className="h-5 w-5 text-amber-400 animate-spin flex-shrink-0" />
       <div>
-        <p className="text-sm font-medium text-amber-800">
+        <p className="text-sm font-medium text-amber-400">
           {status === 'pending' ? 'Score queued' : 'Scoring in progress…'}
         </p>
-        <p className="text-xs text-amber-600 mt-0.5">
+        <p className="text-xs text-amber-500 mt-0.5">
           Claude is analysing this CV against the role. This takes 10–30 seconds.
         </p>
       </div>

@@ -78,6 +78,7 @@ type ScoringInput = {
   roleRequirements: string
   cvText: string
   candidateName: string
+  frameworkContext?: string
 }
 
 export async function scoreCandidateWithClaude(input: ScoringInput): Promise<CandidateScore> {
@@ -101,8 +102,7 @@ DESCRIPTION:
 ${input.roleDescription}
 
 REQUIREMENTS:
-${input.roleRequirements}`,
-            // @ts-expect-error — cache_control is supported in Claude API but not yet in SDK types
+${input.roleRequirements}${input.frameworkContext ? `\n\nHIRING FRAMEWORK CONTEXT:\n${input.frameworkContext}` : ''}`,
             cache_control: { type: 'ephemeral' },
           },
           {

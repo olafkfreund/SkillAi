@@ -5,6 +5,7 @@ import {
   uuid,
   varchar,
   text,
+  boolean,
   timestamp,
   index,
 } from 'drizzle-orm/pg-core'
@@ -14,6 +15,18 @@ import { agencies } from './agencies'
 
 // Extended file type enum — includes all supported CV formats
 export const fileTypeEnum = pgEnum('file_type', ['pdf', 'docx', 'odt', 'rtf', 'txt', 'md'])
+
+// Candidate lifecycle status
+export const candidateStatusEnum = pgEnum('candidate_status', [
+  'new',
+  'shortlisted',
+  'interviewing',
+  'offered',
+  'rejected',
+  'hired',
+])
+
+export type CandidateStatus = (typeof candidateStatusEnum.enumValues)[number]
 
 export const candidates = pgTable(
   'candidates',
@@ -30,9 +43,13 @@ export const candidates = pgTable(
     cvText: text('cv_text').notNull(),
     filePath: varchar('file_path', { length: 500 }),
     fileType: fileTypeEnum('file_type').notNull(),
+    linkedinUrl: varchar('linkedin_url', { length: 500 }),
+    githubUsername: varchar('github_username', { length: 100 }),
     // embedding stored as text (vector(1536)) — managed via pgvector in Phase 2
     // Using text column with cast for compatibility; Phase 2 adds HNSW index
     embedding: text('embedding'),
+    status: candidateStatusEnum('status').notNull().default('new'),
+    isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

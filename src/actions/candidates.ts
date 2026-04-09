@@ -4,12 +4,18 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join, extname } from 'path'
 import { randomUUID } from 'crypto'
 import { headers } from 'next/headers'
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { db, withTenant } from '@/db'
 import { candidates, scores } from '@/db/schema'
 import { parseFile, ParseError } from '@/lib/parsers'
 import { triggerScoring } from '@/lib/ai/scoring'
+import { requireRole } from '@/lib/auth/require-role'
 import type { FileType } from '@/lib/parsers'
+import type { UserRole } from '@/lib/auth/types'
+import type { CandidateStatus } from '@/db/schema/candidates'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 
@@ -111,7 +117,10 @@ export async function createCandidate(
   }
 
   // -- Store file on disk --
-  const uploadDir = join('/app/uploads', tenantId)
+  const uploadBase = process.env.UPLOAD_DIR
+    ? join(process.cwd(), process.env.UPLOAD_DIR)
+    : join(process.cwd(), 'uploads')
+  const uploadDir = join(uploadBase, tenantId)
   await mkdir(uploadDir, { recursive: true })
   const fileId = randomUUID()
   const fileName = `${fileId}.${fileType}`
@@ -147,4 +156,120 @@ export async function createCandidate(
   triggerScoring(candidateId, parsed.data.roleId, tenantId).catch(console.error)
 
   return { success: true, candidateId }
+}
+
+// ---------------------------------------------------------------------------
+// updateCandidateStatus — move candidate through the hiring pipeline
+// ---------------------------------------------------------------------------
+
+export { type CandidateStatus }
+
+export async function updateCandidateStatus(
+  candidateId: string,
+  status: CandidateStatus
+): Promise<void> {
+  const headersList = await headers()
+  const tenantId = headersList.get('x-tenant-id')
+  const userRole = headersList.get('x-user-role') as UserRole | null
+
+  if (!tenantId) throw new Error('Unauthorized')
+
+  requireRole(userRole ?? undefined, 'recruiter')
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .update(candidates)
+      .set({ status })
+      .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
+  })
+
+  revalidatePath(`/dashboard/candidates/${candidateId}`)
+}
+
+// ---------------------------------------------------------------------------
+// updateCandidateDetails — edit name / contact info for a candidate
+// ---------------------------------------------------------------------------
+
+const UpdateCandidateSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').max(100),
+  lastName: z.string().min(1, 'Last name is required').max(100),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  phone: z.string().max(50).optional(),
+})
+
+export type UpdateCandidateState = {
+  success: boolean
+  error?: string
+  fieldErrors?: Record<string, string[]>
+}
+
+export async function updateCandidateDetails(
+  candidateId: string,
+  _prev: UpdateCandidateState | null,
+  formData: FormData
+): Promise<UpdateCandidateState> {
+  const headersList = await headers()
+  const tenantId = headersList.get('x-tenant-id')
+  const userRole = headersList.get('x-user-role') as UserRole | null
+
+  if (!tenantId) return { success: false, error: 'Unauthorized' }
+
+  try {
+    requireRole(userRole ?? undefined, 'recruiter')
+  } catch {
+    return { success: false, error: 'Forbidden: recruiters and admins only' }
+  }
+
+  const parsed = UpdateCandidateSchema.safeParse({
+    firstName: formData.get('firstName'),
+    lastName: formData.get('lastName'),
+    email: formData.get('email') || undefined,
+    phone: formData.get('phone') || undefined,
+  })
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: 'Validation failed',
+      fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+    }
+  }
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .update(candidates)
+      .set({
+        firstName: parsed.data.firstName,
+        lastName: parsed.data.lastName,
+        email: parsed.data.email || null,
+        phone: parsed.data.phone || null,
+      })
+      .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
+  })
+
+  revalidatePath(`/dashboard/candidates/${candidateId}`)
+  return { success: true }
+}
+
+// ---------------------------------------------------------------------------
+// archiveCandidate — soft-delete a candidate by setting isActive=false
+// ---------------------------------------------------------------------------
+
+export async function archiveCandidate(candidateId: string): Promise<void> {
+  const headersList = await headers()
+  const tenantId = headersList.get('x-tenant-id')
+  const userRole = headersList.get('x-user-role') as UserRole | null
+
+  if (!tenantId) throw new Error('Unauthorized')
+
+  requireRole(userRole ?? undefined, 'recruiter')
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .update(candidates)
+      .set({ isActive: false })
+      .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
+  })
+
+  redirect('/dashboard/candidates')
 }

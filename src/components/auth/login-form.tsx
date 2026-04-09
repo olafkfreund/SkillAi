@@ -60,7 +60,7 @@ export function LoginForm({ callbackUrl, error }: Props) {
       {(errorMsg || fieldError) && (
         <div
           role="alert"
-          className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"
+          className="rounded-md bg-red-950 border border-red-800 px-4 py-3 text-sm text-red-400"
         >
           {fieldError ?? errorMsg}
         </div>
@@ -69,7 +69,7 @@ export function LoginForm({ callbackUrl, error }: Props) {
       <div>
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-slate-700 mb-1"
+          className="block text-sm font-medium text-zinc-300 mb-1"
         >
           Email
         </label>
@@ -80,7 +80,8 @@ export function LoginForm({ callbackUrl, error }: Props) {
           autoComplete="email"
           required
           disabled={pending}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
+          className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                     placeholder:text-zinc-500
                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                      disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="you@company.com"
@@ -90,7 +91,7 @@ export function LoginForm({ callbackUrl, error }: Props) {
       <div>
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-slate-700 mb-1"
+          className="block text-sm font-medium text-zinc-300 mb-1"
         >
           Password
         </label>
@@ -101,7 +102,8 @@ export function LoginForm({ callbackUrl, error }: Props) {
           autoComplete="current-password"
           required
           disabled={pending}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
+          className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                     placeholder:text-zinc-500
                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                      disabled:opacity-50 disabled:cursor-not-allowed"
         />

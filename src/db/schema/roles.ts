@@ -2,6 +2,7 @@ import { pgTable, pgPolicy, uuid, varchar, text, boolean, timestamp } from 'driz
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 import { users } from './users'
+import { customers } from './customers'
 
 export const roles = pgTable(
   'roles',
@@ -17,7 +18,10 @@ export const roles = pgTable(
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id),
+    customerId: uuid('customer_id').references(() => customers.id, { onDelete: 'set null' }),
     isActive: boolean('is_active').notNull().default(true),
+    frameworkLevelId: varchar('framework_level_id', { length: 50 }),
+    frameworkLevelLabel: varchar('framework_level_label', { length: 200 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

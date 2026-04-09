@@ -35,12 +35,12 @@ export async function parseFile(buffer: Buffer, fileType: FileType): Promise<str
 }
 
 async function parsePdf(buffer: Buffer): Promise<string> {
-  const pdfParse = (await import('pdf-parse')).default
+  const { extractText } = await import('unpdf')
   try {
-    const result = await pdfParse(buffer)
-    const text = result.text?.trim()
-    if (!text) throw new ParseError('PDF produced empty text — file may be image-only')
-    return text
+    const { text } = await extractText(new Uint8Array(buffer), { mergePages: true })
+    const trimmed = text?.trim()
+    if (!trimmed) throw new ParseError('PDF produced empty text — file may be image-only')
+    return trimmed
   } catch (err) {
     if (err instanceof ParseError) throw err
     throw new ParseError(`PDF parsing failed: ${(err as Error).message}`)

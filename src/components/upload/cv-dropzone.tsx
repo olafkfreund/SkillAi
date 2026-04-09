@@ -74,39 +74,39 @@ export function CvDropzone({ onFileSelect, uploadState = { status: 'idle' }, dis
         {...getRootProps()}
         className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed
           px-6 py-10 text-center transition-colors cursor-pointer
-          ${isDragActive ? 'border-blue-400 bg-blue-50' : 'border-slate-300 bg-slate-50'}
-          ${isSuccess ? 'border-green-400 bg-green-50' : ''}
-          ${isError ? 'border-red-300 bg-red-50' : ''}
-          ${disabled || isUploading || isSuccess ? 'cursor-not-allowed opacity-60' : 'hover:border-blue-400 hover:bg-blue-50'}
+          ${isDragActive ? 'border-blue-500 bg-blue-950' : 'border-zinc-600 bg-zinc-800'}
+          ${isSuccess ? 'border-green-500 bg-green-950' : ''}
+          ${isError ? 'border-red-700 bg-red-950' : ''}
+          ${disabled || isUploading || isSuccess ? 'cursor-not-allowed opacity-60' : 'hover:border-blue-500 hover:bg-blue-950/40'}
         `}
       >
         <input {...getInputProps()} />
 
         {isUploading ? (
           <>
-            <Loader2Icon className="h-10 w-10 text-blue-500 animate-spin mb-3" />
-            <p className="text-sm font-medium text-slate-700">Uploading…</p>
+            <Loader2Icon className="h-10 w-10 text-blue-400 animate-spin mb-3" />
+            <p className="text-sm font-medium text-zinc-300">Uploading…</p>
           </>
         ) : isSuccess ? (
           <>
-            <CheckCircleIcon className="h-10 w-10 text-green-500 mb-3" />
-            <p className="text-sm font-medium text-green-700">Upload successful</p>
+            <CheckCircleIcon className="h-10 w-10 text-green-400 mb-3" />
+            <p className="text-sm font-medium text-green-400">Upload successful</p>
           </>
         ) : isSelected && uploadState.status === 'selected' ? (
           <>
-            <FileTextIcon className="h-10 w-10 text-blue-500 mb-3" />
-            <p className="text-sm font-medium text-slate-700">{uploadState.file.name}</p>
-            <p className="text-xs text-slate-400 mt-1">
+            <FileTextIcon className="h-10 w-10 text-blue-400 mb-3" />
+            <p className="text-sm font-medium text-zinc-300">{uploadState.file.name}</p>
+            <p className="text-xs text-zinc-500 mt-1">
               {(uploadState.file.size / 1024).toFixed(1)} KB — ready to upload
             </p>
           </>
         ) : (
           <>
-            <UploadCloudIcon className="h-10 w-10 text-slate-400 mb-3" />
-            <p className="text-sm font-medium text-slate-700">
+            <UploadCloudIcon className="h-10 w-10 text-zinc-500 mb-3" />
+            <p className="text-sm font-medium text-zinc-300">
               {isDragActive ? 'Drop the CV here' : 'Drag & drop a CV or click to browse'}
             </p>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-zinc-500 mt-1">
               PDF, DOCX, ODT, RTF, TXT, MD — max 10 MB
             </p>
           </>
@@ -117,7 +117,7 @@ export function CvDropzone({ onFileSelect, uploadState = { status: 'idle' }, dis
       {(rejectionMsg || isError) && (
         <div
           role="alert"
-          className="flex items-start gap-2 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700"
+          className="flex items-start gap-2 rounded-md bg-red-950 border border-red-800 px-3 py-2 text-sm text-red-400"
         >
           <XCircleIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <span>{rejectionMsg ?? (uploadState as { status: 'error'; message: string }).message}</span>

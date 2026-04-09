@@ -12,9 +12,9 @@
  *  5. On error: set score_status = 'failed' + error_message
  */
 
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 import { db, withTenant } from '@/db'
-import { candidates, roles, scores } from '@/db/schema'
+import { candidates, roles, scores, customerFrameworks } from '@/db/schema'
 import { scoreCandidateWithClaude } from './claude'
 
 export async function triggerScoring(
@@ -43,6 +43,37 @@ export async function triggerScoring(
       throw new Error('Candidate or role not found')
     }
 
+    // Fetch customer framework if role has a framework level set
+    let frameworkContext: string | undefined
+    if (role.frameworkLevelId && role.customerId) {
+      const [framework] = await db.transaction(async (tx) => {
+        await tx.execute(sql`SELECT set_tenant_context(${tenantId}::uuid)`)
+        return tx
+          .select()
+          .from(customerFrameworks)
+          .where(eq(customerFrameworks.customerId, role.customerId!))
+          .limit(1)
+      })
+      if (framework && framework.levels.length > 0) {
+        const targetLevel = framework.levels.find((l) => l.id === role.frameworkLevelId)
+        if (targetLevel) {
+          const sortedLevels = [...framework.levels].sort((a, b) => a.order - b.order)
+          const levelList = sortedLevels
+            .map((l) => `  ${l.code}: ${l.title}${l.id === role.frameworkLevelId ? ' \u2190 TARGET' : ''}`)
+            .join('\n')
+          frameworkContext = `Framework: ${framework.name}
+
+TARGET BAND: ${targetLevel.code} \u2014 ${targetLevel.title}
+${targetLevel.description ? `Band Description: ${targetLevel.description}` : ''}
+
+All bands (sorted by seniority):
+${levelList}
+
+When scoring experience_level, assess specifically whether the candidate's seniority, scope of responsibility, and technical depth align with ${targetLevel.code}. Reference the band explicitly in your reasoning. Penalise clear under-qualification heavily. Penalise heavy overqualification moderately (overqualified candidates are unlikely to accept or stay).`
+        }
+      }
+    }
+
     // Run Claude scoring
     const result = await scoreCandidateWithClaude({
       roleTitle: role.title,
@@ -50,6 +81,7 @@ export async function triggerScoring(
       roleRequirements: role.requirements,
       cvText: candidate.cvText,
       candidateName: `${candidate.firstName} ${candidate.lastName}`,
+      frameworkContext,
     })
 
     // Write results
