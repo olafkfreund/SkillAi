@@ -1,7 +1,8 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, after } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { join, extname } from 'path'
 import { randomUUID } from 'crypto'
+import { eq } from 'drizzle-orm'
 import { db, withTenant } from '@/db'
 import { candidates, scores } from '@/db/schema'
 import { parseFile, ParseError } from '@/lib/parsers'
@@ -134,6 +135,21 @@ export async function POST(request: NextRequest) {
 
     // Fire-and-forget AI scoring (non-blocking)
     triggerScoring(candidateId, roleId, tenantId).catch(console.error)
+
+    // Fire-and-forget embedding generation (non-blocking, after response is sent)
+    after(async () => {
+      try {
+        const { generateEmbedding } = await import('@/lib/ai/embeddings')
+        const embedding = await generateEmbedding(cvText, tenantId)
+        if (embedding) {
+          await withTenant(tenantId, async (tx) => {
+            await tx.update(candidates).set({ embedding: JSON.stringify(embedding) }).where(eq(candidates.id, candidateId))
+          })
+        }
+      } catch (err) {
+        console.error('[embedding] Failed to generate embedding for candidate:', candidateId, err)
+      }
+    })
 
     return Response.json({
       success: true,

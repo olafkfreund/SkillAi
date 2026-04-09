@@ -6,22 +6,13 @@ import { withTenant } from '@/db'
 import { candidates, agencies } from '@/db/schema'
 import { CandidateFilters } from '@/components/candidates/candidate-filters'
 import { SemanticSearchToggle } from '@/components/candidates/semantic-search-toggle'
-import { ComparisonCheckbox } from '@/components/candidates/comparison-checkbox'
+import { SelectableCandidateList } from '@/components/candidates/selectable-candidate-list'
 import { ComparisonTray } from '@/components/candidates/comparison-tray'
 import type { CandidateStatus } from '@/db/schema/candidates'
 
 export const metadata = { title: 'Candidates — SkillAI' }
 
 const PAGE_SIZE = 25
-
-const STATUS_BADGE: Record<string, string> = {
-  new: 'bg-zinc-700 text-zinc-300',
-  shortlisted: 'bg-blue-900/50 text-blue-300',
-  interviewing: 'bg-purple-900/50 text-purple-300',
-  offered: 'bg-amber-900/50 text-amber-300',
-  hired: 'bg-green-900/50 text-green-300',
-  rejected: 'bg-red-900/50 text-red-300',
-}
 
 interface PageProps {
   searchParams: Promise<{
@@ -192,68 +183,15 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
         </div>
       ) : (
         <>
-          <div className="bg-zinc-900 rounded-xl border border-zinc-700 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-zinc-700 bg-zinc-800">
-                  {/* Compare checkbox column */}
-                  <th className="w-10 px-4 py-3" aria-label="Select for comparison" />
-                  <th className="text-left px-5 py-3 font-medium text-zinc-400">Name</th>
-                  <th className="text-left px-5 py-3 font-medium text-zinc-400">Email</th>
-                  <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden sm:table-cell">
-                    Agency
-                  </th>
-                  <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden md:table-cell">
-                    Status
-                  </th>
-                  <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden lg:table-cell">
-                    Added
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {allCandidates.map((c) => (
-                  <tr
-                    key={c.id}
-                    className="border-b border-zinc-700 hover:bg-zinc-800 transition-colors last:border-0"
-                  >
-                    {/* Comparison checkbox */}
-                    <td className="px-4 py-3">
-                      <ComparisonCheckbox
-                        candidateId={c.id}
-                        candidateName={`${c.firstName} ${c.lastName}`}
-                      />
-                    </td>
-                    <td className="px-5 py-3">
-                      <Link
-                        href={`/dashboard/candidates/${c.id}`}
-                        className="font-medium text-zinc-100 hover:text-blue-400 transition-colors"
-                      >
-                        {c.firstName} {c.lastName}
-                      </Link>
-                    </td>
-                    <td className="px-5 py-3 text-zinc-500 truncate max-w-[200px]">
-                      {c.email ?? '—'}
-                    </td>
-                    <td className="px-5 py-3 text-zinc-500 hidden sm:table-cell">
-                      {c.agencyName ?? '—'}
-                    </td>
-                    <td className="px-5 py-3 hidden md:table-cell">
-                      <span
-                        className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium capitalize
-                                    ${STATUS_BADGE[c.status] ?? 'bg-zinc-700 text-zinc-300'}`}
-                      >
-                        {c.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-zinc-500 hidden lg:table-cell tabular-nums">
-                      {new Date(c.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {/* Serialize dates to strings for the client component */}
+          <SelectableCandidateList
+            candidates={allCandidates.map((c) => ({
+              ...c,
+              createdAt: c.createdAt instanceof Date
+                ? c.createdAt.toISOString()
+                : String(c.createdAt),
+            }))}
+          />
 
           {/* Pagination */}
           {totalPages > 1 && (

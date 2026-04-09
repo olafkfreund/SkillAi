@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { withTenant } from '@/db'
 import { roles } from '@/db/schema'
 import { requireRole } from '@/lib/auth/require-role'
+import { writeAuditLog } from '@/lib/audit'
 import { extractRoleTags } from '@/lib/ai/role-tags'
 import type { UserRole } from '@/lib/auth/types'
 
@@ -78,6 +79,14 @@ export async function createRole(
 
   after(async () => {
     await _saveRoleTags(role.id, tenantId, parsed.data.title, parsed.data.description, parsed.data.requirements)
+  })
+
+  // Audit: role created
+  await writeAuditLog(tenantId, {
+    action: 'role.created',
+    entityType: 'role',
+    entityId: role.id,
+    entityLabel: parsed.data.title,
   })
 
   revalidatePath('/dashboard/roles')
@@ -207,6 +216,13 @@ export async function archiveRole(roleId: string): Promise<void> {
       .update(roles)
       .set({ isActive: false })
       .where(and(eq(roles.id, roleId), eq(roles.tenantId, tenantId)))
+  })
+
+  // Audit: role archived
+  await writeAuditLog(tenantId, {
+    action: 'role.archived',
+    entityType: 'role',
+    entityId: roleId,
   })
 
   redirect('/dashboard/roles')
