@@ -9,6 +9,7 @@ import {
   BuildingIcon,
   SettingsIcon,
   LogOutIcon,
+  UserCogIcon,
 } from 'lucide-react'
 import type { UserRole } from '@/lib/auth/types'
 
@@ -25,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard/candidates', label: 'Candidates', icon: UsersIcon, minRole: 'viewer' },
   { href: '/dashboard/customers', label: 'Customers', icon: BuildingIcon, minRole: 'recruiter' },
   { href: '/dashboard/agencies', label: 'Agencies', icon: BuildingIcon, minRole: 'recruiter' },
+  { href: '/dashboard/users', label: 'Users', icon: UserCogIcon, minRole: 'admin' },
   { href: '/settings', label: 'Settings', icon: SettingsIcon, minRole: 'admin' },
 ]
 

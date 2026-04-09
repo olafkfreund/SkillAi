@@ -1,18 +1,22 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { ArrowLeftIcon, ArchiveIcon } from 'lucide-react'
 import { auth } from '@/lib/auth'
-import { withTenant } from '@/db'
-import { candidates, scores, roles, notes, agencies, candidateEnrichments } from '@/db/schema'
+import { db, withTenant } from '@/db'
+import { candidates, scores, roles, notes, agencies, candidateEnrichments, interviewSlots, calendarConnections } from '@/db/schema'
 import { ScoreChart } from '@/components/candidates/score-chart'
 import { ScorePolling } from '@/components/candidates/score-polling'
+import { RescoreButton } from '@/components/candidates/rescore-button'
 import { PackGenerator } from '@/components/interview/pack-generator'
 import { PackList } from '@/components/interview/pack-list'
 import { DownloadPdfButton } from '@/components/export/download-pdf-button'
 import { EnrichmentPanel } from '@/components/candidates/enrichment-panel'
+import { NotesPanel } from '@/components/candidates/notes-panel'
 import { StatusSelector } from '@/components/candidates/status-selector'
+import { CvDisplay } from '@/components/candidates/cv-display'
 import { EditDetailsForm } from '@/components/candidates/edit-details-form'
+import { InterviewCalendar } from '@/components/candidates/interview-calendar'
 import { archiveCandidate } from '@/actions/candidates'
 import { hasRole } from '@/lib/auth/require-role'
 import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
@@ -57,12 +61,49 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
     : candidateScores[0]
 
   const candidateNotes = await withTenant(tenantId, async (tx) =>
-    tx.select().from(notes).where(eq(notes.candidateId, candidateId))
+    tx
+      .select()
+      .from(notes)
+      .where(eq(notes.candidateId, candidateId))
+      .orderBy(desc(notes.createdAt))
   )
 
   const allRoles = await withTenant(tenantId, async (tx) =>
     tx.select({ id: roles.id, title: roles.title }).from(roles).where(eq(roles.isActive, true))
   )
+
+  const allAgencies = await withTenant(tenantId, async (tx) =>
+    tx.select({ id: agencies.id, name: agencies.name }).from(agencies).where(eq(agencies.isActive, true))
+  )
+
+  // Load interview slots for this candidate
+  const rawSlots = await withTenant(tenantId, async (tx) =>
+    tx
+      .select()
+      .from(interviewSlots)
+      .where(eq(interviewSlots.candidateId, candidateId))
+      .orderBy(desc(interviewSlots.scheduledAt))
+  )
+
+  const initialSlots = rawSlots.map((s) => ({
+    id: s.id,
+    title: s.title,
+    scheduledAt: s.scheduledAt.toISOString(),
+    durationMinutes: s.durationMinutes,
+    status: s.status,
+    location: s.location ?? null,
+    meetingUrl: s.meetingUrl ?? null,
+  }))
+
+  // Check which calendar providers are connected for the current user
+  const userId = session.user.id
+  const calendarConns = await db
+    .select({ provider: calendarConnections.provider })
+    .from(calendarConnections)
+    .where(eq(calendarConnections.userId, userId))
+  const connectedProviders = new Set(calendarConns.map((c) => c.provider))
+  const hasGoogleCalendar = connectedProviders.has('google')
+  const hasMicrosoftCalendar = connectedProviders.has('microsoft')
 
   // Load existing enrichment data
   const [enrichmentRow] = await withTenant(tenantId, async (tx) =>
@@ -151,7 +192,9 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
             lastName: candidate.lastName,
             email: candidate.email ?? null,
             phone: candidate.phone ?? null,
+            agencyId: candidate.agencyId ?? null,
           }}
+          agencies={allAgencies}
         />
       )}
 
@@ -164,9 +207,16 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
         />
       ) : activeScore?.score.scoreStatus === 'complete' ? (
         <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
-          <h2 className="font-semibold text-zinc-100 mb-4">
-            Score for: {activeScore.role.title}
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-zinc-100">Score for: {activeScore.role.title}</h2>
+            {canEdit && (
+              <RescoreButton
+                candidateId={candidateId}
+                currentRoleId={activeScore.score.roleId}
+                allRoles={allRoles}
+              />
+            )}
+          </div>
           <ScoreChart score={activeScore.score} />
           {activeScore.score.aiSummary && (
             <div className="mt-5 pt-5 border-t border-zinc-700">
@@ -176,8 +226,15 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
           )}
         </div>
       ) : activeScore?.score.scoreStatus === 'failed' ? (
-        <div className="rounded-md bg-red-950 border border-red-800 px-4 py-3 text-sm text-red-400 mb-6">
-          Scoring failed: {activeScore.score.errorMessage ?? 'Unknown error'}
+        <div className="rounded-md bg-red-950 border border-red-800 px-4 py-3 text-sm text-red-400 mb-6 flex items-center justify-between">
+          <span>Scoring failed: {activeScore.score.errorMessage ?? 'Unknown error'}</span>
+          {canEdit && (
+            <RescoreButton
+              candidateId={candidateId}
+              currentRoleId={activeScore.score.roleId}
+              allRoles={allRoles}
+            />
+          )}
         </div>
       ) : null}
 
@@ -219,32 +276,41 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
         <PackList candidateId={candidateId} />
       </div>
 
-      {/* CV text */}
+      {/* Interview Schedule */}
+      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+        <h2 className="font-semibold text-zinc-100 mb-4">Interview Schedule</h2>
+        <InterviewCalendar
+          candidateId={candidateId}
+          candidateName={`${candidate.firstName} ${candidate.lastName}`}
+          roleId={roleId}
+          initialSlots={initialSlots}
+          canSchedule={canEdit}
+          allRoles={allRoles}
+          hasGoogleCalendar={hasGoogleCalendar}
+          hasMicrosoftCalendar={hasMicrosoftCalendar}
+        />
+      </div>
+
+      {/* CV */}
       <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
         <h2 className="font-semibold text-zinc-100 mb-3">CV</h2>
-        <pre className="text-sm text-zinc-400 whitespace-pre-wrap font-sans leading-relaxed max-h-96 overflow-y-auto">
-          {candidate.cvText}
-        </pre>
+        <CvDisplay cvText={candidate.cvText} />
       </div>
 
       {/* Notes */}
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6">
-        <h2 className="font-semibold text-zinc-100 mb-3">Notes ({candidateNotes.length})</h2>
-        {candidateNotes.length === 0 ? (
-          <p className="text-sm text-zinc-500">No notes yet.</p>
-        ) : (
-          <div className="space-y-3">
-            {candidateNotes.map((note) => (
-              <div key={note.id} className="rounded-md bg-zinc-800 px-4 py-3">
-                <p className="text-sm text-zinc-300">{note.body}</p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  {new Date(note.createdAt).toLocaleString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <NotesPanel
+        candidateId={candidateId}
+        currentUserId={session?.user?.id ?? ''}
+        canEdit={canEdit}
+        initialNotes={candidateNotes.map((n) => ({
+          id: n.id,
+          body: n.body,
+          authorId: n.authorId,
+          createdAt: n.createdAt.toISOString(),
+          updatedAt: n.updatedAt?.toISOString() ?? null,
+          isEdited: n.isEdited,
+        }))}
+      />
     </div>
   )
 }

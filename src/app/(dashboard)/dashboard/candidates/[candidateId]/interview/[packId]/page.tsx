@@ -116,19 +116,40 @@ export default async function InterviewPackPage({ params }: Props) {
       </div>
 
       {/* Status banners */}
-      {isPending && (
-        <div className="rounded-xl bg-amber-950 border border-amber-800 px-5 py-4 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="h-5 w-5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin flex-shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-amber-400">Generating interview pack…</p>
-              <p className="text-xs text-amber-500 mt-0.5">
-                This usually takes 30-60 seconds. You can refresh the page to check progress.
-              </p>
+      {isPending && (() => {
+        const ageMs = Date.now() - new Date(pack.updatedAt).getTime()
+        const isStuck = ageMs > 3 * 60 * 1000 // 3 minutes
+        return (
+          <div className="rounded-xl bg-amber-950 border border-amber-800 px-5 py-4 mb-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-5 w-5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-400">Generating interview pack…</p>
+                  <p className="text-xs text-amber-500 mt-0.5">
+                    {isStuck
+                      ? 'This is taking longer than expected. The server may have restarted mid-generation.'
+                      : 'This usually takes 30-60 seconds. You can refresh the page to check progress.'}
+                  </p>
+                </div>
+              </div>
+              {isStuck && (
+                <form action={async () => { 'use server'; await retryInterviewPack(pack.id) }}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1.5 rounded-md bg-amber-900 border border-amber-700
+                               text-amber-300 text-xs font-medium px-3 py-1.5 hover:bg-amber-800
+                               transition-colors flex-shrink-0"
+                  >
+                    <RefreshCwIcon className="h-3.5 w-3.5" />
+                    Force retry
+                  </button>
+                </form>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {pack.generationStatus === 'failed' && (
         <div className="rounded-xl bg-red-950 border border-red-800 px-5 py-4 mb-6">

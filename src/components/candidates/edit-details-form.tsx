@@ -11,13 +11,20 @@ interface CandidateDetails {
   lastName: string
   email: string | null
   phone: string | null
+  agencyId: string | null
+}
+
+interface Agency {
+  id: string
+  name: string
 }
 
 interface EditDetailsFormProps {
   candidate: CandidateDetails
+  agencies: Agency[]
 }
 
-export function EditDetailsForm({ candidate }: EditDetailsFormProps) {
+export function EditDetailsForm({ candidate, agencies }: EditDetailsFormProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   const boundAction = updateCandidateDetails.bind(null, candidate.id)
@@ -31,6 +38,7 @@ export function EditDetailsForm({ candidate }: EditDetailsFormProps) {
     lastName: candidate.lastName,
     email: candidate.email ?? '',
     phone: candidate.phone ?? '',
+    agencyId: candidate.agencyId ?? '',
   })
 
   const fieldErrors = state && !state.success ? state.fieldErrors : {}
@@ -58,6 +66,7 @@ export function EditDetailsForm({ candidate }: EditDetailsFormProps) {
             fd.set('lastName', fields.lastName)
             fd.set('email', fields.email)
             fd.set('phone', fields.phone)
+            fd.set('agencyId', fields.agencyId)
             action(fd)
           }}
           className="mt-5 space-y-4"
@@ -164,6 +173,31 @@ export function EditDetailsForm({ candidate }: EditDetailsFormProps) {
                          disabled:opacity-50"
             />
           </div>
+
+          {agencies.length > 0 && (
+            <div>
+              <label htmlFor="agencyId" className="block text-sm font-medium text-zinc-300 mb-1">
+                Agency <span className="text-zinc-500 font-normal">(optional)</span>
+              </label>
+              <select
+                id="agencyId"
+                name="agencyId"
+                disabled={pending}
+                value={fields.agencyId}
+                onChange={(e) => setFields((f) => ({ ...f, agencyId: e.target.value }))}
+                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                           disabled:opacity-50"
+              >
+                <option value="">— No agency —</option>
+                {agencies.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="flex items-center gap-3 pt-1">
             <button

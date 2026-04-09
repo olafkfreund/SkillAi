@@ -22,6 +22,8 @@ export const roles = pgTable(
     isActive: boolean('is_active').notNull().default(true),
     frameworkLevelId: varchar('framework_level_id', { length: 50 }),
     frameworkLevelLabel: varchar('framework_level_label', { length: 200 }),
+    keySkills: text('key_skills').array().notNull().default(sql`'{}'::text[]`),
+    topRequirements: text('top_requirements').array().notNull().default(sql`'{}'::text[]`),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

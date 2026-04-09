@@ -14,8 +14,9 @@
 
 import { eq, and, sql } from 'drizzle-orm'
 import { db, withTenant } from '@/db'
-import { candidates, roles, scores, customerFrameworks } from '@/db/schema'
+import { candidates, roles, scores, customerFrameworks, tenantSettings } from '@/db/schema'
 import { scoreCandidateWithClaude } from './claude'
+import { scoreCandidateWithGemini } from './gemini'
 
 export async function triggerScoring(
   candidateId: string,
@@ -74,15 +75,28 @@ When scoring experience_level, assess specifically whether the candidate's senio
       }
     }
 
-    // Run Claude scoring
-    const result = await scoreCandidateWithClaude({
+    // Resolve AI model preference (tenant setting → default Claude)
+    const [modelSetting] = await withTenant(tenantId, async (tx) =>
+      tx
+        .select({ value: tenantSettings.value })
+        .from(tenantSettings)
+        .where(and(eq(tenantSettings.tenantId, tenantId), eq(tenantSettings.key, 'default_ai_model')))
+        .limit(1)
+    )
+    const useGemini = modelSetting?.value === 'gemini'
+
+    const scoringInput = {
       roleTitle: role.title,
       roleDescription: role.description,
       roleRequirements: role.requirements,
       cvText: candidate.cvText,
       candidateName: `${candidate.firstName} ${candidate.lastName}`,
       frameworkContext,
-    })
+    }
+
+    const result = useGemini
+      ? await scoreCandidateWithGemini({ ...scoringInput, tenantId })
+      : await scoreCandidateWithClaude(scoringInput)
 
     // Write results
     await withTenant(tenantId, async (tx) => {

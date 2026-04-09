@@ -3,11 +3,13 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
+import { after } from 'next/server'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { withTenant } from '@/db'
 import { roles } from '@/db/schema'
 import { requireRole } from '@/lib/auth/require-role'
+import { extractRoleTags } from '@/lib/ai/role-tags'
 import type { UserRole } from '@/lib/auth/types'
 
 const CreateRoleSchema = z.object({
@@ -72,6 +74,10 @@ export async function createRole(
         isActive: true,
       })
       .returning({ id: roles.id })
+  })
+
+  after(async () => {
+    await _saveRoleTags(role.id, tenantId, parsed.data.title, parsed.data.description, parsed.data.requirements)
   })
 
   revalidatePath('/dashboard/roles')
@@ -145,8 +151,41 @@ export async function updateRole(
       .where(and(eq(roles.id, roleId), eq(roles.tenantId, tenantId)))
   })
 
+  after(async () => {
+    await _saveRoleTags(roleId, tenantId, parsed.data.title, parsed.data.description, parsed.data.requirements)
+  })
+
   revalidatePath(`/dashboard/roles/${roleId}`)
   revalidatePath('/dashboard/roles')
+  return { success: true }
+}
+
+// ---------------------------------------------------------------------------
+// regenerateRoleTags — manually (re)run tag extraction for an existing role
+// ---------------------------------------------------------------------------
+
+export async function regenerateRoleTags(
+  roleId: string
+): Promise<{ success: boolean; error?: string }> {
+  const headersList = await headers()
+  const tenantId = headersList.get('x-tenant-id')
+  const userRole = headersList.get('x-user-role') as UserRole | null
+
+  if (!tenantId) return { success: false, error: 'Unauthorized' }
+  try { requireRole(userRole ?? undefined, 'recruiter') } catch {
+    return { success: false, error: 'Forbidden' }
+  }
+
+  const [role] = await withTenant(tenantId, async (tx) =>
+    tx.select({ title: roles.title, description: roles.description, requirements: roles.requirements })
+      .from(roles).where(and(eq(roles.id, roleId), eq(roles.tenantId, tenantId))).limit(1)
+  )
+  if (!role) return { success: false, error: 'Role not found' }
+
+  after(async () => {
+    await _saveRoleTags(roleId, tenantId, role.title, role.description, role.requirements)
+  })
+
   return { success: true }
 }
 
@@ -171,4 +210,30 @@ export async function archiveRole(roleId: string): Promise<void> {
   })
 
   redirect('/dashboard/roles')
+}
+
+// ---------------------------------------------------------------------------
+// _saveRoleTags — background helper: call Claude, write tags to DB
+// ---------------------------------------------------------------------------
+
+async function _saveRoleTags(
+  roleId: string,
+  tenantId: string,
+  title: string,
+  description: string,
+  requirements: string
+): Promise<void> {
+  try {
+    const tags = await extractRoleTags(title, description, requirements)
+    await withTenant(tenantId, async (tx) => {
+      await tx
+        .update(roles)
+        .set({ keySkills: tags.keySkills, topRequirements: tags.topRequirements })
+        .where(eq(roles.id, roleId))
+    })
+    revalidatePath(`/dashboard/roles/${roleId}`)
+    revalidatePath('/dashboard/roles')
+  } catch (err) {
+    console.error(`Role tag extraction failed for ${roleId}:`, err)
+  }
 }

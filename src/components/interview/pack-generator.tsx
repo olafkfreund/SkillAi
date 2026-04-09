@@ -54,15 +54,10 @@ export function PackGenerator({ candidateId, roleId, roleName }: Props) {
               </div>
             )}
 
-            <form
-              action={(fd) => {
-                fd.set('includeCodeChallenge', String(includeCode))
-                action(fd)
-              }}
-              className="space-y-4"
-            >
+            <form action={action} className="space-y-4">
               <input type="hidden" name="candidateId" value={candidateId} />
               <input type="hidden" name="roleId" value={roleId} />
+              <input type="hidden" name="includeCodeChallenge" value={String(includeCode)} />
 
               <label className="flex items-start gap-3 cursor-pointer">
                 <input

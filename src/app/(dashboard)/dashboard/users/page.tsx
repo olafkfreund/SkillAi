@@ -1,0 +1,141 @@
+import { UsersIcon } from 'lucide-react'
+import { auth } from '@/lib/auth'
+import { listTenantUsers } from '@/actions/users'
+import { listPendingInvitations } from '@/actions/invitations'
+import { UserManagementTable } from '@/components/settings/user-management-table'
+import { InviteForm } from './invite-form'
+import { RevokeButton } from './revoke-button'
+import { CopyUrlButton } from './copy-url-button'
+import type { UserRole } from '@/lib/auth/types'
+
+export const metadata = { title: 'Team Management — SkillAI' }
+
+const ROLE_BADGE: Record<UserRole, string> = {
+  admin: 'bg-violet-950 text-violet-400 border border-violet-700',
+  recruiter: 'bg-blue-950 text-blue-400 border border-blue-700',
+  viewer: 'bg-zinc-800 text-zinc-400 border border-zinc-700',
+}
+
+const BASE_URL = process.env.NEXTAUTH_URL ?? 'http://localhost:3001'
+
+export default async function UsersPage() {
+  const session = await auth()
+  const isAdmin = session?.user.role === 'admin'
+
+  const [tenantUsers, pendingInvitations] = isAdmin
+    ? await Promise.all([listTenantUsers(), listPendingInvitations()])
+    : [[], []]
+
+  return (
+    <div className="max-w-4xl">
+      {/* Page header */}
+      <div className="flex items-center gap-3 mb-8">
+        <div className="p-2 bg-zinc-800 rounded-lg">
+          <UsersIcon className="h-5 w-5 text-zinc-400" />
+        </div>
+        <div>
+          <h1 className="text-xl font-bold text-zinc-100">Team Management</h1>
+          <p className="text-sm text-zinc-500">Manage users and send invitations</p>
+        </div>
+      </div>
+
+      {!isAdmin ? (
+        <div className="rounded-xl bg-amber-950 border border-amber-800 px-5 py-4">
+          <p className="text-sm text-amber-400 font-medium">Admin access required</p>
+          <p className="text-xs text-amber-500 mt-0.5">
+            Only admins can manage team members and invitations.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-10">
+          {/* Invite user form */}
+          <InviteForm />
+
+          {/* Pending invitations */}
+          {pendingInvitations.length > 0 && (
+            <div>
+              <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">
+                Pending Invitations
+              </h2>
+              <div className="rounded-xl border border-zinc-700 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-zinc-700 bg-zinc-800">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                        Email
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                        Role
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                        Expires
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800">
+                    {pendingInvitations.map((inv) => {
+                      const inviteUrl = `${BASE_URL}/invite/${inv.token}`
+                      const role = (inv.role as UserRole) ?? 'recruiter'
+                      return (
+                        <tr key={inv.id} className="bg-zinc-900 hover:bg-zinc-800/50 transition-colors">
+                          <td className="px-4 py-3 text-zinc-400">
+                            {inv.email ?? (
+                              <span className="italic text-zinc-600">Open invitation</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[role]}`}
+                            >
+                              {role}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-zinc-500 text-xs">
+                            {inv.expiresAt.toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <CopyUrlButton url={inviteUrl} />
+                              <RevokeButton invitationId={inv.id} />
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Team members table */}
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">
+              Team Members
+            </h2>
+            <p className="text-xs text-zinc-500 mb-4">
+              You cannot change your own role or deactivate your own account.
+            </p>
+            {tenantUsers.length === 0 ? (
+              <div className="rounded-xl bg-zinc-800 border border-zinc-700 px-5 py-4">
+                <p className="text-sm text-zinc-500">No users found.</p>
+              </div>
+            ) : (
+              <UserManagementTable
+                users={tenantUsers}
+                currentUserId={session!.user.id}
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

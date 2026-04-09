@@ -1,10 +1,11 @@
 import { notFound } from 'next/navigation'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, isNull } from 'drizzle-orm'
 import Link from 'next/link'
 import { withTenant } from '@/db'
 import { agencies, candidates } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { AgencyEditForm } from '@/components/agencies/agency-edit-form'
+import { AgencyCandidatePanel } from '@/components/agencies/agency-candidate-panel'
 
 export const metadata = { title: 'Agency — SkillAI' }
 
@@ -40,6 +41,20 @@ export default async function AgencyDetailPage({ params }: Props) {
       .from(candidates)
       .where(and(eq(candidates.agencyId, agencyId), eq(candidates.tenantId, tenantId)))
       .orderBy(desc(candidates.createdAt))
+  )
+
+  // Candidates with no agency (for assignment)
+  const unassignedCandidates = await withTenant(tenantId, async (tx) =>
+    tx
+      .select({
+        id: candidates.id,
+        firstName: candidates.firstName,
+        lastName: candidates.lastName,
+        email: candidates.email,
+      })
+      .from(candidates)
+      .where(and(isNull(candidates.agencyId), eq(candidates.tenantId, tenantId), eq(candidates.isActive, true)))
+      .orderBy(candidates.firstName)
   )
 
   const canEdit = session?.user.role !== 'viewer'
@@ -84,35 +99,15 @@ export default async function AgencyDetailPage({ params }: Props) {
 
         {/* Candidates from this agency */}
         <div className="lg:col-span-2">
-          <h2 className="text-lg font-semibold text-zinc-100 mb-3">
-            Candidates ({agencyCandidates.length})
-          </h2>
-          {agencyCandidates.length === 0 ? (
-            <div className="rounded-xl border-2 border-dashed border-zinc-700 bg-zinc-950 px-6 py-10 text-center">
-              <p className="text-zinc-500 text-sm">No candidates from this agency yet.</p>
-            </div>
-          ) : (
-            <div className="grid gap-2">
-              {agencyCandidates.map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/dashboard/candidates/${c.id}`}
-                  className="flex items-center justify-between rounded-lg bg-zinc-900 border border-zinc-700
-                             px-5 py-3 hover:border-blue-500 hover:shadow-sm transition-all"
-                >
-                  <span className="text-sm font-medium text-zinc-100">
-                    {c.firstName} {c.lastName}
-                    {c.email && (
-                      <span className="font-normal text-zinc-500 ml-2">{c.email}</span>
-                    )}
-                  </span>
-                  <time className="text-xs text-zinc-500">
-                    {new Date(c.createdAt).toLocaleDateString()}
-                  </time>
-                </Link>
-              ))}
-            </div>
-          )}
+          <AgencyCandidatePanel
+            agencyId={agencyId}
+            agencyCandidates={agencyCandidates.map((c) => ({
+              ...c,
+              createdAt: c.createdAt.toISOString(),
+            }))}
+            unassignedCandidates={unassignedCandidates}
+            canEdit={canEdit}
+          />
         </div>
       </div>
     </div>

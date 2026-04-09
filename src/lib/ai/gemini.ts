@@ -1,0 +1,130 @@
+/**
+ * Gemini API client for CV scoring
+ *
+ * Uses Gemini 3.1 Pro (gemini-3.1-pro-preview) with structured JSON output
+ * to return a CandidateScore matching the same schema used by Claude scoring.
+ *
+ * Falls back to tenant API key → GEMINI_API_KEY env var.
+ */
+
+import { GoogleGenerativeAI, SchemaType, type Schema } from '@google/generative-ai'
+import { resolveGoogleKey } from './keys'
+import { CandidateScoreSchema, type CandidateScore } from './schema'
+
+const GEMINI_MODEL = 'models/gemini-3.1-pro-preview'
+
+const SCORE_RESPONSE_SCHEMA: Schema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    overall_score: {
+      type: SchemaType.INTEGER,
+      description: 'Overall fit score 0-100',
+    },
+    dimensions: {
+      type: SchemaType.OBJECT,
+      properties: {
+        technical_skills: {
+          type: SchemaType.OBJECT,
+          properties: {
+            score: { type: SchemaType.INTEGER },
+            reasoning: { type: SchemaType.STRING },
+          },
+          required: ['score', 'reasoning'],
+        },
+        experience_level: {
+          type: SchemaType.OBJECT,
+          properties: {
+            score: { type: SchemaType.INTEGER },
+            reasoning: { type: SchemaType.STRING },
+          },
+          required: ['score', 'reasoning'],
+        },
+        cultural_fit: {
+          type: SchemaType.OBJECT,
+          properties: {
+            score: { type: SchemaType.INTEGER },
+            reasoning: { type: SchemaType.STRING },
+          },
+          required: ['score', 'reasoning'],
+        },
+        communication: {
+          type: SchemaType.OBJECT,
+          properties: {
+            score: { type: SchemaType.INTEGER },
+            reasoning: { type: SchemaType.STRING },
+          },
+          required: ['score', 'reasoning'],
+        },
+      },
+      required: ['technical_skills', 'experience_level', 'cultural_fit', 'communication'],
+    },
+    summary: {
+      type: SchemaType.STRING,
+      description: 'Brief summary of candidate fit (2-4 sentences)',
+    },
+  },
+  required: ['overall_score', 'dimensions', 'summary'],
+}
+
+type ScoringInput = {
+  roleTitle: string
+  roleDescription: string
+  roleRequirements: string
+  cvText: string
+  candidateName: string
+  tenantId: string
+  frameworkContext?: string
+}
+
+export async function scoreCandidateWithGemini(input: ScoringInput): Promise<CandidateScore> {
+  const apiKey = await resolveGoogleKey(input.tenantId)
+  const genAI = new GoogleGenerativeAI(apiKey)
+
+  const model = genAI.getGenerativeModel({
+    model: GEMINI_MODEL,
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: SCORE_RESPONSE_SCHEMA,
+    },
+  })
+
+  const prompt = `You are an expert recruiter scoring candidates against job roles.
+
+ROLE: ${input.roleTitle}
+
+DESCRIPTION:
+${input.roleDescription}
+
+REQUIREMENTS:
+${input.roleRequirements}${input.frameworkContext ? `\n\nHIRING FRAMEWORK CONTEXT:\n${input.frameworkContext}` : ''}
+
+CANDIDATE: ${input.candidateName}
+
+CV:
+${input.cvText.slice(0, 8000)}
+
+Score this candidate on:
+- technical_skills (0-100): depth and breadth of technical skills vs role requirements
+- experience_level (0-100): seniority and experience match for the role
+- cultural_fit (0-100): alignment with role context and team expectations
+- communication (0-100): clarity of CV writing as a communication proxy
+
+Return an overall_score (0-100) plus a brief summary (2-4 sentences).`
+
+  const result = await model.generateContent(prompt)
+  const text = result.response.text()
+
+  let raw: unknown
+  try {
+    raw = JSON.parse(text)
+  } catch {
+    throw new Error(`Gemini returned non-JSON response: ${text.slice(0, 200)}`)
+  }
+
+  const parsed = CandidateScoreSchema.safeParse(raw)
+  if (!parsed.success) {
+    throw new Error(`Gemini response failed schema validation: ${parsed.error.message}`)
+  }
+
+  return parsed.data
+}

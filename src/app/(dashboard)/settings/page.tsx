@@ -1,12 +1,16 @@
 import { notFound } from 'next/navigation'
 import { SettingsIcon } from 'lucide-react'
+import { eq } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
+import { db } from '@/db'
+import { calendarConnections } from '@/db/schema'
 import { getConfiguredKeys, getGeneralSettings } from '@/actions/settings'
 import { listTenantUsers } from '@/actions/users'
 import { ApiKeyField } from '@/components/settings/api-key-field'
 import { GeneralSettingSelect } from '@/components/settings/general-setting-select'
 import { GeneralSettingNumber } from '@/components/settings/general-setting-number'
 import { UserManagementTable } from '@/components/settings/user-management-table'
+import { CalendarConnect } from '@/components/settings/calendar-connect'
 
 export default async function SettingsPage() {
   const session = await auth()
@@ -17,6 +21,16 @@ export default async function SettingsPage() {
   const configuredKeys = isAdmin ? await getConfiguredKeys(tenantId) : []
   const generalSettings = isAdmin ? await getGeneralSettings(tenantId) : {}
   const tenantUsers = isAdmin ? await listTenantUsers() : []
+
+  // Calendar connections are per-user, not per-tenant — query directly
+  const userId = session.user.id
+  const calendarConns = await db
+    .select({ provider: calendarConnections.provider })
+    .from(calendarConnections)
+    .where(eq(calendarConnections.userId, userId))
+  const connectedProviders = new Set(calendarConns.map((c) => c.provider))
+  const googleConnected = connectedProviders.has('google')
+  const microsoftConnected = connectedProviders.has('microsoft')
 
   const anthropicConfigured = configuredKeys.includes('anthropic_api_key')
   const googleConfigured = configuredKeys.includes('google_ai_api_key')
@@ -145,6 +159,21 @@ export default async function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Calendar Integration — available to all authenticated users */}
+      <div className="mt-10">
+        <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">
+          Calendar Integration
+        </h2>
+        <p className="text-xs text-zinc-500 mb-4">
+          Connect your personal calendar to automatically sync interview slots when you schedule them.
+          These connections are per-user and only visible to you.
+        </p>
+        <CalendarConnect
+          googleConnected={googleConnected}
+          microsoftConnected={microsoftConnected}
+        />
+      </div>
     </div>
   )
 }

@@ -23,6 +23,7 @@ export async function GET(
         recommendedDurationMinutes: interviewPacks.recommendedDurationMinutes,
         includesCodeChallenge: interviewPacks.includesCodeChallenge,
         createdAt: interviewPacks.createdAt,
+        updatedAt: interviewPacks.updatedAt,
         roleTitle: roles.title,
         roleId: interviewPacks.roleId,
         questionCount: count(interviewQuestions.id),
@@ -31,7 +32,7 @@ export async function GET(
       .leftJoin(roles, eq(interviewPacks.roleId, roles.id))
       .leftJoin(interviewQuestions, eq(interviewQuestions.packId, interviewPacks.id))
       .where(eq(interviewPacks.candidateId, candidateId))
-      .groupBy(interviewPacks.id, roles.title)
+      .groupBy(interviewPacks.id, roles.title, interviewPacks.updatedAt)
       .orderBy(desc(interviewPacks.createdAt))
   )
 

@@ -1,15 +1,30 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { eq, and, desc } from 'drizzle-orm'
-import { ArrowLeftIcon, UsersIcon, PencilIcon, ArchiveIcon } from 'lucide-react'
+import { ArrowLeftIcon, UsersIcon, PencilIcon, ArchiveIcon, UploadCloudIcon } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { withTenant } from '@/db'
 import { roles, scores, candidates, customers } from '@/db/schema'
 import { DownloadPdfButton } from '@/components/export/download-pdf-button'
-import { archiveRole } from '@/actions/roles'
+import { archiveRole, regenerateRoleTags } from '@/actions/roles'
 import { hasRole } from '@/lib/auth/require-role'
+import { RoleTagsPanel } from '@/components/roles/role-tags-panel'
 
 type Props = { params: Promise<{ roleId: string }> }
+
+function ScorePill({ label, score }: { label: string; score: number | null }) {
+  if (score === null) return null
+  const color =
+    score >= 75 ? 'bg-emerald-950 text-emerald-400 border-emerald-800' :
+    score >= 50 ? 'bg-blue-950 text-blue-400 border-blue-800' :
+    'bg-zinc-800 text-zinc-400 border-zinc-600'
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs border rounded px-1.5 py-0.5 ${color}`}>
+      <span className="text-zinc-500">{label}</span>
+      <span className="font-medium">{score}</span>
+    </span>
+  )
+}
 
 export default async function RoleDetailPage({ params }: Props) {
   const { roleId } = await params
@@ -43,6 +58,10 @@ export default async function RoleDetailPage({ params }: Props) {
         scoreId: scores.id,
         overallScore: scores.overallScore,
         scoreStatus: scores.scoreStatus,
+        technicalScore: scores.technicalScore,
+        experienceScore: scores.experienceScore,
+        culturalFitScore: scores.culturalFitScore,
+        communicationScore: scores.communicationScore,
         firstName: candidates.firstName,
         lastName: candidates.lastName,
         email: candidates.email,
@@ -107,6 +126,14 @@ export default async function RoleDetailPage({ params }: Props) {
             </Link>
           )}
           <Link
+            href={`/dashboard/roles/${roleId}/bulk-upload`}
+            className="flex items-center gap-2 rounded-md bg-zinc-700 text-zinc-100 text-sm
+                       font-medium px-4 py-2 hover:bg-zinc-600 transition-colors"
+          >
+            <UploadCloudIcon className="h-4 w-4" />
+            Bulk Upload
+          </Link>
+          <Link
             href={`/dashboard/roles/${roleId}/upload`}
             className="flex items-center gap-2 rounded-md bg-blue-600 text-white text-sm
                        font-medium px-4 py-2 hover:bg-blue-700 transition-colors"
@@ -130,6 +157,15 @@ export default async function RoleDetailPage({ params }: Props) {
           )}
         </div>
       </div>
+
+      {/* Tags panel */}
+      <RoleTagsPanel
+        roleId={roleId}
+        keySkills={role.keySkills ?? []}
+        topRequirements={role.topRequirements ?? []}
+        canEdit={canEdit}
+        regenerateAction={regenerateRoleTags.bind(null, roleId)}
+      />
 
       {/* Role description */}
       <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
@@ -155,17 +191,31 @@ export default async function RoleDetailPage({ params }: Props) {
                 className="flex items-center justify-between rounded-xl bg-zinc-900 border border-zinc-700
                            px-5 py-4 hover:border-blue-500 hover:shadow-sm transition-all"
               >
-                <span className="font-medium text-zinc-100">
-                  {c.firstName} {c.lastName}
-                </span>
-                <div className="flex items-center gap-3">
+                <div>
+                  <p className="font-medium text-zinc-100">
+                    {c.firstName} {c.lastName}
+                    {c.email && <span className="font-normal text-zinc-500 text-sm ml-2">{c.email}</span>}
+                  </p>
+                  {c.scoreStatus === 'complete' && c.technicalScore !== null && (
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <ScorePill label="Tech" score={c.technicalScore} />
+                      <ScorePill label="Exp" score={c.experienceScore} />
+                      <ScorePill label="Fit" score={c.culturalFitScore} />
+                      <ScorePill label="Comm" score={c.communicationScore} />
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 ml-4 flex-shrink-0">
                   {c.scoreStatus === 'pending' || c.scoreStatus === 'processing' ? (
                     <span className="text-xs bg-amber-950 text-amber-400 border border-amber-800
                                      px-2 py-0.5 rounded-full">
                       Scoring…
                     </span>
                   ) : c.scoreStatus === 'complete' && c.overallScore !== null ? (
-                    <span className="text-sm font-bold text-zinc-100">{c.overallScore}/100</span>
+                    <div className="text-center">
+                      <p className="text-xl font-bold text-zinc-100">{c.overallScore}</p>
+                      <p className="text-xs text-zinc-500">/ 100</p>
+                    </div>
                   ) : (
                     <span className="text-xs text-red-400">Failed</span>
                   )}

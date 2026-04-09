@@ -1,4 +1,4 @@
-import { pgTable, pgPolicy, uuid, text, timestamp, index } from 'drizzle-orm/pg-core'
+import { pgTable, pgPolicy, uuid, text, timestamp, boolean, index } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 import { candidates } from './candidates'
@@ -19,6 +19,8 @@ export const notes = pgTable(
       .references(() => users.id),
     body: text('body').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }),
+    isEdited: boolean('is_edited').notNull().default(false),
   },
   (t) => [
     index('idx_notes_candidate').on(t.candidateId),

@@ -11,6 +11,7 @@ type Pack = {
   recommendedDurationMinutes: number | null
   includesCodeChallenge: boolean
   createdAt: string
+  updatedAt: string
   roleTitle: string | null
   roleId: string
   questionCount: number
@@ -95,14 +96,16 @@ export function PackList({ candidateId }: Props) {
       {packs.map((pack) => {
         const status = STATUS_CONFIG[pack.generationStatus] ?? STATUS_CONFIG.pending
         const isReady = pack.generationStatus === 'complete'
+        const isPending = pack.generationStatus === 'pending' || pack.generationStatus === 'processing'
+        const ageMs = Date.now() - new Date(pack.updatedAt).getTime()
+        const isStuck = isPending && ageMs > 3 * 60 * 1000
 
         const card = (
           <div
-            className={`flex items-center gap-4 rounded-lg border px-4 py-3 transition-colors ${
-              isReady
-                ? 'bg-zinc-900 border-zinc-700 hover:bg-zinc-800 cursor-pointer'
-                : 'bg-zinc-800 border-zinc-700'
-            }`}
+            className={`flex items-center gap-4 rounded-lg border px-4 py-3 transition-colors cursor-pointer
+              ${isStuck
+                ? 'bg-red-950/30 border-red-900 hover:bg-red-950/50'
+                : 'bg-zinc-900 border-zinc-700 hover:bg-zinc-800'}`}
           >
             <FileTextIcon className="h-4 w-4 text-zinc-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
@@ -120,29 +123,32 @@ export function PackList({ candidateId }: Props) {
                     {pack.experienceLevel ? ` · ${pack.experienceLevel}` : ''}
                     {' · '}{new Date(pack.createdAt).toLocaleDateString()}
                   </>
+                ) : isStuck ? (
+                  'Stuck — click to retry'
                 ) : (
                   new Date(pack.createdAt).toLocaleDateString()
                 )}
               </p>
             </div>
             <span
-              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${status.className}`}
+              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${
+                isStuck ? 'text-red-400 bg-red-950 border-red-800' : status.className
+              }`}
             >
-              {status.icon}
-              {status.label}
+              {isStuck ? <XCircleIcon className="h-3.5 w-3.5" /> : status.icon}
+              {isStuck ? 'Stuck' : status.label}
             </span>
           </div>
         )
 
-        return isReady ? (
+        // Always link to pack page — failed/stuck packs show retry button there
+        return (
           <Link
             key={pack.id}
             href={`/dashboard/candidates/${candidateId}/interview/${pack.id}`}
           >
             {card}
           </Link>
-        ) : (
-          <div key={pack.id}>{card}</div>
         )
       })}
     </div>

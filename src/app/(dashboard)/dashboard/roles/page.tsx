@@ -19,6 +19,8 @@ export default async function RolesPage() {
             id: roles.id,
             title: roles.title,
             description: roles.description,
+            keySkills: roles.keySkills,
+            topRequirements: roles.topRequirements,
             createdAt: roles.createdAt,
           })
           .from(roles)
@@ -68,16 +70,38 @@ export default async function RolesPage() {
             <Link
               key={role.id}
               href={`/dashboard/roles/${role.id}`}
-              className="flex items-start justify-between rounded-xl bg-zinc-900 border border-zinc-700
-                         px-6 py-5 hover:border-blue-500 hover:shadow-sm transition-all"
+              className="rounded-xl bg-zinc-900 border border-zinc-700 px-6 py-5
+                         hover:border-blue-500 hover:shadow-sm transition-all block"
             >
-              <div>
+              <div className="flex items-start justify-between">
                 <h2 className="font-semibold text-zinc-100">{role.title}</h2>
-                <p className="text-sm text-zinc-500 mt-0.5 line-clamp-2">{role.description}</p>
+                <time className="text-xs text-zinc-500 whitespace-nowrap ml-4 mt-0.5 flex-shrink-0">
+                  {new Date(role.createdAt).toLocaleDateString()}
+                </time>
               </div>
-              <time className="text-xs text-zinc-500 whitespace-nowrap ml-4 mt-0.5">
-                {new Date(role.createdAt).toLocaleDateString()}
-              </time>
+              <p className="text-sm text-zinc-500 mt-0.5 line-clamp-2">{role.description}</p>
+              {(role.keySkills.length > 0 || role.topRequirements.length > 0) && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {role.keySkills.slice(0, 6).map((s) => (
+                    <span
+                      key={s}
+                      className="inline-flex items-center rounded-full bg-blue-950 border border-blue-800
+                                 text-blue-300 text-xs px-2.5 py-0.5"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                  {role.topRequirements.slice(0, 3).map((r) => (
+                    <span
+                      key={r}
+                      className="inline-flex items-center rounded-full bg-amber-950 border border-amber-800
+                                 text-amber-300 text-xs px-2.5 py-0.5"
+                    >
+                      {r}
+                    </span>
+                  ))}
+                </div>
+              )}
             </Link>
           ))}
         </div>

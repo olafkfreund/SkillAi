@@ -109,6 +109,8 @@ export async function createCandidate(
   let cvText: string
   try {
     cvText = await parseFile(buffer, fileType)
+    // Strip null bytes and other non-printable control characters PostgreSQL rejects
+    cvText = cvText.replace(/\0/g, '').replace(/[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ')
   } catch (err) {
     if (err instanceof ParseError) {
       return { success: false, error: err.message }
@@ -195,6 +197,7 @@ const UpdateCandidateSchema = z.object({
   lastName: z.string().min(1, 'Last name is required').max(100),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().max(50).optional(),
+  agencyId: z.string().uuid().nullable().optional(),
 })
 
 export type UpdateCandidateState = {
@@ -220,11 +223,13 @@ export async function updateCandidateDetails(
     return { success: false, error: 'Forbidden: recruiters and admins only' }
   }
 
+  const rawAgencyId = formData.get('agencyId')
   const parsed = UpdateCandidateSchema.safeParse({
     firstName: formData.get('firstName'),
     lastName: formData.get('lastName'),
     email: formData.get('email') || undefined,
     phone: formData.get('phone') || undefined,
+    agencyId: rawAgencyId === '' || rawAgencyId === null ? null : rawAgencyId,
   })
 
   if (!parsed.success) {
@@ -243,7 +248,39 @@ export async function updateCandidateDetails(
         lastName: parsed.data.lastName,
         email: parsed.data.email || null,
         phone: parsed.data.phone || null,
+        ...(parsed.data.agencyId !== undefined ? { agencyId: parsed.data.agencyId } : {}),
       })
+      .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
+  })
+
+  revalidatePath(`/dashboard/candidates/${candidateId}`)
+  return { success: true }
+}
+
+// ---------------------------------------------------------------------------
+// updateCandidateAgency — assign or remove a candidate's agency
+// ---------------------------------------------------------------------------
+
+export async function updateCandidateAgency(
+  candidateId: string,
+  agencyId: string | null
+): Promise<{ success: boolean; error?: string }> {
+  const headersList = await headers()
+  const tenantId = headersList.get('x-tenant-id')
+  const userRole = headersList.get('x-user-role') as UserRole | null
+
+  if (!tenantId) return { success: false, error: 'Unauthorized' }
+
+  try {
+    requireRole(userRole ?? undefined, 'recruiter')
+  } catch {
+    return { success: false, error: 'Forbidden' }
+  }
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .update(candidates)
+      .set({ agencyId })
       .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
   })
 

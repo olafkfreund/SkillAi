@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
+import { after } from 'next/server'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { randomUUID } from 'crypto'
@@ -76,8 +77,12 @@ export async function createInterviewPack(
     })
   })
 
-  // Fire-and-forget generation pipeline
-  _generateInterviewPack(packId, tenantId, includeCodeChallenge).catch(console.error)
+  // Schedule generation to run after response is sent (Next.js after() guarantees completion)
+  after(async () => {
+    await _generateInterviewPack(packId, tenantId, includeCodeChallenge).catch((err) => {
+      console.error('Interview pack generation error (after):', err)
+    })
+  })
 
   return { success: true, packId }
 }
@@ -98,14 +103,18 @@ export async function retryInterviewPack(packId: string): Promise<{ success: boo
     ).limit(1)
   )
   if (!pack) return { success: false, error: 'Pack not found' }
-  if (pack.generationStatus !== 'failed') return { success: false, error: 'Pack is not in failed state' }
+  if (pack.generationStatus === 'complete') return { success: false, error: 'Pack already complete' }
 
   await withTenant(tenantId, async (tx) =>
     tx.update(interviewPacks).set({ generationStatus: 'pending', errorMessage: null, updatedAt: new Date() })
       .where(eq(interviewPacks.id, packId))
   )
 
-  _generateInterviewPack(packId, tenantId, pack.includesCodeChallenge).catch(console.error)
+  after(async () => {
+    await _generateInterviewPack(packId, tenantId, pack.includesCodeChallenge).catch((err) => {
+      console.error('Interview pack retry error (after):', err)
+    })
+  })
 
   revalidatePath(`/dashboard/candidates/${pack.candidateId}/interview/${packId}`)
   return { success: true }
