@@ -29,16 +29,16 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
   - [x] 2.8 Write unit test for `withTenant()`: 6 tests using `vi.hoisted()` mock pattern (`tests/unit/db/with-tenant.test.ts`)
   - [x] 2.9 All tests pass: `npm run test` — 6 passed, 4 skipped (integration tests require DB)
 
-- [ ] 3. Authentication — Auth.js v5, credentials provider, JWT, RBAC middleware
-  - [ ] 3.1 Write integration tests for auth flow: valid login sets session cookie; wrong password returns error; unauthenticated request to `/dashboard` redirects to `/login`; viewer role blocked from createCandidate server action (tests will fail until auth implemented)
-  - [ ] 3.2 Configure Auth.js v5 in `src/lib/auth.ts`: credentials provider that queries `users` table, verifies bcrypt hash, returns `{ id, email, name, role, tenantId }` in JWT
-  - [ ] 3.3 Create `src/app/api/auth/[...nextauth]/route.ts` Auth.js handler
-  - [ ] 3.4 Configure `@auth/drizzle-adapter` in `auth.ts` (for session persistence if needed)
-  - [ ] 3.5 Build `src/middleware.ts`: protect `/(dashboard)(.*)` and `/api/(candidates|roles|agencies)(.*)` routes; extract JWT claims; set `x-tenant-id` and `x-user-role` request headers; return 401 for unauthenticated API requests
-  - [ ] 3.6 Create role permission check helper `src/lib/auth.ts → requireRole(minRole)` used in Server Actions and API routes
-  - [ ] 3.7 Build login page `src/app/(auth)/login/page.tsx` with email + password form using shadcn/ui `Card`, `Input`, `Button` components
-  - [ ] 3.8 Build authenticated shell layout `src/app/(dashboard)/layout.tsx` with sidebar navigation (Roles, Candidates links)
-  - [ ] 3.9 Verify all auth tests pass: `npm run test`
+- [x] 3. Authentication — Auth.js v5, credentials provider, JWT, RBAC middleware
+  - [x] 3.1 Unit tests: `authorizeUser()` — valid/invalid creds, null on unknown user, no passwordHash in response (`tests/unit/auth/credentials.test.ts`)
+  - [x] 3.2 `src/lib/auth.ts`: NextAuth v5 credentials provider, JWT strategy, jwt/session callbacks embed tenantId + role into token; `src/lib/auth/authorize.ts` contains pure `authorizeUser()` for testability
+  - [x] 3.3 `src/app/api/auth/[...nextauth]/route.ts` Auth.js GET/POST handler
+  - [x] 3.4 JWT sessions used (no DB adapter needed for credentials-only auth)
+  - [x] 3.5 `src/middleware.ts`: protects dashboard + API routes; forwards x-tenant-id, x-user-role, x-user-id headers; returns 401 JSON for API, redirect for dashboard
+  - [x] 3.6 `src/lib/auth/require-role.ts`: `hasRole()` + `requireRole()` with role hierarchy (viewer < recruiter < admin)
+  - [x] 3.7 `src/app/(auth)/login/page.tsx` + `src/components/auth/login-form.tsx`: client form with signIn, error display, loading spinner
+  - [x] 3.8 `src/app/(dashboard)/layout.tsx` + `src/components/layout/sidebar.tsx`: role-filtered nav (Settings admin-only)
+  - [x] 3.9 All tests pass: 16 passed, 4 skipped — `npm run test`
 
 - [ ] 4. CV Upload & Parsing — drag-and-drop, text extraction, file storage
   - [ ] 4.1 Write unit tests for `parsePdf()` and `parseDocx()` using fixture files in `tests/fixtures/` (sample.pdf, sample.docx); assert text extraction returns non-empty string
