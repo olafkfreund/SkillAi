@@ -21,6 +21,9 @@
 - [ ] Ranked candidate list UI — sortable table with overall score + dimension scores `M`
 - [ ] Single candidate profile view — full CV text, scores, AI reasoning `S`
 - [ ] Interview question + code test generator — AI-generated personalised question pack per candidate+role `M`
+- [ ] Settings panel — per-tenant API key management (Claude + Gemini keys stored encrypted) `S`
+- [ ] Extended CV file format support — PDF, DOCX, ODT, TXT, RTF upload and parsing `S`
+- [ ] PDF export — download candidate shortlists, role descriptions, and interview packs as PDFs `M`
 
 ### Should-Have Features
 
