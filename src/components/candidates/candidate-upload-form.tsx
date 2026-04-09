@@ -1,0 +1,236 @@
+'use client'
+
+import { useState, useActionState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import { Loader2, Sparkles } from 'lucide-react'
+import { CvDropzone } from '@/components/upload/cv-dropzone'
+import { createCandidate } from '@/actions/candidates'
+import type { CreateCandidateState } from '@/actions/candidates'
+
+type Agency = { id: string; name: string }
+type Props = { roleId: string; agencies: Agency[] }
+
+interface ExtractedCandidate {
+  firstName?: string
+  lastName?: string
+  email?: string
+  phone?: string
+  linkedin?: string
+  currentTitle?: string
+  summary?: string
+}
+
+export function CandidateUploadForm({ roleId, agencies }: Props) {
+  const router = useRouter()
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [extracting, setExtracting] = useState(false)
+  const [extracted, setExtracted] = useState<ExtractedCandidate | null>(null)
+  const [extractError, setExtractError] = useState<string | null>(null)
+
+  // Controlled form field values — populated by AI extraction
+  const [fields, setFields] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+  })
+
+  const [state, action, pending] = useActionState<CreateCandidateState | null, FormData>(
+    createCandidate,
+    null
+  )
+
+  useEffect(() => {
+    if (state?.success) {
+      router.push(`/dashboard/candidates/${state.candidateId}?roleId=${roleId}`)
+    }
+  }, [state, router, roleId])
+
+  async function handleFileSelect(file: File) {
+    setSelectedFile(file)
+    setExtractError(null)
+    setExtracted(null)
+    setExtracting(true)
+
+    try {
+      const formData = new FormData()
+      formData.set('file', file)
+      const res = await fetch('/api/extract/candidate', { method: 'POST', body: formData })
+      if (!res.ok) throw new Error('Extraction failed')
+      const data: ExtractedCandidate = await res.json()
+
+      setExtracted(data)
+      setFields({
+        firstName: data.firstName ?? '',
+        lastName: data.lastName ?? '',
+        email: data.email ?? '',
+        phone: data.phone ?? '',
+      })
+    } catch {
+      setExtractError('Could not auto-fill from file — please fill in manually.')
+    } finally {
+      setExtracting(false)
+    }
+  }
+
+  const uploadState = submitting
+    ? { status: 'uploading' as const }
+    : state?.success
+      ? { status: 'success' as const }
+      : selectedFile
+        ? { status: 'selected' as const, file: selectedFile }
+        : { status: 'idle' as const }
+
+  const fieldErrors = state && !state.success ? state.fieldErrors : {}
+  const globalError = state && !state.success && !state.fieldErrors ? state.error : null
+
+  return (
+    <form
+      action={(formData) => {
+        if (selectedFile) formData.set('cvFile', selectedFile)
+        setSubmitting(true)
+        action(formData)
+      }}
+      className="space-y-5"
+    >
+      {globalError && (
+        <div role="alert" className="rounded-md bg-red-950 border border-red-800 px-4 py-3 text-sm text-red-400">
+          {globalError}
+        </div>
+      )}
+
+      <input type="hidden" name="roleId" value={roleId} />
+
+      {/* CV upload — top of form so extraction happens before user fills fields */}
+      <div>
+        <label className="block text-sm font-medium text-zinc-300 mb-2">
+          CV file <span className="text-red-500">*</span>
+        </label>
+        <CvDropzone
+          onFileSelect={handleFileSelect}
+          uploadState={uploadState}
+          disabled={pending}
+        />
+        {extracting && (
+          <p className="mt-2 flex items-center gap-1.5 text-xs text-blue-400">
+            <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+            Reading CV and filling in details…
+          </p>
+        )}
+        {extracted && !extracting && (
+          <p className="mt-2 flex items-center gap-1.5 text-xs text-emerald-400">
+            <Sparkles className="h-3.5 w-3.5" />
+            Details filled from CV — review and adjust below
+          </p>
+        )}
+        {extractError && (
+          <p className="mt-2 text-xs text-amber-400">{extractError}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="firstName" className="block text-sm font-medium text-zinc-300 mb-1">
+            First name <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="firstName"
+            name="firstName"
+            required
+            disabled={pending || extracting}
+            value={fields.firstName}
+            onChange={(e) => setFields((f) => ({ ...f, firstName: e.target.value }))}
+            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                       placeholder:text-zinc-500
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          />
+          {fieldErrors?.firstName && (
+            <p className="mt-1 text-xs text-red-400">{fieldErrors.firstName[0]}</p>
+          )}
+        </div>
+        <div>
+          <label htmlFor="lastName" className="block text-sm font-medium text-zinc-300 mb-1">
+            Last name <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="lastName"
+            name="lastName"
+            required
+            disabled={pending || extracting}
+            value={fields.lastName}
+            onChange={(e) => setFields((f) => ({ ...f, lastName: e.target.value }))}
+            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                       placeholder:text-zinc-500
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-1">
+          Email
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          disabled={pending || extracting}
+          value={fields.email}
+          onChange={(e) => setFields((f) => ({ ...f, email: e.target.value }))}
+          className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                     placeholder:text-zinc-500
+                     focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="phone" className="block text-sm font-medium text-zinc-300 mb-1">
+          Phone
+        </label>
+        <input
+          id="phone"
+          name="phone"
+          type="tel"
+          disabled={pending || extracting}
+          value={fields.phone}
+          onChange={(e) => setFields((f) => ({ ...f, phone: e.target.value }))}
+          className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                     placeholder:text-zinc-500
+                     focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+        />
+      </div>
+
+      {agencies.length > 0 && (
+        <div>
+          <label htmlFor="agencyId" className="block text-sm font-medium text-zinc-300 mb-1">
+            Agency
+          </label>
+          <select
+            id="agencyId"
+            name="agencyId"
+            disabled={pending}
+            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            <option value="">— No agency —</option>
+            {agencies.map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={pending || !selectedFile || extracting}
+        className="flex items-center gap-2 rounded-md bg-blue-600 text-white text-sm
+                   font-medium px-5 py-2.5 hover:bg-blue-700 disabled:opacity-50 transition-colors"
+      >
+        {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+        {pending ? 'Uploading…' : 'Upload & score'}
+      </button>
+    </form>
+  )
+}

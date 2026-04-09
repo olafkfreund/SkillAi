@@ -1,0 +1,13 @@
+John Smith
+Senior Software Engineer
+
+EXPERIENCE
+- 8 years TypeScript development
+- Led platform team at TechCorp (2020-2024)
+- Built distributed systems processing 10M events/day
+
+SKILLS
+TypeScript, Node.js, PostgreSQL, Docker, Kubernetes
+
+EDUCATION
+BSc Computer Science, University of Edinburgh, 2016
