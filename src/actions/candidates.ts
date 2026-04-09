@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { db, withTenant } from '@/db'
 import { candidates, scores } from '@/db/schema'
 import { parseFile, ParseError } from '@/lib/parsers'
+import { triggerScoring } from '@/lib/ai/scoring'
 import type { FileType } from '@/lib/parsers'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
@@ -142,8 +143,8 @@ export async function createCandidate(
     })
   })
 
-  // Fire-and-forget scoring (non-blocking) — implemented in Task 6
-  // triggerScoring(candidateId, parsed.data.roleId, tenantId).catch(console.error)
+  // Fire-and-forget scoring (non-blocking)
+  triggerScoring(candidateId, parsed.data.roleId, tenantId).catch(console.error)
 
   return { success: true, candidateId }
 }

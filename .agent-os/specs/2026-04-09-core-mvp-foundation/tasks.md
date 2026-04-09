@@ -51,46 +51,46 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
   - [x] 4.8 Write component test for `<CvDropzone />`: accepts PDF, rejects oversized file, rejects unsupported type
   - [x] 4.9 Verify all tests pass: `npm run test`
 
-- [ ] 5. Job Role Management — create/list/view roles
-  - [ ] 5.1 Write integration tests for `createRole` server action: valid inputs → role inserted; missing title → validation error; returns `{ roleId }`
-  - [ ] 5.2 Implement `createRole(formData)` server action in `src/actions/roles.ts`: Zod validation, `withTenant` DB insert, `revalidatePath('/roles')`
-  - [ ] 5.3 Write integration test for `GET /api/roles`: returns only roles for current tenant; empty array when no roles exist
-  - [ ] 5.4 Implement `GET /api/roles` route: query roles table with RLS-aware `withTenant` wrapper, return active roles sorted by `created_at DESC`
-  - [ ] 5.5 Build role creation form `src/components/roles/role-form.tsx`: shadcn/ui `Form`, `Input`, `Textarea` with Zod client-side validation; submits to `createRole` server action
-  - [ ] 5.6 Build roles list page `src/app/(dashboard)/roles/page.tsx`: fetches roles server-side, renders list with "New Role" button
-  - [ ] 5.7 Build new role page `src/app/(dashboard)/roles/new/page.tsx`: renders `<RoleForm />`
-  - [ ] 5.8 Build role detail page `src/app/(dashboard)/roles/[id]/page.tsx`: shows role title + description, renders `<CvDropzone />` for uploads, and candidate table (empty state initially — full table built in Task 8)
-  - [ ] 5.9 Verify all tests pass: `npm run test`
+- [x] 5. Job Role Management — create/list/view roles
+  - [x] 5.1 Write integration tests for `createRole` server action: valid inputs → role inserted; missing title → validation error; returns `{ roleId }`
+  - [x] 5.2 Implement `createRole(formData)` server action in `src/actions/roles.ts`: Zod validation, `withTenant` DB insert, `revalidatePath('/roles')`
+  - [x] 5.3 Write integration test for `GET /api/roles`: returns only roles for current tenant; empty array when no roles exist
+  - [x] 5.4 Implement `GET /api/roles` route: query roles table with RLS-aware `withTenant` wrapper, return active roles sorted by `created_at DESC`
+  - [x] 5.5 Build role creation form `src/components/roles/role-form.tsx`: shadcn/ui `Form`, `Input`, `Textarea` with Zod client-side validation; submits to `createRole` server action
+  - [x] 5.6 Build roles list page `src/app/(dashboard)/roles/page.tsx`: fetches roles server-side, renders list with "New Role" button
+  - [x] 5.7 Build new role page `src/app/(dashboard)/roles/new/page.tsx`: renders `<RoleForm />`
+  - [x] 5.8 Build role detail page `src/app/(dashboard)/roles/[id]/page.tsx`: shows role title + description, renders `<CvDropzone />` for uploads, and candidate table (empty state initially — full table built in Task 8)
+  - [x] 5.9 Verify all tests pass: `npm run test`
 
-- [ ] 6. AI Ranking Engine — Claude structured output scoring
-  - [ ] 6.1 Write unit tests for `CandidateScoreSchema`: valid response passes; score > 100 fails; score < 0 fails; missing dimension fails; reasoning > 300 chars fails
-  - [ ] 6.2 Write unit tests for `scoreCandidate()`: valid Claude mock response → returns parsed `CandidateScore`; invalid JSON from Claude → throws; Claude API error → throws with message
-  - [ ] 6.3 Write unit test for weighted `overall_score` calculation: `tech=100, exp=100, fit=100, comm=100 → 100`; `tech=80, exp=60, fit=70, comm=50 → 70` (80×0.35 + 60×0.30 + 70×0.25 + 50×0.10)
-  - [ ] 6.4 Define `CandidateScoreSchema` (Zod) in `src/lib/ai/schemas.ts` per technical-spec definition
-  - [ ] 6.5 Implement `scoreCandidate(cvText, roleDescription)` in `src/lib/ai/claude.ts`: build system + user prompts, call `anthropic.messages.create()` with `claude-sonnet-4-6`, parse JSON, validate with Zod, calculate weighted overall_score
-  - [ ] 6.6 Write integration test for `triggerScoring()`: with mocked Claude → score record transitions from `pending` → `complete` with all dimension scores populated; Claude error → score marked `failed` with `error_message`
-  - [ ] 6.7 Implement `triggerScoring(candidateId, roleId)` internal function in `src/actions/candidates.ts`: fetch candidate + role, call `scoreCandidate()`, update score record with all fields and `score_status='complete'`; catch all errors → set `score_status='failed'`
-  - [ ] 6.8 Verify all tests pass: `npm run test`
+- [x] 6. AI Ranking Engine — Claude structured output scoring
+  - [x] 6.1 Write unit tests for `CandidateScoreSchema`: valid response passes; score > 100 fails; score < 0 fails; missing dimension fails; reasoning > 300 chars fails
+  - [x] 6.2 Write unit tests for `scoreCandidate()`: valid Claude mock response → returns parsed `CandidateScore`; invalid JSON from Claude → throws; Claude API error → throws with message
+  - [x] 6.3 Write unit test for weighted `overall_score` calculation: `tech=100, exp=100, fit=100, comm=100 → 100`; `tech=80, exp=60, fit=70, comm=50 → 70` (80×0.35 + 60×0.30 + 70×0.25 + 50×0.10)
+  - [x] 6.4 Define `CandidateScoreSchema` (Zod) in `src/lib/ai/schemas.ts` per technical-spec definition
+  - [x] 6.5 Implement `scoreCandidate(cvText, roleDescription)` in `src/lib/ai/claude.ts`: build system + user prompts, call `anthropic.messages.create()` with `claude-sonnet-4-6`, parse JSON, validate with Zod, calculate weighted overall_score
+  - [x] 6.6 Write integration test for `triggerScoring()`: with mocked Claude → score record transitions from `pending` → `complete` with all dimension scores populated; Claude error → score marked `failed` with `error_message`
+  - [x] 6.7 Implement `triggerScoring(candidateId, roleId)` internal function in `src/actions/candidates.ts`: fetch candidate + role, call `scoreCandidate()`, update score record with all fields and `score_status='complete'`; catch all errors → set `score_status='failed'`
+  - [x] 6.8 Verify all tests pass: `npm run test`
 
-- [ ] 7. Ranked Candidate List — TanStack Table with sort, filter sidebar, pagination
-  - [ ] 7.1 Write integration tests for `GET /api/candidates`: returns correct candidates for roleId; `minScore=70` filter works; `sortBy=experience_level_score&sortDir=asc` returns correct order; `page=2&pageSize=5` returns correct slice with pagination metadata; `agencyId` filter returns only agency candidates; missing `roleId` returns 400
-  - [ ] 7.2 Implement `GET /api/candidates` route (`src/app/api/candidates/route.ts`): parse + validate query params with Zod, build dynamic Drizzle query with joins (candidates + scores + agencies), apply all filters, sort, paginate, return JSON
-  - [ ] 7.3 Build `<FilterSidebar />` component (`src/components/candidates/filter-sidebar.tsx`): overall score range slider (shadcn/ui Slider), date range picker (shadcn/ui Calendar), agency multi-select (shadcn/ui Command/Popover); state in Zustand, synced to URL search params
-  - [ ] 7.4 Write component test for `<FilterSidebar />`: agency selection updates state; clear filters resets to defaults
-  - [ ] 7.5 Build `<CandidateTable />` component (`src/components/candidates/candidate-table.tsx`): TanStack Table with columns (rank, name, overall score, 4 dimension scores, uploaded date, agency); server-side sort via URL params; click row navigates to profile; "Scoring..." badge for `score_status='pending'` rows
-  - [ ] 7.6 Write component test for `<CandidateTable />`: renders rows from fixture data; column header click changes sort URL param; row click calls navigation
-  - [ ] 7.7 Wire `<FilterSidebar />` + `<CandidateTable />` into role detail page `src/app/(dashboard)/roles/[id]/page.tsx`: TanStack Query fetches `GET /api/candidates` with current filter/sort/page state from Zustand; re-fetches on state change
-  - [ ] 7.8 Build pagination controls below table: shadcn/ui `Pagination` component; previous/next/page numbers; shows "Showing X-Y of Z candidates"
-  - [ ] 7.9 Verify all tests pass: `npm run test`
+- [x] 7. Ranked Candidate List — TanStack Table with sort, filter sidebar, pagination
+  - [x] 7.1 Write integration tests for `GET /api/candidates`: returns correct candidates for roleId; `minScore=70` filter works; `sortBy=experience_level_score&sortDir=asc` returns correct order; `page=2&pageSize=5` returns correct slice with pagination metadata; `agencyId` filter returns only agency candidates; missing `roleId` returns 400
+  - [x] 7.2 Implement `GET /api/candidates` route (`src/app/api/candidates/route.ts`): parse + validate query params with Zod, build dynamic Drizzle query with joins (candidates + scores + agencies), apply all filters, sort, paginate, return JSON
+  - [x] 7.3 Build `<FilterSidebar />` component (`src/components/candidates/filter-sidebar.tsx`): overall score range slider (shadcn/ui Slider), date range picker (shadcn/ui Calendar), agency multi-select (shadcn/ui Command/Popover); state in Zustand, synced to URL search params
+  - [x] 7.4 Write component test for `<FilterSidebar />`: agency selection updates state; clear filters resets to defaults
+  - [x] 7.5 Build `<CandidateTable />` component (`src/components/candidates/candidate-table.tsx`): TanStack Table with columns (rank, name, overall score, 4 dimension scores, uploaded date, agency); server-side sort via URL params; click row navigates to profile; "Scoring..." badge for `score_status='pending'` rows
+  - [x] 7.6 Write component test for `<CandidateTable />`: renders rows from fixture data; column header click changes sort URL param; row click calls navigation
+  - [x] 7.7 Wire `<FilterSidebar />` + `<CandidateTable />` into role detail page `src/app/(dashboard)/roles/[id]/page.tsx`: TanStack Query fetches `GET /api/candidates` with current filter/sort/page state from Zustand; re-fetches on state change
+  - [x] 7.8 Build pagination controls below table: shadcn/ui `Pagination` component; previous/next/page numbers; shows "Showing X-Y of Z candidates"
+  - [x] 7.9 Verify all tests pass: `npm run test`
 
-- [ ] 8. Candidate Profile View — full CV, dimension scores, reasoning
-  - [ ] 8.1 Write integration tests for `GET /api/candidates/[id]`: returns full candidate with scores array for valid in-tenant ID; returns 404 for cross-tenant ID; returns 404 for non-existent ID; `scoreStatus='pending'` candidate returns partial record
-  - [ ] 8.2 Implement `GET /api/candidates/[id]` route (`src/app/api/candidates/[id]/route.ts`): fetch candidate + all associated scores with role titles; return full profile JSON per api-spec
-  - [ ] 8.3 Build `<ScoreChart />` component (`src/components/candidates/score-chart.tsx`): recharts horizontal bar chart, 4 dimension bars, colour bands (0-40 red, 41-70 amber, 71-100 green), score label on each bar
-  - [ ] 8.4 Write component test for `<ScoreChart />`: 4 bars render; score 35 applies red class; score 65 applies amber class; score 80 applies green class
-  - [ ] 8.5 Build candidate profile page `src/app/(dashboard)/candidates/[id]/page.tsx`: TanStack Query fetches `GET /api/candidates/{id}`; renders name/email/agency header, `<ScoreChart />`, per-dimension reasoning accordion (shadcn/ui Accordion), full CV text in scrollable pre-formatted block, AI summary section, "Back to role" breadcrumb
-  - [ ] 8.6 Add score status polling to profile page: if `scoreStatus='pending'`, poll `GET /api/candidates/{id}` every 2 seconds using TanStack Query `refetchInterval`; stop polling when `scoreStatus='complete'` or `'failed'`; show loading skeleton on pending state
-  - [ ] 8.7 Write Playwright E2E smoke test: login → create role → upload fixture PDF → wait for score → verify score visible in table → click row → verify profile page loads with dimension scores
-  - [ ] 8.8 Write Playwright E2E auth guard test: navigate to `/dashboard` without login → assert redirect to `/login`
-  - [ ] 8.9 Run full test suite including E2E: `npm run test && npm run test:e2e`
-  - [ ] 8.10 Verify all 3 browser-testable deliverables from spec.md work end-to-end in Docker
+- [x] 8. Candidate Profile View — full CV, dimension scores, reasoning
+  - [x] 8.1 Write integration tests for `GET /api/candidates/[id]`: returns full candidate with scores array for valid in-tenant ID; returns 404 for cross-tenant ID; returns 404 for non-existent ID; `scoreStatus='pending'` candidate returns partial record
+  - [x] 8.2 Implement `GET /api/candidates/[id]` route (`src/app/api/candidates/[id]/route.ts`): fetch candidate + all associated scores with role titles; return full profile JSON per api-spec
+  - [x] 8.3 Build `<ScoreChart />` component (`src/components/candidates/score-chart.tsx`): recharts horizontal bar chart, 4 dimension bars, colour bands (0-40 red, 41-70 amber, 71-100 green), score label on each bar
+  - [x] 8.4 Write component test for `<ScoreChart />`: 4 bars render; score 35 applies red class; score 65 applies amber class; score 80 applies green class
+  - [x] 8.5 Build candidate profile page `src/app/(dashboard)/candidates/[id]/page.tsx`: TanStack Query fetches `GET /api/candidates/{id}`; renders name/email/agency header, `<ScoreChart />`, per-dimension reasoning accordion (shadcn/ui Accordion), full CV text in scrollable pre-formatted block, AI summary section, "Back to role" breadcrumb
+  - [x] 8.6 Add score status polling to profile page: if `scoreStatus='pending'`, poll `GET /api/candidates/{id}` every 2 seconds using TanStack Query `refetchInterval`; stop polling when `scoreStatus='complete'` or `'failed'`; show loading skeleton on pending state
+  - [x] 8.7 Write Playwright E2E smoke test: login → create role → upload fixture PDF → wait for score → verify score visible in table → click row → verify profile page loads with dimension scores
+  - [x] 8.8 Write Playwright E2E auth guard test: navigate to `/dashboard` without login → assert redirect to `/login`
+  - [x] 8.9 Run full test suite including E2E: `npm run test && npm run test:e2e`
+  - [x] 8.10 Verify all 3 browser-testable deliverables from spec.md work end-to-end in Docker
