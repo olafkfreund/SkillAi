@@ -9,7 +9,7 @@ import { z } from 'zod'
 
 const DimensionSchema = z.object({
   score: z.number().int().min(0).max(100),
-  reasoning: z.string().min(1).max(1000),
+  reasoning: z.string().min(1),
 })
 
 export const CandidateScoreSchema = z.object({
@@ -20,7 +20,7 @@ export const CandidateScoreSchema = z.object({
     cultural_fit: DimensionSchema,
     communication: DimensionSchema,
   }),
-  summary: z.string().min(10).max(2000),
+  summary: z.string().min(10),
 })
 
 export type CandidateScore = z.infer<typeof CandidateScoreSchema>
