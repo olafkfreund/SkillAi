@@ -40,16 +40,16 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
   - [x] 3.8 `src/app/(dashboard)/layout.tsx` + `src/components/layout/sidebar.tsx`: role-filtered nav (Settings admin-only)
   - [x] 3.9 All tests pass: 16 passed, 4 skipped — `npm run test`
 
-- [ ] 4. CV Upload & Parsing — drag-and-drop, text extraction, file storage
-  - [ ] 4.1 Write unit tests for `parsePdf()` and `parseDocx()` using fixture files in `tests/fixtures/` (sample.pdf, sample.docx); assert text extraction returns non-empty string
-  - [ ] 4.2 Write unit tests for `parsePdf()` and `parseDocx()` error cases: wrong buffer type throws `ParseError`
-  - [ ] 4.3 Implement `src/lib/parsers/pdf.ts`: wrap `pdf-parse`, handle empty text result, throw typed `ParseError` on failure
-  - [ ] 4.4 Implement `src/lib/parsers/docx.ts`: wrap `mammoth.extractRawText()`, handle empty result, throw typed `ParseError` on failure
-  - [ ] 4.5 Write integration test for `createCandidate` server action: PDF upload → candidate row inserted + score row with `score_status='pending'`; file > 10MB → returns error; unsupported type → returns error
-  - [ ] 4.6 Implement `createCandidate(formData)` server action in `src/actions/candidates.ts`: validate file, write to `/app/uploads/{tenantId}/{uuid}.{ext}`, parse text, insert candidate + score records, call `triggerScoring` fire-and-forget
-  - [ ] 4.7 Build `<CvDropzone />` component (`src/components/upload/cv-dropzone.tsx`): react-dropzone with PDF/DOCX accept, 10MB limit, error messages for rejected files, upload progress indicator
-  - [ ] 4.8 Write component test for `<CvDropzone />`: accepts PDF, rejects oversized file, rejects unsupported type
-  - [ ] 4.9 Verify all tests pass: `npm run test`
+- [x] 4. CV Upload & Parsing — drag-and-drop, text extraction, file storage
+  - [x] 4.1 Write unit tests for `parsePdf()` and `parseDocx()` using fixture files in `tests/fixtures/` (sample.pdf, sample.docx); assert text extraction returns non-empty string
+  - [x] 4.2 Write unit tests for `parsePdf()` and `parseDocx()` error cases: wrong buffer type throws `ParseError`
+  - [x] 4.3 Implement `src/lib/parsers/pdf.ts`: wrap `pdf-parse`, handle empty text result, throw typed `ParseError` on failure
+  - [x] 4.4 Implement `src/lib/parsers/docx.ts`: wrap `mammoth.extractRawText()`, handle empty result, throw typed `ParseError` on failure
+  - [x] 4.5 Write integration test for `createCandidate` server action: PDF upload → candidate row inserted + score row with `score_status='pending'`; file > 10MB → returns error; unsupported type → returns error
+  - [x] 4.6 Implement `createCandidate(formData)` server action in `src/actions/candidates.ts`: validate file, write to `/app/uploads/{tenantId}/{uuid}.{ext}`, parse text, insert candidate + score records, call `triggerScoring` fire-and-forget
+  - [x] 4.7 Build `<CvDropzone />` component (`src/components/upload/cv-dropzone.tsx`): react-dropzone with PDF/DOCX accept, 10MB limit, error messages for rejected files, upload progress indicator
+  - [x] 4.8 Write component test for `<CvDropzone />`: accepts PDF, rejects oversized file, rejects unsupported type
+  - [x] 4.9 Verify all tests pass: `npm run test`
 
 - [ ] 5. Job Role Management — create/list/view roles
   - [ ] 5.1 Write integration tests for `createRole` server action: valid inputs → role inserted; missing title → validation error; returns `{ roleId }`
