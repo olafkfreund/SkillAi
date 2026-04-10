@@ -17,6 +17,7 @@ import { StatusSelector } from '@/components/candidates/status-selector'
 import { CvDisplay } from '@/components/candidates/cv-display'
 import { EditDetailsForm } from '@/components/candidates/edit-details-form'
 import { InterviewCalendar } from '@/components/candidates/interview-calendar'
+import { IcsImportButton } from '@/components/candidates/ics-import-button'
 import { RoleHistoryPanel } from '@/components/candidates/role-history-panel'
 import { MatchingRolesPanel } from '@/components/candidates/matching-roles-panel'
 import { archiveCandidate } from '@/actions/candidates'
@@ -309,6 +310,11 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
       {/* Interview Schedule */}
       <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
         <h2 className="font-semibold text-zinc-100 mb-4">Interview Schedule</h2>
+        {canEdit && (
+          <div className="mb-4">
+            <IcsImportButton candidateId={candidateId} roleId={roleId ?? null} />
+          </div>
+        )}
         <InterviewCalendar
           candidateId={candidateId}
           candidateName={`${candidate.firstName} ${candidate.lastName}`}

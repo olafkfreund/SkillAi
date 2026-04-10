@@ -8,6 +8,7 @@ import { db, withTenant } from '@/db'
 import { interviewSlots, calendarConnections } from '@/db/schema'
 import { syncSlotToCalendars, deleteSlotFromCalendars } from '@/lib/calendar/sync'
 import { getActionContext } from '@/lib/auth/action-context'
+import { parseIcsFile } from '@/lib/ics-parser'
 import type { InterviewSlot } from '@/db/schema/interview-slots'
 
 const CreateSlotSchema = z.object({
@@ -189,4 +190,86 @@ export async function getCalendarConnections(
     google: providers.has('google'),
     microsoft: providers.has('microsoft'),
   }
+}
+
+// ---------------------------------------------------------------------------
+// ICS file import
+// ---------------------------------------------------------------------------
+
+export type IcsImportResult =
+  | { success: true; imported: number; skipped: number }
+  | { success: false; error: string }
+
+/** Maximum ICS file size accepted (500 KB as character count). */
+const MAX_ICS_CHARS = 500 * 1024
+
+/** Maximum number of events processed from a single file. */
+const MAX_EVENTS = 50
+
+/**
+ * Parse an ICS file's text content and insert valid future events as
+ * interview slots for the given candidate.
+ *
+ * @param candidateId - UUID of the target candidate
+ * @param roleId      - UUID of an associated role, or null
+ * @param fileContent - Raw text of the uploaded .ics file
+ */
+export async function importIcsSlots(
+  candidateId: string,
+  roleId: string | null,
+  fileContent: string
+): Promise<IcsImportResult> {
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId } = ctx
+
+  if (!fileContent || fileContent.length === 0) {
+    return { success: false, error: 'File is empty' }
+  }
+  if (fileContent.length > MAX_ICS_CHARS) {
+    return { success: false, error: 'File is too large (max 500 KB)' }
+  }
+
+  const events = parseIcsFile(fileContent)
+
+  if (events.length === 0) {
+    return { success: false, error: 'No valid events found in file' }
+  }
+
+  const now = new Date()
+  let imported = 0
+  let skipped = 0
+
+  for (const event of events.slice(0, MAX_EVENTS)) {
+    // Skip events that are already in the past
+    if (event.start <= now) {
+      skipped++
+      continue
+    }
+
+    try {
+      await withTenant(tenantId, async (tx) =>
+        tx.insert(interviewSlots).values({
+          tenantId,
+          candidateId,
+          roleId: roleId ?? null,
+          title: event.summary,
+          scheduledAt: event.start,
+          durationMinutes: event.durationMinutes,
+          location: event.location ?? null,
+          meetingUrl: event.meetingUrl ?? null,
+          slotNotes: event.description ? 'Imported from calendar file' : null,
+          status: 'scheduled',
+          createdBy: userId,
+        })
+      )
+      imported++
+    } catch {
+      skipped++
+    }
+  }
+
+  revalidatePath(`/dashboard/candidates/${candidateId}`)
+
+  return { success: true, imported, skipped }
 }
