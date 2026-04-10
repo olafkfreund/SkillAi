@@ -1,12 +1,11 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
-import { db, withTenant } from '@/db'
+import { withTenant } from '@/db'
 import { notes } from '@/db/schema'
-import type { UserRole } from '@/lib/auth/types'
+import { getActionContext } from '@/lib/auth/action-context'
 
 const BodySchema = z.string().min(1, 'Note cannot be empty').max(5000, 'Note too long (max 5000 chars)')
 
@@ -19,14 +18,10 @@ export async function createNote(
   candidateId: string,
   body: string
 ): Promise<NoteActionResult> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userId = headersList.get('x-user-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
 
-  if (!tenantId || !userId) {
-    return { success: false, error: 'Unauthorized' }
-  }
   if (userRole === 'viewer') {
     return { success: false, error: 'Forbidden: recruiters and admins only' }
   }
@@ -57,14 +52,10 @@ export async function updateNote(
   candidateId: string,
   body: string
 ): Promise<NoteActionResult> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userId = headersList.get('x-user-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
 
-  if (!tenantId || !userId) {
-    return { success: false, error: 'Unauthorized' }
-  }
   if (userRole === 'viewer') {
     return { success: false, error: 'Forbidden: recruiters and admins only' }
   }
@@ -112,14 +103,9 @@ export async function deleteNote(
   noteId: string,
   candidateId: string
 ): Promise<NoteActionResult> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userId = headersList.get('x-user-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
-
-  if (!tenantId || !userId) {
-    return { success: false, error: 'Unauthorized' }
-  }
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
 
   // Verify note belongs to this tenant
   const [existing] = await withTenant(tenantId, async (tx) =>

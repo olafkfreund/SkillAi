@@ -43,20 +43,68 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
   )
   if (!candidate) notFound()
 
+  // agency depends on candidate.agencyId — must remain sequential after the candidate fetch
   const [agency] = candidate.agencyId
     ? await withTenant(tenantId, async (tx) =>
         tx.select().from(agencies).where(eq(agencies.id, candidate.agencyId!)).limit(1)
       )
     : [null]
 
-  const candidateScores = await withTenant(tenantId, async (tx) =>
-    tx
-      .select({ score: scores, role: roles })
-      .from(scores)
-      .innerJoin(roles, eq(scores.roleId, roles.id))
-      .where(eq(scores.candidateId, candidateId))
-      .orderBy(desc(scores.updatedAt))
-  )
+  // All remaining queries are independent of each other and of the agency result.
+  // They only need candidateId, tenantId, or userId — all available before any DB call.
+  const userId = session.user.id
+  const [
+    candidateScores,
+    candidateNotes,
+    allRoles,
+    allAgencies,
+    rawSlots,
+    calendarConns,
+    [enrichmentRow],
+  ] = await Promise.all([
+    withTenant(tenantId, async (tx) =>
+      tx
+        .select({ score: scores, role: roles })
+        .from(scores)
+        .innerJoin(roles, eq(scores.roleId, roles.id))
+        .where(eq(scores.candidateId, candidateId))
+        .orderBy(desc(scores.updatedAt))
+    ),
+    withTenant(tenantId, async (tx) =>
+      tx
+        .select()
+        .from(notes)
+        .where(eq(notes.candidateId, candidateId))
+        .orderBy(desc(notes.createdAt))
+    ),
+    withTenant(tenantId, async (tx) =>
+      tx.select({ id: roles.id, title: roles.title }).from(roles).where(eq(roles.isActive, true))
+    ),
+    withTenant(tenantId, async (tx) =>
+      tx.select({ id: agencies.id, name: agencies.name }).from(agencies).where(eq(agencies.isActive, true))
+    ),
+    // Load interview slots for this candidate
+    withTenant(tenantId, async (tx) =>
+      tx
+        .select()
+        .from(interviewSlots)
+        .where(eq(interviewSlots.candidateId, candidateId))
+        .orderBy(desc(interviewSlots.scheduledAt))
+    ),
+    // Check which calendar providers are connected for the current user
+    db
+      .select({ provider: calendarConnections.provider })
+      .from(calendarConnections)
+      .where(eq(calendarConnections.userId, userId)),
+    // Load existing enrichment data
+    withTenant(tenantId, async (tx) =>
+      tx
+        .select()
+        .from(candidateEnrichments)
+        .where(eq(candidateEnrichments.candidateId, candidateId))
+        .limit(1)
+    ),
+  ])
 
   const activeScore = roleId
     ? candidateScores.find((s) => s.score.roleId === roleId)
@@ -75,31 +123,6 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
     scoredAt: s.score.updatedAt,
   }))
 
-  const candidateNotes = await withTenant(tenantId, async (tx) =>
-    tx
-      .select()
-      .from(notes)
-      .where(eq(notes.candidateId, candidateId))
-      .orderBy(desc(notes.createdAt))
-  )
-
-  const allRoles = await withTenant(tenantId, async (tx) =>
-    tx.select({ id: roles.id, title: roles.title }).from(roles).where(eq(roles.isActive, true))
-  )
-
-  const allAgencies = await withTenant(tenantId, async (tx) =>
-    tx.select({ id: agencies.id, name: agencies.name }).from(agencies).where(eq(agencies.isActive, true))
-  )
-
-  // Load interview slots for this candidate
-  const rawSlots = await withTenant(tenantId, async (tx) =>
-    tx
-      .select()
-      .from(interviewSlots)
-      .where(eq(interviewSlots.candidateId, candidateId))
-      .orderBy(desc(interviewSlots.scheduledAt))
-  )
-
   const initialSlots = rawSlots.map((s) => ({
     id: s.id,
     title: s.title,
@@ -110,24 +133,9 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
     meetingUrl: s.meetingUrl ?? null,
   }))
 
-  // Check which calendar providers are connected for the current user
-  const userId = session.user.id
-  const calendarConns = await db
-    .select({ provider: calendarConnections.provider })
-    .from(calendarConnections)
-    .where(eq(calendarConnections.userId, userId))
   const connectedProviders = new Set(calendarConns.map((c) => c.provider))
   const hasGoogleCalendar = connectedProviders.has('google')
   const hasMicrosoftCalendar = connectedProviders.has('microsoft')
-
-  // Load existing enrichment data
-  const [enrichmentRow] = await withTenant(tenantId, async (tx) =>
-    tx
-      .select()
-      .from(candidateEnrichments)
-      .where(eq(candidateEnrichments.candidateId, candidateId))
-      .limit(1)
-  )
 
   const initialEnrichment = enrichmentRow
     ? {

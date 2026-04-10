@@ -1,17 +1,17 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { withTenant } from '@/db'
 import { scores, candidates, roles } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { generateShortlistSummary } from '@/lib/ai/shortlist-summary'
+import { getActionContext } from '@/lib/auth/action-context'
 
 export async function getShortlistSummary(
   roleId: string
 ): Promise<{ summary: string } | { error: string }> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  if (!tenantId) return { error: 'Unauthorized' }
+  const ctx = await getActionContext()
+  if (!ctx) return { error: 'Unauthorized' }
+  const { tenantId } = ctx
 
   try {
     const [role] = await withTenant(tenantId, async (tx) =>

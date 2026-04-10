@@ -1,17 +1,10 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { eq, and } from 'drizzle-orm'
 import { withTenant } from '@/db'
 import { candidates, candidateEnrichments } from '@/db/schema'
+import { getActionContext } from '@/lib/auth/action-context'
 import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
-
-async function getTenantAndUserId() {
-  const h = await headers()
-  const tenantId = h.get('x-tenant-id')
-  if (!tenantId) throw new Error('Not authenticated')
-  return tenantId
-}
 
 // ─── Brave Search ─────────────────────────────────────────────────────────────
 
@@ -117,7 +110,9 @@ export type EnrichmentResult =
   | { success: false; error: string }
 
 export async function enrichCandidate(candidateId: string): Promise<EnrichmentResult> {
-  const tenantId = await getTenantAndUserId()
+  const ctx = await getActionContext()
+  if (!ctx) throw new Error('Not authenticated')
+  const { tenantId } = ctx
 
   // Load candidate
   const [candidate] = await withTenant(tenantId, (tx) =>
@@ -203,7 +198,9 @@ export async function updateCandidateLinks(
   linkedinUrl: string | null,
   githubUsername: string | null
 ): Promise<{ success: boolean; error?: string }> {
-  const tenantId = await getTenantAndUserId()
+  const ctx = await getActionContext()
+  if (!ctx) throw new Error('Not authenticated')
+  const { tenantId } = ctx
 
   await withTenant(tenantId, (tx) =>
     tx

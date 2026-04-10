@@ -1,11 +1,13 @@
 import { sql } from 'drizzle-orm'
 import { withTenant } from '@/db'
+import { auth } from '@/lib/auth'
 
 export async function POST(request: Request) {
-  const tenantId = request.headers.get('x-tenant-id')
-  if (!tenantId) {
+  const session = await auth()
+  if (!session?.user?.tenantId) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const tenantId = session.user.tenantId
 
   let query: string
   let limit: number

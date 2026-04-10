@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { headers } from 'next/headers'
 import { after } from 'next/server'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
@@ -11,7 +10,7 @@ import { roles } from '@/db/schema'
 import { requireRole } from '@/lib/auth/require-role'
 import { writeAuditLog } from '@/lib/audit'
 import { extractRoleTags } from '@/lib/ai/role-tags'
-import type { UserRole } from '@/lib/auth/types'
+import { getActionContext } from '@/lib/auth/action-context'
 
 const CreateRoleSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -30,12 +29,9 @@ export async function createRole(
   _prev: CreateRoleState | null,
   formData: FormData
 ): Promise<CreateRoleState> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userId = headersList.get('x-user-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
-
-  if (!tenantId || !userId) return { success: false, error: 'Unauthorized' }
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
 
   try {
     requireRole(userRole ?? undefined, 'recruiter')
@@ -117,11 +113,9 @@ export async function updateRole(
   _prev: UpdateRoleState | null,
   formData: FormData
 ): Promise<UpdateRoleState> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
-
-  if (!tenantId) return { success: false, error: 'Unauthorized' }
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
 
   try {
     requireRole(userRole ?? undefined, 'recruiter')
@@ -176,11 +170,10 @@ export async function updateRole(
 export async function regenerateRoleTags(
   roleId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
 
-  if (!tenantId) return { success: false, error: 'Unauthorized' }
   try { requireRole(userRole ?? undefined, 'recruiter') } catch {
     return { success: false, error: 'Forbidden' }
   }
@@ -203,11 +196,9 @@ export async function regenerateRoleTags(
 // ---------------------------------------------------------------------------
 
 export async function archiveRole(roleId: string): Promise<void> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
-
-  if (!tenantId) throw new Error('Unauthorized')
+  const ctx = await getActionContext()
+  if (!ctx) throw new Error('Unauthorized')
+  const { tenantId, userRole } = ctx
 
   requireRole(userRole ?? undefined, 'recruiter')
 

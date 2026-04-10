@@ -12,6 +12,8 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { parseFile } from '@/lib/parsers'
+import { auth } from '@/lib/auth'
+import { fileTypeFromBuffer } from 'file-type'
 import type { FileType } from '@/lib/parsers'
 
 const anthropic = new Anthropic({
@@ -52,6 +54,11 @@ const EXT_MAP: Record<string, FileType> = {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.tenantId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const formData = await req.formData()
     const file = formData.get('file')
@@ -71,6 +78,19 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())
+
+    // Magic-byte file type validation — reject clearly wrong types (executables, images, etc.)
+    const detectedType = await fileTypeFromBuffer(buffer)
+    const allowedMimes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+      'application/rtf',
+    ]
+    if (detectedType && !allowedMimes.includes(detectedType.mime)) {
+      return NextResponse.json({ error: `Invalid file type detected: ${detectedType.mime}` }, { status: 400 })
+    }
+
     const text = await parseFile(buffer, fileType)
 
     if (!text || text.length < 20) {

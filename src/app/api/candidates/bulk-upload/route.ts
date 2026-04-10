@@ -3,10 +3,12 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join, extname } from 'path'
 import { randomUUID } from 'crypto'
 import { eq } from 'drizzle-orm'
-import { db, withTenant } from '@/db'
+import { withTenant } from '@/db'
 import { candidates, scores } from '@/db/schema'
 import { parseFile, ParseError } from '@/lib/parsers'
 import { triggerScoring } from '@/lib/ai/scoring'
+import { auth } from '@/lib/auth'
+import { fileTypeFromBuffer } from 'file-type'
 import type { FileType } from '@/lib/parsers'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
@@ -31,12 +33,12 @@ const EXT_TO_TYPE: Record<string, FileType> = {
 }
 
 export async function POST(request: NextRequest) {
-  const tenantId = request.headers.get('x-tenant-id')
-  const userId = request.headers.get('x-user-id')
-
-  if (!tenantId || !userId) {
+  const session = await auth()
+  if (!session?.user?.tenantId) {
     return Response.json({ success: false, error: 'Unauthorized' }, { status: 401 })
   }
+  const tenantId = session.user.tenantId
+  const userId = session.user.id
 
   try {
     const formData = await request.formData()
@@ -78,6 +80,23 @@ export async function POST(request: NextRequest) {
 
     // Parse CV text from file buffer
     const buffer = Buffer.from(await file.arrayBuffer())
+
+    // Magic-byte file type validation — reject clearly wrong types (executables, images, etc.)
+    const detectedType = await fileTypeFromBuffer(buffer)
+    const allowedMimes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+      'application/rtf',
+      'application/vnd.oasis.opendocument.text',
+    ]
+    if (detectedType && !allowedMimes.includes(detectedType.mime)) {
+      return Response.json(
+        { success: false, error: `Invalid file type detected: ${detectedType.mime}` },
+        { status: 400 }
+      )
+    }
+
     let cvText: string
     try {
       cvText = await parseFile(buffer, fileType)

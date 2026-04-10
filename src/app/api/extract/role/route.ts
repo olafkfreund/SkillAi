@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { parseFile } from '@/lib/parsers'
+import { auth } from '@/lib/auth'
 import type { FileType } from '@/lib/parsers'
 
 const anthropic = new Anthropic({
@@ -56,6 +57,11 @@ const EXT_MAP: Record<string, FileType> = {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.tenantId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const formData = await req.formData()
     const file = formData.get('file')

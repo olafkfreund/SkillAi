@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
 import { desc, eq } from 'drizzle-orm'
+import { auth } from '@/lib/auth'
 import { withTenant } from '@/db'
 import { roles, users } from '@/db/schema'
 
 export async function GET() {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-
-  if (!tenantId) {
+  const session = await auth()
+  if (!session?.user?.tenantId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const tenantId = session.user.tenantId
 
   const result = await withTenant(tenantId, async (tx) => {
     return tx

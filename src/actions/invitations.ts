@@ -122,8 +122,8 @@ const AcceptInvitationSchema = z
     token: z.string().min(1, 'Invalid invitation token'),
     name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or fewer'),
     email: z.string().email('Valid email is required'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    password: z.string().min(12, 'Password must be at least 12 characters'),
+    confirmPassword: z.string().min(12, 'Please confirm your password'),
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: 'Passwords do not match',

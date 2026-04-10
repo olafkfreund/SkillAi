@@ -1,12 +1,13 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { headers } from 'next/headers'
+import { after } from 'next/server'
 import { eq, and, desc } from 'drizzle-orm'
 import { z } from 'zod'
 import { db, withTenant } from '@/db'
 import { interviewSlots, calendarConnections } from '@/db/schema'
 import { syncSlotToCalendars, deleteSlotFromCalendars } from '@/lib/calendar/sync'
+import { getActionContext } from '@/lib/auth/action-context'
 import type { InterviewSlot } from '@/db/schema/interview-slots'
 
 const CreateSlotSchema = z.object({
@@ -29,11 +30,9 @@ export type CreateSlotState =
 export async function createInterviewSlot(
   data: z.infer<typeof CreateSlotSchema>
 ): Promise<CreateSlotState> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userId = headersList.get('x-user-id')
-
-  if (!tenantId || !userId) return { success: false, error: 'Unauthorized' }
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId } = ctx
 
   const parsed = CreateSlotSchema.safeParse(data)
   if (!parsed.success) {
@@ -111,11 +110,9 @@ export async function cancelInterviewSlot(
   slotId: string,
   candidateId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userId = headersList.get('x-user-id')
-
-  if (!tenantId || !userId) return { success: false, error: 'Unauthorized' }
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId } = ctx
 
   // Fetch slot to verify ownership and get calendar event IDs
   const [slot] = await withTenant(tenantId, async (tx) =>
@@ -162,9 +159,9 @@ export async function getSlots(tenantId: string, candidateId: string): Promise<I
 export async function disconnectCalendar(
   provider: 'google' | 'microsoft'
 ): Promise<void> {
-  const headersList = await headers()
-  const userId = headersList.get('x-user-id')
-  if (!userId) return
+  const ctx = await getActionContext()
+  if (!ctx) return
+  const { userId } = ctx
 
   await db
     .delete(calendarConnections)

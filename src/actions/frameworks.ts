@@ -1,6 +1,5 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
@@ -8,18 +7,8 @@ import { eq, and } from 'drizzle-orm'
 import { withTenant } from '@/db'
 import { customerFrameworks, roles } from '@/db/schema'
 import { requireRole } from '@/lib/auth/require-role'
-import type { UserRole } from '@/lib/auth/types'
+import { getActionContext } from '@/lib/auth/action-context'
 import type { FrameworkLevel } from '@/db/schema/customer-frameworks'
-
-async function getTenantId(): Promise<string | null> {
-  const headersList = await headers()
-  return headersList.get('x-tenant-id')
-}
-
-async function getUserRole(): Promise<UserRole | undefined> {
-  const headersList = await headers()
-  return (headersList.get('x-user-role') as UserRole | null) ?? undefined
-}
 
 const FrameworkLevelSchema = z.object({
   id: z.string().min(1).max(50),
@@ -46,10 +35,9 @@ export async function saveCustomerFramework(
   _prev: FrameworkState | null,
   formData: FormData
 ): Promise<FrameworkState> {
-  const tenantId = await getTenantId()
-  const userRole = await getUserRole()
-
-  if (!tenantId) return { success: false, error: 'Not authenticated' }
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Not authenticated' }
+  const { tenantId, userRole } = ctx
 
   try {
     requireRole(userRole, 'recruiter')
@@ -105,10 +93,10 @@ export async function saveCustomerFramework(
 }
 
 export async function deleteCustomerFramework(customerId: string): Promise<void> {
-  const tenantId = await getTenantId()
-  const userRole = await getUserRole()
+  const ctx = await getActionContext()
+  if (!ctx) return
 
-  if (!tenantId) return
+  const { tenantId, userRole } = ctx
 
   try {
     requireRole(userRole, 'admin')

@@ -1,10 +1,10 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { withTenant } from '@/db'
 import { scores } from '@/db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { generateEmbedding } from '@/lib/ai/embeddings'
+import { getActionContext } from '@/lib/auth/action-context'
 
 export async function getSuggestedCandidates(
   roleId: string,
@@ -17,9 +17,9 @@ export async function getSuggestedCandidates(
   email: string | null
   similarity: number
 }>> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  if (!tenantId) return []
+  const ctx = await getActionContext()
+  if (!ctx) return []
+  const { tenantId } = ctx
 
   try {
     // Generate embedding for the role text
