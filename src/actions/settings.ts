@@ -1,14 +1,13 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { headers } from 'next/headers'
 import { eq, and, notInArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { withTenant } from '@/db'
 import { tenantSettings } from '@/db/schema'
 import { requireRole } from '@/lib/auth/require-role'
 import { encrypt } from '@/lib/crypto'
-import type { UserRole } from '@/lib/auth/types'
+import { getActionContext } from '@/lib/auth/action-context'
 
 const ALLOWED_KEYS = [
   'anthropic_api_key',
@@ -35,12 +34,10 @@ export async function saveApiKey(
   _prev: SettingsState | null,
   formData: FormData
 ): Promise<SettingsState> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userId = headersList.get('x-user-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
 
-  if (!tenantId || !userId) return { success: false, error: 'Unauthorized' }
   try { requireRole(userRole ?? undefined, 'admin') } catch {
     return { success: false, error: 'Only admins can manage API keys' }
   }
@@ -72,11 +69,10 @@ export async function removeApiKey(
   _prev: SettingsState | null,
   formData: FormData
 ): Promise<SettingsState> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
 
-  if (!tenantId) return { success: false, error: 'Unauthorized' }
   try { requireRole(userRole ?? undefined, 'admin') } catch {
     return { success: false, error: 'Only admins can manage API keys' }
   }
@@ -127,12 +123,10 @@ export async function saveGeneralSetting(
   _prev: GeneralSettingsState | null,
   formData: FormData
 ): Promise<GeneralSettingsState> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userId = headersList.get('x-user-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
 
-  if (!tenantId || !userId) return { success: false, error: 'Unauthorized' }
   try { requireRole(userRole ?? undefined, 'admin') } catch {
     return { success: false, error: 'Only admins can manage settings' }
   }

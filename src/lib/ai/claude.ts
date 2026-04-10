@@ -84,7 +84,7 @@ type ScoringInput = {
 export async function scoreCandidateWithClaude(input: ScoringInput): Promise<CandidateScore> {
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 1024,
+    max_tokens: 2048,
     tools: [SCORING_TOOL],
     tool_choice: { type: 'any' },
     messages: [

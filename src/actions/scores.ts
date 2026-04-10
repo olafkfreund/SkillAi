@@ -1,6 +1,5 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { eq, and } from 'drizzle-orm'
 import { withTenant } from '@/db'
 import { scores } from '@/db/schema'
@@ -8,19 +7,15 @@ import { triggerScoring } from '@/lib/ai/scoring'
 import { requireRole } from '@/lib/auth/require-role'
 import { writeAuditLog } from '@/lib/audit'
 import { revalidatePath } from 'next/cache'
-import type { UserRole } from '@/lib/auth/types'
+import { getActionContext } from '@/lib/auth/action-context'
 
 export async function rescoreCandidate(
   candidateId: string,
   roleId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
-
-  if (!tenantId) {
-    return { success: false, error: 'Unauthorized' }
-  }
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
 
   try {
     requireRole(userRole ?? undefined, 'recruiter')
@@ -81,11 +76,10 @@ export async function removeCandidateFromRole(
   scoreId: string,
   roleId: string
 ): Promise<void> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
+  const ctx = await getActionContext()
+  if (!ctx) throw new Error('Unauthorized')
+  const { tenantId, userRole } = ctx
 
-  if (!tenantId) throw new Error('Unauthorized')
   requireRole(userRole ?? undefined, 'recruiter')
 
   await withTenant(tenantId, async (tx) => {

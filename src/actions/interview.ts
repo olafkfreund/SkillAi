@@ -1,7 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { headers } from 'next/headers'
 import { after } from 'next/server'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
@@ -18,7 +17,7 @@ import { requireRole } from '@/lib/auth/require-role'
 import { extractCvProfile } from '@/lib/ai/interview'
 import { generateQuestions } from '@/lib/ai/interview'
 import { inferExperienceLevel, inferLanguage } from '@/lib/ai/interview-helpers'
-import type { UserRole } from '@/lib/auth/types'
+import { getActionContext } from '@/lib/auth/action-context'
 
 const CreatePackSchema = z.object({
   candidateId: z.string().uuid(),
@@ -34,12 +33,10 @@ export async function createInterviewPack(
   _prev: CreatePackState | null,
   formData: FormData
 ): Promise<CreatePackState> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userId = headersList.get('x-user-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
 
-  if (!tenantId || !userId) return { success: false, error: 'Unauthorized' }
   try { requireRole(userRole ?? undefined, 'recruiter') } catch {
     return { success: false, error: 'Forbidden' }
   }
@@ -88,11 +85,10 @@ export async function createInterviewPack(
 }
 
 export async function retryInterviewPack(packId: string): Promise<{ success: boolean; error?: string }> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
 
-  if (!tenantId) return { success: false, error: 'Unauthorized' }
   try { requireRole(userRole ?? undefined, 'recruiter') } catch {
     return { success: false, error: 'Forbidden' }
   }
@@ -121,11 +117,10 @@ export async function retryInterviewPack(packId: string): Promise<{ success: boo
 }
 
 export async function deleteInterviewPack(packId: string): Promise<{ success: boolean; error?: string }> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
 
-  if (!tenantId) return { success: false, error: 'Unauthorized' }
   try { requireRole(userRole ?? undefined, 'recruiter') } catch {
     return { success: false, error: 'Forbidden' }
   }
@@ -148,9 +143,9 @@ export async function updateQuestionNotes(
   questionId: string,
   notes: string
 ): Promise<{ success: boolean; error?: string }> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  if (!tenantId) return { success: false, error: 'Unauthorized' }
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId } = ctx
 
   // Verify question belongs to tenant via pack
   const [question] = await db

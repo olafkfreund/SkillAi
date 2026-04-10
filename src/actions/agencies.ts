@@ -1,11 +1,11 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { z } from 'zod'
 import { eq, and } from 'drizzle-orm'
 import { withTenant } from '@/db'
 import { agencies } from '@/db/schema'
 import { redirect } from 'next/navigation'
+import { getActionContext } from '@/lib/auth/action-context'
 
 const AgencySchema = z.object({
   name: z.string().min(1, 'Name is required').max(150),
@@ -14,18 +14,13 @@ const AgencySchema = z.object({
   notes: z.string().optional(),
 })
 
-async function getTenantId(): Promise<string> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  if (!tenantId) throw new Error('Not authenticated')
-  return tenantId
-}
-
 export async function createAgency(
   _prev: { error?: string } | null,
   formData: FormData
 ): Promise<{ error?: string }> {
-  const tenantId = await getTenantId()
+  const ctx = await getActionContext()
+  if (!ctx) throw new Error('Not authenticated')
+  const { tenantId } = ctx
 
   const parsed = AgencySchema.safeParse({
     name: formData.get('name'),
@@ -58,7 +53,9 @@ export async function updateAgency(
   _prev: { error?: string } | null,
   formData: FormData
 ): Promise<{ error?: string }> {
-  const tenantId = await getTenantId()
+  const ctx = await getActionContext()
+  if (!ctx) throw new Error('Not authenticated')
+  const { tenantId } = ctx
 
   const parsed = AgencySchema.safeParse({
     name: formData.get('name'),
@@ -89,7 +86,9 @@ export async function updateAgency(
 }
 
 export async function archiveAgency(agencyId: string): Promise<void> {
-  const tenantId = await getTenantId()
+  const ctx = await getActionContext()
+  if (!ctx) throw new Error('Not authenticated')
+  const { tenantId } = ctx
 
   await withTenant(tenantId, async (tx) => {
     await tx

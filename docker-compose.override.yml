@@ -6,8 +6,11 @@ services:
       - .:/app
       - /app/node_modules
       - /app/.next
+    env_file:
+      - .env.local
     environment:
       NODE_ENV: development
+      ANTHROPIC_API_KEY: ${SKILLAI_ANTHROPIC_API_KEY}
     command: npm run dev
   db:
     ports:

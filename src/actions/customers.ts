@@ -1,13 +1,12 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { eq, and } from 'drizzle-orm'
 import { withTenant } from '@/db'
 import { customers } from '@/db/schema'
 import { requireRole } from '@/lib/auth/require-role'
-import type { UserRole } from '@/lib/auth/types'
+import { getActionContext } from '@/lib/auth/action-context'
 import { redirect } from 'next/navigation'
 
 const CustomerSchema = z.object({
@@ -26,24 +25,13 @@ export type CreateCustomerState = {
   customerId?: string
 }
 
-async function getTenantId(): Promise<string> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  if (!tenantId) throw new Error('Not authenticated')
-  return tenantId
-}
-
-async function getUserRole(): Promise<UserRole | undefined> {
-  const headersList = await headers()
-  return (headersList.get('x-user-role') as UserRole | null) ?? undefined
-}
-
 export async function createCustomer(
   _prev: CreateCustomerState | null,
   formData: FormData
 ): Promise<CreateCustomerState> {
-  const tenantId = await getTenantId()
-  const userRole = await getUserRole()
+  const ctx = await getActionContext()
+  if (!ctx) throw new Error('Not authenticated')
+  const { tenantId, userRole } = ctx
 
   try {
     requireRole(userRole, 'recruiter')
@@ -90,8 +78,9 @@ export async function updateCustomer(
   _prev: CreateCustomerState | null,
   formData: FormData
 ): Promise<CreateCustomerState> {
-  const tenantId = await getTenantId()
-  const userRole = await getUserRole()
+  const ctx = await getActionContext()
+  if (!ctx) throw new Error('Not authenticated')
+  const { tenantId, userRole } = ctx
 
   try {
     requireRole(userRole, 'recruiter')
@@ -137,8 +126,9 @@ export async function updateCustomer(
 }
 
 export async function archiveCustomer(customerId: string): Promise<void> {
-  const tenantId = await getTenantId()
-  const userRole = await getUserRole()
+  const ctx = await getActionContext()
+  if (!ctx) throw new Error('Not authenticated')
+  const { tenantId, userRole } = ctx
 
   try {
     requireRole(userRole, 'admin')

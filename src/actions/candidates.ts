@@ -3,11 +3,10 @@
 import { writeFile, mkdir } from 'fs/promises'
 import { join, extname } from 'path'
 import { randomUUID } from 'crypto'
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { after } from 'next/server'
-import { eq, and, inArray } from 'drizzle-orm'
+import { eq, and, inArray, or, ilike, notInArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { db, withTenant } from '@/db'
 import { candidates, scores } from '@/db/schema'
@@ -15,8 +14,8 @@ import { parseFile, ParseError } from '@/lib/parsers'
 import { triggerScoring } from '@/lib/ai/scoring'
 import { requireRole } from '@/lib/auth/require-role'
 import { writeAuditLog } from '@/lib/audit'
+import { getActionContext } from '@/lib/auth/action-context'
 import type { FileType } from '@/lib/parsers'
-import type { UserRole } from '@/lib/auth/types'
 import type { CandidateStatus } from '@/db/schema/candidates'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
@@ -58,14 +57,10 @@ export async function createCandidate(
   formData: FormData
 ): Promise<CreateCandidateState> {
   // -- Auth context from middleware headers --
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userId = headersList.get('x-user-id')
-  const userRole = headersList.get('x-user-role')
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
 
-  if (!tenantId || !userId) {
-    return { success: false, error: 'Unauthorized' }
-  }
   if (userRole === 'viewer') {
     return { success: false, error: 'Forbidden: recruiters and admins only' }
   }
@@ -195,11 +190,9 @@ export async function updateCandidateStatus(
   candidateId: string,
   status: CandidateStatus
 ): Promise<void> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
-
-  if (!tenantId) throw new Error('Unauthorized')
+  const ctx = await getActionContext()
+  if (!ctx) throw new Error('Unauthorized')
+  const { tenantId, userRole } = ctx
 
   requireRole(userRole ?? undefined, 'recruiter')
 
@@ -233,11 +226,9 @@ export async function bulkUpdateCandidateStatus(
   candidateIds: string[],
   status: CandidateStatus
 ): Promise<{ success: boolean; updated: number; error?: string }> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
-
-  if (!tenantId) return { success: false, updated: 0, error: 'Unauthorized' }
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, updated: 0, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
 
   try {
     requireRole(userRole ?? undefined, 'recruiter')
@@ -299,11 +290,9 @@ export async function updateCandidateDetails(
   _prev: UpdateCandidateState | null,
   formData: FormData
 ): Promise<UpdateCandidateState> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
-
-  if (!tenantId) return { success: false, error: 'Unauthorized' }
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
 
   try {
     requireRole(userRole ?? undefined, 'recruiter')
@@ -353,11 +342,9 @@ export async function updateCandidateAgency(
   candidateId: string,
   agencyId: string | null
 ): Promise<{ success: boolean; error?: string }> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
-
-  if (!tenantId) return { success: false, error: 'Unauthorized' }
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
 
   try {
     requireRole(userRole ?? undefined, 'recruiter')
@@ -381,11 +368,9 @@ export async function updateCandidateAgency(
 // ---------------------------------------------------------------------------
 
 export async function archiveCandidate(candidateId: string): Promise<void> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
-
-  if (!tenantId) throw new Error('Unauthorized')
+  const ctx = await getActionContext()
+  if (!ctx) throw new Error('Unauthorized')
+  const { tenantId, userRole } = ctx
 
   requireRole(userRole ?? undefined, 'recruiter')
 
@@ -404,4 +389,62 @@ export async function archiveCandidate(candidateId: string): Promise<void> {
   })
 
   redirect('/dashboard/candidates')
+}
+
+// ---------------------------------------------------------------------------
+// searchCandidatesForRole — find active candidates not yet scored for a role
+// ---------------------------------------------------------------------------
+
+export type CandidateSearchResult = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string | null
+  status: string
+}
+
+export async function searchCandidatesForRole(
+  roleId: string,
+  query: string
+): Promise<CandidateSearchResult[]> {
+  const ctx = await getActionContext()
+  if (!ctx) return []
+
+  const { tenantId } = ctx
+  const trimmed = query.trim()
+  if (trimmed.length < 1) return []
+
+  // Subquery: candidate IDs already scored for this role
+  const alreadyScoredSubquery = db
+    .select({ candidateId: scores.candidateId })
+    .from(scores)
+    .where(eq(scores.roleId, roleId))
+
+  const results = await withTenant(tenantId, async (tx) =>
+    tx
+      .select({
+        id: candidates.id,
+        firstName: candidates.firstName,
+        lastName: candidates.lastName,
+        email: candidates.email,
+        status: candidates.status,
+      })
+      .from(candidates)
+      .where(
+        and(
+          eq(candidates.tenantId, tenantId),
+          eq(candidates.isActive, true),
+          or(
+            ilike(candidates.firstName, `%${trimmed}%`),
+            ilike(candidates.lastName, `%${trimmed}%`),
+            ilike(candidates.email, `%${trimmed}%`)
+          ),
+          notInArray(candidates.id, alreadyScoredSubquery)
+        )
+      )
+      .orderBy(candidates.lastName, candidates.firstName)
+      .limit(20)
+  )
+
+  return results
 }

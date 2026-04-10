@@ -1,7 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { headers } from 'next/headers'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
@@ -9,6 +8,7 @@ import { withTenant } from '@/db'
 import { users } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { requireRole } from '@/lib/auth/require-role'
+import { getActionContext } from '@/lib/auth/action-context'
 import type { UserRole } from '@/lib/auth/types'
 import type { User } from '@/db/schema/users'
 
@@ -152,11 +152,10 @@ export async function changePassword(
 // ---------------------------------------------------------------------------
 
 export async function listTenantUsers(): Promise<User[]> {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
-  const userRole = headersList.get('x-user-role') as UserRole | null
+  const ctx = await getActionContext()
+  if (!ctx) return []
+  const { tenantId, userRole } = ctx
 
-  if (!tenantId) return []
   try { requireRole(userRole ?? undefined, 'admin') } catch {
     return []
   }
