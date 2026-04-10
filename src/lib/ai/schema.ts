@@ -20,7 +20,7 @@ export const CandidateScoreSchema = z.object({
     cultural_fit: DimensionSchema,
     communication: DimensionSchema,
   }),
-  summary: z.string().min(10),
+  summary: z.string().min(1).optional().default(''),
 })
 
 export type CandidateScore = z.infer<typeof CandidateScoreSchema>
