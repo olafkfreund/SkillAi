@@ -18,6 +18,7 @@ import { CvDisplay } from '@/components/candidates/cv-display'
 import { EditDetailsForm } from '@/components/candidates/edit-details-form'
 import { InterviewCalendar } from '@/components/candidates/interview-calendar'
 import { RoleHistoryPanel } from '@/components/candidates/role-history-panel'
+import { MatchingRolesPanel } from '@/components/candidates/matching-roles-panel'
 import { archiveCandidate } from '@/actions/candidates'
 import { hasRole } from '@/lib/auth/require-role'
 import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
@@ -260,6 +261,9 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
           )}
         </div>
       ) : null}
+
+      {/* Matching roles — AI-powered suggestions for active roles not yet scored */}
+      <MatchingRolesPanel candidateId={candidateId} />
 
       {/* Role history */}
       <RoleHistoryPanel roleHistory={roleHistory} />
