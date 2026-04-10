@@ -33,7 +33,7 @@ export default auth((req) => {
     return NextResponse.next()
   }
 
-  if (!session) {
+  if (!session?.user?.tenantId) {
     if (isProtectedApi) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -45,8 +45,8 @@ export default auth((req) => {
   // Forward tenant + role as request headers for downstream handlers
   const requestHeaders = new Headers(req.headers)
   requestHeaders.set('x-tenant-id', session.user.tenantId)
-  requestHeaders.set('x-user-role', session.user.role)
-  requestHeaders.set('x-user-id', session.user.id)
+  requestHeaders.set('x-user-role', session.user.role ?? 'viewer')
+  requestHeaders.set('x-user-id', session.user.id ?? '')
 
   return NextResponse.next({ request: { headers: requestHeaders } })
 })
