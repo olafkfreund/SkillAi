@@ -6,7 +6,7 @@ import { randomUUID } from 'crypto'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { after } from 'next/server'
-import { eq, and, inArray } from 'drizzle-orm'
+import { eq, and, inArray, or, ilike, notInArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { db, withTenant } from '@/db'
 import { candidates, scores } from '@/db/schema'
@@ -389,4 +389,62 @@ export async function archiveCandidate(candidateId: string): Promise<void> {
   })
 
   redirect('/dashboard/candidates')
+}
+
+// ---------------------------------------------------------------------------
+// searchCandidatesForRole — find active candidates not yet scored for a role
+// ---------------------------------------------------------------------------
+
+export type CandidateSearchResult = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string | null
+  status: string
+}
+
+export async function searchCandidatesForRole(
+  roleId: string,
+  query: string
+): Promise<CandidateSearchResult[]> {
+  const ctx = await getActionContext()
+  if (!ctx) return []
+
+  const { tenantId } = ctx
+  const trimmed = query.trim()
+  if (trimmed.length < 1) return []
+
+  // Subquery: candidate IDs already scored for this role
+  const alreadyScoredSubquery = db
+    .select({ candidateId: scores.candidateId })
+    .from(scores)
+    .where(eq(scores.roleId, roleId))
+
+  const results = await withTenant(tenantId, async (tx) =>
+    tx
+      .select({
+        id: candidates.id,
+        firstName: candidates.firstName,
+        lastName: candidates.lastName,
+        email: candidates.email,
+        status: candidates.status,
+      })
+      .from(candidates)
+      .where(
+        and(
+          eq(candidates.tenantId, tenantId),
+          eq(candidates.isActive, true),
+          or(
+            ilike(candidates.firstName, `%${trimmed}%`),
+            ilike(candidates.lastName, `%${trimmed}%`),
+            ilike(candidates.email, `%${trimmed}%`)
+          ),
+          notInArray(candidates.id, alreadyScoredSubquery)
+        )
+      )
+      .orderBy(candidates.lastName, candidates.firstName)
+      .limit(20)
+  )
+
+  return results
 }

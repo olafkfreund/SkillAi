@@ -12,6 +12,7 @@ import { hasRole } from '@/lib/auth/require-role'
 import { RoleTagsPanel } from '@/components/roles/role-tags-panel'
 import { RoleCandidateCard } from '@/components/roles/role-candidate-card'
 import { SuggestCandidatesPanel } from '@/components/roles/suggest-candidates-panel'
+import { AddCandidatePanel } from '@/components/roles/add-candidate-panel'
 import { ShortlistSummaryPanel } from '@/components/roles/shortlist-summary-panel'
 
 type Props = { params: Promise<{ roleId: string }> }
@@ -170,6 +171,9 @@ export default async function RoleDetailPage({ params }: Props) {
         roleId={roleId}
         roleText={[role.title, role.description, role.requirements].filter(Boolean).join('\n')}
       />
+
+      {/* Manually add an existing candidate from the archive */}
+      <AddCandidatePanel roleId={roleId} canEdit={canEdit} />
 
       {/* Candidates shortlist */}
       <div>
