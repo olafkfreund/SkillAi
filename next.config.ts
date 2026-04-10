@@ -2,7 +2,7 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  allowedDevOrigins: ['p620', 'p620.local'],
+  allowedDevOrigins: ['p620', 'p620.local', '192.168.1.222', '100.69.100.115'],
   experimental: {
     serverActions: {
       bodySizeLimit: '11mb',
