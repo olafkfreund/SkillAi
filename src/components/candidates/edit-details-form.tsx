@@ -12,6 +12,10 @@ interface CandidateDetails {
   email: string | null
   phone: string | null
   agencyId: string | null
+  country: string | null
+  city: string | null
+  languagesSpoken: string[]
+  willingToRelocate: boolean | null
   candidateRate: string | null
   customerRate: string | null
   rateCurrency: string | null
@@ -42,6 +46,10 @@ export function EditDetailsForm({ candidate, agencies }: EditDetailsFormProps) {
     email: candidate.email ?? '',
     phone: candidate.phone ?? '',
     agencyId: candidate.agencyId ?? '',
+    country: candidate.country ?? '',
+    city: candidate.city ?? '',
+    languagesSpoken: candidate.languagesSpoken?.join(', ') ?? '',
+    willingToRelocate: candidate.willingToRelocate === true ? 'true' : candidate.willingToRelocate === false ? 'false' : '',
     candidateRate: candidate.candidateRate ?? '',
     customerRate: candidate.customerRate ?? '',
     rateCurrency: candidate.rateCurrency ?? 'GBP',
@@ -204,6 +212,48 @@ export function EditDetailsForm({ candidate, agencies }: EditDetailsFormProps) {
               </select>
             </div>
           )}
+
+          {/* Location & Language */}
+          <div className="border-t border-zinc-800 pt-3 mt-1 col-span-2">
+            <p className="text-sm font-medium text-zinc-400 mb-2">Location & Language</p>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label htmlFor="edit-country" className="block text-xs font-medium text-zinc-400 mb-1">Country</label>
+                <input id="edit-country" name="country" type="text" disabled={pending}
+                  value={fields.country} onChange={(e) => setFields((f) => ({ ...f, country: e.target.value }))}
+                  placeholder="United Kingdom"
+                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" />
+              </div>
+              <div>
+                <label htmlFor="edit-city" className="block text-xs font-medium text-zinc-400 mb-1">City</label>
+                <input id="edit-city" name="city" type="text" disabled={pending}
+                  value={fields.city} onChange={(e) => setFields((f) => ({ ...f, city: e.target.value }))}
+                  placeholder="London"
+                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="edit-languages" className="block text-xs font-medium text-zinc-400 mb-1">
+                  Languages <span className="text-zinc-600">(comma-separated)</span>
+                </label>
+                <input id="edit-languages" name="languagesSpoken" type="text" disabled={pending}
+                  value={fields.languagesSpoken} onChange={(e) => setFields((f) => ({ ...f, languagesSpoken: e.target.value }))}
+                  placeholder="English, German"
+                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" />
+              </div>
+              <div>
+                <label htmlFor="edit-relocate" className="block text-xs font-medium text-zinc-400 mb-1">Willing to Relocate</label>
+                <select id="edit-relocate" name="willingToRelocate" disabled={pending}
+                  value={fields.willingToRelocate} onChange={(e) => setFields((f) => ({ ...f, willingToRelocate: e.target.value }))}
+                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
+                  <option value="">— Not specified —</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
           {/* Commercial Details */}
           <div className="border-t border-zinc-800 pt-3 mt-1 col-span-2">

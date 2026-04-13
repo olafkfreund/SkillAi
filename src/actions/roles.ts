@@ -19,6 +19,10 @@ const CreateRoleSchema = z.object({
   customerId: z.string().uuid().optional().or(z.literal('')),
   frameworkLevelId: z.string().max(50).optional().or(z.literal('')),
   frameworkLevelLabel: z.string().max(200).optional().or(z.literal('')),
+  country: z.string().max(100).optional().or(z.literal('')),
+  city: z.string().max(100).optional().or(z.literal('')),
+  workMode: z.enum(['remote', 'hybrid', 'onsite']).optional().or(z.literal('')),
+  languageRequirements: z.string().optional().or(z.literal('')),
 })
 
 export type CreateRoleState =
@@ -46,6 +50,10 @@ export async function createRole(
     customerId: formData.get('customerId') || undefined,
     frameworkLevelId: formData.get('frameworkLevelId') || undefined,
     frameworkLevelLabel: formData.get('frameworkLevelLabel') || undefined,
+    country: formData.get('country') || undefined,
+    city: formData.get('city') || undefined,
+    workMode: formData.get('workMode') || undefined,
+    languageRequirements: formData.get('languageRequirements') || undefined,
   })
 
   if (!parsed.success) {
@@ -68,6 +76,12 @@ export async function createRole(
         customerId: parsed.data.customerId || null,
         frameworkLevelId: parsed.data.frameworkLevelId || null,
         frameworkLevelLabel: parsed.data.frameworkLevelLabel || null,
+        country: parsed.data.country || null,
+        city: parsed.data.city || null,
+        workMode: (parsed.data.workMode as 'remote' | 'hybrid' | 'onsite') || null,
+        languageRequirements: parsed.data.languageRequirements
+          ? parsed.data.languageRequirements.split(',').map((l) => l.trim()).filter(Boolean)
+          : [],
         isActive: true,
       })
       .returning({ id: roles.id })
@@ -100,6 +114,10 @@ const UpdateRoleSchema = z.object({
   customerId: z.string().uuid().optional().or(z.literal('')),
   frameworkLevelId: z.string().max(50).optional().or(z.literal('')),
   frameworkLevelLabel: z.string().max(200).optional().or(z.literal('')),
+  country: z.string().max(100).optional().or(z.literal('')),
+  city: z.string().max(100).optional().or(z.literal('')),
+  workMode: z.enum(['remote', 'hybrid', 'onsite']).optional().or(z.literal('')),
+  languageRequirements: z.string().optional().or(z.literal('')),
 })
 
 export type UpdateRoleState = {
@@ -130,6 +148,10 @@ export async function updateRole(
     customerId: formData.get('customerId') || undefined,
     frameworkLevelId: formData.get('frameworkLevelId') || undefined,
     frameworkLevelLabel: formData.get('frameworkLevelLabel') || undefined,
+    country: formData.get('country') || undefined,
+    city: formData.get('city') || undefined,
+    workMode: formData.get('workMode') || undefined,
+    languageRequirements: formData.get('languageRequirements') || undefined,
   })
 
   if (!parsed.success) {
@@ -150,6 +172,12 @@ export async function updateRole(
         customerId: parsed.data.customerId || null,
         frameworkLevelId: parsed.data.frameworkLevelId || null,
         frameworkLevelLabel: parsed.data.frameworkLevelLabel || null,
+        country: parsed.data.country || null,
+        city: parsed.data.city || null,
+        workMode: (parsed.data.workMode as 'remote' | 'hybrid' | 'onsite') || null,
+        languageRequirements: parsed.data.languageRequirements
+          ? parsed.data.languageRequirements.split(',').map((l) => l.trim()).filter(Boolean)
+          : [],
       })
       .where(and(eq(roles.id, roleId), eq(roles.tenantId, tenantId)))
   })

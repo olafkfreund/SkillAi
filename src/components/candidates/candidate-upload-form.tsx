@@ -35,6 +35,10 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
     lastName: '',
     email: '',
     phone: '',
+    country: '',
+    city: '',
+    languagesSpoken: '',
+    willingToRelocate: '',
     candidateRate: '',
     customerRate: '',
     rateCurrency: 'GBP',
@@ -225,6 +229,75 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
           </select>
         </div>
       )}
+
+      {/* Location & Language */}
+      <div className="border-t border-zinc-800 pt-4 mt-2">
+        <p className="text-sm font-medium text-zinc-400 mb-3">Location & Language (optional)</p>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label htmlFor="country" className="block text-xs font-medium text-zinc-400 mb-1">Country</label>
+            <input
+              id="country"
+              name="country"
+              type="text"
+              value={fields.country}
+              onChange={(e) => setFields((f) => ({ ...f, country: e.target.value }))}
+              disabled={pending}
+              placeholder="United Kingdom"
+              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+          <div>
+            <label htmlFor="city" className="block text-xs font-medium text-zinc-400 mb-1">City</label>
+            <input
+              id="city"
+              name="city"
+              type="text"
+              value={fields.city}
+              onChange={(e) => setFields((f) => ({ ...f, city: e.target.value }))}
+              disabled={pending}
+              placeholder="London"
+              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="languagesSpoken" className="block text-xs font-medium text-zinc-400 mb-1">
+              Languages <span className="text-zinc-600">(comma-separated)</span>
+            </label>
+            <input
+              id="languagesSpoken"
+              name="languagesSpoken"
+              type="text"
+              value={fields.languagesSpoken}
+              onChange={(e) => setFields((f) => ({ ...f, languagesSpoken: e.target.value }))}
+              disabled={pending}
+              placeholder="English, German"
+              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+          <div>
+            <label htmlFor="willingToRelocate" className="block text-xs font-medium text-zinc-400 mb-1">Willing to Relocate</label>
+            <select
+              id="willingToRelocate"
+              name="willingToRelocate"
+              value={fields.willingToRelocate}
+              onChange={(e) => setFields((f) => ({ ...f, willingToRelocate: e.target.value }))}
+              disabled={pending}
+              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              <option value="">— Not specified —</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       {/* Commercial Details */}
       <div className="border-t border-zinc-800 pt-4 mt-2">
