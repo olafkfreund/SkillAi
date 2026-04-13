@@ -20,6 +20,17 @@ export async function GET(request: Request) {
   const parsedOffset = Math.max(0, Number(searchParams.get('offset') ?? 0))
 
   const result = await withTenant(tenantId, async (tx) => {
+    // Build join condition — always match candidateId, optionally filter by roleId
+    const joinCondition = and(
+      eq(scores.candidateId, candidates.id),
+      roleId ? eq(scores.roleId, roleId) : undefined
+    )
+
+    // Build where clause — optionally filter by minimum score
+    const whereClause = minScore !== undefined
+      ? gte(scores.overallScore, minScore)
+      : undefined
+
     const rows = await tx
       .select({
         id: candidates.id,
@@ -35,31 +46,26 @@ export async function GET(request: Request) {
       })
       .from(candidates)
       .leftJoin(agencies, eq(candidates.agencyId, agencies.id))
-      .leftJoin(
-        scores,
-        and(
-          eq(scores.candidateId, candidates.id),
-          roleId ? eq(scores.roleId, roleId) : undefined
-        )
-      )
+      .leftJoin(scores, joinCondition)
+      .where(whereClause)
       .orderBy(desc(scores.overallScore), desc(candidates.createdAt))
       .limit(parsedLimit)
       .offset(parsedOffset)
 
-    const [{ value: totalCount }] = await tx
+    // Count must also respect the minScore filter for accurate pagination
+    const countQuery = tx
       .select({ value: count() })
       .from(candidates)
+      .leftJoin(scores, joinCondition)
+      .where(whereClause)
+
+    const [{ value: totalCount }] = await countQuery
 
     return { rows, totalCount }
   })
 
-  const filtered =
-    minScore !== undefined
-      ? result.rows.filter((r) => r.overallScore !== null && r.overallScore >= minScore)
-      : result.rows
-
   return NextResponse.json({
-    candidates: filtered,
+    candidates: result.rows,
     total: result.totalCount,
     limit: parsedLimit,
     offset: parsedOffset,

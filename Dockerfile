@@ -23,7 +23,17 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# ── Stage 4: Production runner ─────────────────────────────────────────────────
+# ── Stage 4: Migrator (used by the 'migrate' Compose service) ─────────────────
+# Lightweight stage with only what's needed to run drizzle migrations.
+# Has full node_modules from deps — no Next.js build required.
+FROM base AS migrator
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY src/db/migrations ./migrations
+COPY scripts/migrate.mjs ./scripts/migrate.mjs
+CMD ["node", "scripts/migrate.mjs"]
+
+# ── Stage 5: Production runner ─────────────────────────────────────────────────
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production

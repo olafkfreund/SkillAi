@@ -40,14 +40,14 @@ export async function getSuggestedCandidates(
       tx.execute(sql`
         SELECT
           id, first_name, last_name, email,
-          ROUND((1 - (embedding_vec <=> ${embeddingStr}::vector))::numeric, 3) AS similarity
+          ROUND((1 - (embedding <=> ${embeddingStr}::vector))::numeric, 3) AS similarity
         FROM candidates
         WHERE
           tenant_id = current_setting('app.tenant_id', true)::uuid
           AND is_active = true
-          AND embedding_vec IS NOT NULL
+          AND embedding IS NOT NULL
           ${excludeIds.length > 0 ? sql`AND id != ALL(${excludeIds}::uuid[])` : sql``}
-        ORDER BY embedding_vec <=> ${embeddingStr}::vector
+        ORDER BY embedding <=> ${embeddingStr}::vector
         LIMIT ${limit}
       `)
     )

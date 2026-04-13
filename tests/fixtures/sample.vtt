@@ -1,0 +1,13 @@
+WEBVTT
+
+00:00:01.000 --> 00:00:05.000
+<v Interviewer>Tell me about your experience with TypeScript.
+
+00:00:06.000 --> 00:00:15.000
+<v Alice Smith>I've been using TypeScript for three years. I really enjoy the type safety it provides, especially for large codebases.
+
+00:00:16.000 --> 00:00:20.000
+<v Interviewer>Can you give me an example of a complex type you've worked with?
+
+00:00:21.000 --> 00:00:35.000
+<v Alice Smith>Sure. I built a generic event bus with conditional types and inferred payloads. It ensured type-safe event dispatch across our entire monorepo.

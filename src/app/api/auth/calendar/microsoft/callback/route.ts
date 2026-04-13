@@ -9,6 +9,7 @@ import { eq, and } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import { db } from '@/db'
 import { calendarConnections } from '@/db/schema'
+import { encrypt } from '@/lib/crypto'
 
 interface MicrosoftTokenResponse {
   access_token: string
@@ -84,12 +85,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     )
     .limit(1)
 
+  const encryptedAccess = encrypt(tokens.access_token)
+  const encryptedRefresh = tokens.refresh_token ? encrypt(tokens.refresh_token) : null
+
   if (existing.length > 0) {
     await db
       .update(calendarConnections)
       .set({
-        accessToken: tokens.access_token,
-        ...(tokens.refresh_token ? { refreshToken: tokens.refresh_token } : {}),
+        accessToken: encryptedAccess,
+        ...(encryptedRefresh ? { refreshToken: encryptedRefresh } : {}),
         tokenExpiry,
         updatedAt: new Date(),
       })
@@ -103,8 +107,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     await db.insert(calendarConnections).values({
       userId: session.user.id,
       provider: 'microsoft',
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token ?? null,
+      accessToken: encryptedAccess,
+      refreshToken: encryptedRefresh,
       tokenExpiry,
     })
   }

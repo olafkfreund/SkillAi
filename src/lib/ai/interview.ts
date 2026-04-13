@@ -195,13 +195,6 @@ ${options.includeCodeChallenge ? `- Include a ${language} code challenge appropr
     throw new Error('Stage 2: Claude did not return a tool_use response')
   }
 
-  // Log top-level keys so truncation is immediately visible
-  console.log('Stage 2 tool input keys:', Object.keys(toolBlock.input as object))
-  if ((toolBlock.input as Record<string, unknown>).questions) {
-    const qs = (toolBlock.input as Record<string, unknown>).questions as unknown[]
-    console.log('Stage 2 questions count:', qs.length)
-  }
-
   const parsed = InterviewPackSchema.safeParse(toolBlock.input)
   if (!parsed.success) {
     console.error('Stage 2 validation failed. Raw input keys:', Object.keys(toolBlock.input as object))

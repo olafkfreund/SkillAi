@@ -1,0 +1,15 @@
+1
+00:00:01,000 --> 00:00:05,000
+Interviewer: Tell me about your experience with TypeScript.
+
+2
+00:00:06,000 --> 00:00:15,000
+Alice Smith: I've been using TypeScript for three years. I really enjoy the type safety it provides.
+
+3
+00:00:16,000 --> 00:00:20,000
+Interviewer: Can you give me an example of a complex type you've worked with?
+
+4
+00:00:21,000 --> 00:00:35,000
+Alice Smith: Sure. I built a generic event bus with conditional types and inferred payloads.

@@ -38,11 +38,11 @@ export async function POST(request: Request) {
             last_name,
             email,
             status,
-            ROUND((1 - (embedding_vec <=> ${embeddingLiteral}::vector))::numeric, 3) AS similarity
+            ROUND((1 - (embedding <=> ${embeddingLiteral}::vector))::numeric, 3) AS similarity
           FROM candidates
-          WHERE embedding_vec IS NOT NULL
+          WHERE embedding IS NOT NULL
             AND is_active = true
-          ORDER BY embedding_vec <=> ${embeddingLiteral}::vector
+          ORDER BY embedding <=> ${embeddingLiteral}::vector
           LIMIT ${limit}
         `
       )

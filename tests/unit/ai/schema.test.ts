@@ -42,9 +42,18 @@ describe('CandidateScoreSchema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('rejects empty summary', () => {
-    const bad = { ...VALID_SCORE, summary: '' }
-    const result = CandidateScoreSchema.safeParse(bad)
-    expect(result.success).toBe(false)
+  it('accepts empty summary with default fallback', () => {
+    const withEmpty = { ...VALID_SCORE, summary: '' }
+    const result = CandidateScoreSchema.safeParse(withEmpty)
+    expect(result.success).toBe(true)
+  })
+
+  it('uses default when summary is omitted', () => {
+    const { summary: _, ...noSummary } = VALID_SCORE
+    const result = CandidateScoreSchema.safeParse(noSummary)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.summary).toBe('No summary provided')
+    }
   })
 })
