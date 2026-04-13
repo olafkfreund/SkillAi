@@ -12,6 +12,7 @@ import {
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 import { agencies } from './agencies'
+import { users } from './users'
 
 // Extended file type enum — includes all supported CV formats
 export const fileTypeEnum = pgEnum('file_type', ['pdf', 'docx', 'odt', 'rtf', 'txt', 'md'])
@@ -49,6 +50,8 @@ export const candidates = pgTable(
     // Using text column with cast for compatibility; Phase 2 adds HNSW index
     embedding: text('embedding'),
     status: candidateStatusEnum('status').notNull().default('new'),
+    statusConfirmedBy: uuid('status_confirmed_by').references(() => users.id),
+    statusConfirmedAt: timestamp('status_confirmed_at', { withTimezone: true }),
     isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

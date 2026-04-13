@@ -4,9 +4,11 @@ import { auditLogs } from '@/db/schema'
 
 export type AuditAction =
   | 'candidate.created' | 'candidate.archived' | 'candidate.status_changed' | 'candidate.bulk_status_changed'
+  | 'candidate.status_confirmed'
   | 'role.created' | 'role.updated' | 'role.archived'
-  | 'score.removed'
-  | 'interview_pack.created' | 'interview_pack.deleted' | 'interview_pack.retried'
+  | 'score.completed' | 'score.failed' | 'score.removed'
+  | 'interview_pack.created' | 'interview_pack.completed' | 'interview_pack.failed'
+  | 'interview_pack.deleted' | 'interview_pack.retried'
   | 'note.created' | 'note.deleted'
   | 'user.invited' | 'user.role_changed' | 'user.deactivated'
   | 'agency.created' | 'agency.archived'

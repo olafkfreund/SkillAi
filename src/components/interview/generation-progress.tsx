@@ -1,16 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { RefreshCwIcon } from 'lucide-react'
 import { retryInterviewPack } from '@/actions/interview'
-
-type PackStatus = {
-  generationStatus: string
-  generationStage: string | null
-  errorMessage: string | null
-  includesCodeChallenge: boolean
-}
 
 const STAGE_STEPS = [
   'Loading candidate and role data',
@@ -30,46 +24,38 @@ type Props = {
 
 export function GenerationProgress({ packId }: Props) {
   const router = useRouter()
-  const [status, setStatus] = useState<PackStatus>({
-    generationStatus: 'pending',
-    generationStage: null,
-    errorMessage: null,
-    includesCodeChallenge: false,
+
+  const { data } = useQuery({
+    queryKey: ['interview-pack', packId],
+    queryFn: async () => {
+      const res = await fetch(`/api/interview-packs/${packId}`)
+      if (!res.ok) return null
+      return res.json()
+    },
+    refetchInterval: (query) => {
+      const pack = query.state.data?.pack
+      if (!pack) return 2000
+      if (pack.generationStatus === 'complete' || pack.generationStatus === 'failed') return false
+      return 2000
+    },
   })
 
+  const pack = data?.pack
+  const generationStatus = pack?.generationStatus ?? 'pending'
+  const generationStage = pack?.generationStage ?? null
+  const errorMessage = pack?.errorMessage ?? null
+  const includesCodeChallenge = pack?.includesCodeChallenge ?? false
+
+  // Auto-refresh page when complete
   useEffect(() => {
-    let active = true
-
-    async function poll() {
-      try {
-        const res = await fetch(`/api/interview-packs/${packId}`)
-        if (!res.ok) return
-        const data = await res.json()
-        if (!active) return
-
-        setStatus({
-          generationStatus: data.pack.generationStatus,
-          generationStage: data.pack.generationStage,
-          errorMessage: data.pack.errorMessage,
-          includesCodeChallenge: data.pack.includesCodeChallenge ?? false,
-        })
-
-        if (data.pack.generationStatus === 'complete') {
-          router.refresh()
-          return
-        }
-      } catch { /* ignore network errors during polling */ }
-
-      if (active) setTimeout(poll, 2000)
+    if (generationStatus === 'complete') {
+      router.refresh()
     }
+  }, [generationStatus, router])
 
-    poll()
-    return () => { active = false }
-  }, [packId, router])
-
-  const currentStep = getStepIndex(status.generationStage)
-  const isFailed = status.generationStatus === 'failed'
-  const isPending = status.generationStatus === 'pending'
+  const currentStep = getStepIndex(generationStage)
+  const isFailed = generationStatus === 'failed'
+  const isPending = generationStatus === 'pending'
 
   if (isFailed) {
     return (
@@ -77,9 +63,9 @@ export function GenerationProgress({ packId }: Props) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-red-400">Generation failed</p>
-            {status.errorMessage && (
+            {errorMessage && (
               <p className="text-xs text-red-500 mt-0.5 line-clamp-2">
-                {status.errorMessage.split('\n')[0]}
+                {errorMessage.split('\n')[0]}
               </p>
             )}
           </div>
@@ -90,9 +76,8 @@ export function GenerationProgress({ packId }: Props) {
               fetch('/api/interview-packs/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ packId, includeCodeChallenge: status.includesCodeChallenge }),
+                body: JSON.stringify({ packId, includeCodeChallenge: includesCodeChallenge }),
               }).catch(() => {})
-              setStatus({ generationStatus: 'pending', generationStage: null, errorMessage: null, includesCodeChallenge: status.includesCodeChallenge })
             }}
             className="flex items-center gap-1.5 rounded-md bg-red-900 border border-red-700
                        text-red-300 text-xs font-medium px-3 py-1.5 hover:bg-red-800
@@ -112,7 +97,7 @@ export function GenerationProgress({ packId }: Props) {
         <div className="h-5 w-5 rounded-full border-2 border-violet-400 border-t-transparent animate-spin flex-shrink-0" />
         <div>
           <p className="text-sm font-semibold text-zinc-100">
-            {isPending ? 'Starting generation…' : (status.generationStage ?? 'Processing…')}
+            {isPending ? 'Starting generation…' : (generationStage ?? 'Processing…')}
           </p>
         </div>
       </div>
@@ -122,7 +107,6 @@ export function GenerationProgress({ packId }: Props) {
         {STAGE_STEPS.map((step, i) => {
           const isActive = i === currentStep && !isPending
           const isDone = i < currentStep && !isPending
-          const isFuture = i > currentStep || isPending
 
           return (
             <div key={step} className="flex items-center gap-3">

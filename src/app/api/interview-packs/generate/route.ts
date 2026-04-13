@@ -14,6 +14,7 @@ import {
 } from '@/db/schema'
 import { extractCvProfile, generateQuestions } from '@/lib/ai/interview'
 import { inferLanguage } from '@/lib/ai/interview-helpers'
+import { writeAuditLog } from '@/lib/audit'
 
 export const maxDuration = 300
 
@@ -156,10 +157,29 @@ export async function POST(request: Request) {
       }).where(eq(interviewPacks.id, packId))
     })
 
+    writeAuditLog(tenantId, {
+      action: 'interview_pack.completed',
+      entityType: 'interview_pack',
+      entityId: packId,
+      metadata: {
+        questionCount: result.questions.length,
+        experienceLevel: result.experience_level,
+        includesCodeChallenge: !!result.code_challenge,
+      },
+    }).catch(() => {})
+
     return NextResponse.json({ success: true })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     await failPack(tenantId, packId, message)
+
+    writeAuditLog(tenantId, {
+      action: 'interview_pack.failed',
+      entityType: 'interview_pack',
+      entityId: packId,
+      metadata: { error: message },
+    }).catch(() => {})
+
     console.error(`Interview pack generation failed for ${packId}:`, message)
     // Return generic error to client — full details logged server-side
     return NextResponse.json({ error: 'Interview pack generation failed' }, { status: 500 })
