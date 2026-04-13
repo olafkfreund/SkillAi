@@ -87,6 +87,13 @@ export async function scoreCandidateWithClaude(input: ScoringInput): Promise<Can
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2048,
+    system: [
+      {
+        type: 'text',
+        text: 'You are an expert recruiter scoring candidates against job roles. Evaluate candidates objectively on technical skills, experience level, cultural fit, and communication. Provide specific reasoning tied to CV evidence.',
+        cache_control: { type: 'ephemeral' },
+      },
+    ],
     tools: [SCORING_TOOL],
     tool_choice: { type: 'any' },
     messages: [
@@ -95,10 +102,7 @@ export async function scoreCandidateWithClaude(input: ScoringInput): Promise<Can
         content: [
           {
             type: 'text',
-            // Role context cached — same role scored many times
-            text: `You are an expert recruiter scoring candidates against job roles.
-
-ROLE: ${input.roleTitle}
+            text: `ROLE: ${input.roleTitle}
 
 DESCRIPTION:
 ${input.roleDescription}

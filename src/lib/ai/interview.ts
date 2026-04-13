@@ -153,6 +153,13 @@ export async function generateQuestions(
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 12000,
+    system: [
+      {
+        type: 'text',
+        text: 'You are an expert technical interviewer creating personalised interview packs. Generate structured interview questions that are directly tied to the candidate\'s CV and the role requirements. Every question must reference specific CV details.',
+        cache_control: { type: 'ephemeral' },
+      },
+    ],
     tools: [QUESTION_TOOL],
     tool_choice: { type: 'any' },
     messages: [
@@ -161,10 +168,7 @@ export async function generateQuestions(
         content: [
           {
             type: 'text',
-            // Role context cached — same role, many candidates
-            text: `You are an expert technical interviewer creating personalised interview packs.
-
-ROLE: ${role.title}
+            text: `ROLE: ${role.title}
 DESCRIPTION: ${role.description}
 REQUIREMENTS:
 ${role.requirements}`,
