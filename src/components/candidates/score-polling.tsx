@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { Loader2Icon } from 'lucide-react'
 
 type Props = {
@@ -12,29 +13,31 @@ type Props = {
 
 export function ScorePolling({ candidateId, roleId, currentStatus }: Props) {
   const router = useRouter()
-  const [status, setStatus] = useState(currentStatus)
+
+  const { data } = useQuery({
+    queryKey: ['score-status', candidateId, roleId],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/candidates/${candidateId}/score-status?roleId=${roleId}`
+      )
+      if (!res.ok) return { status: currentStatus }
+      return res.json()
+    },
+    initialData: { status: currentStatus },
+    refetchInterval: (query) => {
+      const status = query.state.data?.status
+      if (status === 'complete' || status === 'failed') return false
+      return 2000
+    },
+  })
+
+  const status = data?.status ?? currentStatus
 
   useEffect(() => {
-    if (status === 'pending' || status === 'processing') {
-      const interval = setInterval(async () => {
-        try {
-          const res = await fetch(
-            `/api/candidates/${candidateId}/score-status?roleId=${roleId}`
-          )
-          if (!res.ok) return
-          const data = await res.json()
-          setStatus(data.status)
-          if (data.status === 'complete' || data.status === 'failed') {
-            clearInterval(interval)
-            router.refresh()
-          }
-        } catch {
-          // ignore transient fetch errors
-        }
-      }, 2000)
-      return () => clearInterval(interval)
+    if (status === 'complete' || status === 'failed') {
+      router.refresh()
     }
-  }, [candidateId, roleId, status, router])
+  }, [status, router])
 
   return (
     <div className="flex items-center gap-3 rounded-xl bg-amber-950 border border-amber-800 px-5 py-4 mb-6">

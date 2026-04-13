@@ -531,6 +531,16 @@ function HeaderSection({
                 GitHub: {candidate.githubUsername}
               </Text>
             )}
+            {candidate.candidateRate && (
+              <Text style={{ ...base.small, marginTop: 2 }}>
+                Day Rate: {candidate.rateCurrency ?? ''} {Number(candidate.candidateRate).toFixed(2)}/day
+              </Text>
+            )}
+            {candidate.customerRate && (
+              <Text style={{ ...base.small, marginTop: 2 }}>
+                Customer Rate: {candidate.rateCurrency ?? ''} {Number(candidate.customerRate).toFixed(2)}/day
+              </Text>
+            )}
           </View>
         </View>
 

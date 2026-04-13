@@ -21,6 +21,7 @@ export async function GET(
       .select({
         id: interviewPacks.id,
         generationStatus: interviewPacks.generationStatus,
+        generationStage: interviewPacks.generationStage,
         experienceLevel: interviewPacks.experienceLevel,
         recommendedDurationMinutes: interviewPacks.recommendedDurationMinutes,
         includesCodeChallenge: interviewPacks.includesCodeChallenge,

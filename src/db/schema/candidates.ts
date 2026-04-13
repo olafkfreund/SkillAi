@@ -7,11 +7,13 @@ import {
   text,
   boolean,
   timestamp,
+  numeric,
   index,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 import { agencies } from './agencies'
+import { users } from './users'
 
 // Extended file type enum — includes all supported CV formats
 export const fileTypeEnum = pgEnum('file_type', ['pdf', 'docx', 'odt', 'rtf', 'txt', 'md'])
@@ -49,6 +51,15 @@ export const candidates = pgTable(
     // Using text column with cast for compatibility; Phase 2 adds HNSW index
     embedding: text('embedding'),
     status: candidateStatusEnum('status').notNull().default('new'),
+    statusConfirmedBy: uuid('status_confirmed_by').references(() => users.id),
+    statusConfirmedAt: timestamp('status_confirmed_at', { withTimezone: true }),
+    country: varchar('country', { length: 100 }),
+    city: varchar('city', { length: 100 }),
+    languagesSpoken: text('languages_spoken').array().notNull().default(sql`'{}'::text[]`),
+    willingToRelocate: boolean('willing_to_relocate'),
+    candidateRate: numeric('candidate_rate', { precision: 10, scale: 2 }),
+    customerRate: numeric('customer_rate', { precision: 10, scale: 2 }),
+    rateCurrency: varchar('rate_currency', { length: 3 }),
     isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

@@ -11,6 +11,8 @@ import { CandidateScoreSchema, type CandidateScore } from './schema'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+  timeout: 120_000,
+  maxRetries: 3,
 })
 
 const SCORING_TOOL: Anthropic.Tool = {
@@ -85,6 +87,13 @@ export async function scoreCandidateWithClaude(input: ScoringInput): Promise<Can
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2048,
+    system: [
+      {
+        type: 'text',
+        text: 'You are an expert recruiter scoring candidates against job roles. Evaluate candidates objectively on technical skills, experience level, cultural fit, and communication. Provide specific reasoning tied to CV evidence.',
+        cache_control: { type: 'ephemeral' },
+      },
+    ],
     tools: [SCORING_TOOL],
     tool_choice: { type: 'any' },
     messages: [
@@ -93,10 +102,7 @@ export async function scoreCandidateWithClaude(input: ScoringInput): Promise<Can
         content: [
           {
             type: 'text',
-            // Role context cached — same role scored many times
-            text: `You are an expert recruiter scoring candidates against job roles.
-
-ROLE: ${input.roleTitle}
+            text: `ROLE: ${input.roleTitle}
 
 DESCRIPTION:
 ${input.roleDescription}
@@ -121,6 +127,8 @@ Use the submit_candidate_score tool to return your assessment.`,
       },
     ],
   })
+
+  console.log(`Scoring: model=${response.model}, usage=${JSON.stringify(response.usage)}`)
 
   // Extract the tool_use block
   const toolBlock = response.content.find((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')

@@ -31,67 +31,51 @@ export async function GET(
   const { searchParams } = new URL(req.url)
   const roleId = searchParams.get('roleId')
 
-  // Fetch the candidate first — all subsequent queries depend on it existing
-  const [candidate] = await withTenant(tenantId, async (tx) =>
-    tx
+  // Single withTenant call — one RLS context setup for all queries
+  const data = await withTenant(tenantId, async (tx) => {
+    const [candidate] = await tx
       .select()
       .from(candidates)
       .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
       .limit(1)
-  )
-  if (!candidate) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // Agency fetch depends on candidate.agencyId, so it runs after candidate resolves
-  // All other queries are independent of each other and run in parallel
-  const [agencyResult, allScores, analyses, candidateNotes, enrichmentResult] =
-    await Promise.all([
-      candidate.agencyId
-        ? withTenant(tenantId, async (tx) =>
-            tx.select().from(agencies).where(eq(agencies.id, candidate.agencyId!)).limit(1)
-          )
-        : Promise.resolve([null]),
+    if (!candidate) return null
 
-      // ALL scores for this candidate joined with role titles, newest first
-      withTenant(tenantId, async (tx) =>
+    const [agencyResult, allScores, analyses, candidateNotes, enrichmentResult] =
+      await Promise.all([
+        candidate.agencyId
+          ? tx.select().from(agencies).where(eq(agencies.id, candidate.agencyId!)).limit(1)
+          : Promise.resolve([null]),
         tx
           .select({ score: scores, role: roles })
           .from(scores)
           .innerJoin(roles, eq(scores.roleId, roles.id))
           .where(eq(scores.candidateId, candidateId))
-          .orderBy(desc(scores.updatedAt))
-      ),
-
-      // Transcript analyses joined with transcripts to filter by candidateId
-      withTenant(tenantId, async (tx) =>
+          .orderBy(desc(scores.updatedAt)),
         tx
           .select({ transcript_analyses: transcriptAnalyses, interview_transcripts: interviewTranscripts })
           .from(transcriptAnalyses)
-          .innerJoin(
-            interviewTranscripts,
-            eq(transcriptAnalyses.transcriptId, interviewTranscripts.id)
-          )
+          .innerJoin(interviewTranscripts, eq(transcriptAnalyses.transcriptId, interviewTranscripts.id))
           .where(eq(interviewTranscripts.candidateId, candidateId))
-          .orderBy(desc(transcriptAnalyses.createdAt))
-      ),
-
-      // Candidate notes, newest first
-      withTenant(tenantId, async (tx) =>
+          .orderBy(desc(transcriptAnalyses.createdAt)),
         tx
           .select()
           .from(notes)
           .where(eq(notes.candidateId, candidateId))
-          .orderBy(desc(notes.createdAt))
-      ),
-
-      // Enrichment — at most one row per candidate
-      withTenant(tenantId, async (tx) =>
+          .orderBy(desc(notes.createdAt)),
         tx
           .select()
           .from(candidateEnrichments)
           .where(eq(candidateEnrichments.candidateId, candidateId))
-          .limit(1)
-      ),
-    ])
+          .limit(1),
+      ])
+
+    return { candidate, agencyResult, allScores, analyses, candidateNotes, enrichmentResult }
+  })
+
+  if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  const { candidate, agencyResult, allScores, analyses, candidateNotes, enrichmentResult } = data
 
   const agency = agencyResult[0] ?? null
   const enrichmentRow = enrichmentResult[0] ?? null

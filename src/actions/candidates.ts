@@ -46,7 +46,21 @@ const CreateCandidateSchema = z.object({
   phone: z.string().max(50).optional(),
   agencyId: z.string().uuid().optional(),
   roleId: z.string().uuid(),
-})
+  country: z.string().max(100).optional().or(z.literal('')),
+  city: z.string().max(100).optional().or(z.literal('')),
+  languagesSpoken: z.string().optional().or(z.literal('')),
+  willingToRelocate: z.enum(['true', 'false', '']).optional(),
+  candidateRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  customerRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  rateCurrency: z.string().max(3).toUpperCase().optional().or(z.literal('')),
+}).refine(
+  (data) => {
+    const hasRate = (typeof data.candidateRate === 'number') || (typeof data.customerRate === 'number')
+    if (hasRate && (!data.rateCurrency || data.rateCurrency === '')) return false
+    return true
+  },
+  { message: 'Currency is required when a rate is set', path: ['rateCurrency'] }
+)
 
 export type CreateCandidateState =
   | { success: true; candidateId: string }
@@ -140,6 +154,15 @@ export async function createCandidate(
       cvText,
       filePath: `/uploads/${tenantId}/${fileName}`,
       fileType,
+      country: parsed.data.country || null,
+      city: parsed.data.city || null,
+      languagesSpoken: parsed.data.languagesSpoken
+        ? parsed.data.languagesSpoken.split(',').map((l) => l.trim()).filter(Boolean)
+        : [],
+      willingToRelocate: parsed.data.willingToRelocate === 'true' ? true : parsed.data.willingToRelocate === 'false' ? false : null,
+      candidateRate: typeof parsed.data.candidateRate === 'number' ? String(parsed.data.candidateRate) : null,
+      customerRate: typeof parsed.data.customerRate === 'number' ? String(parsed.data.customerRate) : null,
+      rateCurrency: parsed.data.rateCurrency || null,
     })
 
     await tx.insert(scores).values({
@@ -276,6 +299,13 @@ const UpdateCandidateSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().max(50).optional(),
   agencyId: z.string().uuid().nullable().optional(),
+  country: z.string().max(100).optional().or(z.literal('')),
+  city: z.string().max(100).optional().or(z.literal('')),
+  languagesSpoken: z.string().optional().or(z.literal('')),
+  willingToRelocate: z.enum(['true', 'false', '']).optional(),
+  candidateRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  customerRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  rateCurrency: z.string().max(3).toUpperCase().optional().or(z.literal('')),
 })
 
 export type UpdateCandidateState = {
@@ -306,6 +336,13 @@ export async function updateCandidateDetails(
     email: formData.get('email') || undefined,
     phone: formData.get('phone') || undefined,
     agencyId: rawAgencyId === '' || rawAgencyId === null ? null : rawAgencyId,
+    country: formData.get('country') || undefined,
+    city: formData.get('city') || undefined,
+    languagesSpoken: formData.get('languagesSpoken') || undefined,
+    willingToRelocate: formData.get('willingToRelocate') || undefined,
+    candidateRate: formData.get('candidateRate') || undefined,
+    customerRate: formData.get('customerRate') || undefined,
+    rateCurrency: formData.get('rateCurrency') || undefined,
   })
 
   if (!parsed.success) {
@@ -325,6 +362,15 @@ export async function updateCandidateDetails(
         email: parsed.data.email || null,
         phone: parsed.data.phone || null,
         ...(parsed.data.agencyId !== undefined ? { agencyId: parsed.data.agencyId } : {}),
+        country: parsed.data.country || null,
+        city: parsed.data.city || null,
+        languagesSpoken: parsed.data.languagesSpoken
+          ? parsed.data.languagesSpoken.split(',').map((l) => l.trim()).filter(Boolean)
+          : [],
+        willingToRelocate: parsed.data.willingToRelocate === 'true' ? true : parsed.data.willingToRelocate === 'false' ? false : null,
+        candidateRate: typeof parsed.data.candidateRate === 'number' ? String(parsed.data.candidateRate) : null,
+        customerRate: typeof parsed.data.customerRate === 'number' ? String(parsed.data.customerRate) : null,
+        rateCurrency: parsed.data.rateCurrency || null,
       })
       .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
   })
@@ -413,6 +459,9 @@ export async function searchCandidatesForRole(
   const trimmed = query.trim()
   if (trimmed.length < 1) return []
 
+  // Escape LIKE metacharacters to prevent wildcard injection
+  const safeTrimmed = trimmed.replace(/[%_\\]/g, '\\$&')
+
   // Subquery: candidate IDs already scored for this role
   const alreadyScoredSubquery = db
     .select({ candidateId: scores.candidateId })
@@ -434,9 +483,9 @@ export async function searchCandidatesForRole(
           eq(candidates.tenantId, tenantId),
           eq(candidates.isActive, true),
           or(
-            ilike(candidates.firstName, `%${trimmed}%`),
-            ilike(candidates.lastName, `%${trimmed}%`),
-            ilike(candidates.email, `%${trimmed}%`)
+            ilike(candidates.firstName, `%${safeTrimmed}%`),
+            ilike(candidates.lastName, `%${safeTrimmed}%`),
+            ilike(candidates.email, `%${safeTrimmed}%`)
           ),
           notInArray(candidates.id, alreadyScoredSubquery)
         )

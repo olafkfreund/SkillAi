@@ -15,10 +15,7 @@ import { parseFile } from '@/lib/parsers'
 import { auth } from '@/lib/auth'
 import { fileTypeFromBuffer } from 'file-type'
 import type { FileType } from '@/lib/parsers'
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+import { resolveAnthropicKey } from '@/lib/ai/keys'
 
 const EXTRACT_TOOL: Anthropic.Tool = {
   name: 'extract_candidate_details',
@@ -58,6 +55,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.tenantId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const tenantId = session.user.tenantId
 
   try {
     const formData = await req.formData()
@@ -97,14 +95,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Could not extract text from file' }, { status: 422 })
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY
+    const apiKey = await resolveAnthropicKey(tenantId)
     if (!apiKey || apiKey.startsWith('sk-ant-placeholder')) {
       return NextResponse.json(
-        { error: 'ANTHROPIC_API_KEY not configured — add a real key to .env.local' },
+        { error: 'Anthropic API key not configured — add one in Settings' },
         { status: 503 }
       )
     }
 
+    const anthropic = new Anthropic({ apiKey, maxRetries: 3 })
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 512,
