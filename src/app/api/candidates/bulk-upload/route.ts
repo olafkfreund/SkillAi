@@ -118,7 +118,8 @@ export async function POST(request: NextRequest) {
     const lastName = nameParts.slice(1).join(' ') || 'Candidate'
 
     // Store file on disk
-    const uploadBase = join(process.cwd(), process.env.UPLOAD_DIR ?? 'uploads')
+    const envDir = process.env.UPLOAD_DIR ?? 'uploads'
+    const uploadBase = envDir.startsWith('/') ? envDir : join(process.cwd(), envDir)
     const uploadDir = join(uploadBase, tenantId)
     await mkdir(uploadDir, { recursive: true })
 

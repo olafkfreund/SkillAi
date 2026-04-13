@@ -11,6 +11,7 @@ import Credentials from 'next-auth/providers/credentials'
 import { authorizeUser } from '@/lib/auth/authorize'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   providers: [
     Credentials({
       credentials: {

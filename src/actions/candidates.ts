@@ -116,9 +116,8 @@ export async function createCandidate(
   }
 
   // -- Store file on disk --
-  const uploadBase = process.env.UPLOAD_DIR
-    ? join(process.cwd(), process.env.UPLOAD_DIR)
-    : join(process.cwd(), 'uploads')
+  const envDir = process.env.UPLOAD_DIR ?? 'uploads'
+  const uploadBase = envDir.startsWith('/') ? envDir : join(process.cwd(), envDir)
   const uploadDir = join(uploadBase, tenantId)
   await mkdir(uploadDir, { recursive: true })
   const fileId = randomUUID()

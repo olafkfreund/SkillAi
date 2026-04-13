@@ -1,17 +1,12 @@
 services:
   app:
     build:
-      target: development
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
+      target: runner
     env_file:
       - .env.local
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       ANTHROPIC_API_KEY: ${SKILLAI_ANTHROPIC_API_KEY}
-    command: npm run dev
   db:
     ports:
       - '5433:5432'
