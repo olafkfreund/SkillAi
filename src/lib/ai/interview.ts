@@ -17,7 +17,11 @@ import { inferExperienceLevel, inferLanguage } from './interview-helpers'
 
 export { inferExperienceLevel, inferLanguage }
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  timeout: 240_000,
+  maxRetries: 3,
+})
 
 // -- Stage 1: CV Profile Extraction --
 
@@ -63,7 +67,7 @@ const CV_PROFILE_TOOL: Anthropic.Tool = {
 
 export async function extractCvProfile(cvText: string): Promise<CvProfile> {
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 2048,
     tools: [CV_PROFILE_TOOL],
     tool_choice: { type: 'any' },
@@ -78,10 +82,12 @@ ${cvText.slice(0, 6000)}`,
     ],
   })
 
+  console.log(`Stage 1 (extractCvProfile): model=${response.model}, usage=${JSON.stringify(response.usage)}`)
+
   const toolBlock = response.content.find(
     (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
   )
-  if (!toolBlock) throw new Error('Stage 1: Claude did not return a tool_use response')
+  if (!toolBlock) throw new Error(`Stage 1: Claude did not return a tool_use response (stop_reason: ${response.stop_reason})`)
 
   const parsed = CvProfileSchema.safeParse(toolBlock.input)
   if (!parsed.success) throw new Error(`Stage 1 schema validation failed: ${parsed.error.message}`)
@@ -146,7 +152,7 @@ export async function generateQuestions(
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 16000,
+    max_tokens: 12000,
     tools: [QUESTION_TOOL],
     tool_choice: { type: 'any' },
     messages: [
@@ -187,18 +193,21 @@ ${options.includeCodeChallenge ? `- Include a ${language} code challenge appropr
     ],
   })
 
+  console.log(`Stage 2 response: stop_reason=${response.stop_reason}, usage=${JSON.stringify(response.usage)}`)
+
   const toolBlock = response.content.find(
     (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
   )
   if (!toolBlock) {
     console.error('Stage 2: no tool_use block. stop_reason:', response.stop_reason, 'content types:', response.content.map(b => b.type))
-    throw new Error('Stage 2: Claude did not return a tool_use response')
+    throw new Error(`Stage 2: Claude did not return a tool_use response (stop_reason: ${response.stop_reason})`)
   }
 
   const parsed = InterviewPackSchema.safeParse(toolBlock.input)
   if (!parsed.success) {
-    console.error('Stage 2 validation failed. Raw input keys:', Object.keys(toolBlock.input as object))
-    throw new Error(`Stage 2 schema validation failed: ${parsed.error.message}`)
+    const inputKeys = Object.keys(toolBlock.input as object)
+    console.error('Stage 2 validation failed. Raw input keys:', inputKeys, 'stop_reason:', response.stop_reason)
+    throw new Error(`Stage 2 schema validation failed (stop_reason: ${response.stop_reason}, keys: ${inputKeys.join(',')}): ${parsed.error.message}`)
   }
 
   return parsed.data

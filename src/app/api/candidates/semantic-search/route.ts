@@ -51,8 +51,7 @@ export async function POST(request: Request) {
     // drizzle-orm/postgres-js execute() returns the RowList directly (an array)
     return Response.json({ results: Array.from(results) })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Semantic search failed'
-    console.error('[semantic-search]', err)
-    return Response.json({ error: message }, { status: 500 })
+    console.error('[semantic-search]', err instanceof Error ? err.message : err)
+    return Response.json({ error: 'Semantic search failed' }, { status: 500 })
   }
 }

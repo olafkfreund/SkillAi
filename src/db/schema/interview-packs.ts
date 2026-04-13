@@ -43,6 +43,7 @@ export const interviewPacks = pgTable(
       .notNull()
       .references(() => roles.id, { onDelete: 'cascade' }),
     generationStatus: generationStatusEnum('generation_status').notNull().default('pending'),
+    generationStage: text('generation_stage'),
     experienceLevel: experienceLevelEnum('experience_level'),
     recommendedDurationMinutes: integer('recommended_duration_minutes'),
     includesCodeChallenge: boolean('includes_code_challenge').notNull().default(false),

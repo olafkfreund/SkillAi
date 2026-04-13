@@ -7,6 +7,7 @@ import { FileTextIcon, Loader2Icon, CheckCircleIcon, XCircleIcon, ClockIcon } fr
 type Pack = {
   id: string
   generationStatus: string
+  generationStage: string | null
   experienceLevel: string | null
   recommendedDurationMinutes: number | null
   includesCodeChallenge: boolean
@@ -125,6 +126,8 @@ export function PackList({ candidateId }: Props) {
                   </>
                 ) : isStuck ? (
                   'Stuck — click to retry'
+                ) : isPending && pack.generationStage ? (
+                  pack.generationStage
                 ) : (
                   new Date(pack.createdAt).toLocaleDateString()
                 )}

@@ -20,11 +20,18 @@ export function PackGenerator({ candidateId, roleId, roleName }: Props) {
 
   useEffect(() => {
     if (state?.success) {
+      // Pack row created — trigger generation via API route from the client
+      fetch('/api/interview-packs/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ packId: state.packId, includeCodeChallenge: includeCode }),
+      }).catch((err) => console.error('Failed to trigger generation:', err))
+
       setOpen(false)
       router.push(`/dashboard/candidates/${candidateId}/interview/${state.packId}`)
       router.refresh()
     }
-  }, [state, router, candidateId])
+  }, [state, router, candidateId, includeCode])
 
   return (
     <>
@@ -84,7 +91,7 @@ export function PackGenerator({ candidateId, roleId, roleName }: Props) {
                              hover:bg-violet-700 disabled:opacity-50 transition-colors"
                 >
                   {pending && <Loader2Icon className="h-4 w-4 animate-spin" />}
-                  {pending ? 'Generating…' : 'Generate'}
+                  {pending ? 'Creating…' : 'Generate'}
                 </button>
                 <button
                   type="button"

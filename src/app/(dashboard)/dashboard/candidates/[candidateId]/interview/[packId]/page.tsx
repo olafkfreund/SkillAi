@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeftIcon, ClockIcon, BrainIcon, RefreshCwIcon } from 'lucide-react'
+import { ArrowLeftIcon, ClockIcon, BrainIcon } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { withTenant } from '@/db'
 import { interviewPacks, interviewQuestions, codeChallenges, candidates, roles } from '@/db/schema'
@@ -8,7 +8,9 @@ import { eq, asc, and } from 'drizzle-orm'
 import { QuestionCard } from '@/components/interview/question-card'
 import { CodeChallengeCard } from '@/components/interview/code-challenge'
 import { DownloadPdfButton } from '@/components/export/download-pdf-button'
-import { retryInterviewPack } from '@/actions/interview'
+import { GenerationProgress } from '@/components/interview/generation-progress'
+import { RetryButton } from '@/components/interview/retry-button'
+
 
 type Props = {
   params: Promise<{ candidateId: string; packId: string }>
@@ -115,42 +117,12 @@ export default async function InterviewPackPage({ params }: Props) {
         )}
       </div>
 
-      {/* Status banners */}
-      {isPending && (() => {
-        const ageMs = Date.now() - new Date(pack.updatedAt).getTime()
-        const isStuck = ageMs > 3 * 60 * 1000 // 3 minutes
-        return (
-          <div className="rounded-xl bg-amber-950 border border-amber-800 px-5 py-4 mb-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-5 w-5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-amber-400">Generating interview pack…</p>
-                  <p className="text-xs text-amber-500 mt-0.5">
-                    {isStuck
-                      ? 'This is taking longer than expected. The server may have restarted mid-generation.'
-                      : 'This usually takes 30-60 seconds. You can refresh the page to check progress.'}
-                  </p>
-                </div>
-              </div>
-              {isStuck && (
-                <form action={async () => { 'use server'; await retryInterviewPack(pack.id) }}>
-                  <button
-                    type="submit"
-                    className="flex items-center gap-1.5 rounded-md bg-amber-900 border border-amber-700
-                               text-amber-300 text-xs font-medium px-3 py-1.5 hover:bg-amber-800
-                               transition-colors flex-shrink-0"
-                  >
-                    <RefreshCwIcon className="h-3.5 w-3.5" />
-                    Force retry
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        )
-      })()}
+      {/* Live progress for pending/processing */}
+      {isPending && (
+        <GenerationProgress packId={packId} />
+      )}
 
+      {/* Failed banner */}
       {pack.generationStatus === 'failed' && (
         <div className="rounded-xl bg-red-950 border border-red-800 px-5 py-4 mb-6">
           <div className="flex items-start justify-between gap-4">
@@ -160,16 +132,7 @@ export default async function InterviewPackPage({ params }: Props) {
                 <p className="text-xs text-red-500 mt-0.5 line-clamp-2">{pack.errorMessage.split('\n')[0]}</p>
               )}
             </div>
-            <form action={async () => { 'use server'; await retryInterviewPack(pack.id) }}>
-              <button
-                type="submit"
-                className="flex items-center gap-1.5 rounded-md bg-red-900 border border-red-700
-                           text-red-300 text-xs font-medium px-3 py-1.5 hover:bg-red-800 transition-colors flex-shrink-0"
-              >
-                <RefreshCwIcon className="h-3.5 w-3.5" />
-                Retry
-              </button>
-            </form>
+            <RetryButton packId={packId} includesCodeChallenge={pack.includesCodeChallenge} />
           </div>
         </div>
       )}

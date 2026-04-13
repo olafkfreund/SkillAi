@@ -11,6 +11,8 @@ import { CandidateScoreSchema, type CandidateScore } from './schema'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+  timeout: 120_000,
+  maxRetries: 3,
 })
 
 const SCORING_TOOL: Anthropic.Tool = {
@@ -121,6 +123,8 @@ Use the submit_candidate_score tool to return your assessment.`,
       },
     ],
   })
+
+  console.log(`Scoring: model=${response.model}, usage=${JSON.stringify(response.usage)}`)
 
   // Extract the tool_use block
   const toolBlock = response.content.find((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')

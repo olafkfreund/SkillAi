@@ -413,6 +413,9 @@ export async function searchCandidatesForRole(
   const trimmed = query.trim()
   if (trimmed.length < 1) return []
 
+  // Escape LIKE metacharacters to prevent wildcard injection
+  const safeTrimmed = trimmed.replace(/[%_\\]/g, '\\$&')
+
   // Subquery: candidate IDs already scored for this role
   const alreadyScoredSubquery = db
     .select({ candidateId: scores.candidateId })
@@ -434,9 +437,9 @@ export async function searchCandidatesForRole(
           eq(candidates.tenantId, tenantId),
           eq(candidates.isActive, true),
           or(
-            ilike(candidates.firstName, `%${trimmed}%`),
-            ilike(candidates.lastName, `%${trimmed}%`),
-            ilike(candidates.email, `%${trimmed}%`)
+            ilike(candidates.firstName, `%${safeTrimmed}%`),
+            ilike(candidates.lastName, `%${safeTrimmed}%`),
+            ilike(candidates.email, `%${safeTrimmed}%`)
           ),
           notInArray(candidates.id, alreadyScoredSubquery)
         )
