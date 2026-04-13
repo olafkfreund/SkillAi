@@ -7,6 +7,7 @@ import {
   text,
   boolean,
   timestamp,
+  numeric,
   index,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
@@ -52,6 +53,9 @@ export const candidates = pgTable(
     status: candidateStatusEnum('status').notNull().default('new'),
     statusConfirmedBy: uuid('status_confirmed_by').references(() => users.id),
     statusConfirmedAt: timestamp('status_confirmed_at', { withTimezone: true }),
+    candidateRate: numeric('candidate_rate', { precision: 10, scale: 2 }),
+    customerRate: numeric('customer_rate', { precision: 10, scale: 2 }),
+    rateCurrency: varchar('rate_currency', { length: 3 }),
     isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

@@ -219,9 +219,48 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
             email: candidate.email ?? null,
             phone: candidate.phone ?? null,
             agencyId: candidate.agencyId ?? null,
+            candidateRate: candidate.candidateRate ?? null,
+            customerRate: candidate.customerRate ?? null,
+            rateCurrency: candidate.rateCurrency ?? null,
           }}
           agencies={allAgencies}
         />
+      )}
+
+      {/* Commercial Details */}
+      {(candidate.candidateRate || candidate.customerRate) && (
+        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+          <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">Commercial Details</h3>
+          <div className="grid grid-cols-3 gap-4">
+            {candidate.candidateRate && (
+              <div>
+                <p className="text-xs text-zinc-500">Candidate Rate/day</p>
+                <p className="text-lg font-semibold text-zinc-100">
+                  {candidate.rateCurrency ?? ''} {Number(candidate.candidateRate).toFixed(2)}
+                </p>
+              </div>
+            )}
+            {candidate.customerRate && (
+              <div>
+                <p className="text-xs text-zinc-500">Customer Rate/day</p>
+                <p className="text-lg font-semibold text-zinc-100">
+                  {candidate.rateCurrency ?? ''} {Number(candidate.customerRate).toFixed(2)}
+                </p>
+              </div>
+            )}
+            {candidate.candidateRate && candidate.customerRate && (
+              <div>
+                <p className="text-xs text-zinc-500">Margin</p>
+                <p className="text-lg font-semibold text-emerald-400">
+                  {candidate.rateCurrency ?? ''} {(Number(candidate.customerRate) - Number(candidate.candidateRate)).toFixed(2)}
+                  <span className="text-sm text-zinc-500 ml-1">
+                    ({((Number(candidate.customerRate) - Number(candidate.candidateRate)) / Number(candidate.customerRate) * 100).toFixed(1)}%)
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Scoring section */}

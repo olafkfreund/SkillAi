@@ -79,6 +79,9 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
               status: candidates.status,
               createdAt: candidates.createdAt,
               agencyName: agencies.name,
+              candidateRate: candidates.candidateRate,
+              customerRate: candidates.customerRate,
+              rateCurrency: candidates.rateCurrency,
             })
             .from(candidates)
             .leftJoin(agencies, eq(candidates.agencyId, agencies.id))

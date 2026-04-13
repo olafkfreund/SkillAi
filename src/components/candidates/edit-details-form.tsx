@@ -12,6 +12,9 @@ interface CandidateDetails {
   email: string | null
   phone: string | null
   agencyId: string | null
+  candidateRate: string | null
+  customerRate: string | null
+  rateCurrency: string | null
 }
 
 interface Agency {
@@ -39,6 +42,9 @@ export function EditDetailsForm({ candidate, agencies }: EditDetailsFormProps) {
     email: candidate.email ?? '',
     phone: candidate.phone ?? '',
     agencyId: candidate.agencyId ?? '',
+    candidateRate: candidate.candidateRate ?? '',
+    customerRate: candidate.customerRate ?? '',
+    rateCurrency: candidate.rateCurrency ?? 'GBP',
   })
 
   const fieldErrors = state && !state.success ? state.fieldErrors : {}
@@ -198,6 +204,73 @@ export function EditDetailsForm({ candidate, agencies }: EditDetailsFormProps) {
               </select>
             </div>
           )}
+
+          {/* Commercial Details */}
+          <div className="border-t border-zinc-800 pt-3 mt-1 col-span-2">
+            <p className="text-sm font-medium text-zinc-400 mb-2">Commercial Details</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label htmlFor="candidateRate" className="block text-xs font-medium text-zinc-400 mb-1">
+                  Candidate Rate/day
+                </label>
+                <input
+                  id="candidateRate"
+                  name="candidateRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  disabled={pending}
+                  value={fields.candidateRate}
+                  onChange={(e) => setFields((f) => ({ ...f, candidateRate: e.target.value }))}
+                  placeholder="650.00"
+                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                             placeholder:text-zinc-500
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                />
+              </div>
+              <div>
+                <label htmlFor="customerRate" className="block text-xs font-medium text-zinc-400 mb-1">
+                  Customer Rate/day
+                </label>
+                <input
+                  id="customerRate"
+                  name="customerRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  disabled={pending}
+                  value={fields.customerRate}
+                  onChange={(e) => setFields((f) => ({ ...f, customerRate: e.target.value }))}
+                  placeholder="850.00"
+                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                             placeholder:text-zinc-500
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                />
+              </div>
+              <div>
+                <label htmlFor="rateCurrency" className="block text-xs font-medium text-zinc-400 mb-1">
+                  Currency
+                </label>
+                <select
+                  id="rateCurrency"
+                  name="rateCurrency"
+                  disabled={pending}
+                  value={fields.rateCurrency}
+                  onChange={(e) => setFields((f) => ({ ...f, rateCurrency: e.target.value }))}
+                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  <option value="GBP">GBP</option>
+                  <option value="EUR">EUR</option>
+                  <option value="USD">USD</option>
+                  <option value="CHF">CHF</option>
+                  <option value="SEK">SEK</option>
+                  <option value="NOK">NOK</option>
+                  <option value="DKK">DKK</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
           <div className="flex items-center gap-3 pt-1">
             <button

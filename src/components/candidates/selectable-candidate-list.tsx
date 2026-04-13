@@ -22,6 +22,9 @@ export type CandidateRow = {
   status: string
   createdAt: string | Date
   agencyName: string | null
+  candidateRate: string | null
+  customerRate: string | null
+  rateCurrency: string | null
 }
 
 type Props = {
@@ -88,6 +91,9 @@ export function SelectableCandidateList({ candidates }: Props) {
               <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden sm:table-cell">
                 Agency
               </th>
+              <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden lg:table-cell">
+                Rate/day
+              </th>
               <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden md:table-cell">
                 Status
               </th>
@@ -137,6 +143,11 @@ export function SelectableCandidateList({ candidates }: Props) {
                   </td>
                   <td className="px-5 py-3 text-zinc-500 hidden sm:table-cell">
                     {c.agencyName ?? '—'}
+                  </td>
+                  <td className="px-5 py-3 text-zinc-400 hidden lg:table-cell tabular-nums text-sm">
+                    {c.candidateRate
+                      ? `${c.rateCurrency ?? ''} ${Number(c.candidateRate).toFixed(0)}`
+                      : '—'}
                   </td>
                   <td className="px-5 py-3 hidden md:table-cell">
                     <span

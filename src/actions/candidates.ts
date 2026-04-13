@@ -46,7 +46,17 @@ const CreateCandidateSchema = z.object({
   phone: z.string().max(50).optional(),
   agencyId: z.string().uuid().optional(),
   roleId: z.string().uuid(),
-})
+  candidateRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  customerRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  rateCurrency: z.string().max(3).toUpperCase().optional().or(z.literal('')),
+}).refine(
+  (data) => {
+    const hasRate = (typeof data.candidateRate === 'number') || (typeof data.customerRate === 'number')
+    if (hasRate && (!data.rateCurrency || data.rateCurrency === '')) return false
+    return true
+  },
+  { message: 'Currency is required when a rate is set', path: ['rateCurrency'] }
+)
 
 export type CreateCandidateState =
   | { success: true; candidateId: string }
@@ -140,6 +150,9 @@ export async function createCandidate(
       cvText,
       filePath: `/uploads/${tenantId}/${fileName}`,
       fileType,
+      candidateRate: typeof parsed.data.candidateRate === 'number' ? String(parsed.data.candidateRate) : null,
+      customerRate: typeof parsed.data.customerRate === 'number' ? String(parsed.data.customerRate) : null,
+      rateCurrency: parsed.data.rateCurrency || null,
     })
 
     await tx.insert(scores).values({
@@ -276,6 +289,9 @@ const UpdateCandidateSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().max(50).optional(),
   agencyId: z.string().uuid().nullable().optional(),
+  candidateRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  customerRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  rateCurrency: z.string().max(3).toUpperCase().optional().or(z.literal('')),
 })
 
 export type UpdateCandidateState = {
@@ -306,6 +322,9 @@ export async function updateCandidateDetails(
     email: formData.get('email') || undefined,
     phone: formData.get('phone') || undefined,
     agencyId: rawAgencyId === '' || rawAgencyId === null ? null : rawAgencyId,
+    candidateRate: formData.get('candidateRate') || undefined,
+    customerRate: formData.get('customerRate') || undefined,
+    rateCurrency: formData.get('rateCurrency') || undefined,
   })
 
   if (!parsed.success) {
@@ -325,6 +344,9 @@ export async function updateCandidateDetails(
         email: parsed.data.email || null,
         phone: parsed.data.phone || null,
         ...(parsed.data.agencyId !== undefined ? { agencyId: parsed.data.agencyId } : {}),
+        candidateRate: typeof parsed.data.candidateRate === 'number' ? String(parsed.data.candidateRate) : null,
+        customerRate: typeof parsed.data.customerRate === 'number' ? String(parsed.data.customerRate) : null,
+        rateCurrency: parsed.data.rateCurrency || null,
       })
       .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
   })
