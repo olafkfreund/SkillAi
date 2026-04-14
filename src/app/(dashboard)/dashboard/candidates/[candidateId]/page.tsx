@@ -190,10 +190,14 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
             {candidate.phone && <span>{candidate.phone}</span>}
             {agency && <span>via {agency.name}</span>}
           </div>
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
             <DownloadPdfButton
               href={`/api/export/candidate/${candidateId}${roleId ? `?roleId=${roleId}` : ''}`}
-              label="Download profile PDF"
+              label="Internal PDF"
+            />
+            <DownloadPdfButton
+              href={`/api/export/candidate/${candidateId}?audience=customer${roleId ? `&roleId=${roleId}` : ''}`}
+              label="Customer PDF"
             />
             {canEdit && candidate.isActive && (
               <form action={archiveCandidate.bind(null, candidateId)}>
