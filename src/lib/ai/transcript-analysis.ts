@@ -20,6 +20,11 @@ import {
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+  // Match the resilience config used by other AI calls in the codebase —
+  // built-in exponential backoff handles transient network blips and
+  // 429/529/500 responses that would otherwise surface as "Connection error".
+  maxRetries: 3,
+  timeout: 120_000,
 })
 
 type PackQuestion = {
