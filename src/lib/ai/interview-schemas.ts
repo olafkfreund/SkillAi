@@ -7,7 +7,13 @@ import { z } from 'zod'
 // Stage 1: CV profile extraction
 export const CvProfileSchema = z.object({
   experience_level: z.enum(['junior', 'mid', 'senior', 'lead']).optional(),
-  summary: z.string().min(20).max(600).optional(),
+  // Accept any length from Claude and truncate to 800 chars for safety — some
+  // candidates have rich enough backgrounds that Claude writes a slightly
+  // longer summary. Rejecting a 601-char summary would fail the whole extraction.
+  summary: z
+    .string()
+    .optional()
+    .transform((s) => (s && s.length > 800 ? s.slice(0, 797) + '…' : s)),
   companies: z
     .array(
       z.object({
