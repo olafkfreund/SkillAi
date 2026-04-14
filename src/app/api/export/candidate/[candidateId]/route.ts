@@ -223,7 +223,10 @@ export async function GET(
   return new NextResponse(buffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${filename}"`,
+      // `inline` lets the browser display the PDF in a new tab (via the
+      // button's target="_blank"). The filename is still honoured when
+      // the user hits "Save" in the PDF viewer.
+      'Content-Disposition': `inline; filename="${filename}"`,
     },
   })
   } catch (err) {
