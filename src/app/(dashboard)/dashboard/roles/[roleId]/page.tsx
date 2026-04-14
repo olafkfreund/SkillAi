@@ -10,6 +10,8 @@ import { archiveRole, regenerateRoleTags } from '@/actions/roles'
 import { removeCandidateFromRole } from '@/actions/scores'
 import { hasRole } from '@/lib/auth/require-role'
 import { RoleTagsPanel } from '@/components/roles/role-tags-panel'
+import { RoleMetaBar } from '@/components/roles/role-meta-bar'
+import { RoleContent } from '@/components/roles/role-content'
 import { RoleCandidateCard } from '@/components/roles/role-candidate-card'
 import { SuggestCandidatesPanel } from '@/components/roles/suggest-candidates-panel'
 import { AddCandidatePanel } from '@/components/roles/add-candidate-panel'
@@ -31,11 +33,11 @@ export default async function RoleDetailPage({ params }: Props) {
   )
   if (!role) notFound()
 
-  // Fetch customer name if linked
+  // Fetch customer info if linked
   const [customer] = role.customerId
     ? await withTenant(tenantId, async (tx) =>
         tx
-          .select({ name: customers.name })
+          .select({ id: customers.id, name: customers.name })
           .from(customers)
           .where(eq(customers.id, role.customerId!))
           .limit(1)
@@ -149,6 +151,9 @@ export default async function RoleDetailPage({ params }: Props) {
         </div>
       </div>
 
+      {/* Meta bar — work mode, location, languages, customer, framework level */}
+      <RoleMetaBar role={role} customer={customer} />
+
       {/* Tags panel */}
       <RoleTagsPanel
         roleId={roleId}
@@ -160,10 +165,18 @@ export default async function RoleDetailPage({ params }: Props) {
 
       {/* Role description */}
       <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
-        <h2 className="font-semibold text-zinc-100 mb-3">Description</h2>
-        <p className="text-zinc-400 whitespace-pre-wrap text-sm">{role.description}</p>
-        <h2 className="font-semibold text-zinc-100 mt-5 mb-3">Requirements</h2>
-        <p className="text-zinc-400 whitespace-pre-wrap text-sm">{role.requirements}</p>
+        <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-4">
+          Role Description
+        </h2>
+        <RoleContent text={role.description} />
+      </div>
+
+      {/* Requirements */}
+      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+        <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-4">
+          Requirements
+        </h2>
+        <RoleContent text={role.requirements} />
       </div>
 
       {/* Auto-suggest matching candidates from archive */}
