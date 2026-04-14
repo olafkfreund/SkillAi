@@ -64,6 +64,13 @@
       "when": 1776430800000,
       "tag": "0008_add_cv_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1776517200000,
+      "tag": "0009_add_cv_text_formatted",
+      "breakpoints": true
     }
   ]
 }

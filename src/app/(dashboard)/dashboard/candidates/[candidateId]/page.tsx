@@ -425,6 +425,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
         <CandidateCvProfile
           candidateId={candidateId}
           cvText={candidate.cvText}
+          cvTextFormatted={candidate.cvTextFormatted}
           profile={cvProfileRow ? {
             experienceLevel: cvProfileRow.experienceLevel,
             summary: cvProfileRow.summary,
