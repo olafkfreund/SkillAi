@@ -63,6 +63,10 @@ type EnrichmentData = {
 type Props = {
   candidate: Candidate
   agencyName: string | null
+  // When 'customer', sensitive fields (candidateRate, redFlags, recommendedDecision,
+  // notes section, low-score reasoning) are hidden. Sanitisation of the data
+  // itself happens upstream in the API route; this prop gates rendering.
+  audience?: 'internal' | 'customer'
   activeScore: Score | null
   activeRole: Role | null
   roleHistory: RoleHistoryEntry[]
@@ -488,13 +492,16 @@ function BulletList({ items, color }: { items: string[]; color?: string }) {
 function HeaderSection({
   candidate,
   agencyName,
+  audience,
   generatedAt,
 }: {
   candidate: Candidate
   agencyName: string | null
+  audience: 'internal' | 'customer'
   generatedAt: Date
 }) {
   const sc = statusColors(candidate.status)
+  const isCustomer = audience === 'customer'
   return (
     <View style={{ marginBottom: 4 }}>
       <View style={{ ...base.row, justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -504,12 +511,14 @@ function HeaderSection({
             {candidate.firstName} {candidate.lastName}
           </Text>
 
-          {/* Status badge */}
-          <View style={[s.statusBadge, { backgroundColor: sc.bg }]}>
-            <Text style={{ color: sc.text, fontSize: 8, fontFamily: 'Helvetica-Bold' }}>
-              {statusLabel(candidate.status).toUpperCase()}
-            </Text>
-          </View>
+          {/* Status badge — internal only (exposes internal pipeline stage) */}
+          {!isCustomer && (
+            <View style={[s.statusBadge, { backgroundColor: sc.bg }]}>
+              <Text style={{ color: sc.text, fontSize: 8, fontFamily: 'Helvetica-Bold' }}>
+                {statusLabel(candidate.status).toUpperCase()}
+              </Text>
+            </View>
+          )}
 
           <View style={{ marginTop: 6 }}>
             {candidate.email && (
@@ -518,7 +527,7 @@ function HeaderSection({
             {candidate.phone && (
               <Text style={{ ...base.small, marginTop: 2 }}>{candidate.phone}</Text>
             )}
-            {agencyName && (
+            {agencyName && !isCustomer && (
               <Text style={{ ...base.small, marginTop: 2 }}>Agency: {agencyName}</Text>
             )}
             {candidate.linkedinUrl && (
@@ -531,14 +540,15 @@ function HeaderSection({
                 GitHub: {candidate.githubUsername}
               </Text>
             )}
-            {candidate.candidateRate && (
+            {/* candidateRate reveals our margin — internal only */}
+            {!isCustomer && candidate.candidateRate && (
               <Text style={{ ...base.small, marginTop: 2 }}>
                 Day Rate: {candidate.rateCurrency ?? ''} {Number(candidate.candidateRate).toFixed(2)}/day
               </Text>
             )}
             {candidate.customerRate && (
               <Text style={{ ...base.small, marginTop: 2 }}>
-                Customer Rate: {candidate.rateCurrency ?? ''} {Number(candidate.customerRate).toFixed(2)}/day
+                {isCustomer ? 'Day Rate' : 'Customer Rate'}: {candidate.rateCurrency ?? ''} {Number(candidate.customerRate).toFixed(2)}/day
               </Text>
             )}
           </View>
@@ -546,7 +556,9 @@ function HeaderSection({
 
         {/* Right: generated date */}
         <View style={{ alignItems: 'flex-end' }}>
-          <Text style={[base.small, { marginBottom: 2 }]}>Candidate Dossier</Text>
+          <Text style={[base.small, { marginBottom: 2, fontFamily: 'Helvetica-Bold' }]}>
+            {isCustomer ? 'CANDIDATE PROFILE' : 'Candidate Dossier'}
+          </Text>
           <Text style={base.small}>Generated: {fmt(generatedAt)}</Text>
         </View>
       </View>
@@ -668,10 +680,13 @@ function RoleHistorySection({ history }: { history: RoleHistoryEntry[] }) {
 // ---------------------------------------------------------------------------
 function TranscriptAnalysesSection({
   analyses,
+  audience,
 }: {
   analyses: TranscriptAnalysisEntry[]
+  audience: 'internal' | 'customer'
 }) {
   if (analyses.length === 0) return null
+  const isCustomer = audience === 'customer'
 
   return (
     <View>
@@ -709,11 +724,14 @@ function TranscriptAnalysesSection({
                     </Text>
                   </View>
                 )}
-                <View style={[s.decisionBadge, { backgroundColor: dc.bg }]}>
-                  <Text style={{ color: dc.text, fontSize: 9, fontFamily: 'Helvetica-Bold' }}>
-                    {dc.label.toUpperCase()}
-                  </Text>
-                </View>
+                {/* Recommended decision is an internal signal — hide from customer */}
+                {!isCustomer && (
+                  <View style={[s.decisionBadge, { backgroundColor: dc.bg }]}>
+                    <Text style={{ color: dc.text, fontSize: 9, fontFamily: 'Helvetica-Bold' }}>
+                      {dc.label.toUpperCase()}
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
 
@@ -755,8 +773,8 @@ function TranscriptAnalysesSection({
               </View>
             )}
 
-            {/* Red flags */}
-            {analysis.redFlags && analysis.redFlags.length > 0 && (
+            {/* Red flags — internal only (sanitised upstream for customer) */}
+            {!isCustomer && analysis.redFlags && analysis.redFlags.length > 0 && (
               <View style={{ marginTop: 8 }}>
                 <Text style={base.label}>Red Flags</Text>
                 <BulletList items={analysis.redFlags} color={colors.red700} />
@@ -917,6 +935,7 @@ function CvTextSection({ cvText }: { cvText: string }) {
 export function CandidatePDF({
   candidate,
   agencyName,
+  audience = 'internal',
   activeScore,
   activeRole,
   roleHistory,
@@ -926,14 +945,17 @@ export function CandidatePDF({
   generatedAt,
 }: Props) {
   const fullName = `${candidate.firstName} ${candidate.lastName}`
+  const isCustomer = audience === 'customer'
+  const docTitle = isCustomer ? `${fullName} — Candidate Profile` : `${fullName} — Candidate Dossier`
 
   return (
-    <Document title={`${fullName} — Candidate Dossier`}>
+    <Document title={docTitle}>
       <Page size="A4" style={base.page}>
         {/* ── 1. Header ─────────────────────────────────────────────── */}
         <HeaderSection
           candidate={candidate}
           agencyName={agencyName}
+          audience={audience}
           generatedAt={generatedAt}
         />
 
@@ -955,13 +977,13 @@ export function CandidatePDF({
         {/* ── 4. Interview Transcript Analyses ──────────────────────── */}
         {transcriptAnalyses.length > 0 && (
           <>
-            <TranscriptAnalysesSection analyses={transcriptAnalyses} />
+            <TranscriptAnalysesSection analyses={transcriptAnalyses} audience={audience} />
             <View style={base.divider} />
           </>
         )}
 
-        {/* ── 5. Notes ──────────────────────────────────────────────── */}
-        {notes.length > 0 && (
+        {/* ── 5. Notes (internal only) ──────────────────────────────── */}
+        {!isCustomer && notes.length > 0 && (
           <>
             <NotesSection notes={notes} />
             <View style={base.divider} />
@@ -981,7 +1003,11 @@ export function CandidatePDF({
 
         {/* ── Footer (fixed on every page) ──────────────────────────── */}
         <View style={base.footer} fixed>
-          <Text style={base.small}>SkillAI — Confidential</Text>
+          <Text style={base.small}>
+            {isCustomer
+              ? 'Confidential — Prepared for customer review. Candidate contact details shared upon engagement only.'
+              : 'SkillAI — Confidential'}
+          </Text>
           <Text
             style={base.small}
             render={({ pageNumber, totalPages }) =>

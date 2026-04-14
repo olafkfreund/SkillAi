@@ -17,6 +17,58 @@ import {
 import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
 import { CandidatePDF } from '@/lib/pdf'
 
+type Audience = 'internal' | 'customer'
+
+type TranscriptAnalysisEntry = {
+  overallScore: number | null
+  communicationScore: number | null
+  technicalDepthScore: number | null
+  problemSolvingScore: number | null
+  socialFitScore: number | null
+  communicationReasoning: string | null
+  technicalDepthReasoning: string | null
+  problemSolvingReasoning: string | null
+  socialFitReasoning: string | null
+  summary: string | null
+  strengths: string[] | null
+  redFlags: string[] | null
+  recommendedDecision: 'proceed' | 'consider' | 'decline' | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  questionResponses: any
+  createdAt: Date
+}
+
+/**
+ * Produce customer-safe copies of transcript analyses by:
+ * - dropping redFlags and recommendedDecision
+ * - blanking reasoning text for dimension scores below 60
+ * - filtering out question responses with quality === 'weak'
+ * Does not mutate the input.
+ */
+function sanitizeAnalysesForCustomer(analyses: TranscriptAnalysisEntry[]): TranscriptAnalysisEntry[] {
+  return analyses.map((a) => {
+    const blankIfLow = (reasoning: string | null, score: number | null) =>
+      score !== null && score < 60 ? null : reasoning
+
+    const safeQR = Array.isArray(a.questionResponses)
+      ? (a.questionResponses as Array<{ quality?: string }>).filter(
+          (q) => q.quality !== 'weak'
+        )
+      : a.questionResponses
+
+    return {
+      ...a,
+      redFlags: null,
+      recommendedDecision: null,
+      communicationReasoning: blankIfLow(a.communicationReasoning, a.communicationScore),
+      technicalDepthReasoning: blankIfLow(a.technicalDepthReasoning, a.technicalDepthScore),
+      problemSolvingReasoning: blankIfLow(a.problemSolvingReasoning, a.problemSolvingScore),
+      socialFitReasoning: blankIfLow(a.socialFitReasoning, a.socialFitScore),
+      questionResponses: safeQR,
+    }
+  })
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ candidateId: string }> }
@@ -30,6 +82,7 @@ export async function GET(
   const { candidateId } = await params
   const { searchParams } = new URL(req.url)
   const roleId = searchParams.get('roleId')
+  const audience: Audience = searchParams.get('audience') === 'customer' ? 'customer' : 'internal'
 
   // Single withTenant call — one RLS context setup for all queries
   const data = await withTenant(tenantId, async (tx) => {
@@ -102,10 +155,36 @@ export async function GET(
     }
   }
 
+  const rawAnalyses: TranscriptAnalysisEntry[] = analyses.map((a) => ({
+    overallScore: a.transcript_analyses.overallScore,
+    communicationScore: a.transcript_analyses.communicationScore,
+    technicalDepthScore: a.transcript_analyses.technicalDepthScore,
+    problemSolvingScore: a.transcript_analyses.problemSolvingScore,
+    socialFitScore: a.transcript_analyses.socialFitScore,
+    communicationReasoning: a.transcript_analyses.communicationReasoning,
+    technicalDepthReasoning: a.transcript_analyses.technicalDepthReasoning,
+    problemSolvingReasoning: a.transcript_analyses.problemSolvingReasoning,
+    socialFitReasoning: a.transcript_analyses.socialFitReasoning,
+    summary: a.transcript_analyses.summary,
+    strengths: a.transcript_analyses.strengths,
+    redFlags: a.transcript_analyses.redFlags,
+    recommendedDecision: a.transcript_analyses.recommendedDecision,
+    questionResponses: a.transcript_analyses.questionResponses,
+    createdAt: a.transcript_analyses.createdAt,
+  }))
+
+  const finalAnalyses = audience === 'customer' ? sanitizeAnalysesForCustomer(rawAnalyses) : rawAnalyses
+  const finalNotes = audience === 'customer' ? [] : candidateNotes.map((n) => ({
+    body: n.body,
+    createdAt: n.createdAt,
+    isEdited: n.isEdited,
+  }))
+
   const buffer = await renderToBuffer(
     React.createElement(CandidatePDF, {
       candidate,
       agencyName: agency?.name ?? null,
+      audience,
       activeScore,
       activeRole,
       roleHistory: allScores
@@ -119,28 +198,8 @@ export async function GET(
           communicationScore: s.score.communicationScore,
           scoredAt: s.score.updatedAt,
         })),
-      transcriptAnalyses: analyses.map((a) => ({
-        overallScore: a.transcript_analyses.overallScore,
-        communicationScore: a.transcript_analyses.communicationScore,
-        technicalDepthScore: a.transcript_analyses.technicalDepthScore,
-        problemSolvingScore: a.transcript_analyses.problemSolvingScore,
-        socialFitScore: a.transcript_analyses.socialFitScore,
-        communicationReasoning: a.transcript_analyses.communicationReasoning,
-        technicalDepthReasoning: a.transcript_analyses.technicalDepthReasoning,
-        problemSolvingReasoning: a.transcript_analyses.problemSolvingReasoning,
-        socialFitReasoning: a.transcript_analyses.socialFitReasoning,
-        summary: a.transcript_analyses.summary,
-        strengths: a.transcript_analyses.strengths,
-        redFlags: a.transcript_analyses.redFlags,
-        recommendedDecision: a.transcript_analyses.recommendedDecision,
-        questionResponses: a.transcript_analyses.questionResponses,
-        createdAt: a.transcript_analyses.createdAt,
-      })),
-      notes: candidateNotes.map((n) => ({
-        body: n.body,
-        createdAt: n.createdAt,
-        isEdited: n.isEdited,
-      })),
+      transcriptAnalyses: finalAnalyses,
+      notes: finalNotes,
       enrichment: enrichmentRow
         ? {
             webHits: (enrichmentRow.webHits ?? []) as WebHit[],
@@ -151,7 +210,9 @@ export async function GET(
     }) as any
   )
 
-  const filename = `${candidate.firstName}-${candidate.lastName}-profile.pdf`
+  const filename = audience === 'customer'
+    ? `customer-profile-${candidate.firstName}-${candidate.lastName}.pdf`
+    : `${candidate.firstName}-${candidate.lastName}-profile.pdf`
 
   return new NextResponse(buffer as unknown as BodyInit, {
     headers: {
