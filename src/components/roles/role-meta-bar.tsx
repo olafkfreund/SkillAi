@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { MapPinIcon, GlobeIcon, BuildingIcon, LayersIcon, MonitorIcon, HomeIcon, UsersIcon, CalendarIcon, ClockIcon, ExternalLinkIcon } from 'lucide-react'
+import { MapPinIcon, GlobeIcon, BuildingIcon, LayersIcon, MonitorIcon, HomeIcon, UsersIcon, CalendarIcon, ClockIcon, ExternalLinkIcon, BanknoteIcon } from 'lucide-react'
 
 type RoleMeta = {
   workMode: string | null
@@ -9,6 +9,8 @@ type RoleMeta = {
   frameworkLevelLabel: string | null
   targetFillDate?: string | null
   cutoffDate?: string | null
+  customerDayRate?: string | null
+  rateCurrency?: string | null
 }
 
 type Customer = {
@@ -77,7 +79,7 @@ export function RoleMetaBar({ role, customer, portalUrl }: Props) {
 
   // No metadata at all — render nothing
   if (!workMode && !location && !hasLanguages && !customer && !role.frameworkLevelLabel
-      && !role.targetFillDate && !role.cutoffDate && !portalUrl) {
+      && !role.targetFillDate && !role.cutoffDate && !portalUrl && !role.customerDayRate) {
     return null
   }
 
@@ -121,6 +123,13 @@ export function RoleMetaBar({ role, customer, portalUrl }: Props) {
         <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-800 bg-indigo-950 text-indigo-300 text-xs font-medium px-2.5 py-1">
           <LayersIcon className="h-3 w-3" />
           {role.frameworkLevelLabel}
+        </span>
+      )}
+
+      {role.customerDayRate && (
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-800 bg-emerald-950 text-emerald-300 text-xs font-medium px-2.5 py-1">
+          <BanknoteIcon className="h-3 w-3" />
+          {role.rateCurrency ?? ''} {Number(role.customerDayRate).toFixed(0)}/day budget
         </span>
       )}
 

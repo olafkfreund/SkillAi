@@ -114,6 +114,7 @@ type ShortlistEntry = {
   candidate: Candidate
   score: Score
   agencyName: string | null
+  margin: { amount: number; currency: string; mismatch: boolean } | null
 }
 
 type Props = {
@@ -184,6 +185,15 @@ function RoleContextBlock({ role, customerName }: { role: Role; customerName?: s
         </>
       )}
 
+      {role.customerDayRate && (
+        <>
+          <Text style={s.contextLabel}>Budget</Text>
+          <Text style={{ fontSize: 9, color: colors.slate700, marginTop: 2 }}>
+            {role.rateCurrency ?? ''} {Number(role.customerDayRate).toFixed(0)}/day
+          </Text>
+        </>
+      )}
+
       {descSnippet && (
         <Text style={s.contextDescription}>{descSnippet}</Text>
       )}
@@ -222,6 +232,20 @@ export function ShortlistPDF({ entries, roleTitle, role, customerName }: Props) 
                 </View>
                 {entry.agencyName && (
                   <Text style={{ ...base.small, marginBottom: 4 }}>via {entry.agencyName}</Text>
+                )}
+                {entry.margin && (
+                  <Text
+                    style={{
+                      fontSize: 9,
+                      fontFamily: 'Helvetica-Bold',
+                      color: entry.margin.amount >= 0 ? '#047857' : '#b91c1c',
+                      marginBottom: 4,
+                    }}
+                  >
+                    Margin: {entry.margin.amount >= 0 ? '+' : ''}
+                    {entry.margin.currency} {entry.margin.amount.toFixed(0)}/day
+                    {entry.margin.mismatch ? '  (currency mismatch)' : ''}
+                  </Text>
                 )}
                 {entry.score.aiSummary && (
                   <Text style={{ ...base.text, marginBottom: 6 }}>{entry.score.aiSummary}</Text>

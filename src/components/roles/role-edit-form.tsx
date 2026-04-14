@@ -18,6 +18,8 @@ interface RoleData {
   targetFillDate?: string | null
   cutoffDate?: string | null
   customerPortalPath?: string | null
+  customerDayRate?: string | null
+  rateCurrency?: string | null
 }
 
 type FrameworkLevelOption = {
@@ -53,6 +55,8 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
     targetFillDate: role.targetFillDate ?? '',
     cutoffDate: role.cutoffDate ?? '',
     customerPortalPath: role.customerPortalPath ?? '',
+    customerDayRate: role.customerDayRate ?? '',
+    rateCurrency: role.rateCurrency ?? '',
   })
 
   useEffect(() => {
@@ -75,6 +79,8 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
         fd.set('targetFillDate', fields.targetFillDate)
         fd.set('cutoffDate', fields.cutoffDate)
         fd.set('customerPortalPath', fields.customerPortalPath)
+        fd.set('customerDayRate', fields.customerDayRate)
+        fd.set('rateCurrency', fields.rateCurrency)
         action(fd)
       }}
       className="space-y-6 max-w-2xl"
@@ -222,6 +228,52 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
         />
         {fieldErrors?.requirements && (
           <p className="mt-1 text-xs text-red-400">{fieldErrors.requirements[0]}</p>
+        )}
+      </div>
+
+      {/* Budget */}
+      <div className="border-t border-zinc-800 pt-4 mt-2">
+        <p className="text-sm font-medium text-zinc-400 mb-3">Budget</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="customerDayRate" className="block text-sm font-medium text-zinc-300 mb-1">
+              Customer Day Rate
+            </label>
+            <input
+              id="customerDayRate"
+              name="customerDayRate"
+              type="number"
+              step="0.01"
+              min="0"
+              disabled={pending}
+              value={fields.customerDayRate}
+              onChange={(e) => setFields((f) => ({ ...f, customerDayRate: e.target.value }))}
+              placeholder="850.00"
+              className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-zinc-100 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+            />
+            <p className="mt-1 text-xs text-zinc-500">Budget the client pays per day for this role.</p>
+          </div>
+          <div>
+            <label htmlFor="rateCurrency" className="block text-sm font-medium text-zinc-300 mb-1">
+              Currency
+            </label>
+            <select
+              id="rateCurrency"
+              name="rateCurrency"
+              disabled={pending}
+              value={fields.rateCurrency}
+              onChange={(e) => setFields((f) => ({ ...f, rateCurrency: e.target.value }))}
+              className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-zinc-100 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+            >
+              <option value="">—</option>
+              <option value="GBP">GBP</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+            </select>
+          </div>
+        </div>
+        {fieldErrors?.rateCurrency && (
+          <p className="mt-1 text-xs text-red-400">{fieldErrors.rateCurrency[0]}</p>
         )}
       </div>
 

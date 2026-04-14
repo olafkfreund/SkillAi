@@ -21,6 +21,8 @@ interface RoleFields {
   targetFillDate: string
   cutoffDate: string
   customerPortalPath: string
+  customerDayRate: string
+  rateCurrency: string
 }
 
 type FrameworkLevelOption = {
@@ -57,6 +59,8 @@ export function RoleForm({ customers = [], frameworks = {} }: RoleFormProps) {
     targetFillDate: '',
     cutoffDate: '',
     customerPortalPath: '',
+    customerDayRate: '',
+    rateCurrency: '',
   })
 
   const [importFile, setImportFile] = useState<File | null>(null)
@@ -414,6 +418,50 @@ export function RoleForm({ customers = [], frameworks = {} }: RoleFormProps) {
               />
             </div>
           </div>
+        </div>
+
+        {/* Budget */}
+        <div className="border-t border-zinc-800 pt-4 mt-2">
+          <p className="text-sm font-medium text-zinc-400 mb-3">Budget</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="customerDayRate" className="block text-sm font-medium text-zinc-300 mb-1">
+                Customer Day Rate
+              </label>
+              <input
+                id="customerDayRate"
+                name="customerDayRate"
+                type="number"
+                step="0.01"
+                min="0"
+                value={fields.customerDayRate}
+                onChange={(e) => setFields((f) => ({ ...f, customerDayRate: e.target.value }))}
+                placeholder="850.00"
+                className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-zinc-100 focus:border-blue-500 focus:outline-none"
+              />
+              <p className="mt-1 text-xs text-zinc-500">Budget the client pays per day for this role.</p>
+            </div>
+            <div>
+              <label htmlFor="rateCurrency" className="block text-sm font-medium text-zinc-300 mb-1">
+                Currency
+              </label>
+              <select
+                id="rateCurrency"
+                name="rateCurrency"
+                value={fields.rateCurrency}
+                onChange={(e) => setFields((f) => ({ ...f, rateCurrency: e.target.value }))}
+                className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-zinc-100 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="">—</option>
+                <option value="GBP">GBP</option>
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+              </select>
+            </div>
+          </div>
+          {fieldErrors?.rateCurrency && (
+            <p className="mt-1 text-xs text-red-400">{fieldErrors.rateCurrency[0]}</p>
+          )}
         </div>
 
         {/* Deadlines & Customer Portal */}

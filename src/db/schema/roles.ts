@@ -1,4 +1,4 @@
-import { pgTable, pgPolicy, pgEnum, uuid, varchar, text, boolean, timestamp, date } from 'drizzle-orm/pg-core'
+import { pgTable, pgPolicy, pgEnum, uuid, varchar, text, boolean, timestamp, date, numeric } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 import { users } from './users'
@@ -33,6 +33,8 @@ export const roles = pgTable(
     targetFillDate: date('target_fill_date'),
     cutoffDate: date('cutoff_date'),
     customerPortalPath: varchar('customer_portal_path', { length: 500 }),
+    customerDayRate: numeric('customer_day_rate', { precision: 10, scale: 2 }),
+    rateCurrency: varchar('rate_currency', { length: 3 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

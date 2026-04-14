@@ -23,6 +23,8 @@ export default async function RolesPage() {
             topRequirements: roles.topRequirements,
             createdAt: roles.createdAt,
             cutoffDate: roles.cutoffDate,
+            customerDayRate: roles.customerDayRate,
+            rateCurrency: roles.rateCurrency,
           })
           .from(roles)
           .where(eq(roles.isActive, true))
@@ -100,6 +102,11 @@ export default async function RolesPage() {
                     }
                     return null
                   })()}
+                  {role.customerDayRate && (
+                    <span className="inline-flex items-center rounded-full bg-emerald-950 border border-emerald-800 text-emerald-300 text-xs font-medium px-2 py-0.5">
+                      {role.rateCurrency ?? ''} {Number(role.customerDayRate).toFixed(0)}/day
+                    </span>
+                  )}
                 </div>
                 <time className="text-xs text-zinc-500 whitespace-nowrap ml-4 mt-0.5 flex-shrink-0">
                   {new Date(role.createdAt).toLocaleDateString()}
