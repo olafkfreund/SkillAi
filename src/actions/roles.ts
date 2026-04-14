@@ -23,6 +23,9 @@ const CreateRoleSchema = z.object({
   city: z.string().max(100).optional().or(z.literal('')),
   workMode: z.enum(['remote', 'hybrid', 'onsite']).optional().or(z.literal('')),
   languageRequirements: z.string().optional().or(z.literal('')),
+  targetFillDate: z.string().optional().or(z.literal('')),
+  cutoffDate: z.string().optional().or(z.literal('')),
+  customerPortalPath: z.string().max(500).optional().or(z.literal('')),
 })
 
 export type CreateRoleState =
@@ -54,6 +57,9 @@ export async function createRole(
     city: formData.get('city') || undefined,
     workMode: formData.get('workMode') || undefined,
     languageRequirements: formData.get('languageRequirements') || undefined,
+    targetFillDate: formData.get('targetFillDate') || undefined,
+    cutoffDate: formData.get('cutoffDate') || undefined,
+    customerPortalPath: formData.get('customerPortalPath') || undefined,
   })
 
   if (!parsed.success) {
@@ -82,6 +88,9 @@ export async function createRole(
         languageRequirements: parsed.data.languageRequirements
           ? parsed.data.languageRequirements.split(',').map((l) => l.trim()).filter(Boolean)
           : [],
+        targetFillDate: parsed.data.targetFillDate || null,
+        cutoffDate: parsed.data.cutoffDate || null,
+        customerPortalPath: parsed.data.customerPortalPath || null,
         isActive: true,
       })
       .returning({ id: roles.id })
@@ -118,6 +127,9 @@ const UpdateRoleSchema = z.object({
   city: z.string().max(100).optional().or(z.literal('')),
   workMode: z.enum(['remote', 'hybrid', 'onsite']).optional().or(z.literal('')),
   languageRequirements: z.string().optional().or(z.literal('')),
+  targetFillDate: z.string().optional().or(z.literal('')),
+  cutoffDate: z.string().optional().or(z.literal('')),
+  customerPortalPath: z.string().max(500).optional().or(z.literal('')),
 })
 
 export type UpdateRoleState = {
@@ -152,6 +164,9 @@ export async function updateRole(
     city: formData.get('city') || undefined,
     workMode: formData.get('workMode') || undefined,
     languageRequirements: formData.get('languageRequirements') || undefined,
+    targetFillDate: formData.get('targetFillDate') || undefined,
+    cutoffDate: formData.get('cutoffDate') || undefined,
+    customerPortalPath: formData.get('customerPortalPath') || undefined,
   })
 
   if (!parsed.success) {
@@ -178,6 +193,9 @@ export async function updateRole(
         languageRequirements: parsed.data.languageRequirements
           ? parsed.data.languageRequirements.split(',').map((l) => l.trim()).filter(Boolean)
           : [],
+        targetFillDate: parsed.data.targetFillDate || null,
+        cutoffDate: parsed.data.cutoffDate || null,
+        customerPortalPath: parsed.data.customerPortalPath || null,
       })
       .where(and(eq(roles.id, roleId), eq(roles.tenantId, tenantId)))
   })

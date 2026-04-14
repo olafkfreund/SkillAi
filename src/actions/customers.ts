@@ -15,6 +15,7 @@ const CustomerSchema = z.object({
   contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
   contactPhone: z.string().max(50).optional(),
   website: z.string().max(500).optional(),
+  portalBaseUrl: z.string().url('Must be a valid URL').max(500).optional().or(z.literal('')),
   notes: z.string().optional(),
 })
 
@@ -45,6 +46,7 @@ export async function createCustomer(
     contactEmail: formData.get('contactEmail') || undefined,
     contactPhone: formData.get('contactPhone') || undefined,
     website: formData.get('website') || undefined,
+    portalBaseUrl: formData.get('portalBaseUrl') || undefined,
     notes: formData.get('notes') || undefined,
   })
 
@@ -56,7 +58,7 @@ export async function createCustomer(
     }
   }
 
-  const { name, contactName, contactEmail, contactPhone, website, notes } = parsed.data
+  const { name, contactName, contactEmail, contactPhone, website, portalBaseUrl, notes } = parsed.data
 
   await withTenant(tenantId, async (tx) => {
     await tx.insert(customers).values({
@@ -66,6 +68,7 @@ export async function createCustomer(
       contactEmail: contactEmail || null,
       contactPhone: contactPhone || null,
       website: website || null,
+      portalBaseUrl: portalBaseUrl || null,
       notes: notes || null,
     })
   })
@@ -94,6 +97,7 @@ export async function updateCustomer(
     contactEmail: formData.get('contactEmail') || undefined,
     contactPhone: formData.get('contactPhone') || undefined,
     website: formData.get('website') || undefined,
+    portalBaseUrl: formData.get('portalBaseUrl') || undefined,
     notes: formData.get('notes') || undefined,
   })
 
@@ -105,7 +109,7 @@ export async function updateCustomer(
     }
   }
 
-  const { name, contactName, contactEmail, contactPhone, website, notes } = parsed.data
+  const { name, contactName, contactEmail, contactPhone, website, portalBaseUrl, notes } = parsed.data
 
   await withTenant(tenantId, async (tx) => {
     await tx
@@ -116,6 +120,7 @@ export async function updateCustomer(
         contactEmail: contactEmail || null,
         contactPhone: contactPhone || null,
         website: website || null,
+        portalBaseUrl: portalBaseUrl || null,
         notes: notes || null,
       })
       .where(and(eq(customers.id, customerId), eq(customers.tenantId, tenantId)))

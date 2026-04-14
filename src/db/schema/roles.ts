@@ -1,4 +1,4 @@
-import { pgTable, pgPolicy, pgEnum, uuid, varchar, text, boolean, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, pgPolicy, pgEnum, uuid, varchar, text, boolean, timestamp, date } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 import { users } from './users'
@@ -30,6 +30,9 @@ export const roles = pgTable(
     languageRequirements: text('language_requirements').array().notNull().default(sql`'{}'::text[]`),
     keySkills: text('key_skills').array().notNull().default(sql`'{}'::text[]`),
     topRequirements: text('top_requirements').array().notNull().default(sql`'{}'::text[]`),
+    targetFillDate: date('target_fill_date'),
+    cutoffDate: date('cutoff_date'),
+    customerPortalPath: varchar('customer_portal_path', { length: 500 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

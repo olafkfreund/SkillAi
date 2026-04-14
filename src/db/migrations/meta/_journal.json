@@ -71,6 +71,13 @@
       "when": 1776517200000,
       "tag": "0009_add_cv_text_formatted",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776603600000,
+      "tag": "0010_add_role_deadlines",
+      "breakpoints": true
     }
   ]
 }

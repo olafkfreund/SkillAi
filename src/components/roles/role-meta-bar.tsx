@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { MapPinIcon, GlobeIcon, BuildingIcon, LayersIcon, MonitorIcon, HomeIcon, UsersIcon } from 'lucide-react'
+import { MapPinIcon, GlobeIcon, BuildingIcon, LayersIcon, MonitorIcon, HomeIcon, UsersIcon, CalendarIcon, ClockIcon, ExternalLinkIcon } from 'lucide-react'
 
 type RoleMeta = {
   workMode: string | null
@@ -7,6 +7,8 @@ type RoleMeta = {
   city: string | null
   languageRequirements: string[] | null
   frameworkLevelLabel: string | null
+  targetFillDate?: string | null
+  cutoffDate?: string | null
 }
 
 type Customer = {
@@ -17,6 +19,21 @@ type Customer = {
 type Props = {
   role: RoleMeta
   customer?: Customer
+  /** Full assembled portal URL ({customer.portalBaseUrl} + {role.customerPortalPath}) or null */
+  portalUrl?: string | null
+}
+
+function fmtDate(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function daysFromNow(iso: string): number {
+  const target = new Date(iso)
+  target.setHours(0, 0, 0, 0)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 }
 
 const WORK_MODE_STYLES: Record<string, { bg: string; text: string; border: string; icon: React.ReactNode; label: string }> = {
@@ -43,13 +60,24 @@ const WORK_MODE_STYLES: Record<string, { bg: string; text: string; border: strin
   },
 }
 
-export function RoleMetaBar({ role, customer }: Props) {
+export function RoleMetaBar({ role, customer, portalUrl }: Props) {
   const location = [role.city, role.country].filter(Boolean).join(', ')
   const hasLanguages = role.languageRequirements && role.languageRequirements.length > 0
   const workMode = role.workMode ? WORK_MODE_STYLES[role.workMode] : null
 
+  // Cut-off colour by urgency
+  const cutoffDays = role.cutoffDate ? daysFromNow(role.cutoffDate) : null
+  const cutoffStyle = cutoffDays === null
+    ? null
+    : cutoffDays < 0
+      ? { bg: 'bg-red-950', text: 'text-red-300', border: 'border-red-800', label: 'EXPIRED' }
+      : cutoffDays <= 14
+        ? { bg: 'bg-amber-950', text: 'text-amber-300', border: 'border-amber-800', label: `Cut-off ${fmtDate(role.cutoffDate!)}` }
+        : { bg: 'bg-emerald-950', text: 'text-emerald-300', border: 'border-emerald-800', label: `Cut-off ${fmtDate(role.cutoffDate!)}` }
+
   // No metadata at all — render nothing
-  if (!workMode && !location && !hasLanguages && !customer && !role.frameworkLevelLabel) {
+  if (!workMode && !location && !hasLanguages && !customer && !role.frameworkLevelLabel
+      && !role.targetFillDate && !role.cutoffDate && !portalUrl) {
     return null
   }
 
@@ -94,6 +122,32 @@ export function RoleMetaBar({ role, customer }: Props) {
           <LayersIcon className="h-3 w-3" />
           {role.frameworkLevelLabel}
         </span>
+      )}
+
+      {role.targetFillDate && (
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-800 text-zinc-300 text-xs font-medium px-2.5 py-1">
+          <CalendarIcon className="h-3 w-3 text-zinc-500" />
+          Fill by {fmtDate(role.targetFillDate)}
+        </span>
+      )}
+
+      {cutoffStyle && (
+        <span className={`inline-flex items-center gap-1.5 rounded-full border text-xs font-medium px-2.5 py-1 ${cutoffStyle.bg} ${cutoffStyle.text} ${cutoffStyle.border}`}>
+          <ClockIcon className="h-3 w-3" />
+          {cutoffStyle.label}
+        </span>
+      )}
+
+      {portalUrl && (
+        <a
+          href={portalUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-full border border-blue-800 bg-blue-950 text-blue-300 text-xs font-medium px-2.5 py-1 hover:bg-blue-900 hover:text-blue-200 transition-colors"
+        >
+          <ExternalLinkIcon className="h-3 w-3" />
+          Customer portal
+        </a>
       )}
     </div>
   )
