@@ -1,4 +1,4 @@
-import { pgTable, pgPolicy, uuid, varchar, text, boolean, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, pgPolicy, uuid, varchar, text, boolean, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 
@@ -14,9 +14,14 @@ export const agencies = pgTable(
     contactPhone: varchar('contact_phone', { length: 50 }),
     notes: text('notes'),
     isActive: boolean('is_active').notNull().default(true),
+    isInternal: boolean('is_internal').notNull().default(false),
+    isSystem: boolean('is_system').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
+    uniqueIndex('uniq_agencies_tenant_internal')
+      .on(t.tenantId)
+      .where(sql`is_internal`),
     pgPolicy('agencies_tenant_isolation', {
       as: 'permissive',
       for: 'all',

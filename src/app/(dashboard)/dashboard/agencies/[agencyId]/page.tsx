@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { eq, and, desc, isNull, count, avg, max, sql } from 'drizzle-orm'
 import Link from 'next/link'
+import { HomeIcon, LockIcon } from 'lucide-react'
 import { withTenant } from '@/db'
 import { agencies, candidates, scores } from '@/db/schema'
 import { auth } from '@/lib/auth'
@@ -126,7 +127,20 @@ export default async function AgencyDetailPage({ params }: Props) {
         <Link href="/dashboard/agencies" className="text-sm text-zinc-500 hover:text-zinc-300">
           ← Back to agencies
         </Link>
-        <h1 className="text-2xl font-bold text-zinc-100 mt-2">{agency.name}</h1>
+        <h1 className="text-2xl font-bold text-zinc-100 mt-2 flex items-center gap-2">
+          {agency.isInternal && <HomeIcon className="h-5 w-5 text-blue-400" />}
+          {agency.name}
+          {agency.isSystem && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-zinc-600 bg-zinc-800
+                         text-zinc-300 text-xs font-medium px-2 py-0.5"
+              title="System agency — managed by SkillAI, cannot be archived"
+            >
+              <LockIcon className="h-3 w-3" />
+              System agency
+            </span>
+          )}
+        </h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

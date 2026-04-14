@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import { LockIcon } from 'lucide-react'
 import { updateAgency, archiveAgency } from '@/actions/agencies'
 import type { Agency } from '@/db/schema/agencies'
 
@@ -94,12 +95,27 @@ export function AgencyEditForm({ agency }: Props) {
         </button>
       </form>
 
-      <ArchiveButton agencyId={agency.id} />
+      <ArchiveButton agencyId={agency.id} isSystem={agency.isSystem} />
     </div>
   )
 }
 
-function ArchiveButton({ agencyId }: { agencyId: string }) {
+function ArchiveButton({ agencyId, isSystem }: { agencyId: string; isSystem: boolean }) {
+  if (isSystem) {
+    return (
+      <button
+        type="button"
+        disabled
+        title="System agency — cannot be archived"
+        className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-zinc-700
+                   bg-zinc-900 text-zinc-600 text-sm font-medium px-4 py-2 cursor-not-allowed"
+      >
+        <LockIcon className="h-3.5 w-3.5" />
+        Archive agency
+      </button>
+    )
+  }
+
   const boundArchive = archiveAgency.bind(null, agencyId)
   return (
     <form action={boundArchive}>

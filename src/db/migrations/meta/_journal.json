@@ -85,6 +85,13 @@
       "when": 1776690000000,
       "tag": "0011_add_role_customer_day_rate",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1776776400000,
+      "tag": "0012_add_internal_bench",
+      "breakpoints": true
     }
   ]
 }

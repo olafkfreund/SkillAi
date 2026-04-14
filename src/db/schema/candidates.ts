@@ -9,6 +9,7 @@ import {
   timestamp,
   numeric,
   index,
+  date,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
@@ -29,6 +30,15 @@ export const candidateStatusEnum = pgEnum('candidate_status', [
 ])
 
 export type CandidateStatus = (typeof candidateStatusEnum.enumValues)[number]
+
+// Candidate availability (orthogonal to pipeline status)
+export const availabilityStatusEnum = pgEnum('availability_status', [
+  'available',
+  'on_project',
+  'unavailable',
+])
+
+export type AvailabilityStatus = (typeof availabilityStatusEnum.enumValues)[number]
 
 export const candidates = pgTable(
   'candidates',
@@ -61,12 +71,15 @@ export const candidates = pgTable(
     candidateRate: numeric('candidate_rate', { precision: 10, scale: 2 }),
     customerRate: numeric('customer_rate', { precision: 10, scale: 2 }),
     rateCurrency: varchar('rate_currency', { length: 3 }),
+    availabilityStatus: availabilityStatusEnum('availability_status').notNull().default('available'),
+    availableFrom: date('available_from'),
     isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('idx_candidates_tenant').on(t.tenantId),
     index('idx_candidates_agency').on(t.agencyId),
+    index('idx_candidates_agency_availability').on(t.agencyId, t.availabilityStatus),
     pgPolicy('candidates_tenant_isolation', {
       as: 'permissive',
       for: 'all',

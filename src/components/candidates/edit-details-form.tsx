@@ -19,6 +19,8 @@ interface CandidateDetails {
   candidateRate: string | null
   customerRate: string | null
   rateCurrency: string | null
+  availabilityStatus?: 'available' | 'on_project' | 'unavailable' | null
+  availableFrom?: string | null
 }
 
 interface Agency {
@@ -53,6 +55,8 @@ export function EditDetailsForm({ candidate, agencies }: EditDetailsFormProps) {
     candidateRate: candidate.candidateRate ?? '',
     customerRate: candidate.customerRate ?? '',
     rateCurrency: candidate.rateCurrency ?? 'GBP',
+    availabilityStatus: candidate.availabilityStatus ?? 'available',
+    availableFrom: candidate.availableFrom ?? '',
   })
 
   const fieldErrors = state && !state.success ? state.fieldErrors : {}
@@ -318,6 +322,53 @@ export function EditDetailsForm({ candidate, agencies }: EditDetailsFormProps) {
                   <option value="NOK">NOK</option>
                   <option value="DKK">DKK</option>
                 </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Availability */}
+          <div className="border-t border-zinc-800 pt-3 mt-1 col-span-2">
+            <p className="text-sm font-medium text-zinc-400 mb-2">Availability</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="availabilityStatus" className="block text-xs font-medium text-zinc-400 mb-1">
+                  Availability status
+                </label>
+                <select
+                  id="availabilityStatus"
+                  name="availabilityStatus"
+                  disabled={pending}
+                  value={fields.availabilityStatus}
+                  onChange={(e) =>
+                    setFields((f) => ({
+                      ...f,
+                      availabilityStatus: e.target.value as typeof f.availabilityStatus,
+                      // Clear availableFrom when leaving on_project
+                      availableFrom: e.target.value === 'on_project' ? f.availableFrom : '',
+                    }))
+                  }
+                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  <option value="available">Available</option>
+                  <option value="on_project">On project</option>
+                  <option value="unavailable">Unavailable</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="availableFrom" className="block text-xs font-medium text-zinc-400 mb-1">
+                  Available from <span className="text-zinc-600">(when on project)</span>
+                </label>
+                <input
+                  id="availableFrom"
+                  name="availableFrom"
+                  type="date"
+                  disabled={pending || fields.availabilityStatus !== 'on_project'}
+                  value={fields.availableFrom}
+                  onChange={(e) => setFields((f) => ({ ...f, availableFrom: e.target.value }))}
+                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                />
               </div>
             </div>
           </div>

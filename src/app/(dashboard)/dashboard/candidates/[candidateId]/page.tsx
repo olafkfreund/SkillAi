@@ -239,6 +239,8 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
             candidateRate: candidate.candidateRate ?? null,
             customerRate: candidate.customerRate ?? null,
             rateCurrency: candidate.rateCurrency ?? null,
+            availabilityStatus: candidate.availabilityStatus ?? 'available',
+            availableFrom: candidate.availableFrom ?? null,
           }}
           agencies={allAgencies}
         />

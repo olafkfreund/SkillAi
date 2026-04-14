@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useTransition } from 'react'
-import { XIcon } from 'lucide-react'
+import { XIcon, HomeIcon } from 'lucide-react'
 
 type ScorePillProps = { label: string; score: number | null }
 
@@ -58,6 +58,7 @@ type Props = {
   roleCurrency: string | null
   candidateRate: string | null
   candidateCurrency: string | null
+  isInternal?: boolean
   canEdit: boolean
   removeAction: (scoreId: string, roleId: string) => Promise<void>
 }
@@ -79,6 +80,7 @@ export function RoleCandidateCard({
   roleCurrency,
   candidateRate,
   candidateCurrency,
+  isInternal,
   canEdit,
   removeAction,
 }: Props) {
@@ -99,9 +101,18 @@ export function RoleCandidateCard({
                   ${isPending ? 'opacity-40 pointer-events-none border-zinc-700' : 'border-zinc-700'}`}
     >
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-zinc-100">
-          {firstName} {lastName}
-          {email && <span className="font-normal text-zinc-500 text-sm ml-2">{email}</span>}
+        <p className="font-medium text-zinc-100 flex items-center gap-2 flex-wrap">
+          <span>
+            {firstName} {lastName}
+          </span>
+          {isInternal && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-950 border border-blue-800
+                             text-blue-300 text-xs font-semibold px-2 py-0.5">
+              <HomeIcon className="h-3 w-3" />
+              INTERNAL
+            </span>
+          )}
+          {email && <span className="font-normal text-zinc-500 text-sm ml-1">{email}</span>}
         </p>
         {scoreStatus === 'complete' && technicalScore !== null && (
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">

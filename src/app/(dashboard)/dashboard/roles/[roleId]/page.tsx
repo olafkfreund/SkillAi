@@ -4,7 +4,7 @@ import { eq, and, desc } from 'drizzle-orm'
 import { ArrowLeftIcon, UsersIcon, PencilIcon, ArchiveIcon, UploadCloudIcon, AlertTriangleIcon } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { withTenant } from '@/db'
-import { roles, scores, candidates, customers } from '@/db/schema'
+import { roles, scores, candidates, customers, agencies } from '@/db/schema'
 import { DownloadPdfButton } from '@/components/export/download-pdf-button'
 import { archiveRole, regenerateRoleTags } from '@/actions/roles'
 import { removeCandidateFromRole } from '@/actions/scores'
@@ -69,9 +69,11 @@ export default async function RoleDetailPage({ params }: Props) {
         candidateId: candidates.id,
         candidateRate: candidates.candidateRate,
         candidateCurrency: candidates.rateCurrency,
+        agencyIsInternal: agencies.isInternal,
       })
       .from(scores)
       .innerJoin(candidates, eq(scores.candidateId, candidates.id))
+      .leftJoin(agencies, eq(candidates.agencyId, agencies.id))
       .where(eq(scores.roleId, roleId))
       .orderBy(desc(scores.overallScore))
   )
@@ -266,6 +268,7 @@ export default async function RoleDetailPage({ params }: Props) {
                 roleCurrency={role.rateCurrency}
                 candidateRate={c.candidateRate}
                 candidateCurrency={c.candidateCurrency}
+                isInternal={Boolean(c.agencyIsInternal)}
                 canEdit={canEdit}
                 removeAction={removeCandidateFromRole}
               />
