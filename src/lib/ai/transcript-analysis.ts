@@ -23,9 +23,17 @@ const anthropic = new Anthropic({
   // Match the resilience config used by other AI calls in the codebase —
   // built-in exponential backoff handles transient network blips and
   // 429/529/500 responses that would otherwise surface as "Connection error".
+  // Long transcripts (60+ minute meetings ≈ 100K+ tokens) need a longer
+  // timeout — Claude can take 60-180s to process large inputs.
   maxRetries: 3,
-  timeout: 120_000,
+  timeout: 300_000,
 })
+
+// Soft cap on transcript size sent to Claude. claude-sonnet-4-6 supports
+// 200K tokens (~800K chars) but very large requests are unreliable and
+// expensive. ~250K chars ≈ 60K tokens = a 90-minute meeting transcript,
+// which is plenty for any interview.
+const MAX_TRANSCRIPT_CHARS = 250_000
 
 type PackQuestion = {
   questionText: string
@@ -88,7 +96,12 @@ ${input.packQuestions?.length ? 'Map transcript excerpts to each interview quest
           },
           {
             type: 'text',
-            text: `TRANSCRIPT:\n${input.transcriptText}\n\nUse the submit_transcript_analysis tool to return your structured assessment.`,
+            text: `TRANSCRIPT:\n${
+              input.transcriptText.length > MAX_TRANSCRIPT_CHARS
+                ? input.transcriptText.slice(0, MAX_TRANSCRIPT_CHARS) +
+                  '\n\n[...transcript truncated to fit AI context window...]'
+                : input.transcriptText
+            }\n\nUse the submit_transcript_analysis tool to return your structured assessment.`,
           },
         ],
       },
@@ -211,12 +224,19 @@ export async function triggerTranscriptAnalysis(
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
+    // Include type/cause/stack in the server log for diagnosis
+    const detail = err instanceof Error
+      ? `name=${err.name} message=${err.message} cause=${JSON.stringify((err as Error & { cause?: unknown }).cause)}`
+      : String(err)
+    console.error(`[transcript-analysis] FAILED for ${transcriptId}:`, detail)
+    if (err instanceof Error && err.stack) {
+      console.error(`[transcript-analysis] stack:\n${err.stack}`)
+    }
     await withTenant(tenantId, async (tx) => {
       await tx
         .update(interviewTranscripts)
         .set({ analysisStatus: 'failed', errorMessage: message, updatedAt: new Date() })
         .where(eq(interviewTranscripts.id, transcriptId))
     })
-    console.error(`Transcript analysis failed for ${transcriptId}:`, message)
   }
 }
