@@ -3,9 +3,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
-import { RefreshCwIcon, BriefcaseIcon, CheckCircle2Icon, AlertCircleIcon, Loader2Icon } from 'lucide-react'
+import { RefreshCwIcon, BriefcaseIcon, CheckCircle2Icon, AlertCircleIcon, Loader2Icon, SparklesIcon } from 'lucide-react'
 import { reextractCvProfile } from '@/actions/cv-profiles'
+import { reformatCv } from '@/actions/cv-reformat'
 import { CvDisplay } from './cv-display'
+import { RoleContent } from '@/components/roles/role-content'
 
 type ProfileRow = {
   experienceLevel: string | null
@@ -21,6 +23,7 @@ type ProfileRow = {
 type Props = {
   candidateId: string
   cvText: string
+  cvTextFormatted: string | null
   profile: ProfileRow | null
   canEdit: boolean
 }
@@ -64,10 +67,20 @@ const LEVEL_STYLES: Record<string, string> = {
   lead: 'bg-amber-950 text-amber-300 border-amber-800',
 }
 
-export function CandidateCvProfile({ candidateId, cvText, profile: initialProfile, canEdit }: Props) {
+export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profile: initialProfile, canEdit }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [retryError, setRetryError] = useState<string | null>(null)
+  const [isReformatting, startReformatTransition] = useTransition()
+  const [reformatError, setReformatError] = useState<string | null>(null)
+
+  async function handleReformat() {
+    setReformatError(null)
+    startReformatTransition(async () => {
+      const result = await reformatCv(candidateId)
+      if (!result.success) setReformatError(result.error ?? 'Reformat failed')
+    })
+  }
 
   // Poll while extraction is in progress
   const { data: livePack } = useQuery<ProfileRow | null>({
@@ -251,14 +264,58 @@ export function CandidateCvProfile({ candidateId, cvText, profile: initialProfil
         </div>
       )}
 
-      {/* Raw CV disclosure */}
+      {/* Raw / formatted CV disclosure */}
       <details className="group" open={!isComplete}>
-        <summary className="cursor-pointer text-sm text-violet-400 hover:text-violet-300 select-none py-2">
-          <span className="group-open:hidden">▸ Show raw CV text</span>
-          <span className="hidden group-open:inline">▾ Hide raw CV text</span>
+        <summary className="cursor-pointer text-sm text-violet-400 hover:text-violet-300 select-none py-2 flex items-center gap-2">
+          <span className="flex-1">
+            <span className="group-open:hidden">▸ Show full CV text</span>
+            <span className="hidden group-open:inline">▾ Hide full CV text</span>
+          </span>
+          {cvTextFormatted && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-violet-950 border border-violet-800 text-violet-300 text-[10px] font-medium px-2 py-0.5">
+              <SparklesIcon className="h-2.5 w-2.5" />
+              AI-formatted
+            </span>
+          )}
         </summary>
+
         <div className="mt-2 pt-3 border-t border-zinc-800">
-          <CvDisplay cvText={cvText} />
+          {/* Reformat button — recruiters/admins only */}
+          {canEdit && (
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <p className="text-xs text-zinc-500">
+                {cvTextFormatted
+                  ? 'Showing AI-formatted version. Click below to regenerate from raw text.'
+                  : 'Showing raw extracted text. Click "Reformat with AI" for a cleaner version.'}
+              </p>
+              <button
+                type="button"
+                onClick={handleReformat}
+                disabled={isReformatting}
+                className="inline-flex items-center gap-1.5 rounded-md border border-violet-800 bg-violet-950 text-violet-300 text-xs font-medium px-2.5 py-1 hover:bg-violet-900 transition-colors disabled:opacity-50"
+              >
+                {isReformatting ? (
+                  <Loader2Icon className="h-3 w-3 animate-spin" />
+                ) : (
+                  <SparklesIcon className="h-3 w-3" />
+                )}
+                {isReformatting
+                  ? 'Reformatting…'
+                  : cvTextFormatted ? 'Re-format with AI' : 'Reformat with AI'}
+              </button>
+            </div>
+          )}
+          {reformatError && (
+            <div className="mb-3 rounded-md bg-red-950 border border-red-800 px-3 py-2 text-xs text-red-400">
+              {reformatError}
+            </div>
+          )}
+
+          {cvTextFormatted ? (
+            <RoleContent text={cvTextFormatted} />
+          ) : (
+            <CvDisplay cvText={cvText} />
+          )}
         </div>
       </details>
     </div>

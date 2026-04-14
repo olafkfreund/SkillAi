@@ -43,6 +43,7 @@ export const candidates = pgTable(
     email: varchar('email', { length: 255 }),
     phone: varchar('phone', { length: 50 }),
     cvText: text('cv_text').notNull(),
+    cvTextFormatted: text('cv_text_formatted'),
     filePath: varchar('file_path', { length: 500 }),
     fileType: fileTypeEnum('file_type').notNull(),
     linkedinUrl: varchar('linkedin_url', { length: 500 }),

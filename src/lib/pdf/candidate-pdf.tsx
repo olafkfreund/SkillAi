@@ -920,11 +920,22 @@ function EnrichmentSection({ enrichment }: { enrichment: EnrichmentData }) {
 // ---------------------------------------------------------------------------
 // Section: CV Text
 // ---------------------------------------------------------------------------
-function CvTextSection({ cvText }: { cvText: string }) {
+function CvTextSection({ cvText, cvTextFormatted }: { cvText: string; cvTextFormatted?: string | null }) {
+  // Prefer AI-formatted version when present — split by blank lines into
+  // paragraphs for proper PDF spacing. Falls back to raw cvText.
+  const text = cvTextFormatted ?? cvText
+  const paragraphs = text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+
   return (
     <View>
       <Text style={base.h2}>Curriculum Vitae</Text>
-      <Text style={s.cvText}>{cvText}</Text>
+      {paragraphs.length > 0 ? (
+        paragraphs.map((para, i) => (
+          <Text key={i} style={[s.cvText, { marginBottom: 6 }]}>{para}</Text>
+        ))
+      ) : (
+        <Text style={s.cvText}>{text}</Text>
+      )}
     </View>
   )
 }
@@ -999,7 +1010,7 @@ export function CandidatePDF({
         )}
 
         {/* ── 7. CV Text ────────────────────────────────────────────── */}
-        <CvTextSection cvText={candidate.cvText} />
+        <CvTextSection cvText={candidate.cvText} cvTextFormatted={candidate.cvTextFormatted} />
 
         {/* ── Footer (fixed on every page) ──────────────────────────── */}
         <View style={base.footer} fixed>
