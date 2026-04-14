@@ -22,6 +22,7 @@ export default async function RolesPage() {
             keySkills: roles.keySkills,
             topRequirements: roles.topRequirements,
             createdAt: roles.createdAt,
+            cutoffDate: roles.cutoffDate,
           })
           .from(roles)
           .where(eq(roles.isActive, true))
@@ -74,7 +75,32 @@ export default async function RolesPage() {
                          hover:border-blue-500 hover:shadow-sm transition-all block"
             >
               <div className="flex items-start justify-between">
-                <h2 className="font-semibold text-zinc-100">{role.title}</h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="font-semibold text-zinc-100">{role.title}</h2>
+                  {(() => {
+                    if (!role.cutoffDate) return null
+                    const target = new Date(role.cutoffDate)
+                    target.setHours(0, 0, 0, 0)
+                    const today = new Date()
+                    today.setHours(0, 0, 0, 0)
+                    const days = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+                    if (days < 0) {
+                      return (
+                        <span className="inline-flex items-center rounded-full bg-red-950 border border-red-800 text-red-300 text-xs font-semibold px-2 py-0.5">
+                          EXPIRED
+                        </span>
+                      )
+                    }
+                    if (days <= 7) {
+                      return (
+                        <span className="inline-flex items-center rounded-full bg-amber-950 border border-amber-800 text-amber-300 text-xs font-medium px-2 py-0.5">
+                          Cut-off in {days} day{days !== 1 ? 's' : ''}
+                        </span>
+                      )
+                    }
+                    return null
+                  })()}
+                </div>
                 <time className="text-xs text-zinc-500 whitespace-nowrap ml-4 mt-0.5 flex-shrink-0">
                   {new Date(role.createdAt).toLocaleDateString()}
                 </time>

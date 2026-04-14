@@ -61,6 +61,9 @@ export default async function RoleEditPage({ params }: Props) {
           customerId: role.customerId,
           frameworkLevelId: role.frameworkLevelId,
           frameworkLevelLabel: role.frameworkLevelLabel,
+          targetFillDate: role.targetFillDate,
+          cutoffDate: role.cutoffDate,
+          customerPortalPath: role.customerPortalPath,
         }}
         customers={activeCustomers}
         frameworks={frameworks}

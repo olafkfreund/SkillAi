@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { eq, and, desc } from 'drizzle-orm'
-import { ArrowLeftIcon, UsersIcon, PencilIcon, ArchiveIcon, UploadCloudIcon } from 'lucide-react'
+import { ArrowLeftIcon, UsersIcon, PencilIcon, ArchiveIcon, UploadCloudIcon, AlertTriangleIcon } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { withTenant } from '@/db'
 import { roles, scores, candidates, customers } from '@/db/schema'
@@ -37,12 +37,20 @@ export default async function RoleDetailPage({ params }: Props) {
   const [customer] = role.customerId
     ? await withTenant(tenantId, async (tx) =>
         tx
-          .select({ id: customers.id, name: customers.name })
+          .select({ id: customers.id, name: customers.name, portalBaseUrl: customers.portalBaseUrl })
           .from(customers)
           .where(eq(customers.id, role.customerId!))
           .limit(1)
       )
     : [null]
+
+  // Assemble customer portal URL
+  const portalUrl = customer?.portalBaseUrl && role.customerPortalPath
+    ? customer.portalBaseUrl.replace(/\/$/, '') + (role.customerPortalPath.startsWith('/') ? '' : '/') + role.customerPortalPath
+    : customer?.portalBaseUrl || null
+
+  // Compute expired state for banner
+  const isExpired = role.isActive && role.cutoffDate && new Date(role.cutoffDate) < new Date(new Date().setHours(0, 0, 0, 0))
 
   // Fetch scored candidates for this role
   const scoredCandidates = await withTenant(tenantId, async (tx) =>
@@ -152,7 +160,47 @@ export default async function RoleDetailPage({ params }: Props) {
       </div>
 
       {/* Meta bar — work mode, location, languages, customer, framework level */}
-      <RoleMetaBar role={role} customer={customer} />
+      {/* Expired banner — when cut-off date has passed but role is still active */}
+      {isExpired && (
+        <div className="rounded-xl bg-red-950 border border-red-800 px-5 py-4 mb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangleIcon className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-red-400">Cut-off date passed</p>
+                <p className="text-xs text-red-500 mt-0.5">
+                  The cut-off date for this role passed on {role.cutoffDate ? new Date(role.cutoffDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}.
+                  Decide whether to extend the cut-off or archive the role.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {canEdit && (
+                <Link
+                  href={`/dashboard/roles/${roleId}/edit`}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-medium px-2.5 py-1.5 hover:bg-zinc-700 transition-colors"
+                >
+                  <PencilIcon className="h-3 w-3" />
+                  Edit
+                </Link>
+              )}
+              {canEdit && (
+                <form action={archiveRole.bind(null, roleId)}>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-red-900 border border-red-700 text-red-200 text-xs font-medium px-2.5 py-1.5 hover:bg-red-800 transition-colors"
+                  >
+                    <ArchiveIcon className="h-3 w-3" />
+                    Archive role
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <RoleMetaBar role={role} customer={customer} portalUrl={portalUrl} />
 
       {/* Tags panel */}
       <RoleTagsPanel

@@ -15,6 +15,9 @@ interface RoleData {
   customerId: string | null
   frameworkLevelId?: string | null
   frameworkLevelLabel?: string | null
+  targetFillDate?: string | null
+  cutoffDate?: string | null
+  customerPortalPath?: string | null
 }
 
 type FrameworkLevelOption = {
@@ -47,6 +50,9 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
     customerId: role.customerId ?? '',
     frameworkLevelId: role.frameworkLevelId ?? '',
     frameworkLevelLabel: role.frameworkLevelLabel ?? '',
+    targetFillDate: role.targetFillDate ?? '',
+    cutoffDate: role.cutoffDate ?? '',
+    customerPortalPath: role.customerPortalPath ?? '',
   })
 
   useEffect(() => {
@@ -66,6 +72,9 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
         fd.set('customerId', fields.customerId)
         fd.set('frameworkLevelId', fields.frameworkLevelId)
         fd.set('frameworkLevelLabel', fields.frameworkLevelLabel)
+        fd.set('targetFillDate', fields.targetFillDate)
+        fd.set('cutoffDate', fields.cutoffDate)
+        fd.set('customerPortalPath', fields.customerPortalPath)
         action(fd)
       }}
       className="space-y-6 max-w-2xl"
@@ -213,6 +222,64 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
         />
         {fieldErrors?.requirements && (
           <p className="mt-1 text-xs text-red-400">{fieldErrors.requirements[0]}</p>
+        )}
+      </div>
+
+      {/* Deadlines & Customer Portal */}
+      <div className="border-t border-zinc-800 pt-4 mt-2">
+        <p className="text-sm font-medium text-zinc-300 mb-3">Deadlines & Customer Portal</p>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label htmlFor="targetFillDate" className="block text-xs font-medium text-zinc-400 mb-1">
+              Target Fill Date <span className="text-zinc-600">(optional)</span>
+            </label>
+            <input
+              id="targetFillDate"
+              name="targetFillDate"
+              type="date"
+              disabled={pending}
+              value={fields.targetFillDate}
+              onChange={(e) => setFields((f) => ({ ...f, targetFillDate: e.target.value }))}
+              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+          <div>
+            <label htmlFor="cutoffDate" className="block text-xs font-medium text-zinc-400 mb-1">
+              Cut-off Date <span className="text-zinc-600">(absolute deadline)</span>
+            </label>
+            <input
+              id="cutoffDate"
+              name="cutoffDate"
+              type="date"
+              disabled={pending}
+              value={fields.cutoffDate}
+              onChange={(e) => setFields((f) => ({ ...f, cutoffDate: e.target.value }))}
+              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+        </div>
+        {fields.customerId && (
+          <div>
+            <label htmlFor="customerPortalPath" className="block text-xs font-medium text-zinc-400 mb-1">
+              Customer Portal Path <span className="text-zinc-600">(optional)</span>
+            </label>
+            <input
+              id="customerPortalPath"
+              name="customerPortalPath"
+              type="text"
+              disabled={pending}
+              value={fields.customerPortalPath}
+              onChange={(e) => setFields((f) => ({ ...f, customerPortalPath: e.target.value }))}
+              placeholder="/jobs/12345"
+              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                         placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+            <p className="mt-1 text-xs text-zinc-500">
+              Path on the customer&apos;s portal for this role. Combined with the customer&apos;s base URL.
+            </p>
+          </div>
         )}
       </div>
 
