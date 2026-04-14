@@ -100,10 +100,14 @@ ${cvText.slice(0, 6000)}`,
 export async function generateQuestions(
   cvProfile: CvProfile,
   role: { title: string; description: string; requirements: string },
-  options: { includeCodeChallenge: boolean; language?: string }
+  options: { includeCodeChallenge: boolean; language?: string; packType?: 'full' | 'pre_screening' }
 ): Promise<InterviewPackOutput> {
   const language = options.language ?? inferLanguage(cvProfile.technical_skills)
   const experienceLevel = cvProfile.experience_level ?? 'mid'
+  const packType = options.packType ?? 'full'
+  const isPreScreening = packType === 'pre_screening'
+  // Force disable code challenge for pre-screening (too short for coding)
+  const includeCodeChallenge = isPreScreening ? false : options.includeCodeChallenge
 
   const QUESTION_TOOL: Anthropic.Tool = {
     name: 'submit_interview_pack',
@@ -112,10 +116,11 @@ export async function generateQuestions(
       type: 'object' as const,
       properties: {
         experience_level: { type: 'string', enum: ['junior', 'mid', 'senior', 'lead'] },
-        recommended_duration_minutes: { type: 'integer', minimum: 30 },
+        recommended_duration_minutes: { type: 'integer', minimum: isPreScreening ? 20 : 30 },
         questions: {
           type: 'array',
-          minItems: 6,
+          minItems: isPreScreening ? 5 : 6,
+          maxItems: isPreScreening ? 5 : 15,
           items: {
             type: 'object',
             properties: {
@@ -132,7 +137,7 @@ export async function generateQuestions(
             required: ['question_type', 'difficulty', 'question_text', 'rationale', 'follow_ups', 'strong_answer_signals', 'acceptable_answer_signals', 'weak_answer_signals', 'cv_references'],
           },
         },
-        code_challenge: options.includeCodeChallenge ? {
+        code_challenge: includeCodeChallenge ? {
           type: 'object',
           properties: {
             title: { type: 'string' },
@@ -176,7 +181,26 @@ ${role.requirements}`,
           },
           {
             type: 'text',
-            text: `Create a complete interview pack for this ${experienceLevel}-level candidate.
+            text: isPreScreening
+              ? `Create a SHORT pre-screening interview pack for this ${experienceLevel}-level candidate.
+
+CANDIDATE PROFILE:
+- Experience level: ${experienceLevel}
+- Technical skills: ${cvProfile.technical_skills.join(', ')}
+- Companies: ${cvProfile.companies.map((c) => `${c.role} at ${c.name}`).join('; ')}
+- Key moments to reference: ${cvProfile.personalizable_moments.join('; ')}
+
+Pre-screening requirements:
+- Generate EXACTLY 5 questions: 1 behavioral, 2 technical, 1 situational, 1 cultural
+- Target total duration ~30 minutes (recommended_duration_minutes: 30)
+- Questions must be focused and high-signal — this is a quick pre-screening call before a full interview
+- Each question must reference specific CV moments (cv_references array)
+- Include scoring rubric: strong/acceptable/weak answer signals
+- Include up to 2 follow-up questions per question
+- Do NOT include a code challenge
+- Calibrate difficulty to ${experienceLevel} level
+- Prefer shorter, more decisive questions than a full interview — the goal is to quickly assess fit before investing in a longer interview`
+              : `Create a complete interview pack for this ${experienceLevel}-level candidate.
 
 CANDIDATE PROFILE:
 - Experience level: ${experienceLevel}
@@ -189,7 +213,7 @@ Requirements:
 - Each question must reference specific CV moments (cv_references array)
 - Include scoring rubric: strong/acceptable/weak answer signals
 - Include up to 2 follow-up questions per question
-${options.includeCodeChallenge ? `- Include a ${language} code challenge appropriate for ${experienceLevel} level` : '- Do NOT include a code challenge'}
+${includeCodeChallenge ? `- Include a ${language} code challenge appropriate for ${experienceLevel} level` : '- Do NOT include a code challenge'}
 - Calibrate difficulty to ${experienceLevel} level`,
           },
         ],

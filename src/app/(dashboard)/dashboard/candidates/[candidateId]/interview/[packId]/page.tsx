@@ -90,6 +90,11 @@ export default async function InterviewPackPage({ params }: Props) {
 
         {pack.generationStatus === 'complete' && (
           <div className="flex flex-wrap items-center gap-3 mt-4">
+            {pack.packType === 'pre_screening' && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-950 text-amber-300 border border-amber-700">
+                Pre-screening · 30 min
+              </span>
+            )}
             {pack.experienceLevel && (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-950 text-blue-300 border border-blue-700 capitalize">
                 {pack.experienceLevel} level

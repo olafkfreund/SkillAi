@@ -48,7 +48,7 @@ const CodeChallengeSchema = z.object({
 export const InterviewPackSchema = z.object({
   experience_level: z.enum(['junior', 'mid', 'senior', 'lead']),
   recommended_duration_minutes: z.number().int().positive(),
-  questions: z.array(QuestionSchema).min(6).max(15),
+  questions: z.array(QuestionSchema).min(5).max(15),
   code_challenge: CodeChallengeSchema.optional(),
 })
 
