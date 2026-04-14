@@ -4,7 +4,7 @@ import { eq, and, desc } from 'drizzle-orm'
 import { ArrowLeftIcon, ArchiveIcon } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { db, withTenant } from '@/db'
-import { candidates, scores, roles, notes, agencies, candidateEnrichments, interviewSlots, calendarConnections } from '@/db/schema'
+import { candidates, scores, roles, notes, agencies, candidateEnrichments, cvProfiles, interviewSlots, calendarConnections } from '@/db/schema'
 import { ScoreChart } from '@/components/candidates/score-chart'
 import { ScorePolling } from '@/components/candidates/score-polling'
 import { RescoreButton } from '@/components/candidates/rescore-button'
@@ -14,7 +14,7 @@ import { DownloadPdfButton } from '@/components/export/download-pdf-button'
 import { EnrichmentPanel } from '@/components/candidates/enrichment-panel'
 import { NotesPanel } from '@/components/candidates/notes-panel'
 import { StatusSelector } from '@/components/candidates/status-selector'
-import { CvDisplay } from '@/components/candidates/cv-display'
+import { CandidateCvProfile } from '@/components/candidates/candidate-cv-profile'
 import { EditDetailsForm } from '@/components/candidates/edit-details-form'
 import { InterviewCalendar } from '@/components/candidates/interview-calendar'
 import { IcsImportButton } from '@/components/candidates/ics-import-button'
@@ -64,6 +64,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
     rawSlots,
     calendarConns,
     [enrichmentRow],
+    [cvProfileRow],
   ] = await Promise.all([
     withTenant(tenantId, async (tx) =>
       tx
@@ -105,6 +106,14 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
         .select()
         .from(candidateEnrichments)
         .where(eq(candidateEnrichments.candidateId, candidateId))
+        .limit(1)
+    ),
+    // Load CV profile (structured AI extraction)
+    withTenant(tenantId, async (tx) =>
+      tx
+        .select()
+        .from(cvProfiles)
+        .where(eq(cvProfiles.candidateId, candidateId))
         .limit(1)
     ),
   ])
@@ -406,10 +415,24 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
         />
       </div>
 
-      {/* CV */}
+      {/* CV Profile */}
       <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
-        <h2 className="font-semibold text-zinc-100 mb-3">CV</h2>
-        <CvDisplay cvText={candidate.cvText} />
+        <h2 className="font-semibold text-zinc-100 mb-4">CV Profile</h2>
+        <CandidateCvProfile
+          candidateId={candidateId}
+          cvText={candidate.cvText}
+          profile={cvProfileRow ? {
+            experienceLevel: cvProfileRow.experienceLevel,
+            summary: cvProfileRow.summary,
+            technicalSkills: cvProfileRow.technicalSkills ?? [],
+            companies: cvProfileRow.companies ?? [],
+            personalizableMoments: cvProfileRow.personalizableMoments ?? [],
+            extractionStatus: cvProfileRow.extractionStatus,
+            errorMessage: cvProfileRow.errorMessage,
+            extractedAt: cvProfileRow.extractedAt ? cvProfileRow.extractedAt.toISOString() : null,
+          } : null}
+          canEdit={canEdit}
+        />
       </div>
 
       {/* Notes */}

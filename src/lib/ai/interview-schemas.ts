@@ -7,6 +7,7 @@ import { z } from 'zod'
 // Stage 1: CV profile extraction
 export const CvProfileSchema = z.object({
   experience_level: z.enum(['junior', 'mid', 'senior', 'lead']).optional(),
+  summary: z.string().min(20).max(600).optional(),
   companies: z
     .array(
       z.object({

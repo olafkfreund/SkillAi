@@ -169,6 +169,14 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         console.error('[embedding] Failed to generate embedding for candidate:', candidateId, err)
       }
+
+      // CV profile extraction — parallel with embedding
+      try {
+        const { triggerCvProfileExtraction } = await import('@/lib/ai/cv-profile')
+        await triggerCvProfileExtraction(candidateId, tenantId)
+      } catch (err) {
+        console.error('[cv-profile] Failed to extract for candidate:', candidateId, err)
+      }
     })
 
     return Response.json({

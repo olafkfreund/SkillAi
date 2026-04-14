@@ -36,6 +36,10 @@ const CV_PROFILE_TOOL: Anthropic.Tool = {
         enum: ['junior', 'mid', 'senior', 'lead'],
         description: 'Inferred experience level',
       },
+      summary: {
+        type: 'string',
+        description: 'Concise 2-3 sentence overview of the candidate: seniority, core strengths, notable experience',
+      },
       companies: {
         type: 'array',
         maxItems: 5,
@@ -75,6 +79,8 @@ export async function extractCvProfile(cvText: string): Promise<CvProfile> {
       {
         role: 'user',
         content: `Extract a structured profile from this CV. Identify the candidate's experience level, companies worked at with key achievements, technical skills, and specific moments worth referencing in interview questions.
+
+Also write a concise 2-3 sentence summary of the candidate that captures seniority, core strengths, and notable experience.
 
 CV:
 ${cvText.slice(0, 6000)}`,
