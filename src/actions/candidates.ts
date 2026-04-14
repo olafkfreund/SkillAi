@@ -9,14 +9,15 @@ import { after } from 'next/server'
 import { eq, and, inArray, or, ilike, notInArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { db, withTenant } from '@/db'
-import { candidates, scores } from '@/db/schema'
+import { candidates, scores, agencies } from '@/db/schema'
 import { parseFile, ParseError } from '@/lib/parsers'
 import { triggerScoring } from '@/lib/ai/scoring'
 import { requireRole } from '@/lib/auth/require-role'
 import { writeAuditLog } from '@/lib/audit'
 import { getActionContext } from '@/lib/auth/action-context'
+import { ensureInternalAgency } from '@/lib/tenants/ensure-internal-agency'
 import type { FileType } from '@/lib/parsers'
-import type { CandidateStatus } from '@/db/schema/candidates'
+import type { CandidateStatus, AvailabilityStatus } from '@/db/schema/candidates'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 
@@ -314,6 +315,8 @@ const UpdateCandidateSchema = z.object({
   candidateRate: z.coerce.number().min(0).optional().or(z.literal('')),
   customerRate: z.coerce.number().min(0).optional().or(z.literal('')),
   rateCurrency: z.string().max(3).toUpperCase().optional().or(z.literal('')),
+  availabilityStatus: z.enum(['available', 'on_project', 'unavailable']).optional(),
+  availableFrom: z.string().optional().or(z.literal('')),
 })
 
 export type UpdateCandidateState = {
@@ -351,6 +354,8 @@ export async function updateCandidateDetails(
     candidateRate: formData.get('candidateRate') || undefined,
     customerRate: formData.get('customerRate') || undefined,
     rateCurrency: formData.get('rateCurrency') || undefined,
+    availabilityStatus: formData.get('availabilityStatus') || undefined,
+    availableFrom: formData.get('availableFrom') || undefined,
   })
 
   if (!parsed.success) {
@@ -360,6 +365,18 @@ export async function updateCandidateDetails(
       fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
     }
   }
+
+  // Normalise availability: if not "on_project", null out availableFrom
+  const availability = parsed.data.availabilityStatus
+  const availabilityUpdate = availability
+    ? {
+        availabilityStatus: availability,
+        availableFrom:
+          availability === 'on_project' && parsed.data.availableFrom
+            ? parsed.data.availableFrom
+            : null,
+      }
+    : {}
 
   await withTenant(tenantId, async (tx) => {
     await tx
@@ -379,12 +396,127 @@ export async function updateCandidateDetails(
         candidateRate: typeof parsed.data.candidateRate === 'number' ? String(parsed.data.candidateRate) : null,
         customerRate: typeof parsed.data.customerRate === 'number' ? String(parsed.data.customerRate) : null,
         rateCurrency: parsed.data.rateCurrency || null,
+        ...availabilityUpdate,
       })
       .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
   })
 
   revalidatePath(`/dashboard/candidates/${candidateId}`)
   return { success: true }
+}
+
+// ---------------------------------------------------------------------------
+// updateCandidateAvailability — set availability status + return date
+// ---------------------------------------------------------------------------
+
+export async function updateCandidateAvailability(
+  candidateId: string,
+  input: {
+    availabilityStatus: AvailabilityStatus
+    availableFrom: string | null
+  }
+): Promise<{ success: boolean; error?: string }> {
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
+
+  try {
+    requireRole(userRole ?? undefined, 'recruiter')
+  } catch {
+    return { success: false, error: 'Forbidden: recruiters and admins only' }
+  }
+
+  const { availabilityStatus, availableFrom } = input
+
+  if (!['available', 'on_project', 'unavailable'].includes(availabilityStatus)) {
+    return { success: false, error: `Invalid availability status: ${availabilityStatus}` }
+  }
+
+  // If not on_project, force availableFrom to null
+  const effectiveFrom = availabilityStatus === 'on_project' ? availableFrom : null
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .update(candidates)
+      .set({
+        availabilityStatus,
+        availableFrom: effectiveFrom,
+      })
+      .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
+  })
+
+  revalidatePath(`/dashboard/candidates/${candidateId}`)
+  revalidatePath('/dashboard/candidates')
+  return { success: true }
+}
+
+// ---------------------------------------------------------------------------
+// bulkAssignToInternalAgency — move selected candidates to the Internal agency
+// ---------------------------------------------------------------------------
+
+export async function bulkAssignToInternalAgency(
+  candidateIds: string[]
+): Promise<{ success: boolean; updated: number; error?: string }> {
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, updated: 0, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
+
+  try {
+    requireRole(userRole ?? undefined, 'recruiter')
+  } catch {
+    return { success: false, updated: 0, error: 'Forbidden: recruiters and admins only' }
+  }
+
+  if (!Array.isArray(candidateIds) || candidateIds.length === 0) {
+    return { success: false, updated: 0, error: 'No candidates selected' }
+  }
+
+  if (candidateIds.length > 200) {
+    return { success: false, updated: 0, error: 'Cannot assign more than 200 candidates at once' }
+  }
+
+  const result = await withTenant(tenantId, async (tx) => {
+    // Find (or create) the Internal agency for this tenant
+    let [internal] = await tx
+      .select({ id: agencies.id })
+      .from(agencies)
+      .where(and(eq(agencies.tenantId, tenantId), eq(agencies.isInternal, true)))
+      .limit(1)
+
+    if (!internal) {
+      await ensureInternalAgency(tx, tenantId)
+      const [created] = await tx
+        .select({ id: agencies.id })
+        .from(agencies)
+        .where(and(eq(agencies.tenantId, tenantId), eq(agencies.isInternal, true)))
+        .limit(1)
+      internal = created
+    }
+
+    if (!internal) {
+      throw new Error('Failed to provision Internal agency')
+    }
+
+    const updated = await tx
+      .update(candidates)
+      .set({
+        agencyId: internal.id,
+        availabilityStatus: 'available',
+        availableFrom: null,
+      })
+      .where(
+        and(
+          inArray(candidates.id, candidateIds),
+          eq(candidates.tenantId, tenantId)
+        )
+      )
+      .returning({ id: candidates.id })
+
+    return updated.length
+  })
+
+  revalidatePath('/dashboard/candidates')
+  return { success: true, updated: result }
 }
 
 // ---------------------------------------------------------------------------
