@@ -84,6 +84,10 @@ export async function GET(
   const roleId = searchParams.get('roleId')
   const audience: Audience = searchParams.get('audience') === 'customer' ? 'customer' : 'internal'
 
+  console.log(`[pdf-export] candidateId=${candidateId} audience=${audience} roleId=${roleId ?? 'none'}`)
+
+  try {
+
   // Single withTenant call — one RLS context setup for all queries
   const data = await withTenant(tenantId, async (tx) => {
     const [candidate] = await tx
@@ -214,10 +218,19 @@ export async function GET(
     ? `customer-profile-${candidate.firstName}-${candidate.lastName}.pdf`
     : `${candidate.firstName}-${candidate.lastName}-profile.pdf`
 
+  console.log(`[pdf-export] ✓ rendered ${filename} (${buffer.length} bytes)`)
+
   return new NextResponse(buffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${filename}"`,
     },
   })
+  } catch (err) {
+    console.error('[pdf-export] FAILED:', err instanceof Error ? err.stack : err)
+    return NextResponse.json(
+      { error: 'PDF generation failed', detail: err instanceof Error ? err.message : 'unknown' },
+      { status: 500 }
+    )
+  }
 }
