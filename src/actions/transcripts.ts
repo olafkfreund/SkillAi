@@ -104,7 +104,7 @@ export async function uploadTranscript(
         tenantId,
         candidateId,
         roleId,
-        packId: packId ?? undefined,
+        packId: packId && packId.length > 0 ? packId : null,
         rawTranscriptText,
         parsedTranscript,
         sourcePlatform: platform as 'teams' | 'zoom' | 'meet' | 'other',
