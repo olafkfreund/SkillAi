@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { XIcon, CalendarIcon } from 'lucide-react'
-import { createInterviewSlot } from '@/actions/calendar'
+import { createInterviewSlot, updateInterviewSlot } from '@/actions/calendar'
 
 export interface SlotData {
   id: string
@@ -12,6 +12,8 @@ export interface SlotData {
   status: string
   location?: string | null
   meetingUrl?: string | null
+  slotNotes?: string | null
+  roleId?: string | null
 }
 
 interface Props {
@@ -23,6 +25,8 @@ interface Props {
   onClose: () => void
   hasGoogleCalendar: boolean
   hasMicrosoftCalendar: boolean
+  /** When set, the modal opens in edit mode and updates this slot instead of creating a new one. */
+  editingSlot?: SlotData | null
 }
 
 const DURATION_OPTIONS = [
@@ -42,24 +46,34 @@ export function ScheduleInterviewModal({
   onClose,
   hasGoogleCalendar,
   hasMicrosoftCalendar,
+  editingSlot,
 }: Props) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const isEditMode = !!editingSlot
 
-  // Default date: tomorrow at 10:00
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const defaultDate = tomorrow.toISOString().split('T')[0]
+  // Compute defaults — from editingSlot if present, else tomorrow at 10:00
+  const initialDateTime = editingSlot
+    ? new Date(editingSlot.scheduledAt)
+    : (() => {
+        const d = new Date()
+        d.setDate(d.getDate() + 1)
+        d.setUTCHours(10, 0, 0, 0)
+        return d
+      })()
+
+  const initialDate = initialDateTime.toISOString().split('T')[0]
+  const initialTime = initialDateTime.toISOString().substring(11, 16)
 
   const [form, setForm] = useState({
-    title: `Interview – ${candidateName}`,
-    selectedRoleId: roleId ?? '',
-    date: defaultDate,
-    time: '10:00',
-    durationMinutes: 60,
-    location: '',
-    meetingUrl: '',
-    slotNotes: '',
+    title: editingSlot?.title ?? `Interview – ${candidateName}`,
+    selectedRoleId: editingSlot?.roleId ?? roleId ?? '',
+    date: initialDate,
+    time: initialTime,
+    durationMinutes: editingSlot?.durationMinutes ?? 60,
+    location: editingSlot?.location ?? '',
+    meetingUrl: editingSlot?.meetingUrl ?? '',
+    slotNotes: editingSlot?.slotNotes ?? '',
     syncGoogle: false,
     syncMicrosoft: false,
   })
@@ -75,7 +89,7 @@ export function ScheduleInterviewModal({
     const syncToCalendar = form.syncGoogle || form.syncMicrosoft
 
     startTransition(async () => {
-      const result = await createInterviewSlot({
+      const payload = {
         candidateId,
         roleId: form.selectedRoleId || undefined,
         title: form.title,
@@ -85,7 +99,11 @@ export function ScheduleInterviewModal({
         meetingUrl: form.meetingUrl || undefined,
         slotNotes: form.slotNotes || undefined,
         syncToCalendar,
-      })
+      }
+
+      const result = isEditMode && editingSlot
+        ? await updateInterviewSlot({ ...payload, slotId: editingSlot.id })
+        : await createInterviewSlot(payload)
 
       if (!result.success) {
         setError(result.error)
@@ -100,6 +118,8 @@ export function ScheduleInterviewModal({
         status: 'scheduled',
         location: form.location || null,
         meetingUrl: form.meetingUrl || null,
+        slotNotes: form.slotNotes || null,
+        roleId: form.selectedRoleId || null,
       })
     })
   }
@@ -111,7 +131,9 @@ export function ScheduleInterviewModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-700">
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-4 w-4 text-violet-400" />
-            <h2 className="font-semibold text-zinc-100 text-sm">Schedule Interview</h2>
+            <h2 className="font-semibold text-zinc-100 text-sm">
+              {isEditMode ? 'Edit Interview' : 'Schedule Interview'}
+            </h2>
           </div>
           <button
             type="button"
@@ -310,7 +332,9 @@ export function ScheduleInterviewModal({
               className="px-4 py-2 text-sm font-medium bg-violet-700 hover:bg-violet-600
                          text-white rounded-lg transition-colors disabled:opacity-50"
             >
-              {isPending ? 'Scheduling...' : 'Schedule Interview'}
+              {isPending
+                ? (isEditMode ? 'Updating...' : 'Scheduling...')
+                : (isEditMode ? 'Update Interview' : 'Schedule Interview')}
             </button>
           </div>
         </form>

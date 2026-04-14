@@ -9,6 +9,7 @@ export type AuditAction =
   | 'score.completed' | 'score.failed' | 'score.removed'
   | 'interview_pack.created' | 'interview_pack.completed' | 'interview_pack.failed'
   | 'interview_pack.deleted' | 'interview_pack.retried'
+  | 'interview_slot.created' | 'interview_slot.updated' | 'interview_slot.cancelled'
   | 'note.created' | 'note.deleted'
   | 'user.invited' | 'user.role_changed' | 'user.deactivated'
   | 'agency.created' | 'agency.archived'
