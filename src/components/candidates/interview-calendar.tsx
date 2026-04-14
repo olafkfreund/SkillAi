@@ -386,17 +386,18 @@ export function InterviewCalendar({
           <div className="space-y-1.5">
             {slots.map((slot) => {
               const d = new Date(slot.scheduledAt)
+              const isCancelled = slot.status === 'cancelled'
               return (
                 <div
                   key={slot.id}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-xs
-                    ${slot.status === 'cancelled' ? 'bg-zinc-800/50' : 'bg-zinc-800'}`}
+                    ${isCancelled ? 'bg-zinc-800/50' : 'bg-zinc-800'}`}
                 >
                   <div className={`w-2 h-2 rounded-full flex-shrink-0
-                    ${slot.status === 'cancelled' ? 'bg-zinc-600' : 'bg-violet-500'}`} />
+                    ${isCancelled ? 'bg-zinc-600' : 'bg-violet-500'}`} />
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium truncate
-                      ${slot.status === 'cancelled' ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
+                      ${isCancelled ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
                       {slot.title}
                     </p>
                     <p className="text-zinc-500">
@@ -407,10 +408,32 @@ export function InterviewCalendar({
                       {d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })} UTC
                     </p>
                   </div>
-                  {slot.status === 'cancelled' && (
+                  {isCancelled ? (
                     <span className="text-[10px] text-zinc-500 bg-zinc-700 px-2 py-0.5 rounded">
                       Cancelled
                     </span>
+                  ) : canSchedule && (
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => handleEdit(slot)}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium
+                                   text-violet-300 border border-violet-800 rounded px-2 py-1
+                                   hover:bg-violet-950 transition-colors"
+                      >
+                        <PencilIcon className="h-3 w-3" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await cancelInterviewSlot(slot.id, candidateId)
+                          handleCancelled(slot.id)
+                        }}
+                        className="text-[11px] font-medium text-red-400 border border-red-800
+                                   rounded px-2 py-1 hover:bg-red-950 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   )}
                 </div>
               )
