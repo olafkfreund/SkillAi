@@ -8,6 +8,7 @@ import {
   MapPinIcon,
   VideoIcon,
   XCircleIcon,
+  PencilIcon,
 } from 'lucide-react'
 import { cancelInterviewSlot } from '@/actions/calendar'
 import { ScheduleInterviewModal, type SlotData } from './schedule-interview-modal'
@@ -64,10 +65,11 @@ interface SlotPopoverProps {
   candidateId: string
   canSchedule: boolean
   onCancelled: (slotId: string) => void
+  onEdit: (slot: SlotData) => void
   onClose: () => void
 }
 
-function SlotPopover({ slot, candidateId, canSchedule, onCancelled, onClose }: SlotPopoverProps) {
+function SlotPopover({ slot, candidateId, canSchedule, onCancelled, onEdit, onClose }: SlotPopoverProps) {
   const [cancelling, setCancelling] = useState(false)
   const start = new Date(slot.scheduledAt)
   const end = new Date(start.getTime() + slot.durationMinutes * 60_000)
@@ -119,14 +121,25 @@ function SlotPopover({ slot, candidateId, canSchedule, onCancelled, onClose }: S
       )}
 
       {canSchedule && slot.status !== 'cancelled' && (
-        <button
-          onClick={handleCancel}
-          disabled={cancelling}
-          className="w-full text-xs font-medium text-red-400 border border-red-800 rounded-md
-                     px-3 py-1.5 hover:bg-red-950 transition-colors disabled:opacity-50"
-        >
-          {cancelling ? 'Cancelling...' : 'Cancel interview'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { onEdit(slot); onClose() }}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium
+                       text-violet-300 border border-violet-800 rounded-md
+                       px-3 py-1.5 hover:bg-violet-950 transition-colors"
+          >
+            <PencilIcon className="h-3 w-3" />
+            Edit
+          </button>
+          <button
+            onClick={handleCancel}
+            disabled={cancelling}
+            className="flex-1 text-xs font-medium text-red-400 border border-red-800 rounded-md
+                       px-3 py-1.5 hover:bg-red-950 transition-colors disabled:opacity-50"
+          >
+            {cancelling ? 'Cancelling...' : 'Cancel'}
+          </button>
+        </div>
       )}
     </div>
   )
@@ -145,6 +158,7 @@ export function InterviewCalendar({
   const [slots, setSlots] = useState<SlotData[]>(initialSlots)
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()))
   const [showModal, setShowModal] = useState(false)
+  const [editingSlot, setEditingSlot] = useState<SlotData | null>(null)
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null)
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
@@ -154,8 +168,24 @@ export function InterviewCalendar({
   const goToday = () => setWeekStart(getWeekStart(new Date()))
 
   const handleScheduled = (slot: SlotData) => {
-    setSlots((prev) => [slot, ...prev])
+    if (editingSlot) {
+      // Edit mode: replace the existing slot
+      setSlots((prev) => prev.map((s) => (s.id === editingSlot.id ? { ...s, ...slot, id: editingSlot.id } : s)))
+    } else {
+      setSlots((prev) => [slot, ...prev])
+    }
     setShowModal(false)
+    setEditingSlot(null)
+  }
+
+  const handleEdit = (slot: SlotData) => {
+    setEditingSlot(slot)
+    setShowModal(true)
+  }
+
+  const closeModal = () => {
+    setShowModal(false)
+    setEditingSlot(null)
   }
 
   const handleCancelled = (slotId: string) => {
@@ -333,6 +363,7 @@ export function InterviewCalendar({
                             candidateId={candidateId}
                             canSchedule={canSchedule}
                             onCancelled={handleCancelled}
+                            onEdit={handleEdit}
                             onClose={() => setOpenPopoverId(null)}
                           />
                         )}
@@ -388,7 +419,7 @@ export function InterviewCalendar({
         </div>
       )}
 
-      {/* Schedule modal */}
+      {/* Schedule / Edit modal */}
       {showModal && (
         <ScheduleInterviewModal
           candidateId={candidateId}
@@ -396,9 +427,10 @@ export function InterviewCalendar({
           roleId={roleId}
           allRoles={allRoles}
           onScheduled={handleScheduled}
-          onClose={() => setShowModal(false)}
+          onClose={closeModal}
           hasGoogleCalendar={hasGoogleCalendar}
           hasMicrosoftCalendar={hasMicrosoftCalendar}
+          editingSlot={editingSlot}
         />
       )}
     </>

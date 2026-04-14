@@ -8,6 +8,7 @@ import { db, withTenant } from '@/db'
 import { interviewSlots, calendarConnections } from '@/db/schema'
 import { syncSlotToCalendars, deleteSlotFromCalendars } from '@/lib/calendar/sync'
 import { getActionContext } from '@/lib/auth/action-context'
+import { writeAuditLog } from '@/lib/audit'
 import { parseIcsFile } from '@/lib/ics-parser'
 import type { InterviewSlot } from '@/db/schema/interview-slots'
 
@@ -102,6 +103,135 @@ export async function createInterviewSlot(
     }
   }
 
+  await writeAuditLog(tenantId, {
+    action: 'interview_slot.created',
+    entityType: 'interview_slot',
+    entityId: slotId,
+    entityLabel: title,
+    metadata: { candidateId, scheduledAt: scheduledDate.toISOString() },
+  })
+
+  revalidatePath(`/dashboard/candidates/${candidateId}`)
+
+  return { success: true, slotId }
+}
+
+/**
+ * Update an existing interview slot. Re-syncs to connected calendars by
+ * deleting the old event and creating a new one with the updated details.
+ * Cancelled slots cannot be edited.
+ */
+const UpdateSlotSchema = CreateSlotSchema.extend({
+  slotId: z.string().uuid(),
+})
+
+export async function updateInterviewSlot(
+  data: z.infer<typeof UpdateSlotSchema>
+): Promise<CreateSlotState> {
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId } = ctx
+
+  const parsed = UpdateSlotSchema.safeParse(data)
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid input' }
+  }
+
+  const {
+    slotId,
+    candidateId,
+    roleId,
+    title,
+    scheduledAt,
+    durationMinutes,
+    location,
+    meetingUrl,
+    slotNotes,
+    syncToCalendar,
+  } = parsed.data
+
+  // Load existing slot — verify ownership + get calendar event IDs
+  const [existing] = await withTenant(tenantId, async (tx) =>
+    tx
+      .select()
+      .from(interviewSlots)
+      .where(and(eq(interviewSlots.id, slotId), eq(interviewSlots.tenantId, tenantId)))
+      .limit(1)
+  )
+
+  if (!existing) return { success: false, error: 'Slot not found' }
+  if (existing.status === 'cancelled') {
+    return { success: false, error: 'Cannot edit a cancelled interview' }
+  }
+
+  const scheduledDate = new Date(scheduledAt)
+
+  // Decide whether to resync calendar events:
+  // - If user requests sync, delete the old event(s) (if any) and create new
+  // - If user does NOT request sync but old events exist, drop them (they're now stale)
+  let newGoogleEventId: string | null = existing.googleEventId
+  let newMicrosoftEventId: string | null = existing.microsoftEventId
+
+  const hadCalendarEvents = !!(existing.googleEventId || existing.microsoftEventId)
+  if (syncToCalendar || hadCalendarEvents) {
+    // Drop the old events first (non-fatal)
+    try {
+      await deleteSlotFromCalendars(userId, existing.googleEventId, existing.microsoftEventId)
+    } catch {
+      // ignore — we'll overwrite the IDs below
+    }
+    newGoogleEventId = null
+    newMicrosoftEventId = null
+
+    // Create fresh events if the user wants ongoing sync
+    if (syncToCalendar) {
+      try {
+        const calendarEvent = {
+          title,
+          startAt: scheduledDate,
+          durationMinutes,
+          location: location || undefined,
+          meetingUrl: meetingUrl || undefined,
+        }
+        const result = await syncSlotToCalendars(userId, calendarEvent)
+        newGoogleEventId = result.googleEventId ?? null
+        newMicrosoftEventId = result.microsoftEventId ?? null
+      } catch {
+        // Calendar sync failure is non-fatal
+      }
+    }
+  }
+
+  try {
+    await withTenant(tenantId, async (tx) =>
+      tx
+        .update(interviewSlots)
+        .set({
+          roleId: roleId ?? null,
+          title,
+          scheduledAt: scheduledDate,
+          durationMinutes,
+          location: location || null,
+          meetingUrl: meetingUrl || null,
+          slotNotes: slotNotes || null,
+          googleEventId: newGoogleEventId,
+          microsoftEventId: newMicrosoftEventId,
+          updatedAt: new Date(),
+        })
+        .where(eq(interviewSlots.id, slotId))
+    )
+  } catch {
+    return { success: false, error: 'Failed to update interview slot' }
+  }
+
+  await writeAuditLog(tenantId, {
+    action: 'interview_slot.updated',
+    entityType: 'interview_slot',
+    entityId: slotId,
+    entityLabel: title,
+    metadata: { candidateId, scheduledAt: scheduledDate.toISOString() },
+  })
+
   revalidatePath(`/dashboard/candidates/${candidateId}`)
 
   return { success: true, slotId }
@@ -139,6 +269,14 @@ export async function cancelInterviewSlot(
       .set({ status: 'cancelled', updatedAt: new Date() })
       .where(eq(interviewSlots.id, slotId))
   )
+
+  await writeAuditLog(tenantId, {
+    action: 'interview_slot.cancelled',
+    entityType: 'interview_slot',
+    entityId: slotId,
+    entityLabel: slot.title,
+    metadata: { candidateId },
+  })
 
   revalidatePath(`/dashboard/candidates/${candidateId}`)
 
