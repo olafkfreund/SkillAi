@@ -236,3 +236,22 @@ async function parsePdfTranscript(buffer: Buffer): Promise<ParsedTranscript> {
 function buildRawText(cues: TranscriptCue[]): string {
   return cues.map((c) => `[${c.speaker}]: ${c.text}`).join('\n')
 }
+
+/**
+ * Remove characters Postgres text columns cannot store.
+ * Null bytes (\u0000) and other C0 control chars leak through some DOCX/VTT
+ * files (binary residue, unexpected encodings). Strip them defensively.
+ */
+export function sanitizeText(text: string): string {
+  // Remove NULL bytes and other non-printable control chars except \t, \n, \r
+  // eslint-disable-next-line no-control-regex
+  return text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+}
+
+export function sanitizeCues(cues: TranscriptCue[]): TranscriptCue[] {
+  return cues.map((c) => ({
+    ...c,
+    speaker: sanitizeText(c.speaker),
+    text: sanitizeText(c.text),
+  }))
+}

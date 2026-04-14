@@ -20,7 +20,7 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { auth } from '@/lib/auth'
 import { withTenant } from '@/db'
 import { interviewTranscripts } from '@/db/schema'
-import { parseTranscriptFile, type TranscriptFormat } from '@/lib/parsers/transcript'
+import { parseTranscriptFile, sanitizeText, sanitizeCues, type TranscriptFormat } from '@/lib/parsers/transcript'
 import { triggerTranscriptAnalysis } from '@/lib/ai/transcript-analysis'
 import type { TranscriptCue } from '@/lib/parsers/transcript'
 
@@ -121,8 +121,8 @@ export async function POST(request: NextRequest) {
         candidateId,
         roleId,
         packId: packId && packId.length > 0 ? packId : null,
-        rawTranscriptText,
-        parsedTranscript,
+        rawTranscriptText: sanitizeText(rawTranscriptText),
+        parsedTranscript: sanitizeCues(parsedTranscript),
         sourcePlatform: platform as 'teams' | 'zoom' | 'meet' | 'other',
         sourceFormat,
         interviewDate: interviewDate ?? undefined,

@@ -5,7 +5,7 @@ import { requireRole } from '@/lib/auth/require-role'
 import { after } from 'next/server'
 import { withTenant } from '@/db'
 import { interviewTranscripts } from '@/db/schema'
-import { parseTranscriptFile, type TranscriptFormat, type TranscriptCue } from '@/lib/parsers/transcript'
+import { parseTranscriptFile, sanitizeText, sanitizeCues, type TranscriptFormat, type TranscriptCue } from '@/lib/parsers/transcript'
 import { triggerTranscriptAnalysis } from '@/lib/ai/transcript-analysis'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5 MB
@@ -105,8 +105,8 @@ export async function uploadTranscript(
         candidateId,
         roleId,
         packId: packId && packId.length > 0 ? packId : null,
-        rawTranscriptText,
-        parsedTranscript,
+        rawTranscriptText: sanitizeText(rawTranscriptText),
+        parsedTranscript: sanitizeCues(parsedTranscript),
         sourcePlatform: platform as 'teams' | 'zoom' | 'meet' | 'other',
         sourceFormat,
         interviewDate: interviewDate ?? undefined,
