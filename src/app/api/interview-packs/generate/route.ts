@@ -12,7 +12,8 @@ import {
   candidates,
   roles,
 } from '@/db/schema'
-import { extractCvProfile, generateQuestions } from '@/lib/ai/interview'
+import { generateQuestions } from '@/lib/ai/interview'
+import { getOrExtractCvProfile } from '@/lib/ai/cv-profile'
 import { inferLanguage } from '@/lib/ai/interview-helpers'
 import { writeAuditLog } from '@/lib/audit'
 
@@ -102,9 +103,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Role not found' }, { status: 404 })
     }
 
-    // Stage 1: Extract CV profile
+    // Stage 1: Extract CV profile (or use cached from candidate upload)
     await setStage(tenantId, packId, 'Analysing CV with AI — extracting skills and experience…')
-    const cvProfile = await extractCvProfile(candidate.cvText)
+    const cvProfile = await getOrExtractCvProfile(candidate.id, tenantId, candidate.cvText)
 
     // Stage 2: Generate questions
     await setStage(tenantId, packId, pack.packType === 'pre_screening'

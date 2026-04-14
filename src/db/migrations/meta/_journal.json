@@ -57,6 +57,13 @@
       "when": 1776344400000,
       "tag": "0007_add_pack_type",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776430800000,
+      "tag": "0008_add_cv_profiles",
+      "breakpoints": true
     }
   ]
 }
