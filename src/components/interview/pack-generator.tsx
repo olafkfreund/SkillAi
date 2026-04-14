@@ -7,11 +7,16 @@ import { createInterviewPack } from '@/actions/interview'
 import type { CreatePackState } from '@/actions/interview'
 
 type Props = { candidateId: string; roleId: string; roleName: string }
+type PackType = 'full' | 'pre_screening'
 
 export function PackGenerator({ candidateId, roleId, roleName }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [includeCode, setIncludeCode] = useState(false)
+  const [packType, setPackType] = useState<PackType>('full')
+
+  const isPreScreening = packType === 'pre_screening'
+  const effectiveIncludeCode = isPreScreening ? false : includeCode
 
   const [state, action, pending] = useActionState<CreatePackState | null, FormData>(
     createInterviewPack,
@@ -24,14 +29,18 @@ export function PackGenerator({ candidateId, roleId, roleName }: Props) {
       fetch('/api/interview-packs/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packId: state.packId, includeCodeChallenge: includeCode }),
+        body: JSON.stringify({
+          packId: state.packId,
+          includeCodeChallenge: effectiveIncludeCode,
+          packType,
+        }),
       }).catch((err) => console.error('Failed to trigger generation:', err))
 
       setOpen(false)
       router.push(`/dashboard/candidates/${candidateId}/interview/${state.packId}`)
       router.refresh()
     }
-  }, [state, router, candidateId, includeCode])
+  }, [state, router, candidateId, effectiveIncludeCode, packType])
 
   return (
     <>
@@ -71,20 +80,59 @@ export function PackGenerator({ candidateId, roleId, roleName }: Props) {
             <form action={action} className="space-y-4">
               <input type="hidden" name="candidateId" value={candidateId} />
               <input type="hidden" name="roleId" value={roleId} />
-              <input type="hidden" name="includeCodeChallenge" value={String(includeCode)} />
+              <input type="hidden" name="includeCodeChallenge" value={String(effectiveIncludeCode)} />
+              <input type="hidden" name="packType" value={packType} />
 
-              <label className="flex items-start gap-3 cursor-pointer">
+              {/* Pack type radio group */}
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium text-zinc-300 mb-1">Pack type</legend>
+                <label className="flex items-start gap-3 cursor-pointer rounded-md border border-zinc-700 bg-zinc-800/50 p-3 hover:bg-zinc-800 transition-colors">
+                  <input
+                    type="radio"
+                    name="packTypeRadio"
+                    value="full"
+                    checked={packType === 'full'}
+                    onChange={() => setPackType('full')}
+                    disabled={pending}
+                    className="mt-0.5 h-4 w-4 border-zinc-600 text-violet-600"
+                  />
+                  <span className="text-sm text-zinc-100">
+                    Full interview pack
+                    <span className="block text-xs text-zinc-500">8-12 questions · ~60 min</span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer rounded-md border border-zinc-700 bg-zinc-800/50 p-3 hover:bg-zinc-800 transition-colors">
+                  <input
+                    type="radio"
+                    name="packTypeRadio"
+                    value="pre_screening"
+                    checked={packType === 'pre_screening'}
+                    onChange={() => setPackType('pre_screening')}
+                    disabled={pending}
+                    className="mt-0.5 h-4 w-4 border-zinc-600 text-violet-600"
+                  />
+                  <span className="text-sm text-zinc-100">
+                    Pre-screening call
+                    <span className="block text-xs text-zinc-500">5 questions · ~30 min · quick fit check</span>
+                  </span>
+                </label>
+              </fieldset>
+
+              {/* Code challenge — disabled for pre-screening */}
+              <label className={`flex items-start gap-3 ${isPreScreening ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
                 <input
                   type="checkbox"
-                  checked={includeCode}
+                  checked={effectiveIncludeCode}
                   onChange={(e) => setIncludeCode(e.target.checked)}
-                  disabled={pending}
+                  disabled={pending || isPreScreening}
                   className="mt-0.5 h-4 w-4 rounded border-zinc-600 text-violet-600"
                 />
                 <span className="text-sm text-zinc-300">
                   Include code challenge
                   <span className="block text-xs text-zinc-500">
-                    AI generates a language-appropriate coding exercise
+                    {isPreScreening
+                      ? 'Not available for pre-screening calls'
+                      : 'AI generates a language-appropriate coding exercise'}
                   </span>
                 </span>
               </label>

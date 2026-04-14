@@ -11,6 +11,7 @@ type Pack = {
   experienceLevel: string | null
   recommendedDurationMinutes: number | null
   includesCodeChallenge: boolean
+  packType: 'full' | 'pre_screening'
   createdAt: string
   updatedAt: string
   roleTitle: string | null
@@ -94,8 +95,13 @@ export function PackList({ candidateId }: Props) {
           >
             <FileTextIcon className="h-4 w-4 text-zinc-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-zinc-100 truncate">
-                {pack.roleTitle ?? 'Unknown role'}
+              <p className="text-sm font-medium text-zinc-100 truncate flex items-center gap-2">
+                <span className="truncate">{pack.roleTitle ?? 'Unknown role'}</span>
+                {pack.packType === 'pre_screening' && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-950 text-amber-300 border border-amber-800 flex-shrink-0">
+                    Pre-screening
+                  </span>
+                )}
               </p>
               <p className="text-xs text-zinc-500 mt-0.5">
                 {isReady ? (

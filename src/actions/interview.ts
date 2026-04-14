@@ -18,6 +18,7 @@ const CreatePackSchema = z.object({
   candidateId: z.string().uuid(),
   roleId: z.string().uuid(),
   includeCodeChallenge: z.boolean().default(false),
+  packType: z.enum(['full', 'pre_screening']).default('full'),
 })
 
 export type CreatePackState =
@@ -40,10 +41,13 @@ export async function createInterviewPack(
     candidateId: formData.get('candidateId'),
     roleId: formData.get('roleId'),
     includeCodeChallenge: formData.get('includeCodeChallenge') === 'true',
+    packType: formData.get('packType') || 'full',
   })
   if (!parsed.success) return { success: false, error: 'Invalid input' }
 
-  const { candidateId, roleId, includeCodeChallenge } = parsed.data
+  const { candidateId, roleId, packType } = parsed.data
+  // Pre-screening never includes code challenge
+  const includeCodeChallenge = packType === 'pre_screening' ? false : parsed.data.includeCodeChallenge
 
   // Verify candidate belongs to this tenant
   const [candidate] = await withTenant(tenantId, async (tx) =>
@@ -65,6 +69,7 @@ export async function createInterviewPack(
       generationStatus: 'pending',
       experienceLevel,
       includesCodeChallenge: includeCodeChallenge,
+      packType,
       createdBy: userId,
     })
   })
