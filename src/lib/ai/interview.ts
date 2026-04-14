@@ -80,7 +80,7 @@ export async function extractCvProfile(cvText: string): Promise<CvProfile> {
         role: 'user',
         content: `Extract a structured profile from this CV. Identify the candidate's experience level, companies worked at with key achievements, technical skills, and specific moments worth referencing in interview questions.
 
-Also write a concise 2-3 sentence summary of the candidate that captures seniority, core strengths, and notable experience.
+Also write a concise 2-3 sentence summary (maximum ~500 characters) of the candidate that captures seniority, core strengths, and notable experience.
 
 CV:
 ${cvText.slice(0, 6000)}`,
