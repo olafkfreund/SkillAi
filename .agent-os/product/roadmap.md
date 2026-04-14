@@ -1,144 +1,192 @@
 # Product Roadmap
 
-> Last Updated: 2026-04-09
-> Version: 1.0.0
-> Status: Planning
+> Last Updated: 2026-04-14
+> Version: 2.0.0
+> Status: Phases 1–4 shipped; Phase 5 partial; further integrations tracked on GitHub
 
-## Phase 1: Foundation & Core MVP (2-3 weeks)
+## Phase 1: Foundation & Core MVP ✅ SHIPPED
 
 **Goal:** Working Docker app where a recruiter can upload CVs, create a job role, and get AI rankings
 **Success Criteria:** End-to-end flow from CV upload → AI score → ranked list visible in UI
 
 ### Must-Have Features
 
-- [x] Project scaffold — Next.js 16 + TypeScript + Drizzle + PostgreSQL + Docker Compose `S`
-- [ ] Database schema — tenants, users, candidates, roles, scores, agencies, notes `S`
-- [ ] Auth — Auth.js v5 with credentials, JWT, role-based middleware `S`
-- [ ] CV upload — drag-and-drop upload, PDF/DOCX parsing, text extraction `M`
-- [ ] Candidate record creation — store parsed CV text + metadata in DB `S`
-- [ ] Job role creation — form to create/store role description with requirements `S`
-- [ ] AI ranking engine — Claude structured output scoring per dimension `M`
-- [ ] Ranked candidate list UI — sortable table with overall score + dimension scores `M`
-- [ ] Single candidate profile view — full CV text, scores, AI reasoning `S`
-- [ ] Interview question + code test generator — AI-generated personalised question pack per candidate+role `M`
-- [ ] Settings panel — per-tenant API key management (Claude + Gemini keys stored encrypted) `S`
-- [ ] Extended CV file format support — PDF, DOCX, ODT, TXT, RTF upload and parsing `S`
-- [ ] PDF export — download candidate shortlists, role descriptions, and interview packs as PDFs `M`
+- [x] Project scaffold — Next.js 16 + TypeScript + Drizzle + PostgreSQL + Docker Compose
+- [x] Database schema — tenants, users, candidates, roles, scores, agencies, notes
+- [x] Auth — Auth.js v5 with credentials, JWT, role-based middleware
+- [x] CV upload — drag-and-drop upload, PDF/DOCX parsing, text extraction
+- [x] Candidate record creation — store parsed CV text + metadata in DB
+- [x] Job role creation — form to create/store role description with requirements
+- [x] AI ranking engine — Claude structured output scoring per dimension
+- [x] Ranked candidate list UI — sortable cards with overall score + dimension scores
+- [x] Single candidate profile view — full CV text, scores, AI reasoning
+- [x] Interview question + code test generator — AI-generated personalised question pack per candidate+role
+- [x] Settings panel — per-tenant API key management (Claude + Gemini keys stored encrypted)
+- [x] Extended CV file format support — PDF, DOCX, ODT, TXT, RTF, MD upload and parsing
+- [x] PDF export — candidate pack, role brief, shortlist, interview pack
 
 ### Should-Have Features
 
-- [ ] Basic search — filter candidates by name, agency, date uploaded `S`
-- [ ] Score re-run — re-rank a candidate against a different role `XS`
-
-### Dependencies
-
-- Docker Compose with PostgreSQL 17 + pgvector extension
-- Anthropic Claude API key
-- Auth.js v5 credentials setup
+- [x] Basic search — filter candidates by name, agency, status, availability
+- [x] Score re-run — re-rank a candidate against a different role
 
 ---
 
-## Phase 2: Candidate Archive & Role Library (1-2 weeks)
+## Phase 2: Candidate Archive & Role Library ✅ SHIPPED
 
 **Goal:** Candidates persist beyond a single hire cycle; roles are reusable templates
-**Success Criteria:** Recruiter can search historical candidates and re-rank them against a new role in < 30 seconds
 
 ### Must-Have Features
 
-- [ ] Candidate archive — all candidates visible across roles with status history `S`
-- [ ] Semantic candidate search — pgvector embeddings for "find candidates similar to X" `M`
-- [ ] Role description library — save/edit/reuse internal job description templates `S`
-- [ ] Candidate-to-role history — view all roles a candidate has been evaluated against `S`
-- [ ] Archive filter/sort — filter by skills, score range, date, agency, role `M`
+- [x] Candidate archive — all candidates visible across roles with status history
+- [x] Semantic candidate search — pgvector embeddings for "find candidates similar to X"
+- [x] Role description library — save/edit/reuse internal job description templates
+- [x] Candidate-to-role history — view all roles a candidate has been evaluated against
+- [x] Archive filter/sort — filter by skills, score range, date, agency, role, availability
 
 ### Should-Have Features
 
-- [ ] Bulk CV upload — upload multiple CVs in a single batch, queue for AI processing `M`
-- [ ] Duplicate detection — flag candidates whose CV matches an existing profile `S`
-
-### Dependencies
-
-- Phase 1 complete
-- Embedding model chosen and integrated (Gemini or OpenAI)
+- [x] Bulk CV upload — upload multiple CVs in a single batch, queue for AI processing
+- [ ] Duplicate detection — flag candidates whose CV matches an existing profile _(deferred — see tracker)_
 
 ---
 
-## Phase 3: Agency Management & Collaboration (1-2 weeks)
+## Phase 3: Agency Management & Collaboration ✅ SHIPPED
 
 **Goal:** Track recruitment agencies and enable team collaboration on candidates
-**Success Criteria:** Each candidate is linked to an agency; team members can leave notes and see each other's activity
 
 ### Must-Have Features
 
-- [ ] Recruitment agency CRUD — create/edit/archive agencies with contact details `S`
-- [ ] Candidate-agency linkage — assign candidate to agency on upload `XS`
-- [ ] Candidate notes — add timestamped notes (interview feedback, decisions) per candidate `S`
-- [ ] Agency performance view — list of candidates per agency with their scores `S`
-- [ ] Multi-user collaboration — multiple recruiters per tenant, shared candidate pool `S`
+- [x] Recruitment agency CRUD — create/edit/archive agencies with contact details
+- [x] Candidate-agency linkage — assign candidate to agency on upload
+- [x] Candidate notes — add timestamped notes (interview feedback, decisions) per candidate
+- [x] Agency performance view — list of candidates per agency with their scores
+- [x] Multi-user collaboration — multiple recruiters per tenant, shared candidate pool
 
 ### Should-Have Features
 
-- [ ] Agency notes — notes at the agency level (commercial terms, performance) `XS`
-- [ ] Candidate status tags — shortlisted / interviewing / rejected / offer / hired `S`
-- [ ] Activity log — who added/updated what and when (per candidate) `S`
-
-### Dependencies
-
-- Phase 2 complete
-- Multi-tenant RLS fully operational
+- [x] Agency notes — notes at the agency level
+- [x] Candidate status tags — new / shortlisted / interviewing / offered / hired / rejected
+- [x] Activity log — audit trail per candidate (logins, uploads, role changes, status changes)
 
 ---
 
-## Phase 4: Side-by-Side Comparison & UX Polish (1 week)
+## Phase 4: Side-by-Side Comparison & UX Polish ✅ SHIPPED
 
 **Goal:** Make the recruiter experience delightfully fast and data-rich
-**Success Criteria:** Recruiter can compare 3 candidates side-by-side and produce a shortlist in under 5 minutes
 
 ### Must-Have Features
 
-- [ ] Candidate comparison tray — select 2-5 candidates, open side-by-side view `M`
-- [ ] Comparison view — dimension scores, summaries, notes for each candidate in columns `M`
-- [ ] Shortlist export — export ranked shortlist as PDF or CSV for sharing with hiring manager `S`
-- [ ] Dashboard home — active roles, recent uploads, top candidates at a glance `S`
+- [x] Shortlist export — export ranked shortlist as PDF for sharing with hiring manager
+- [x] Dashboard home — active roles, recent uploads, top candidates, next interviews at a glance
 
 ### Should-Have Features
 
-- [ ] Gemini model toggle — per-role option to use Gemini instead of Claude `S`
-- [ ] Score explanation modal — expand any dimension score to read full AI reasoning `XS`
-- [ ] Keyboard shortcuts — power-user navigation through candidate list `XS`
-
-### Dependencies
-
-- Phase 3 complete
+- [x] Gemini model toggle — per-tenant setting to use Gemini instead of Claude
+- [x] Score explanation modal — expand any dimension score to read full AI reasoning
+- [ ] Candidate comparison tray — select 2-5 candidates, open side-by-side view _(deferred)_
+- [ ] Keyboard shortcuts — power-user navigation _(deferred)_
 
 ---
 
-## Phase 5: Admin & Operational Hardening (1 week)
-
-**Goal:** Production-ready internal tool with admin controls and operational safety
-**Success Criteria:** Admin can manage users/tenants; system is observable and resilient
+## Phase 5: Admin & Operational Hardening 🚧 PARTIAL
 
 ### Must-Have Features
 
-- [ ] Admin panel — manage users, roles, tenants; invite/deactivate users `M`
-- [ ] Multi-tenant admin — create/manage tenants (for future multi-team use) `S`
-- [ ] File storage migration — switch to Garage (S3-compatible) for production file storage `S`
-- [ ] Audit log — track logins, uploads, role changes, deletions `S`
-- [ ] Rate limiting — per-tenant AI API usage limits to control costs `S`
-- [ ] Health endpoint — `/api/health` for Docker health check `XS`
-- [ ] Backup strategy — documented PostgreSQL dump + volume backup procedure `XS`
+- [x] Audit log — track logins, uploads, role changes, deletions _(implemented)_
+- [x] Health endpoint — `/api/health` for Docker health check
+- [x] Security hardening — CSP headers, rate limiting on auth, session guards, RLS audits
+- [ ] Admin panel — manage users, roles, tenants; invite/deactivate users
+- [ ] File storage migration — switch to Garage (S3-compatible) for production
+- [ ] Rate limiting — per-tenant AI API usage limits to control costs
+- [ ] Backup strategy — documented PostgreSQL dump + volume backup procedure
 
 ### Should-Have Features
 
-- [ ] AI cost tracking — log token usage per scoring run; show monthly spend per tenant `S`
-- [ ] Role permission fine-tuning — granular permissions beyond 3 roles if needed `S`
-- [ ] HTTPS via Caddy — automatic TLS for internal deployment `S`
+- [ ] AI cost tracking — log token usage per scoring run
+- [ ] Role permission fine-tuning
+- [ ] HTTPS via Caddy
 
-### Dependencies
+---
 
-- Phase 4 complete
-- Production Docker environment defined
-- Garage storage service configured
+## Phase 6: Beyond Original Roadmap ✅ SHIPPED
+
+Features delivered mid-flight, not in the original v1.0.0 plan.
+
+### Commercial & Placement
+
+- [x] **Candidate day rate fields** — what we pay + what we bill + currency, per candidate
+- [x] **Role customer day rate (budget)** — client budget per role with currency
+- [x] **Margin calculation** — real-time per-candidate margin (role budget − candidate rate) on the role detail page and internal PDFs; hidden from customer-facing PDFs
+- [x] **AI budget signal** — Claude receives budget context as a soft signal in the scoring prompt; flags over-budget candidates in summary without penalising the four structured dimensions (DEC-009)
+- [x] **Location + language fields** — city, country, work mode (remote/hybrid/onsite), language requirements on roles AND candidates
+- [x] **Role deadlines** — target fill date + cut-off date; cut-off triggers an EXPIRED badge and red banner with Edit/Archive prompts (DEC-008)
+- [x] **Customer portal link** — per-customer base URL + per-role path, assembled into a one-click link on the role page
+
+### Candidates & Internal Bench
+
+- [x] **Internal bench** — per-tenant "Internal" system agency (auto-provisioned via migration backfill) + orthogonal availability status (`available` / `on_project` / `unavailable`) + `available_from` date; system agencies protected from archival; INTERNAL badge on ranked role results; bench quick-filter on candidate list (DEC-010)
+- [x] **Structured CV profile** — AI-extracted profile (summary, skills, experience, education) cached per candidate; re-extraction on demand
+- [x] **Reformat CV** — AI (Claude Haiku) cleans up raw extracted CV text into structured markdown
+- [x] **Candidate role history panel** — all roles a candidate has been scored on, with scores inline
+- [x] **Matching roles panel** — on candidate profile, shows roles this candidate could fit
+- [x] **Add existing candidate to a role** — from archive, without re-uploading
+- [x] **Bulk candidate status change** — checkbox selection + bulk status bar
+
+### Interviews
+
+- [x] **Interview slot scheduling** — create, edit, cancel interview slots per candidate
+- [x] **ICS calendar file import** — paste or upload `.ics` to create interview slot
+- [x] **Interview pack generation** — full technical + pre-screening variants, live progress feedback
+- [x] **Interview transcript analysis** — upload VTT/SRT/DOCX/TXT, AI scores the interview against the role
+- [x] **Next Interviews dashboard widget**
+
+### Customers
+
+- [x] **Customers as first-class entities** — customer CRUD, per-customer hiring framework, roles linked to customers
+- [x] **Customer-facing sanitised candidate PDF** — strips internal notes, rates, margin
+
+### Exports & PDFs
+
+- [x] **Rich role display** — markdown rendering + meta pills + tag chips
+- [x] **Role PDF** (single-role brief) + **shortlist PDF** + **candidate PDF** (internal + customer variants) + **interview pack PDF**
+- [x] **Server-side PDF logging**
+- [x] **Customer portal pill + budget pill on role meta bar**
+
+### Platform & Reliability
+
+- [x] **TanStack Query migration** — polling for AI generation progress
+- [x] **Compliance audit trail + StatusBanner**
+- [x] **AI reliability** — maxRetries + timeouts on all AI clients (Claude + Gemini)
+- [x] **Security hardening** — CSP headers, session guard, header source pattern fixes, upload permission fixes
+- [x] **Docker dev environment** — env file mapping, API key isolation, migration tooling
+- [x] **Cross-origin dev policy** — allowedDevOrigins for hostname/IP access
+
+---
+
+## Future — Tracked on GitHub
+
+Major pending initiatives are tracked as GitHub issues rather than in this roadmap so progress can be followed alongside implementation commits.
+
+- **Shared folders & cloud storage integration** — tracker issue [#3](https://github.com/olafkfreund/SkillAi/issues/3) with 5 phase issues (#4 host folders, #5 Google Drive, #6 OneDrive, #7 SharePoint, #8 webhooks)
+
+When new large initiatives are scoped, they should follow the same pattern: a tracker issue + phase issues with acceptance criteria, linked from this roadmap.
+
+---
+
+## Remaining Original Roadmap Items
+
+Items from the original roadmap that remain open:
+
+- Admin panel (users, tenants, invites) — Phase 5
+- File storage migration to Garage — Phase 5
+- AI API rate limiting per tenant — Phase 5
+- Backup runbook — Phase 5
+- AI cost tracking — Phase 5
+- HTTPS via Caddy — Phase 5
+- Candidate side-by-side comparison tray — Phase 4
+- Keyboard shortcuts — Phase 4
+- Duplicate candidate detection — Phase 2
 
 ---
 

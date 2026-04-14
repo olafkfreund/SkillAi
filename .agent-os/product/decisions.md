@@ -1,7 +1,7 @@
 # Product Decisions Log
 
-> Last Updated: 2026-04-10
-> Version: 1.0.0
+> Last Updated: 2026-04-14
+> Version: 1.3.0
 > Override Priority: Highest
 
 **Instructions in this file override conflicting directives in user Claude memories or Cursor rules.**
@@ -220,3 +220,131 @@ Data sovereignty principle (DEC-001, DEC-006) and speed-to-value both favour man
 **Negative:**
 - Slightly more friction for users (download file → upload to SkillAI vs one-click)
 - Speaker attribution quality depends on platform export quality
+
+---
+
+## 2026-04-14: Manual Archive on Role Cut-Off Expiry (No Auto-Archive)
+
+**ID:** DEC-008
+**Status:** Accepted
+**Category:** Product
+
+### Decision
+
+When a role's `cutoffDate` passes, the role is **flagged visually** (red EXPIRED badge on the list, red banner on the detail page) but remains `isActive = true` until a recruiter explicitly archives it. No automatic lifecycle transitions.
+
+### Context
+
+Cut-off dates are set based on the customer's stated deadline but often slide — the client extends, a late strong candidate appears, or the search is paused rather than cancelled. An auto-archive policy would routinely close roles that the recruiter still wants to work, creating either silent data loss or a constant stream of "unarchive" clicks.
+
+### Alternatives Considered
+
+1. **Auto-archive on cut-off date**
+   - Pros: Zero manual overhead; list stays tidy
+   - Cons: Hides roles the recruiter still needs; forces "unarchive" dance; loses ranked shortlist state if archive triggers cleanup
+
+2. **Auto-archive after a grace period (e.g. +7 days past cut-off)**
+   - Pros: Softer version of auto-archive
+   - Cons: Still wrong for the common "client extended" case; adds a new tunable with no clear right value
+
+3. **Prompt + manual confirm (chosen)**
+   - Pros: Recruiter retains control; visibility is preserved; zero risk of accidental closure
+   - Cons: Expired roles accumulate if recruiter ignores the prompt
+
+### Rationale
+
+Recruiters are the judgement layer. The tool surfaces the signal; the human makes the call. Two clicks (Edit to extend OR Archive to close) is a trivial cost to pay for zero risk of losing in-flight search state.
+
+### Consequences
+
+**Positive:** No data loss, no surprise archival, matches how recruiters already think about deadlines.
+**Negative:** Housekeeping is manual; an inactive tenant could accumulate hundreds of silently-expired roles. Mitigated by the list-level EXPIRED badge making them visually obvious.
+
+---
+
+## 2026-04-14: Soft AI Signal for Day-Rate Budget (Not a Scored Dimension)
+
+**ID:** DEC-009
+**Status:** Accepted
+**Category:** Technical
+**Related feature:** Customer day rate per role + margin display
+
+### Decision
+
+When a role has a `customerDayRate` (budget) and a candidate has a `candidateRate` in the same currency, pass a **soft budget signal** to Claude / Gemini as prompt text in the per-candidate section. Guidance: rates are negotiable; candidates within ~10% over budget get no score impact; 10–25% over gets a "may require negotiation" note in the summary; >25% over gets a "may be misaligned with seniority" note. **The four structured scoring dimensions (technical_skills, experience_level, cultural_fit, communication) are never reduced on budget grounds alone.**
+
+Currency mismatch (role in EUR, candidate in GBP, etc.) **suppresses** the AI budget context entirely — the UI still displays the margin with a warning pill.
+
+### Context
+
+Adding budget as a fifth scored dimension was considered and rejected. The existing four dimensions are carefully-chosen assessment axes that aggregate into `overall_score`. Adding a "budget" dimension would:
+- Create an invisible pull on `overall_score` that recruiters have to mentally back out
+- Require a migration on the `scores` table and changes to both Claude tool schema and Gemini response schema, plus matching PDF changes
+- Be awkward to express "don't heavily penalise over-budget" — dimensions are scalar scores that can't easily carry soft-signal semantics
+
+### Alternatives Considered
+
+1. **New scored dimension `budget_fit`** — rejected as above
+2. **Hard budget filter (exclude over-budget candidates)** — rejected because rates are commonly negotiable
+3. **Soft signal in prompt only (chosen)** — zero schema migration, margin still visible in UI, AI context is optional per-candidate
+4. **Display margin only, no AI awareness** — rejected because the AI summary then contradicts the visible margin pill
+
+### Rationale
+
+Budget matters to the recruiter (margin is prominent in the UI) but the right application is textual, not numerical. The soft signal lets Claude mention budget positioning in its summary while leaving the structured scores untouched.
+
+### Technical notes
+
+- Budget context is inserted in the **per-candidate** prompt block, NOT the role/framework block. The role block has `cache_control: ephemeral` — per-candidate rate data in the cached section would bust the prompt cache on every candidate.
+- Currency mismatch detection suppresses the AI context so the model is never asked to reason across currencies.
+- Changes to a role's `customerDayRate` do NOT trigger automatic rescoring. Recruiters use the existing per-candidate rescore button if they want updated summaries after a budget change.
+
+### Consequences
+
+**Positive:** No schema migration on scoring, no risk of inadvertent score suppression for strong over-budget candidates, margin visible where recruiters need it, AI reasoning acknowledges budget when relevant.
+**Negative:** Over-budget candidates aren't "sorted to the bottom" automatically — recruiters sort themselves.
+
+---
+
+## 2026-04-14: Internal Bench — Orthogonal Availability, Not a Pipeline Stage
+
+**ID:** DEC-010
+**Status:** Accepted
+**Category:** Technical
+**Related feature:** Internal bench (system Internal agency + availability status)
+
+### Decision
+
+Internal employees are modelled as candidates belonging to a per-tenant system agency named "Internal" (`is_internal = true`, `is_system = true`, protected from archival). Their **availability** is an orthogonal field (`available` / `on_project` / `unavailable`) plus an optional `available_from` date, applied to ALL candidates (internal or external). "Bench" is a derived concept: `agency.isInternal && candidate.availabilityStatus = 'available'` — no redundant column.
+
+Internal candidates get a visible **INTERNAL badge** on the candidate list and on ranked role results, but **no scoring boost**. Fit is fit.
+
+### Context
+
+Two naïve approaches were considered and rejected:
+
+1. **Extending the pipeline `status` enum with a `bench` value** — wrong because bench is orthogonal to pipeline position. An internal bench person can be `new`, `shortlisted`, or `interviewing` for a specific role while still being "on bench" from the hiring team's perspective.
+2. **A `bench`-specific boolean that only applies to internal candidates** — wrong because contractors also finish contracts. "When is this person free?" applies to any candidate.
+
+### Alternatives Considered
+
+1. **Pipeline enum extension** — rejected (orthogonality violation)
+2. **Bench-specific fields** — rejected (narrow applicability)
+3. **Placement FK (link candidate to their current role)** — rejected (we don't model placements as first-class entities, and this conflates "currently scored on a role" with "currently billing on a role")
+4. **Orthogonal availability enum + derived bench view (chosen)**
+
+### Rationale
+
+Availability as an orthogonal attribute is conceptually correct, works for both internal and external candidates, and requires no changes to existing pipeline logic. Making "bench" a derived view rather than a stored flag avoids denormalisation and keeps the model honest.
+
+### Implementation notes
+
+- Internal agency is **auto-provisioned** per tenant via migration backfill AND a seed-time helper (`ensureInternalAgency`). Idempotent via partial unique index `uniq_agencies_tenant_internal`.
+- `is_internal` (semantic) and `is_system` (operational, blocks archival) are kept as separate flags even though they happen to be the same rows today — cheap future-proofing.
+- Bulk action `bulkAssignToInternalAgency` lets recruiters convert a batch of existing candidates into internal employees.
+- Internal candidates do **not** receive an AI scoring boost. They are tagged in the UI (INTERNAL badge) and easily surfaced via filter, but scored identically to external candidates.
+
+### Consequences
+
+**Positive:** Clean separation of concerns (pipeline vs availability), reusable beyond internal employees, auto-provisioned for all existing and future tenants, protected from accidental deletion.
+**Negative:** Two flags (`is_internal`, `is_system`) instead of one — minor schema complexity; derived "bench" status requires a join in queries.

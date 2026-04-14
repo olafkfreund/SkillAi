@@ -1,14 +1,14 @@
 # Technical Stack
 
-> Last Updated: 2026-04-09
-> Version: 1.0.0
+> Last Updated: 2026-04-14
+> Version: 1.1.0
 
 ## Application Framework
 
-- **Framework:** Next.js 15 (App Router)
+- **Framework:** Next.js 16.2+ (App Router, standalone output)
 - **Language:** TypeScript 5.x
 - **Runtime:** Node.js 22 LTS
-- **Rendering strategy:** Server Components for data-heavy views, Client Components for interactive UI (filters, comparisons, notes)
+- **Rendering strategy:** Server Components for data-heavy views, Client Components for interactive UI (filters, comparisons, notes). Server Actions for mutations. `after()` for fire-and-forget work where applicable; dedicated API routes for long-running AI generation with client-side polling via TanStack Query.
 
 ## Database
 
