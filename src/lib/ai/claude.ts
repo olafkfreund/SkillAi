@@ -81,6 +81,7 @@ type ScoringInput = {
   cvText: string
   candidateName: string
   frameworkContext?: string
+  budgetContext?: string
 }
 
 export async function scoreCandidateWithClaude(input: ScoringInput): Promise<CandidateScore> {
@@ -116,7 +117,7 @@ ${input.roleRequirements}${input.frameworkContext ? `\n\nHIRING FRAMEWORK CONTEX
             text: `Score this candidate:
 
 CANDIDATE: ${input.candidateName}
-
+${input.budgetContext ? `\n${input.budgetContext}\n` : ''}
 CV:
 ${input.cvText.slice(0, 8000)}
 

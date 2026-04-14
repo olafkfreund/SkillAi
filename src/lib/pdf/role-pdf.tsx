@@ -125,6 +125,14 @@ export function RolePDF({ role, customerName }: Props) {
           </View>
         )}
 
+        {/* Budget — internal role PDF only (no customer-facing variant) */}
+        {role.customerDayRate && (
+          <Text style={{ fontSize: 10, color: colors.slate900, marginBottom: 10 }}>
+            <Text style={{ fontFamily: 'Helvetica-Bold' }}>Budget: </Text>
+            {role.rateCurrency ?? ''} {Number(role.customerDayRate).toFixed(0)}/day
+          </Text>
+        )}
+
         <View style={base.divider} />
 
         {/* Key skills */}

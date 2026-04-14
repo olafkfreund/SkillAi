@@ -48,11 +48,25 @@ export async function GET(
     for (const a of agencyRows) agencyMap.set(a.id, a.name)
   }
 
-  const entries = candidateScores.map(({ candidate, score }) => ({
-    candidate,
-    score,
-    agencyName: candidate.agencyId ? (agencyMap.get(candidate.agencyId) ?? null) : null,
-  }))
+  const entries = candidateScores.map(({ candidate, score }) => {
+    let margin: { amount: number; currency: string; mismatch: boolean } | null = null
+    if (role.customerDayRate && candidate.candidateRate) {
+      const mismatch = Boolean(
+        role.rateCurrency && candidate.rateCurrency && role.rateCurrency !== candidate.rateCurrency
+      )
+      margin = {
+        amount: Number(role.customerDayRate) - Number(candidate.candidateRate),
+        currency: role.rateCurrency ?? candidate.rateCurrency ?? '',
+        mismatch,
+      }
+    }
+    return {
+      candidate,
+      score,
+      agencyName: candidate.agencyId ? (agencyMap.get(candidate.agencyId) ?? null) : null,
+      margin,
+    }
+  })
 
   // Look up customer name if linked
   let customerName: string | null = null

@@ -86,6 +86,11 @@ When scoring experience_level, assess specifically whether the candidate's senio
     )
     const useGemini = modelSetting?.value === 'gemini'
 
+    const budgetContext = buildBudgetContext(
+      { customerDayRate: role.customerDayRate, rateCurrency: role.rateCurrency },
+      { candidateRate: candidate.candidateRate, rateCurrency: candidate.rateCurrency }
+    )
+
     const scoringInput = {
       roleTitle: role.title,
       roleDescription: role.description,
@@ -93,6 +98,7 @@ When scoring experience_level, assess specifically whether the candidate's senio
       cvText: candidate.cvText,
       candidateName: `${candidate.firstName} ${candidate.lastName}`,
       frameworkContext,
+      budgetContext,
     }
 
     const result = useGemini
@@ -149,4 +155,38 @@ When scoring experience_level, assess specifically whether the candidate's senio
 
     console.error(`Scoring failed for candidate ${candidateId}:`, message)
   }
+}
+
+/**
+ * Build a soft budget signal for the AI prompt.
+ *
+ * Returns undefined when either side is missing, or when currencies mismatch
+ * (to avoid confusing the model with cross-currency math).
+ *
+ * The budget signal is textual guidance only — it never changes the four
+ * structured scoring dimensions (technical_skills, experience_level,
+ * cultural_fit, communication). Rates are negotiable, so over-budget is
+ * flagged in the summary but not penalised numerically.
+ */
+function buildBudgetContext(
+  role: { customerDayRate: string | null; rateCurrency: string | null },
+  candidate: { candidateRate: string | null; rateCurrency: string | null }
+): string | undefined {
+  if (!role.customerDayRate || !candidate.candidateRate) return undefined
+  if (role.rateCurrency && candidate.rateCurrency && role.rateCurrency !== candidate.rateCurrency) return undefined
+  const budget = Number(role.customerDayRate)
+  const ask = Number(candidate.candidateRate)
+  const delta = budget - ask
+  const pctOver = ask > budget ? ((ask - budget) / budget) * 100 : 0
+  const ccy = role.rateCurrency ?? candidate.rateCurrency ?? ''
+  return `BUDGET SIGNAL (soft):
+Role budget (what client will pay): ${ccy} ${budget.toFixed(0)}/day
+Candidate asking rate:               ${ccy} ${ask.toFixed(0)}/day
+Implied margin:                      ${ccy} ${delta.toFixed(0)}/day${pctOver > 0 ? ` (${pctOver.toFixed(0)}% over budget)` : ''}
+
+GUIDANCE: Rates are commonly negotiable. Do NOT heavily penalise score for being over budget.
+- If within budget or within ~10% over: no impact on scores.
+- If 10-25% over: mention in the summary as "slightly above budget, may require negotiation."
+- If >25% over: mention in the summary as "significantly above budget — likely needs negotiation or may be misaligned with seniority expected."
+Never lower technical_skills, experience_level, cultural_fit, or communication scores on budget grounds alone.`
 }

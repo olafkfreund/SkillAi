@@ -26,7 +26,16 @@ const CreateRoleSchema = z.object({
   targetFillDate: z.string().optional().or(z.literal('')),
   cutoffDate: z.string().optional().or(z.literal('')),
   customerPortalPath: z.string().max(500).optional().or(z.literal('')),
-})
+  customerDayRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  rateCurrency: z.string().max(3).toUpperCase().optional().or(z.literal('')),
+}).refine(
+  (data) => {
+    const hasRate = typeof data.customerDayRate === 'number'
+    if (hasRate && (!data.rateCurrency || data.rateCurrency === '')) return false
+    return true
+  },
+  { message: 'Currency is required when a rate is set', path: ['rateCurrency'] }
+)
 
 export type CreateRoleState =
   | { success: true; roleId: string }
@@ -60,6 +69,8 @@ export async function createRole(
     targetFillDate: formData.get('targetFillDate') || undefined,
     cutoffDate: formData.get('cutoffDate') || undefined,
     customerPortalPath: formData.get('customerPortalPath') || undefined,
+    customerDayRate: formData.get('customerDayRate') || undefined,
+    rateCurrency: formData.get('rateCurrency') || undefined,
   })
 
   if (!parsed.success) {
@@ -91,6 +102,8 @@ export async function createRole(
         targetFillDate: parsed.data.targetFillDate || null,
         cutoffDate: parsed.data.cutoffDate || null,
         customerPortalPath: parsed.data.customerPortalPath || null,
+        customerDayRate: typeof parsed.data.customerDayRate === 'number' ? String(parsed.data.customerDayRate) : null,
+        rateCurrency: parsed.data.rateCurrency || null,
         isActive: true,
       })
       .returning({ id: roles.id })
@@ -130,7 +143,16 @@ const UpdateRoleSchema = z.object({
   targetFillDate: z.string().optional().or(z.literal('')),
   cutoffDate: z.string().optional().or(z.literal('')),
   customerPortalPath: z.string().max(500).optional().or(z.literal('')),
-})
+  customerDayRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  rateCurrency: z.string().max(3).toUpperCase().optional().or(z.literal('')),
+}).refine(
+  (data) => {
+    const hasRate = typeof data.customerDayRate === 'number'
+    if (hasRate && (!data.rateCurrency || data.rateCurrency === '')) return false
+    return true
+  },
+  { message: 'Currency is required when a rate is set', path: ['rateCurrency'] }
+)
 
 export type UpdateRoleState = {
   success: boolean
@@ -167,6 +189,8 @@ export async function updateRole(
     targetFillDate: formData.get('targetFillDate') || undefined,
     cutoffDate: formData.get('cutoffDate') || undefined,
     customerPortalPath: formData.get('customerPortalPath') || undefined,
+    customerDayRate: formData.get('customerDayRate') || undefined,
+    rateCurrency: formData.get('rateCurrency') || undefined,
   })
 
   if (!parsed.success) {
@@ -196,6 +220,8 @@ export async function updateRole(
         targetFillDate: parsed.data.targetFillDate || null,
         cutoffDate: parsed.data.cutoffDate || null,
         customerPortalPath: parsed.data.customerPortalPath || null,
+        customerDayRate: typeof parsed.data.customerDayRate === 'number' ? String(parsed.data.customerDayRate) : null,
+        rateCurrency: parsed.data.rateCurrency || null,
       })
       .where(and(eq(roles.id, roleId), eq(roles.tenantId, tenantId)))
   })

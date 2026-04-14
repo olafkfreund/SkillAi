@@ -74,6 +74,7 @@ type ScoringInput = {
   candidateName: string
   tenantId: string
   frameworkContext?: string
+  budgetContext?: string
 }
 
 export async function scoreCandidateWithGemini(input: ScoringInput): Promise<CandidateScore> {
@@ -99,7 +100,7 @@ REQUIREMENTS:
 ${input.roleRequirements}${input.frameworkContext ? `\n\nHIRING FRAMEWORK CONTEXT:\n${input.frameworkContext}` : ''}
 
 CANDIDATE: ${input.candidateName}
-
+${input.budgetContext ? `\n${input.budgetContext}\n` : ''}
 CV:
 ${input.cvText.slice(0, 8000)}
 

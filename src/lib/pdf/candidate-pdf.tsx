@@ -572,13 +572,24 @@ function HeaderSection({
 function ActiveScoreSection({
   score,
   role,
+  candidate,
+  audience,
 }: {
   score: Score | null
   role: Role | null
+  candidate: Candidate
+  audience: 'internal' | 'customer'
 }) {
   if (!score || !role) return null
 
-  const overallC = scoreColors(score.overallScore)
+  const isCustomer = audience === 'customer'
+  // Margin is internal-only — never surfaced to customers
+  const showMargin =
+    !isCustomer && role.customerDayRate && candidate.candidateRate
+  const marginAmount = showMargin
+    ? Number(role.customerDayRate) - Number(candidate.candidateRate)
+    : null
+  const marginCurrency = role.rateCurrency ?? candidate.rateCurrency ?? ''
 
   return (
     <View break={false}>
@@ -615,6 +626,21 @@ function ActiveScoreSection({
         score={score.communicationScore}
         reasoning={score.communicationReasoning}
       />
+
+      {/* Margin on this role — internal only */}
+      {showMargin && marginAmount !== null && (
+        <Text
+          style={{
+            fontSize: 9,
+            fontFamily: 'Helvetica-Bold',
+            color: marginAmount >= 0 ? colors.green700 : colors.red700,
+            marginTop: 8,
+          }}
+        >
+          Margin on this role: {marginAmount >= 0 ? '+' : ''}
+          {marginCurrency} {marginAmount.toFixed(0)}/day
+        </Text>
+      )}
 
       {/* AI Summary */}
       {score.aiSummary && (
@@ -973,7 +999,12 @@ export function CandidatePDF({
         <View style={base.divider} />
 
         {/* ── 2. Active Role Score ───────────────────────────────────── */}
-        <ActiveScoreSection score={activeScore} role={activeRole} />
+        <ActiveScoreSection
+          score={activeScore}
+          role={activeRole}
+          candidate={candidate}
+          audience={audience}
+        />
 
         {(activeScore || activeRole) && <View style={base.divider} />}
 

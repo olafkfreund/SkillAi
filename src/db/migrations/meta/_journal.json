@@ -78,6 +78,13 @@
       "when": 1776603600000,
       "tag": "0010_add_role_deadlines",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1776690000000,
+      "tag": "0011_add_role_customer_day_rate",
+      "breakpoints": true
     }
   ]
 }

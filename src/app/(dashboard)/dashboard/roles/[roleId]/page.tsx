@@ -67,6 +67,8 @@ export default async function RoleDetailPage({ params }: Props) {
         lastName: candidates.lastName,
         email: candidates.email,
         candidateId: candidates.id,
+        candidateRate: candidates.candidateRate,
+        candidateCurrency: candidates.rateCurrency,
       })
       .from(scores)
       .innerJoin(candidates, eq(scores.candidateId, candidates.id))
@@ -260,6 +262,10 @@ export default async function RoleDetailPage({ params }: Props) {
                 experienceScore={c.experienceScore}
                 culturalFitScore={c.culturalFitScore}
                 communicationScore={c.communicationScore}
+                roleDayRate={role.customerDayRate}
+                roleCurrency={role.rateCurrency}
+                candidateRate={c.candidateRate}
+                candidateCurrency={c.candidateCurrency}
                 canEdit={canEdit}
                 removeAction={removeCandidateFromRole}
               />
