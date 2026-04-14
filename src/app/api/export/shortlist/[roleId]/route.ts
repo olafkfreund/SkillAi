@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth'
 import React from 'react'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { withTenant } from '@/db'
-import { candidates, scores, roles, agencies } from '@/db/schema'
+import { candidates, scores, roles, agencies, customers } from '@/db/schema'
 import { ShortlistPDF } from '@/lib/pdf'
 
 export async function GET(
@@ -54,14 +54,28 @@ export async function GET(
     agencyName: candidate.agencyId ? (agencyMap.get(candidate.agencyId) ?? null) : null,
   }))
 
+  // Look up customer name if linked
+  let customerName: string | null = null
+  if (role.customerId) {
+    const [customer] = await withTenant(tenantId, async (tx) =>
+      tx.select({ name: customers.name }).from(customers).where(eq(customers.id, role.customerId!)).limit(1)
+    )
+    customerName = customer?.name ?? null
+  }
+
   const buffer = await renderToBuffer(
-    React.createElement(ShortlistPDF, { entries, roleTitle: role.title }) as any
+    React.createElement(ShortlistPDF, {
+      entries,
+      roleTitle: role.title,
+      role,
+      customerName,
+    }) as any
   )
 
   return new NextResponse(buffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="shortlist-${role.title.replace(/\s+/g, '-')}.pdf"`,
+      'Content-Disposition': `inline; filename="shortlist-${role.title.replace(/\s+/g, '-')}.pdf"`,
     },
   })
 }
