@@ -2,11 +2,11 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useCallback, useTransition, useState, useEffect, useRef } from 'react'
-import { SearchIcon, XIcon } from 'lucide-react'
+import { SearchIcon, XIcon, FileXIcon } from 'lucide-react'
 
 type Props = {
   agencies: { id: string; name: string }[]
-  currentFilters: { q?: string; status?: string; agencyId?: string }
+  currentFilters: { q?: string; status?: string; agencyId?: string; missingCv?: boolean }
 }
 
 const STATUS_OPTIONS = [
@@ -38,6 +38,7 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
       if (currentFilters.q) params.set('q', currentFilters.q)
       if (currentFilters.status) params.set('status', currentFilters.status)
       if (currentFilters.agencyId) params.set('agencyId', currentFilters.agencyId)
+      if (currentFilters.missingCv) params.set('missingCv', '1')
       // Reset page on any filter change
       params.delete('page')
 
@@ -56,6 +57,10 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
     [router, pathname, currentFilters, startTransition]
   )
 
+  const toggleMissingCv = () => {
+    updateParams({ missingCv: currentFilters.missingCv ? '' : '1' })
+  }
+
   const handleSearchChange = (value: string) => {
     setSearchValue(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -73,7 +78,7 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
   }
 
   const hasActiveFilters =
-    !!currentFilters.q || !!currentFilters.status || !!currentFilters.agencyId
+    !!currentFilters.q || !!currentFilters.status || !!currentFilters.agencyId || !!currentFilters.missingCv
 
   const clearFilters = () => {
     setSearchValue('')
@@ -136,6 +141,25 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
           </option>
         ))}
       </select>
+
+      {/* Missing CV toggle */}
+      <button
+        onClick={toggleMissingCv}
+        className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm
+                    transition-colors cursor-pointer
+                    ${currentFilters.missingCv
+                      ? 'border-amber-500 bg-amber-900/30 text-amber-300 hover:bg-amber-900/50'
+                      : 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100'
+                    }`}
+        aria-pressed={!!currentFilters.missingCv}
+        aria-label="Filter to candidates missing original CV"
+      >
+        <FileXIcon className="h-4 w-4" />
+        Missing CV
+        {currentFilters.missingCv && (
+          <XIcon className="h-3.5 w-3.5 ml-0.5 opacity-70" aria-hidden="true" />
+        )}
+      </button>
 
       {/* Clear filters button */}
       {hasActiveFilters && (

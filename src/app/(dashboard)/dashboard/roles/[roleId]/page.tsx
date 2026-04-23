@@ -14,6 +14,7 @@ import { RoleCandidateCard } from '@/components/roles/role-candidate-card'
 import { SuggestCandidatesPanel } from '@/components/roles/suggest-candidates-panel'
 import { AddCandidatePanel } from '@/components/roles/add-candidate-panel'
 import { ShortlistSummaryPanel } from '@/components/roles/shortlist-summary-panel'
+import { DownloadCvsButton } from '@/components/roles/download-cvs-button'
 
 type Props = { params: Promise<{ roleId: string }> }
 
@@ -107,6 +108,7 @@ export default async function RoleDetailPage({ params }: Props) {
             href={`/api/export/shortlist/${roleId}`}
             label="Export shortlist PDF"
           />
+          <DownloadCvsButton roleId={roleId} />
           {canEdit && (
             <Link
               href={`/dashboard/roles/${roleId}/edit`}
