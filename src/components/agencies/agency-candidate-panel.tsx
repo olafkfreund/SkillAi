@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { UserPlusIcon, XIcon } from 'lucide-react'
+import { Download, UserPlusIcon, XIcon } from 'lucide-react'
 import { updateCandidateAgency } from '@/actions/candidates'
 
 interface Candidate {
@@ -10,6 +10,7 @@ interface Candidate {
   firstName: string
   lastName: string
   email: string | null
+  filePath: string | null
   createdAt: string
 }
 
@@ -58,7 +59,7 @@ export function AgencyCandidatePanel({ agencyId, agencyCandidates, unassignedCan
         setUnassigned((prev) => prev.filter((c) => c.id !== selectedId))
         if (candidate) {
           setCandidates((prev) =>
-            [{ ...candidate, createdAt: new Date().toISOString() }, ...prev]
+            [{ ...candidate, filePath: null, createdAt: new Date().toISOString() }, ...prev]
           )
         }
         setSelectedId('')
@@ -127,6 +128,17 @@ export function AgencyCandidatePanel({ agencyId, agencyCandidates, unassignedCan
                 <time className="text-xs text-zinc-500">
                   {new Date(c.createdAt).toLocaleDateString()}
                 </time>
+                {c.filePath && (
+                  <a
+                    href={`/api/candidates/${c.id}/cv`}
+                    download
+                    title="Download original CV"
+                    className="rounded p-1 text-zinc-600 hover:text-blue-400 hover:bg-blue-950
+                               transition-colors"
+                  >
+                    <Download className="h-4 w-4" />
+                  </a>
+                )}
                 {canEdit && (
                   <button
                     type="button"

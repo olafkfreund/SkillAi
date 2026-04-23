@@ -76,6 +76,7 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
               firstName: candidates.firstName,
               lastName: candidates.lastName,
               email: candidates.email,
+              filePath: candidates.filePath,
               status: candidates.status,
               createdAt: candidates.createdAt,
               agencyName: agencies.name,
@@ -187,6 +188,7 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
           <SelectableCandidateList
             candidates={allCandidates.map((c) => ({
               ...c,
+              filePath: c.filePath ?? null,
               createdAt: c.createdAt instanceof Date
                 ? c.createdAt.toISOString()
                 : String(c.createdAt),

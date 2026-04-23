@@ -4,6 +4,7 @@ import { auditLogs } from '@/db/schema'
 
 export type AuditAction =
   | 'candidate.created' | 'candidate.archived' | 'candidate.status_changed' | 'candidate.bulk_status_changed'
+  | 'candidate.cv_attached' | 'candidate.cv_downloaded' | 'candidate.cv_replaced'
   | 'role.created' | 'role.updated' | 'role.archived'
   | 'score.removed'
   | 'interview_pack.created' | 'interview_pack.deleted' | 'interview_pack.retried'

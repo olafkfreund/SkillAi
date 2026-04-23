@@ -16,6 +16,7 @@ export async function getSuggestedCandidates(
   firstName: string
   lastName: string
   email: string | null
+  filePath: string | null
   similarity: number
 }>> {
   const ctx = await getActionContext()
@@ -39,7 +40,7 @@ export async function getSuggestedCandidates(
     const results = await withTenant(tenantId, async (tx) =>
       tx.execute(sql`
         SELECT
-          id, first_name, last_name, email,
+          id, first_name, last_name, email, file_path,
           ROUND((1 - (embedding_vec <=> ${embeddingStr}::vector))::numeric, 3) AS similarity
         FROM candidates
         WHERE
@@ -57,12 +58,14 @@ export async function getSuggestedCandidates(
       first_name: string
       last_name: string
       email: string | null
+      file_path: string | null
       similarity: number
     }>).map((r) => ({
       id: r.id,
       firstName: r.first_name,
       lastName: r.last_name,
       email: r.email,
+      filePath: r.file_path ?? null,
       similarity: Math.round(Number(r.similarity) * 100),
     }))
   } catch (err) {
