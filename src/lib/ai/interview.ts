@@ -19,8 +19,8 @@ export { inferExperienceLevel, inferLanguage }
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-  timeout: 120_000,
-  maxRetries: 2,
+  timeout: 180_000,
+  maxRetries: 1,
 })
 
 // -- Stage 1: CV Profile Extraction --
@@ -150,7 +150,7 @@ export async function generateQuestions(
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 16000,
+    max_tokens: 8000,
     tools: [QUESTION_TOOL],
     tool_choice: { type: 'any' },
     messages: [

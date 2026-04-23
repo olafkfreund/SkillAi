@@ -8,6 +8,7 @@ import { eq, asc, and } from 'drizzle-orm'
 import { QuestionCard } from '@/components/interview/question-card'
 import { CodeChallengeCard } from '@/components/interview/code-challenge'
 import { DownloadPdfButton } from '@/components/export/download-pdf-button'
+import { PackStatusPoller } from '@/components/interview/pack-status-poller'
 import { retryInterviewPack } from '@/actions/interview'
 
 type Props = {
@@ -121,6 +122,7 @@ export default async function InterviewPackPage({ params }: Props) {
         const isStuck = ageMs > 3 * 60 * 1000 // 3 minutes
         return (
           <div className="rounded-xl bg-amber-950 border border-amber-800 px-5 py-4 mb-6">
+            <PackStatusPoller />
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="h-5 w-5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin flex-shrink-0 mt-0.5" />

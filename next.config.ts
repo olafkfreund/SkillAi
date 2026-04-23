@@ -2,6 +2,13 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  allowedDevOrigins: [
+    'localhost',
+    '127.0.0.1',
+    'p620.tail833f7.ts.net',
+    '*.tail833f7.ts.net',
+    '100.69.100.115',
+  ],
   experimental: {
     serverActions: {
       bodySizeLimit: '11mb',
