@@ -1,0 +1,7 @@
+Interviewer: Tell me about your experience with TypeScript.
+
+Alice Smith: I've been using TypeScript for three years. I really enjoy the type safety it provides, especially for large codebases.
+
+Interviewer: Can you give me an example of a complex type you've worked with?
+
+Alice Smith: Sure. I built a generic event bus with conditional types and inferred payloads. It ensured type-safe event dispatch across our entire monorepo.

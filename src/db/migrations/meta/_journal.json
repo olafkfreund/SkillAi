@@ -8,6 +8,90 @@
       "when": 1775732773740,
       "tag": "0000_lumpy_rage",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775826081132,
+      "tag": "0001_fluffy_sprite",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775912400000,
+      "tag": "0002_add_generation_stage",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775998800000,
+      "tag": "0003_add_composite_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1776085200000,
+      "tag": "0004_add_status_confirmation",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1776171600000,
+      "tag": "0005_add_candidate_rates",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776258000000,
+      "tag": "0006_add_location_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776344400000,
+      "tag": "0007_add_pack_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776430800000,
+      "tag": "0008_add_cv_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1776517200000,
+      "tag": "0009_add_cv_text_formatted",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776603600000,
+      "tag": "0010_add_role_deadlines",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1776690000000,
+      "tag": "0011_add_role_customer_day_rate",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1776776400000,
+      "tag": "0012_add_internal_bench",
+      "breakpoints": true
     }
   ]
 }

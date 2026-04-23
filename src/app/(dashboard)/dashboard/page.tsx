@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { desc, eq, and, gte, count, sql, isNull } from 'drizzle-orm'
+import { desc, asc, eq, and, gte, ne, count, sql, isNull } from 'drizzle-orm'
 import {
   BriefcaseIcon,
   UsersIcon,
@@ -11,7 +11,8 @@ import {
 
 import { auth } from '@/lib/auth'
 import { withTenant } from '@/db'
-import { roles, candidates, scores, interviewPacks, agencies } from '@/db/schema'
+import { roles, candidates, scores, interviewPacks, agencies, interviewSlots, users } from '@/db/schema'
+import { NextInterviewsCard } from '@/components/dashboard/next-interviews-card'
 
 export const metadata = { title: 'Dashboard — SkillAI' }
 
@@ -116,6 +117,35 @@ export default async function DashboardPage() {
       .limit(8)
   )
 
+  // ── Upcoming interviews (next 5, soonest first, excluding cancelled) ─────
+  const upcomingInterviews = await withTenant(tenantId, async (tx) =>
+    tx
+      .select({
+        id:                  interviewSlots.id,
+        scheduledAt:         interviewSlots.scheduledAt,
+        durationMinutes:     interviewSlots.durationMinutes,
+        title:               interviewSlots.title,
+        location:            interviewSlots.location,
+        meetingUrl:          interviewSlots.meetingUrl,
+        status:              interviewSlots.status,
+        candidateId:         interviewSlots.candidateId,
+        candidateFirstName:  candidates.firstName,
+        candidateLastName:   candidates.lastName,
+        roleTitle:           roles.title,
+        interviewerName:     users.name,
+      })
+      .from(interviewSlots)
+      .innerJoin(candidates, eq(interviewSlots.candidateId, candidates.id))
+      .leftJoin(roles, eq(interviewSlots.roleId, roles.id))
+      .leftJoin(users, eq(interviewSlots.interviewerId, users.id))
+      .where(and(
+        gte(interviewSlots.scheduledAt, new Date()),
+        ne(interviewSlots.status, 'cancelled')
+      ))
+      .orderBy(asc(interviewSlots.scheduledAt))
+      .limit(5)
+  )
+
   return (
     <div>
       {/* Page header */}
@@ -126,6 +156,9 @@ export default async function DashboardPage() {
           <span className="font-medium text-zinc-300">{session?.user.name}</span>.
         </p>
       </div>
+
+      {/* ── Next interviews widget ──────────────────────────────────────── */}
+      <NextInterviewsCard interviews={upcomingInterviews} />
 
       {/* ── Stat cards ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Download } from 'lucide-react'
+import { Download, HomeIcon } from 'lucide-react'
 import { ComparisonCheckbox } from './comparison-checkbox'
 import { BulkStatusBar } from './bulk-status-bar'
 
@@ -24,6 +24,25 @@ export type CandidateRow = {
   status: string
   createdAt: string | Date
   agencyName: string | null
+  candidateRate: string | null
+  customerRate: string | null
+  rateCurrency: string | null
+  isInternalAgency?: boolean
+  availabilityStatus?: string
+  availableFrom?: string | null
+}
+
+function formatAvailableFrom(date: string | null | undefined): string {
+  if (!date) return ''
+  try {
+    return new Date(date).toLocaleDateString(undefined, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })
+  } catch {
+    return date
+  }
 }
 
 type Props = {
@@ -90,6 +109,9 @@ export function SelectableCandidateList({ candidates }: Props) {
               <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden sm:table-cell">
                 Agency
               </th>
+              <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden lg:table-cell">
+                Rate/day
+              </th>
               <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden md:table-cell">
                 Status
               </th>
@@ -128,18 +150,54 @@ export function SelectableCandidateList({ candidates }: Props) {
                     />
                   </td>
                   <td className="px-5 py-3">
-                    <Link
-                      href={`/dashboard/candidates/${c.id}`}
-                      className="font-medium text-zinc-100 hover:text-blue-400 transition-colors"
-                    >
-                      {c.firstName} {c.lastName}
-                    </Link>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Link
+                        href={`/dashboard/candidates/${c.id}`}
+                        className="font-medium text-zinc-100 hover:text-blue-400 transition-colors"
+                      >
+                        {c.firstName} {c.lastName}
+                      </Link>
+                      {c.availabilityStatus === 'on_project' && (
+                        <span
+                          className="inline-flex items-center rounded-full border border-amber-800 bg-amber-950
+                                     text-amber-300 text-xs font-medium px-2 py-0.5"
+                          title="On project"
+                        >
+                          {c.availableFrom
+                            ? `On project until ${formatAvailableFrom(c.availableFrom)}`
+                            : 'On project'}
+                        </span>
+                      )}
+                      {c.availabilityStatus === 'unavailable' && (
+                        <span
+                          className="inline-flex items-center rounded-full border border-zinc-600 bg-zinc-800
+                                     text-zinc-300 text-xs font-medium px-2 py-0.5"
+                        >
+                          Unavailable
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-3 text-zinc-500 truncate max-w-[200px]">
                     {c.email ?? '—'}
                   </td>
-                  <td className="px-5 py-3 text-zinc-500 hidden sm:table-cell">
-                    {c.agencyName ?? '—'}
+                  <td className="px-5 py-3 hidden sm:table-cell">
+                    {c.isInternalAgency ? (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full border border-blue-800 bg-blue-950
+                                   text-blue-300 text-xs font-medium px-2 py-0.5"
+                      >
+                        <HomeIcon className="h-3 w-3" />
+                        Internal
+                      </span>
+                    ) : (
+                      <span className="text-zinc-500">{c.agencyName ?? '—'}</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3 text-zinc-400 hidden lg:table-cell tabular-nums text-sm">
+                    {c.candidateRate
+                      ? `${c.rateCurrency ?? ''} ${Number(c.candidateRate).toFixed(0)}`
+                      : '—'}
                   </td>
                   <td className="px-5 py-3 hidden md:table-cell">
                     <span

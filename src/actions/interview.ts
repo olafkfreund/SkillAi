@@ -1,28 +1,24 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { after } from 'next/server'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { randomUUID } from 'crypto'
-import { db, withTenant } from '@/db'
+import { withTenant } from '@/db'
 import {
   interviewPacks,
   interviewQuestions,
-  codeChallenges,
   candidates,
-  roles,
 } from '@/db/schema'
 import { requireRole } from '@/lib/auth/require-role'
-import { extractCvProfile } from '@/lib/ai/interview'
-import { generateQuestions } from '@/lib/ai/interview'
-import { inferExperienceLevel, inferLanguage } from '@/lib/ai/interview-helpers'
+import { inferExperienceLevel } from '@/lib/ai/interview-helpers'
 import { getActionContext } from '@/lib/auth/action-context'
 
 const CreatePackSchema = z.object({
   candidateId: z.string().uuid(),
   roleId: z.string().uuid(),
   includeCodeChallenge: z.boolean().default(false),
+  packType: z.enum(['full', 'pre_screening']).default('full'),
 })
 
 export type CreatePackState =
@@ -45,10 +41,13 @@ export async function createInterviewPack(
     candidateId: formData.get('candidateId'),
     roleId: formData.get('roleId'),
     includeCodeChallenge: formData.get('includeCodeChallenge') === 'true',
+    packType: formData.get('packType') || 'full',
   })
   if (!parsed.success) return { success: false, error: 'Invalid input' }
 
-  const { candidateId, roleId, includeCodeChallenge } = parsed.data
+  const { candidateId, roleId, packType } = parsed.data
+  // Pre-screening never includes code challenge
+  const includeCodeChallenge = packType === 'pre_screening' ? false : parsed.data.includeCodeChallenge
 
   // Verify candidate belongs to this tenant
   const [candidate] = await withTenant(tenantId, async (tx) =>
@@ -70,14 +69,8 @@ export async function createInterviewPack(
       generationStatus: 'pending',
       experienceLevel,
       includesCodeChallenge: includeCodeChallenge,
+      packType,
       createdBy: userId,
-    })
-  })
-
-  // Schedule generation to run after response is sent (Next.js after() guarantees completion)
-  after(async () => {
-    await _generateInterviewPack(packId, tenantId, includeCodeChallenge).catch((err) => {
-      console.error('Interview pack generation error (after):', err)
     })
   })
 
@@ -105,12 +98,6 @@ export async function retryInterviewPack(packId: string): Promise<{ success: boo
     tx.update(interviewPacks).set({ generationStatus: 'pending', errorMessage: null, updatedAt: new Date() })
       .where(eq(interviewPacks.id, packId))
   )
-
-  after(async () => {
-    await _generateInterviewPack(packId, tenantId, pack.includesCodeChallenge).catch((err) => {
-      console.error('Interview pack retry error (after):', err)
-    })
-  })
 
   revalidatePath(`/dashboard/candidates/${pack.candidateId}/interview/${packId}`)
   return { success: true }
@@ -147,108 +134,22 @@ export async function updateQuestionNotes(
   if (!ctx) return { success: false, error: 'Unauthorized' }
   const { tenantId } = ctx
 
-  // Verify question belongs to tenant via pack
-  const [question] = await db
-    .select({ packId: interviewQuestions.packId })
-    .from(interviewQuestions)
-    .where(eq(interviewQuestions.id, questionId))
-    .limit(1)
+  // Verify question belongs to tenant via pack (all queries within tenant context)
+  const [question] = await withTenant(tenantId, async (tx) =>
+    tx.select({ id: interviewQuestions.id, packId: interviewQuestions.packId })
+      .from(interviewQuestions)
+      .innerJoin(interviewPacks, eq(interviewQuestions.packId, interviewPacks.id))
+      .where(eq(interviewQuestions.id, questionId))
+      .limit(1)
+  )
   if (!question) return { success: false, error: 'Question not found' }
 
-  const [pack] = await withTenant(tenantId, async (tx) =>
-    tx.select({ id: interviewPacks.id })
-      .from(interviewPacks).where(eq(interviewPacks.id, question.packId)).limit(1)
+  await withTenant(tenantId, async (tx) =>
+    tx.update(interviewQuestions)
+      .set({ notes })
+      .where(eq(interviewQuestions.id, questionId))
   )
-  if (!pack) return { success: false, error: 'Forbidden' }
-
-  await db
-    .update(interviewQuestions)
-    .set({ notes })
-    .where(eq(interviewQuestions.id, questionId))
 
   return { success: true }
 }
 
-// -- Background pipeline --
-
-async function _generateInterviewPack(
-  packId: string,
-  tenantId: string,
-  includeCodeChallenge: boolean
-): Promise<void> {
-  await withTenant(tenantId, async (tx) =>
-    tx.update(interviewPacks)
-      .set({ generationStatus: 'processing', updatedAt: new Date() })
-      .where(eq(interviewPacks.id, packId))
-  )
-
-  try {
-    const [pack] = await withTenant(tenantId, async (tx) =>
-      tx.select().from(interviewPacks).where(eq(interviewPacks.id, packId)).limit(1)
-    )
-    const [candidate] = await withTenant(tenantId, async (tx) =>
-      tx.select().from(candidates).where(eq(candidates.id, pack.candidateId)).limit(1)
-    )
-    const [role] = await withTenant(tenantId, async (tx) =>
-      tx.select().from(roles).where(eq(roles.id, pack.roleId)).limit(1)
-    )
-
-    // Stage 1: Extract CV profile
-    const cvProfile = await extractCvProfile(candidate.cvText)
-
-    // Stage 2: Generate questions
-    const language = inferLanguage(cvProfile.technical_skills)
-    const result = await generateQuestions(cvProfile, role, { includeCodeChallenge, language })
-
-    // Insert questions
-    await withTenant(tenantId, async (tx) => {
-      const questionValues = result.questions.map((q, i) => ({
-        packId,
-        questionType: q.question_type,
-        difficulty: q.difficulty,
-        questionText: q.question_text,
-        rationale: q.rationale,
-        followUps: q.follow_ups,
-        strongAnswerSignals: q.strong_answer_signals,
-        acceptableAnswerSignals: q.acceptable_answer_signals,
-        weakAnswerSignals: q.weak_answer_signals,
-        cvReferences: q.cv_references,
-        orderIndex: i,
-      }))
-
-      await tx.insert(interviewQuestions).values(questionValues)
-
-      if (result.code_challenge) {
-        const cc = result.code_challenge
-        await tx.insert(codeChallenges).values({
-          packId,
-          title: cc.title,
-          problemDescription: cc.problem_description,
-          starterCode: cc.starter_code,
-          language: cc.language,
-          unitTests: cc.unit_tests,
-          evaluationCriteria: cc.evaluation_criteria,
-          estimatedMinutes: cc.estimated_minutes,
-        })
-      }
-
-      await tx.update(interviewPacks).set({
-        generationStatus: 'complete',
-        experienceLevel: result.experience_level,
-        recommendedDurationMinutes: result.recommended_duration_minutes,
-        includesCodeChallenge: !!result.code_challenge,
-        updatedAt: new Date(),
-      }).where(eq(interviewPacks.id, packId))
-    })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    await withTenant(tenantId, async (tx) =>
-      tx.update(interviewPacks).set({
-        generationStatus: 'failed',
-        errorMessage: message,
-        updatedAt: new Date(),
-      }).where(eq(interviewPacks.id, packId))
-    )
-    console.error(`Interview pack generation failed for ${packId}:`, message)
-  }
-}

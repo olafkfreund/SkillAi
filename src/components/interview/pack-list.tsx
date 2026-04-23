@@ -1,15 +1,17 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { FileTextIcon, Loader2Icon, CheckCircleIcon, XCircleIcon, ClockIcon } from 'lucide-react'
 
 type Pack = {
   id: string
   generationStatus: string
+  generationStage: string | null
   experienceLevel: string | null
   recommendedDurationMinutes: number | null
   includesCodeChallenge: boolean
+  packType: 'full' | 'pre_screening'
   createdAt: string
   updatedAt: string
   roleTitle: string | null
@@ -43,40 +45,24 @@ const STATUS_CONFIG: Record<string, { icon: React.ReactNode; label: string; clas
 }
 
 export function PackList({ candidateId }: Props) {
-  const [packs, setPacks] = useState<Pack[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchPacks() {
-      try {
-        const res = await fetch(`/api/candidates/${candidateId}/interview-packs`)
-        if (res.ok) {
-          const data = await res.json()
-          setPacks(data)
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchPacks()
-  }, [candidateId])
-
-  // Poll while any pack is pending/processing
-  useEffect(() => {
-    const hasPending = packs.some(
-      (p) => p.generationStatus === 'pending' || p.generationStatus === 'processing'
-    )
-    if (!hasPending) return
-
-    const id = setInterval(async () => {
+  const { data: packs = [], isLoading } = useQuery<Pack[]>({
+    queryKey: ['interview-packs', candidateId],
+    queryFn: async () => {
       const res = await fetch(`/api/candidates/${candidateId}/interview-packs`)
-      if (res.ok) setPacks(await res.json())
-    }, 3000)
+      if (!res.ok) return []
+      return res.json()
+    },
+    refetchInterval: (query) => {
+      const data = query.state.data
+      if (!data) return false
+      const hasPending = data.some(
+        (p) => p.generationStatus === 'pending' || p.generationStatus === 'processing'
+      )
+      return hasPending ? 3000 : false
+    },
+  })
 
-    return () => clearInterval(id)
-  }, [candidateId, packs])
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center gap-2 text-sm text-zinc-500 py-4">
         <Loader2Icon className="h-4 w-4 animate-spin" />
@@ -109,8 +95,13 @@ export function PackList({ candidateId }: Props) {
           >
             <FileTextIcon className="h-4 w-4 text-zinc-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-zinc-100 truncate">
-                {pack.roleTitle ?? 'Unknown role'}
+              <p className="text-sm font-medium text-zinc-100 truncate flex items-center gap-2">
+                <span className="truncate">{pack.roleTitle ?? 'Unknown role'}</span>
+                {pack.packType === 'pre_screening' && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-950 text-amber-300 border border-amber-800 flex-shrink-0">
+                    Pre-screening
+                  </span>
+                )}
               </p>
               <p className="text-xs text-zinc-500 mt-0.5">
                 {isReady ? (
@@ -125,6 +116,8 @@ export function PackList({ candidateId }: Props) {
                   </>
                 ) : isStuck ? (
                   'Stuck — click to retry'
+                ) : isPending && pack.generationStage ? (
+                  pack.generationStage
                 ) : (
                   new Date(pack.createdAt).toLocaleDateString()
                 )}
@@ -141,7 +134,6 @@ export function PackList({ candidateId }: Props) {
           </div>
         )
 
-        // Always link to pack page — failed/stuck packs show retry button there
         return (
           <Link
             key={pack.id}

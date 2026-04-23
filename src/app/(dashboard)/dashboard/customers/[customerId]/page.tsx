@@ -101,6 +101,19 @@ export default async function CustomerDetailPage({ params }: Props) {
                   </a>
                 </div>
               )}
+              {customer.portalBaseUrl && (
+                <div>
+                  <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Portal Base URL</p>
+                  <a
+                    href={customer.portalBaseUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-violet-400 hover:underline mt-0.5 block"
+                  >
+                    {customer.portalBaseUrl}
+                  </a>
+                </div>
+              )}
               {customer.notes && (
                 <div>
                   <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Notes</p>

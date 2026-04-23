@@ -4,7 +4,7 @@ import { eq, and, desc } from 'drizzle-orm'
 import { ArrowLeftIcon, ArchiveIcon } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { db, withTenant } from '@/db'
-import { candidates, scores, roles, notes, agencies, candidateEnrichments, interviewSlots, calendarConnections } from '@/db/schema'
+import { candidates, scores, roles, notes, agencies, candidateEnrichments, cvProfiles, interviewSlots, calendarConnections } from '@/db/schema'
 import { ScoreChart } from '@/components/candidates/score-chart'
 import { ScorePolling } from '@/components/candidates/score-polling'
 import { RescoreButton } from '@/components/candidates/rescore-button'
@@ -14,13 +14,14 @@ import { DownloadPdfButton } from '@/components/export/download-pdf-button'
 import { EnrichmentPanel } from '@/components/candidates/enrichment-panel'
 import { NotesPanel } from '@/components/candidates/notes-panel'
 import { StatusSelector } from '@/components/candidates/status-selector'
-import { CvDisplay } from '@/components/candidates/cv-display'
+import { CandidateCvProfile } from '@/components/candidates/candidate-cv-profile'
 import { EditDetailsForm } from '@/components/candidates/edit-details-form'
 import { InterviewCalendar } from '@/components/candidates/interview-calendar'
 import { IcsImportButton } from '@/components/candidates/ics-import-button'
 import { RoleHistoryPanel } from '@/components/candidates/role-history-panel'
 import { MatchingRolesPanel } from '@/components/candidates/matching-roles-panel'
 import { CvFilePanel } from '@/components/candidates/cv-file-panel'
+import { TranscriptSection } from '@/components/transcripts/transcript-section'
 import { archiveCandidate } from '@/actions/candidates'
 import { hasRole } from '@/lib/auth/require-role'
 import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
@@ -64,6 +65,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
     rawSlots,
     calendarConns,
     [enrichmentRow],
+    [cvProfileRow],
   ] = await Promise.all([
     withTenant(tenantId, async (tx) =>
       tx
@@ -105,6 +107,14 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
         .select()
         .from(candidateEnrichments)
         .where(eq(candidateEnrichments.candidateId, candidateId))
+        .limit(1)
+    ),
+    // Load CV profile (structured AI extraction)
+    withTenant(tenantId, async (tx) =>
+      tx
+        .select()
+        .from(cvProfiles)
+        .where(eq(cvProfiles.candidateId, candidateId))
         .limit(1)
     ),
   ])
@@ -181,10 +191,14 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
             {candidate.phone && <span>{candidate.phone}</span>}
             {agency && <span>via {agency.name}</span>}
           </div>
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
             <DownloadPdfButton
               href={`/api/export/candidate/${candidateId}${roleId ? `?roleId=${roleId}` : ''}`}
-              label="Download profile PDF"
+              label="Internal PDF"
+            />
+            <DownloadPdfButton
+              href={`/api/export/candidate/${candidateId}?audience=customer${roleId ? `&roleId=${roleId}` : ''}`}
+              label="Customer PDF"
             />
             {canEdit && candidate.isActive && (
               <form action={archiveCandidate.bind(null, candidateId)}>
@@ -227,9 +241,83 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
             email: candidate.email ?? null,
             phone: candidate.phone ?? null,
             agencyId: candidate.agencyId ?? null,
+            country: candidate.country ?? null,
+            city: candidate.city ?? null,
+            languagesSpoken: candidate.languagesSpoken ?? [],
+            willingToRelocate: candidate.willingToRelocate ?? null,
+            candidateRate: candidate.candidateRate ?? null,
+            customerRate: candidate.customerRate ?? null,
+            rateCurrency: candidate.rateCurrency ?? null,
+            availabilityStatus: candidate.availabilityStatus ?? 'available',
+            availableFrom: candidate.availableFrom ?? null,
           }}
           agencies={allAgencies}
         />
+      )}
+
+      {/* Location & Language */}
+      {(candidate.country || candidate.city || (candidate.languagesSpoken && candidate.languagesSpoken.length > 0)) && (
+        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+          <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">Location & Language</h3>
+          <div className="flex flex-wrap gap-x-8 gap-y-2">
+            {(candidate.country || candidate.city) && (
+              <div>
+                <p className="text-xs text-zinc-500">Location</p>
+                <p className="text-sm text-zinc-100">
+                  {[candidate.city, candidate.country].filter(Boolean).join(', ')}
+                </p>
+              </div>
+            )}
+            {candidate.languagesSpoken && candidate.languagesSpoken.length > 0 && (
+              <div>
+                <p className="text-xs text-zinc-500">Languages</p>
+                <p className="text-sm text-zinc-100">{candidate.languagesSpoken.join(', ')}</p>
+              </div>
+            )}
+            {candidate.willingToRelocate !== null && (
+              <div>
+                <p className="text-xs text-zinc-500">Willing to Relocate</p>
+                <p className="text-sm text-zinc-100">{candidate.willingToRelocate ? 'Yes' : 'No'}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Commercial Details */}
+      {(candidate.candidateRate || candidate.customerRate) && (
+        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+          <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">Commercial Details</h3>
+          <div className="grid grid-cols-3 gap-4">
+            {candidate.candidateRate && (
+              <div>
+                <p className="text-xs text-zinc-500">Candidate Rate/day</p>
+                <p className="text-lg font-semibold text-zinc-100">
+                  {candidate.rateCurrency ?? ''} {Number(candidate.candidateRate).toFixed(2)}
+                </p>
+              </div>
+            )}
+            {candidate.customerRate && (
+              <div>
+                <p className="text-xs text-zinc-500">Customer Rate/day</p>
+                <p className="text-lg font-semibold text-zinc-100">
+                  {candidate.rateCurrency ?? ''} {Number(candidate.customerRate).toFixed(2)}
+                </p>
+              </div>
+            )}
+            {candidate.candidateRate && candidate.customerRate && (
+              <div>
+                <p className="text-xs text-zinc-500">Margin</p>
+                <p className="text-lg font-semibold text-emerald-400">
+                  {candidate.rateCurrency ?? ''} {(Number(candidate.customerRate) - Number(candidate.candidateRate)).toFixed(2)}
+                  <span className="text-sm text-zinc-500 ml-1">
+                    ({((Number(candidate.customerRate) - Number(candidate.candidateRate)) / Number(candidate.customerRate) * 100).toFixed(1)}%)
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Scoring section */}
@@ -316,6 +404,12 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
         <PackList candidateId={candidateId} />
       </div>
 
+      {/* Interview Transcripts */}
+      <TranscriptSection
+        candidateId={candidateId}
+        defaultRoleId={roleId ?? activeScore?.score.roleId}
+      />
+
       {/* Interview Schedule */}
       <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
         <h2 className="font-semibold text-zinc-100 mb-4">Interview Schedule</h2>
@@ -336,10 +430,25 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
         />
       </div>
 
-      {/* CV */}
+      {/* CV Profile */}
       <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
-        <h2 className="font-semibold text-zinc-100 mb-3">CV</h2>
-        <CvDisplay cvText={candidate.cvText} />
+        <h2 className="font-semibold text-zinc-100 mb-4">CV Profile</h2>
+        <CandidateCvProfile
+          candidateId={candidateId}
+          cvText={candidate.cvText}
+          cvTextFormatted={candidate.cvTextFormatted}
+          profile={cvProfileRow ? {
+            experienceLevel: cvProfileRow.experienceLevel,
+            summary: cvProfileRow.summary,
+            technicalSkills: cvProfileRow.technicalSkills ?? [],
+            companies: cvProfileRow.companies ?? [],
+            personalizableMoments: cvProfileRow.personalizableMoments ?? [],
+            extractionStatus: cvProfileRow.extractionStatus,
+            errorMessage: cvProfileRow.errorMessage,
+            extractedAt: cvProfileRow.extractedAt ? cvProfileRow.extractedAt.toISOString() : null,
+          } : null}
+          canEdit={canEdit}
+        />
       </div>
 
       {/* Notes */}

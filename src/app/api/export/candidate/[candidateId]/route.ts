@@ -1,11 +1,73 @@
 import { NextResponse } from 'next/server'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import React from 'react'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { withTenant } from '@/db'
-import { candidates, scores, roles, agencies } from '@/db/schema'
+import {
+  candidates,
+  scores,
+  roles,
+  agencies,
+  notes,
+  interviewTranscripts,
+  transcriptAnalyses,
+  candidateEnrichments,
+} from '@/db/schema'
+import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
 import { CandidatePDF } from '@/lib/pdf'
+
+type Audience = 'internal' | 'customer'
+
+type TranscriptAnalysisEntry = {
+  overallScore: number | null
+  communicationScore: number | null
+  technicalDepthScore: number | null
+  problemSolvingScore: number | null
+  socialFitScore: number | null
+  communicationReasoning: string | null
+  technicalDepthReasoning: string | null
+  problemSolvingReasoning: string | null
+  socialFitReasoning: string | null
+  summary: string | null
+  strengths: string[] | null
+  redFlags: string[] | null
+  recommendedDecision: 'proceed' | 'consider' | 'decline' | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  questionResponses: any
+  createdAt: Date
+}
+
+/**
+ * Produce customer-safe copies of transcript analyses by:
+ * - dropping redFlags and recommendedDecision
+ * - blanking reasoning text for dimension scores below 60
+ * - filtering out question responses with quality === 'weak'
+ * Does not mutate the input.
+ */
+function sanitizeAnalysesForCustomer(analyses: TranscriptAnalysisEntry[]): TranscriptAnalysisEntry[] {
+  return analyses.map((a) => {
+    const blankIfLow = (reasoning: string | null, score: number | null) =>
+      score !== null && score < 60 ? null : reasoning
+
+    const safeQR = Array.isArray(a.questionResponses)
+      ? (a.questionResponses as Array<{ quality?: string }>).filter(
+          (q) => q.quality !== 'weak'
+        )
+      : a.questionResponses
+
+    return {
+      ...a,
+      redFlags: null,
+      recommendedDecision: null,
+      communicationReasoning: blankIfLow(a.communicationReasoning, a.communicationScore),
+      technicalDepthReasoning: blankIfLow(a.technicalDepthReasoning, a.technicalDepthScore),
+      problemSolvingReasoning: blankIfLow(a.problemSolvingReasoning, a.problemSolvingScore),
+      socialFitReasoning: blankIfLow(a.socialFitReasoning, a.socialFitScore),
+      questionResponses: safeQR,
+    }
+  })
+}
 
 export async function GET(
   req: Request,
@@ -20,58 +82,158 @@ export async function GET(
   const { candidateId } = await params
   const { searchParams } = new URL(req.url)
   const roleId = searchParams.get('roleId')
+  const audience: Audience = searchParams.get('audience') === 'customer' ? 'customer' : 'internal'
 
-  const [candidate] = await withTenant(tenantId, async (tx) =>
-    tx
+  console.log(`[pdf-export] candidateId=${candidateId} audience=${audience} roleId=${roleId ?? 'none'}`)
+
+  try {
+
+  // Single withTenant call — one RLS context setup for all queries
+  const data = await withTenant(tenantId, async (tx) => {
+    const [candidate] = await tx
       .select()
       .from(candidates)
       .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
       .limit(1)
-  )
-  if (!candidate) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const [agency] = candidate.agencyId
-    ? await withTenant(tenantId, async (tx) =>
-        tx.select().from(agencies).where(eq(agencies.id, candidate.agencyId!)).limit(1)
-      )
-    : [null]
+    if (!candidate) return null
 
-  let score = null
-  let role = null
+    const [agencyResult, allScores, analyses, candidateNotes, enrichmentResult] =
+      await Promise.all([
+        candidate.agencyId
+          ? tx.select().from(agencies).where(eq(agencies.id, candidate.agencyId!)).limit(1)
+          : Promise.resolve([null]),
+        tx
+          .select({ score: scores, role: roles })
+          .from(scores)
+          .innerJoin(roles, eq(scores.roleId, roles.id))
+          .where(eq(scores.candidateId, candidateId))
+          .orderBy(desc(scores.updatedAt)),
+        tx
+          .select({ transcript_analyses: transcriptAnalyses, interview_transcripts: interviewTranscripts })
+          .from(transcriptAnalyses)
+          .innerJoin(interviewTranscripts, eq(transcriptAnalyses.transcriptId, interviewTranscripts.id))
+          .where(eq(interviewTranscripts.candidateId, candidateId))
+          .orderBy(desc(transcriptAnalyses.createdAt)),
+        tx
+          .select()
+          .from(notes)
+          .where(eq(notes.candidateId, candidateId))
+          .orderBy(desc(notes.createdAt)),
+        tx
+          .select()
+          .from(candidateEnrichments)
+          .where(eq(candidateEnrichments.candidateId, candidateId))
+          .limit(1),
+      ])
+
+    return { candidate, agencyResult, allScores, analyses, candidateNotes, enrichmentResult }
+  })
+
+  if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  const { candidate, agencyResult, allScores, analyses, candidateNotes, enrichmentResult } = data
+
+  const agency = agencyResult[0] ?? null
+  const enrichmentRow = enrichmentResult[0] ?? null
+
+  // Determine the active score/role: prefer the ?roleId param, fall back to the
+  // first completed score in the history, then any score.
+  let activeScore = null
+  let activeRole = null
 
   if (roleId) {
-    const [scoreRow] = await withTenant(tenantId, async (tx) =>
-      tx
-        .select()
-        .from(scores)
-        .where(and(eq(scores.candidateId, candidateId), eq(scores.roleId, roleId)))
-        .limit(1)
-    )
-    score = scoreRow ?? null
-
-    if (score) {
-      const [roleRow] = await withTenant(tenantId, async (tx) =>
-        tx.select().from(roles).where(eq(roles.id, roleId)).limit(1)
-      )
-      role = roleRow ?? null
+    const match = allScores.find((s) => s.score.roleId === roleId)
+    if (match) {
+      activeScore = match.score
+      activeRole = match.role
     }
   }
+
+  if (!activeScore) {
+    const firstComplete = allScores.find((s) => s.score.scoreStatus === 'complete')
+    const fallback = firstComplete ?? allScores[0]
+    if (fallback) {
+      activeScore = fallback.score
+      activeRole = fallback.role
+    }
+  }
+
+  const rawAnalyses: TranscriptAnalysisEntry[] = analyses.map((a) => ({
+    overallScore: a.transcript_analyses.overallScore,
+    communicationScore: a.transcript_analyses.communicationScore,
+    technicalDepthScore: a.transcript_analyses.technicalDepthScore,
+    problemSolvingScore: a.transcript_analyses.problemSolvingScore,
+    socialFitScore: a.transcript_analyses.socialFitScore,
+    communicationReasoning: a.transcript_analyses.communicationReasoning,
+    technicalDepthReasoning: a.transcript_analyses.technicalDepthReasoning,
+    problemSolvingReasoning: a.transcript_analyses.problemSolvingReasoning,
+    socialFitReasoning: a.transcript_analyses.socialFitReasoning,
+    summary: a.transcript_analyses.summary,
+    strengths: a.transcript_analyses.strengths,
+    redFlags: a.transcript_analyses.redFlags,
+    recommendedDecision: a.transcript_analyses.recommendedDecision,
+    questionResponses: a.transcript_analyses.questionResponses,
+    createdAt: a.transcript_analyses.createdAt,
+  }))
+
+  const finalAnalyses = audience === 'customer' ? sanitizeAnalysesForCustomer(rawAnalyses) : rawAnalyses
+  const finalNotes = audience === 'customer' ? [] : candidateNotes.map((n) => ({
+    body: n.body,
+    createdAt: n.createdAt,
+    isEdited: n.isEdited,
+  }))
 
   const buffer = await renderToBuffer(
     React.createElement(CandidatePDF, {
       candidate,
-      score,
-      role,
       agencyName: agency?.name ?? null,
+      audience,
+      activeScore,
+      activeRole,
+      roleHistory: allScores
+        .filter((s) => s.score.scoreStatus === 'complete')
+        .map((s) => ({
+          roleTitle: s.role.title,
+          overallScore: s.score.overallScore,
+          technicalScore: s.score.technicalScore,
+          experienceScore: s.score.experienceScore,
+          culturalFitScore: s.score.culturalFitScore,
+          communicationScore: s.score.communicationScore,
+          scoredAt: s.score.updatedAt,
+        })),
+      transcriptAnalyses: finalAnalyses,
+      notes: finalNotes,
+      enrichment: enrichmentRow
+        ? {
+            webHits: (enrichmentRow.webHits ?? []) as WebHit[],
+            githubProfile: (enrichmentRow.githubProfile ?? null) as GitHubProfile | null,
+          }
+        : null,
+      generatedAt: new Date(),
     }) as any
   )
 
-  const filename = `${candidate.firstName}-${candidate.lastName}-profile.pdf`
+  const filename = audience === 'customer'
+    ? `customer-profile-${candidate.firstName}-${candidate.lastName}.pdf`
+    : `${candidate.firstName}-${candidate.lastName}-profile.pdf`
+
+  console.log(`[pdf-export] ✓ rendered ${filename} (${buffer.length} bytes)`)
 
   return new NextResponse(buffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${filename}"`,
+      // `inline` lets the browser display the PDF in a new tab (via the
+      // button's target="_blank"). The filename is still honoured when
+      // the user hits "Save" in the PDF viewer.
+      'Content-Disposition': `inline; filename="${filename}"`,
     },
   })
+  } catch (err) {
+    console.error('[pdf-export] FAILED:', err instanceof Error ? err.stack : err)
+    return NextResponse.json(
+      { error: 'PDF generation failed', detail: err instanceof Error ? err.message : 'unknown' },
+      { status: 500 }
+    )
+  }
 }

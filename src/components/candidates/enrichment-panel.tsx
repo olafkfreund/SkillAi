@@ -263,7 +263,7 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
           )}
 
           {enrichment?.searchedAt && (
-            <p className="text-xs text-zinc-500 mt-2">
+            <p className="text-xs text-zinc-500 mt-2" suppressHydrationWarning>
               Last searched {new Date(enrichment.searchedAt).toLocaleString()}
             </p>
           )}

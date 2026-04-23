@@ -15,6 +15,7 @@ import postgres from 'postgres'
 import bcrypt from 'bcryptjs'
 import { sql } from 'drizzle-orm'
 import * as schema from './schema'
+import { ensureInternalAgency } from '@/lib/tenants/ensure-internal-agency'
 
 const {
   tenants,
@@ -51,6 +52,9 @@ async function seed() {
 
   // Set RLS context for all subsequent inserts
   await db.execute(sql`SELECT set_tenant_context(${tenantId}::uuid)`)
+
+  // -- Internal agency (system-managed, one per tenant) --
+  await ensureInternalAgency(db, tenantId)
 
   // -- Users --
   const adminHash = await bcrypt.hash('admin1234', 12)

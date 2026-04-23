@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useTransition } from 'react'
-import { Download, XIcon } from 'lucide-react'
+import { Download, XIcon, HomeIcon } from 'lucide-react'
 
 type ScorePillProps = { label: string; score: number | null }
 
@@ -16,6 +16,27 @@ function ScorePill({ label, score }: ScorePillProps) {
     <span className={`inline-flex items-center gap-1 text-xs border rounded px-1.5 py-0.5 ${color}`}>
       <span className="text-zinc-500">{label}</span>
       <span className="font-medium">{score}</span>
+    </span>
+  )
+}
+
+function MarginPill({
+  roleRate, roleCurrency, candRate, candCurrency,
+}: { roleRate: string | null; roleCurrency: string | null; candRate: string | null; candCurrency: string | null }) {
+  if (!roleRate || !candRate) return null
+  const mismatch = Boolean(roleCurrency && candCurrency && roleCurrency !== candCurrency)
+  const margin = Number(roleRate) - Number(candRate)
+  const color = margin >= 0
+    ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+    : 'bg-red-950 text-red-300 border-red-800'
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs border rounded-full px-2 py-0.5 ${color}`}
+      title={mismatch ? `Currency mismatch: role ${roleCurrency} vs candidate ${candCurrency}` : undefined}
+    >
+      <span className="text-zinc-400">Margin</span>
+      <span className="font-medium">{margin >= 0 ? '+' : ''}{roleCurrency ?? ''} {margin.toFixed(0)}/day</span>
+      {mismatch && <span className="text-amber-400">⚠</span>}
     </span>
   )
 }
@@ -34,6 +55,11 @@ type Props = {
   experienceScore: number | null
   culturalFitScore: number | null
   communicationScore: number | null
+  roleDayRate: string | null
+  roleCurrency: string | null
+  candidateRate: string | null
+  candidateCurrency: string | null
+  isInternal?: boolean
   canEdit: boolean
   removeAction: (scoreId: string, roleId: string) => Promise<void>
 }
@@ -52,6 +78,11 @@ export function RoleCandidateCard({
   experienceScore,
   culturalFitScore,
   communicationScore,
+  roleDayRate,
+  roleCurrency,
+  candidateRate,
+  candidateCurrency,
+  isInternal,
   canEdit,
   removeAction,
 }: Props) {
@@ -88,9 +119,18 @@ export function RoleCandidateCard({
                   ${isPending ? 'opacity-40 pointer-events-none border-zinc-700' : 'border-zinc-700'}`}
     >
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-zinc-100">
-          {firstName} {lastName}
-          {email && <span className="font-normal text-zinc-500 text-sm ml-2">{email}</span>}
+        <p className="font-medium text-zinc-100 flex items-center gap-2 flex-wrap">
+          <span>
+            {firstName} {lastName}
+          </span>
+          {isInternal && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-950 border border-blue-800
+                             text-blue-300 text-xs font-semibold px-2 py-0.5">
+              <HomeIcon className="h-3 w-3" />
+              INTERNAL
+            </span>
+          )}
+          {email && <span className="font-normal text-zinc-500 text-sm ml-1">{email}</span>}
         </p>
         {scoreStatus === 'complete' && technicalScore !== null && (
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -98,6 +138,12 @@ export function RoleCandidateCard({
             <ScorePill label="Exp" score={experienceScore} />
             <ScorePill label="Fit" score={culturalFitScore} />
             <ScorePill label="Comm" score={communicationScore} />
+            <MarginPill
+              roleRate={roleDayRate}
+              roleCurrency={roleCurrency}
+              candRate={candidateRate}
+              candCurrency={candidateCurrency}
+            />
           </div>
         )}
       </div>

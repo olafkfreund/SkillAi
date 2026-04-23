@@ -19,8 +19,8 @@ export { inferExperienceLevel, inferLanguage }
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-  timeout: 180_000,
-  maxRetries: 1,
+  timeout: 240_000,
+  maxRetries: 3,
 })
 
 // -- Stage 1: CV Profile Extraction --
@@ -35,6 +35,10 @@ const CV_PROFILE_TOOL: Anthropic.Tool = {
         type: 'string',
         enum: ['junior', 'mid', 'senior', 'lead'],
         description: 'Inferred experience level',
+      },
+      summary: {
+        type: 'string',
+        description: 'Concise 2-3 sentence overview of the candidate: seniority, core strengths, notable experience',
       },
       companies: {
         type: 'array',
@@ -67,7 +71,7 @@ const CV_PROFILE_TOOL: Anthropic.Tool = {
 
 export async function extractCvProfile(cvText: string): Promise<CvProfile> {
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 2048,
     tools: [CV_PROFILE_TOOL],
     tool_choice: { type: 'any' },
@@ -76,16 +80,20 @@ export async function extractCvProfile(cvText: string): Promise<CvProfile> {
         role: 'user',
         content: `Extract a structured profile from this CV. Identify the candidate's experience level, companies worked at with key achievements, technical skills, and specific moments worth referencing in interview questions.
 
+Also write a concise 2-3 sentence summary (maximum ~500 characters) of the candidate that captures seniority, core strengths, and notable experience.
+
 CV:
 ${cvText.slice(0, 6000)}`,
       },
     ],
   })
 
+  console.log(`Stage 1 (extractCvProfile): model=${response.model}, usage=${JSON.stringify(response.usage)}`)
+
   const toolBlock = response.content.find(
     (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
   )
-  if (!toolBlock) throw new Error('Stage 1: Claude did not return a tool_use response')
+  if (!toolBlock) throw new Error(`Stage 1: Claude did not return a tool_use response (stop_reason: ${response.stop_reason})`)
 
   const parsed = CvProfileSchema.safeParse(toolBlock.input)
   if (!parsed.success) throw new Error(`Stage 1 schema validation failed: ${parsed.error.message}`)
@@ -98,10 +106,14 @@ ${cvText.slice(0, 6000)}`,
 export async function generateQuestions(
   cvProfile: CvProfile,
   role: { title: string; description: string; requirements: string },
-  options: { includeCodeChallenge: boolean; language?: string }
+  options: { includeCodeChallenge: boolean; language?: string; packType?: 'full' | 'pre_screening' }
 ): Promise<InterviewPackOutput> {
   const language = options.language ?? inferLanguage(cvProfile.technical_skills)
   const experienceLevel = cvProfile.experience_level ?? 'mid'
+  const packType = options.packType ?? 'full'
+  const isPreScreening = packType === 'pre_screening'
+  // Force disable code challenge for pre-screening (too short for coding)
+  const includeCodeChallenge = isPreScreening ? false : options.includeCodeChallenge
 
   const QUESTION_TOOL: Anthropic.Tool = {
     name: 'submit_interview_pack',
@@ -110,10 +122,11 @@ export async function generateQuestions(
       type: 'object' as const,
       properties: {
         experience_level: { type: 'string', enum: ['junior', 'mid', 'senior', 'lead'] },
-        recommended_duration_minutes: { type: 'integer', minimum: 30 },
+        recommended_duration_minutes: { type: 'integer', minimum: isPreScreening ? 20 : 30 },
         questions: {
           type: 'array',
-          minItems: 6,
+          minItems: isPreScreening ? 5 : 6,
+          maxItems: isPreScreening ? 5 : 15,
           items: {
             type: 'object',
             properties: {
@@ -130,7 +143,7 @@ export async function generateQuestions(
             required: ['question_type', 'difficulty', 'question_text', 'rationale', 'follow_ups', 'strong_answer_signals', 'acceptable_answer_signals', 'weak_answer_signals', 'cv_references'],
           },
         },
-        code_challenge: options.includeCodeChallenge ? {
+        code_challenge: includeCodeChallenge ? {
           type: 'object',
           properties: {
             title: { type: 'string' },
@@ -150,7 +163,14 @@ export async function generateQuestions(
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 8000,
+    max_tokens: 12000,
+    system: [
+      {
+        type: 'text',
+        text: 'You are an expert technical interviewer creating personalised interview packs. Generate structured interview questions that are directly tied to the candidate\'s CV and the role requirements. Every question must reference specific CV details.',
+        cache_control: { type: 'ephemeral' },
+      },
+    ],
     tools: [QUESTION_TOOL],
     tool_choice: { type: 'any' },
     messages: [
@@ -159,10 +179,7 @@ export async function generateQuestions(
         content: [
           {
             type: 'text',
-            // Role context cached — same role, many candidates
-            text: `You are an expert technical interviewer creating personalised interview packs.
-
-ROLE: ${role.title}
+            text: `ROLE: ${role.title}
 DESCRIPTION: ${role.description}
 REQUIREMENTS:
 ${role.requirements}`,
@@ -170,7 +187,26 @@ ${role.requirements}`,
           },
           {
             type: 'text',
-            text: `Create a complete interview pack for this ${experienceLevel}-level candidate.
+            text: isPreScreening
+              ? `Create a SHORT pre-screening interview pack for this ${experienceLevel}-level candidate.
+
+CANDIDATE PROFILE:
+- Experience level: ${experienceLevel}
+- Technical skills: ${cvProfile.technical_skills.join(', ')}
+- Companies: ${cvProfile.companies.map((c) => `${c.role} at ${c.name}`).join('; ')}
+- Key moments to reference: ${cvProfile.personalizable_moments.join('; ')}
+
+Pre-screening requirements:
+- Generate EXACTLY 5 questions: 1 behavioral, 2 technical, 1 situational, 1 cultural
+- Target total duration ~30 minutes (recommended_duration_minutes: 30)
+- Questions must be focused and high-signal — this is a quick pre-screening call before a full interview
+- Each question must reference specific CV moments (cv_references array)
+- Include scoring rubric: strong/acceptable/weak answer signals
+- Include up to 2 follow-up questions per question
+- Do NOT include a code challenge
+- Calibrate difficulty to ${experienceLevel} level
+- Prefer shorter, more decisive questions than a full interview — the goal is to quickly assess fit before investing in a longer interview`
+              : `Create a complete interview pack for this ${experienceLevel}-level candidate.
 
 CANDIDATE PROFILE:
 - Experience level: ${experienceLevel}
@@ -183,7 +219,7 @@ Requirements:
 - Each question must reference specific CV moments (cv_references array)
 - Include scoring rubric: strong/acceptable/weak answer signals
 - Include up to 2 follow-up questions per question
-${options.includeCodeChallenge ? `- Include a ${language} code challenge appropriate for ${experienceLevel} level` : '- Do NOT include a code challenge'}
+${includeCodeChallenge ? `- Include a ${language} code challenge appropriate for ${experienceLevel} level` : '- Do NOT include a code challenge'}
 - Calibrate difficulty to ${experienceLevel} level`,
           },
         ],
@@ -191,25 +227,21 @@ ${options.includeCodeChallenge ? `- Include a ${language} code challenge appropr
     ],
   })
 
+  console.log(`Stage 2 response: stop_reason=${response.stop_reason}, usage=${JSON.stringify(response.usage)}`)
+
   const toolBlock = response.content.find(
     (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
   )
   if (!toolBlock) {
     console.error('Stage 2: no tool_use block. stop_reason:', response.stop_reason, 'content types:', response.content.map(b => b.type))
-    throw new Error('Stage 2: Claude did not return a tool_use response')
-  }
-
-  // Log top-level keys so truncation is immediately visible
-  console.log('Stage 2 tool input keys:', Object.keys(toolBlock.input as object))
-  if ((toolBlock.input as Record<string, unknown>).questions) {
-    const qs = (toolBlock.input as Record<string, unknown>).questions as unknown[]
-    console.log('Stage 2 questions count:', qs.length)
+    throw new Error(`Stage 2: Claude did not return a tool_use response (stop_reason: ${response.stop_reason})`)
   }
 
   const parsed = InterviewPackSchema.safeParse(toolBlock.input)
   if (!parsed.success) {
-    console.error('Stage 2 validation failed. Raw input keys:', Object.keys(toolBlock.input as object))
-    throw new Error(`Stage 2 schema validation failed: ${parsed.error.message}`)
+    const inputKeys = Object.keys(toolBlock.input as object)
+    console.error('Stage 2 validation failed. Raw input keys:', inputKeys, 'stop_reason:', response.stop_reason)
+    throw new Error(`Stage 2 schema validation failed (stop_reason: ${response.stop_reason}, keys: ${inputKeys.join(',')}): ${parsed.error.message}`)
   }
 
   return parsed.data

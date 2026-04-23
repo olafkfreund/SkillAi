@@ -20,7 +20,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 const DASHBOARD_PATTERN = /^\/(dashboard|settings)/
-const API_PROTECTED_PATTERN = /^\/api\/(candidates|roles|agencies|export|settings|interview-packs|extract)/
+const API_PROTECTED_PATTERN = /^\/api\/(candidates|roles|agencies|export|settings|interview-packs|extract|transcripts)/
 
 export default auth((req) => {
   const { pathname } = req.nextUrl
@@ -62,5 +62,6 @@ export const config = {
     '/api/settings/:path*',
     '/api/interview-packs/:path*',
     '/api/extract/:path*',
+    '/api/transcripts/:path*',
   ],
 }

@@ -5,6 +5,7 @@
 import { eq, and } from 'drizzle-orm'
 import { db } from '@/db'
 import { calendarConnections } from '@/db/schema'
+import { decrypt, encrypt } from '@/lib/crypto'
 import {
   createGoogleEvent,
   deleteGoogleEvent,
@@ -37,18 +38,22 @@ export async function syncSlotToCalendars(
   }
 
   for (const conn of connections) {
+    // Decrypt stored tokens
+    const decryptedAccess = decrypt(conn.accessToken)
+    const decryptedRefresh = conn.refreshToken ? decrypt(conn.refreshToken) : null
+
     if (conn.provider === 'google') {
       // Refresh token if expired
-      let accessToken = conn.accessToken
-      if (conn.tokenExpiry && conn.tokenExpiry < new Date() && conn.refreshToken) {
-        const refreshed = await refreshGoogleToken(conn.refreshToken)
+      let accessToken = decryptedAccess
+      if (conn.tokenExpiry && conn.tokenExpiry < new Date() && decryptedRefresh) {
+        const refreshed = await refreshGoogleToken(decryptedRefresh)
         if (refreshed) {
           accessToken = refreshed.accessToken
-          // Update stored token
+          // Update stored token (re-encrypt)
           await db
             .update(calendarConnections)
             .set({
-              accessToken: refreshed.accessToken,
+              accessToken: encrypt(refreshed.accessToken),
               tokenExpiry: refreshed.expiresAt,
               updatedAt: new Date(),
             })
@@ -58,7 +63,7 @@ export async function syncSlotToCalendars(
 
       const googleResult = await createGoogleEvent(
         accessToken,
-        conn.refreshToken ?? null,
+        decryptedRefresh,
         conn.calendarId ?? 'primary',
         eventWithAttendee
       )
@@ -67,15 +72,15 @@ export async function syncSlotToCalendars(
 
     if (conn.provider === 'microsoft') {
       // Refresh token if expired
-      let accessToken = conn.accessToken
-      if (conn.tokenExpiry && conn.tokenExpiry < new Date() && conn.refreshToken) {
-        const refreshed = await refreshMicrosoftToken(conn.refreshToken)
+      let accessToken = decryptedAccess
+      if (conn.tokenExpiry && conn.tokenExpiry < new Date() && decryptedRefresh) {
+        const refreshed = await refreshMicrosoftToken(decryptedRefresh)
         if (refreshed) {
           accessToken = refreshed.accessToken
           await db
             .update(calendarConnections)
             .set({
-              accessToken: refreshed.accessToken,
+              accessToken: encrypt(refreshed.accessToken),
               tokenExpiry: refreshed.expiresAt,
               updatedAt: new Date(),
             })
@@ -90,7 +95,7 @@ export async function syncSlotToCalendars(
 
       const msResult = await createMicrosoftEvent(
         accessToken,
-        conn.refreshToken ?? null,
+        decryptedRefresh,
         eventWithAttendee
       )
       if (msResult) result.microsoftEventId = msResult.eventId
@@ -114,11 +119,12 @@ export async function deleteSlotFromCalendars(
     .where(eq(calendarConnections.userId, userId))
 
   for (const conn of connections) {
+    const decryptedAccess = decrypt(conn.accessToken)
     if (conn.provider === 'google' && googleEventId) {
-      await deleteGoogleEvent(conn.accessToken, conn.calendarId ?? 'primary', googleEventId)
+      await deleteGoogleEvent(decryptedAccess, conn.calendarId ?? 'primary', googleEventId)
     }
     if (conn.provider === 'microsoft' && microsoftEventId) {
-      await deleteMicrosoftEvent(conn.accessToken, microsoftEventId)
+      await deleteMicrosoftEvent(decryptedAccess, microsoftEventId)
     }
   }
 }

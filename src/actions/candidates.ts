@@ -7,14 +7,15 @@ import { after } from 'next/server'
 import { eq, and, inArray, or, ilike, notInArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { db, withTenant } from '@/db'
-import { candidates, scores } from '@/db/schema'
+import { candidates, scores, agencies } from '@/db/schema'
 import { ParseError } from '@/lib/parsers'
 import { triggerScoring } from '@/lib/ai/scoring'
 import { requireRole } from '@/lib/auth/require-role'
 import { writeAuditLog } from '@/lib/audit'
 import { getActionContext } from '@/lib/auth/action-context'
 import { validateCvFile, parseCvBuffer, persistCvFile } from '@/lib/cv/store'
-import type { CandidateStatus } from '@/db/schema/candidates'
+import { ensureInternalAgency } from '@/lib/tenants/ensure-internal-agency'
+import type { CandidateStatus, AvailabilityStatus } from '@/db/schema/candidates'
 
 const CreateCandidateSchema = z.object({
   firstName: z.string().min(1).max(100),
@@ -23,7 +24,21 @@ const CreateCandidateSchema = z.object({
   phone: z.string().max(50).optional(),
   agencyId: z.string().uuid().optional(),
   roleId: z.string().uuid(),
-})
+  country: z.string().max(100).optional().or(z.literal('')),
+  city: z.string().max(100).optional().or(z.literal('')),
+  languagesSpoken: z.string().optional().or(z.literal('')),
+  willingToRelocate: z.enum(['true', 'false', '']).optional(),
+  candidateRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  customerRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  rateCurrency: z.string().max(3).toUpperCase().optional().or(z.literal('')),
+}).refine(
+  (data) => {
+    const hasRate = (typeof data.candidateRate === 'number') || (typeof data.customerRate === 'number')
+    if (hasRate && (!data.rateCurrency || data.rateCurrency === '')) return false
+    return true
+  },
+  { message: 'Currency is required when a rate is set', path: ['rateCurrency'] }
+)
 
 export type CreateCandidateState =
   | { success: true; candidateId: string }
@@ -101,6 +116,15 @@ export async function createCandidate(
       cvText,
       filePath,
       fileType,
+      country: parsed.data.country || null,
+      city: parsed.data.city || null,
+      languagesSpoken: parsed.data.languagesSpoken
+        ? parsed.data.languagesSpoken.split(',').map((l) => l.trim()).filter(Boolean)
+        : [],
+      willingToRelocate: parsed.data.willingToRelocate === 'true' ? true : parsed.data.willingToRelocate === 'false' ? false : null,
+      candidateRate: typeof parsed.data.candidateRate === 'number' ? String(parsed.data.candidateRate) : null,
+      customerRate: typeof parsed.data.customerRate === 'number' ? String(parsed.data.customerRate) : null,
+      rateCurrency: parsed.data.rateCurrency || null,
     })
 
     await tx.insert(scores).values({
@@ -134,6 +158,14 @@ export async function createCandidate(
       }
     } catch (err) {
       console.error('[embedding] Failed to generate embedding for candidate:', candidateId, err)
+    }
+
+    // CV profile extraction — parallel with embedding
+    try {
+      const { triggerCvProfileExtraction } = await import('@/lib/ai/cv-profile')
+      await triggerCvProfileExtraction(candidateId, tenantId)
+    } catch (err) {
+      console.error('[cv-profile] Failed to extract for candidate:', candidateId, err)
     }
   })
 
@@ -237,6 +269,15 @@ const UpdateCandidateSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().max(50).optional(),
   agencyId: z.string().uuid().nullable().optional(),
+  country: z.string().max(100).optional().or(z.literal('')),
+  city: z.string().max(100).optional().or(z.literal('')),
+  languagesSpoken: z.string().optional().or(z.literal('')),
+  willingToRelocate: z.enum(['true', 'false', '']).optional(),
+  candidateRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  customerRate: z.coerce.number().min(0).optional().or(z.literal('')),
+  rateCurrency: z.string().max(3).toUpperCase().optional().or(z.literal('')),
+  availabilityStatus: z.enum(['available', 'on_project', 'unavailable']).optional(),
+  availableFrom: z.string().optional().or(z.literal('')),
 })
 
 export type UpdateCandidateState = {
@@ -267,6 +308,15 @@ export async function updateCandidateDetails(
     email: formData.get('email') || undefined,
     phone: formData.get('phone') || undefined,
     agencyId: rawAgencyId === '' || rawAgencyId === null ? null : rawAgencyId,
+    country: formData.get('country') || undefined,
+    city: formData.get('city') || undefined,
+    languagesSpoken: formData.get('languagesSpoken') || undefined,
+    willingToRelocate: formData.get('willingToRelocate') || undefined,
+    candidateRate: formData.get('candidateRate') || undefined,
+    customerRate: formData.get('customerRate') || undefined,
+    rateCurrency: formData.get('rateCurrency') || undefined,
+    availabilityStatus: formData.get('availabilityStatus') || undefined,
+    availableFrom: formData.get('availableFrom') || undefined,
   })
 
   if (!parsed.success) {
@@ -277,6 +327,18 @@ export async function updateCandidateDetails(
     }
   }
 
+  // Normalise availability: if not "on_project", null out availableFrom
+  const availability = parsed.data.availabilityStatus
+  const availabilityUpdate = availability
+    ? {
+        availabilityStatus: availability,
+        availableFrom:
+          availability === 'on_project' && parsed.data.availableFrom
+            ? parsed.data.availableFrom
+            : null,
+      }
+    : {}
+
   await withTenant(tenantId, async (tx) => {
     await tx
       .update(candidates)
@@ -286,12 +348,136 @@ export async function updateCandidateDetails(
         email: parsed.data.email || null,
         phone: parsed.data.phone || null,
         ...(parsed.data.agencyId !== undefined ? { agencyId: parsed.data.agencyId } : {}),
+        country: parsed.data.country || null,
+        city: parsed.data.city || null,
+        languagesSpoken: parsed.data.languagesSpoken
+          ? parsed.data.languagesSpoken.split(',').map((l) => l.trim()).filter(Boolean)
+          : [],
+        willingToRelocate: parsed.data.willingToRelocate === 'true' ? true : parsed.data.willingToRelocate === 'false' ? false : null,
+        candidateRate: typeof parsed.data.candidateRate === 'number' ? String(parsed.data.candidateRate) : null,
+        customerRate: typeof parsed.data.customerRate === 'number' ? String(parsed.data.customerRate) : null,
+        rateCurrency: parsed.data.rateCurrency || null,
+        ...availabilityUpdate,
       })
       .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
   })
 
   revalidatePath(`/dashboard/candidates/${candidateId}`)
   return { success: true }
+}
+
+// ---------------------------------------------------------------------------
+// updateCandidateAvailability — set availability status + return date
+// ---------------------------------------------------------------------------
+
+export async function updateCandidateAvailability(
+  candidateId: string,
+  input: {
+    availabilityStatus: AvailabilityStatus
+    availableFrom: string | null
+  }
+): Promise<{ success: boolean; error?: string }> {
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
+
+  try {
+    requireRole(userRole ?? undefined, 'recruiter')
+  } catch {
+    return { success: false, error: 'Forbidden: recruiters and admins only' }
+  }
+
+  const { availabilityStatus, availableFrom } = input
+
+  if (!['available', 'on_project', 'unavailable'].includes(availabilityStatus)) {
+    return { success: false, error: `Invalid availability status: ${availabilityStatus}` }
+  }
+
+  // If not on_project, force availableFrom to null
+  const effectiveFrom = availabilityStatus === 'on_project' ? availableFrom : null
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .update(candidates)
+      .set({
+        availabilityStatus,
+        availableFrom: effectiveFrom,
+      })
+      .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
+  })
+
+  revalidatePath(`/dashboard/candidates/${candidateId}`)
+  revalidatePath('/dashboard/candidates')
+  return { success: true }
+}
+
+// ---------------------------------------------------------------------------
+// bulkAssignToInternalAgency — move selected candidates to the Internal agency
+// ---------------------------------------------------------------------------
+
+export async function bulkAssignToInternalAgency(
+  candidateIds: string[]
+): Promise<{ success: boolean; updated: number; error?: string }> {
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, updated: 0, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
+
+  try {
+    requireRole(userRole ?? undefined, 'recruiter')
+  } catch {
+    return { success: false, updated: 0, error: 'Forbidden: recruiters and admins only' }
+  }
+
+  if (!Array.isArray(candidateIds) || candidateIds.length === 0) {
+    return { success: false, updated: 0, error: 'No candidates selected' }
+  }
+
+  if (candidateIds.length > 200) {
+    return { success: false, updated: 0, error: 'Cannot assign more than 200 candidates at once' }
+  }
+
+  const result = await withTenant(tenantId, async (tx) => {
+    // Find (or create) the Internal agency for this tenant
+    let [internal] = await tx
+      .select({ id: agencies.id })
+      .from(agencies)
+      .where(and(eq(agencies.tenantId, tenantId), eq(agencies.isInternal, true)))
+      .limit(1)
+
+    if (!internal) {
+      await ensureInternalAgency(tx, tenantId)
+      const [created] = await tx
+        .select({ id: agencies.id })
+        .from(agencies)
+        .where(and(eq(agencies.tenantId, tenantId), eq(agencies.isInternal, true)))
+        .limit(1)
+      internal = created
+    }
+
+    if (!internal) {
+      throw new Error('Failed to provision Internal agency')
+    }
+
+    const updated = await tx
+      .update(candidates)
+      .set({
+        agencyId: internal.id,
+        availabilityStatus: 'available',
+        availableFrom: null,
+      })
+      .where(
+        and(
+          inArray(candidates.id, candidateIds),
+          eq(candidates.tenantId, tenantId)
+        )
+      )
+      .returning({ id: candidates.id })
+
+    return updated.length
+  })
+
+  revalidatePath('/dashboard/candidates')
+  return { success: true, updated: result }
 }
 
 // ---------------------------------------------------------------------------
@@ -374,6 +560,9 @@ export async function searchCandidatesForRole(
   const trimmed = query.trim()
   if (trimmed.length < 1) return []
 
+  // Escape LIKE metacharacters to prevent wildcard injection
+  const safeTrimmed = trimmed.replace(/[%_\\]/g, '\\$&')
+
   // Subquery: candidate IDs already scored for this role
   const alreadyScoredSubquery = db
     .select({ candidateId: scores.candidateId })
@@ -395,9 +584,9 @@ export async function searchCandidatesForRole(
           eq(candidates.tenantId, tenantId),
           eq(candidates.isActive, true),
           or(
-            ilike(candidates.firstName, `%${trimmed}%`),
-            ilike(candidates.lastName, `%${trimmed}%`),
-            ilike(candidates.email, `%${trimmed}%`)
+            ilike(candidates.firstName, `%${safeTrimmed}%`),
+            ilike(candidates.lastName, `%${safeTrimmed}%`),
+            ilike(candidates.email, `%${safeTrimmed}%`)
           ),
           notInArray(candidates.id, alreadyScoredSubquery)
         )

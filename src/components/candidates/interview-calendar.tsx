@@ -8,6 +8,7 @@ import {
   MapPinIcon,
   VideoIcon,
   XCircleIcon,
+  PencilIcon,
 } from 'lucide-react'
 import { cancelInterviewSlot } from '@/actions/calendar'
 import { ScheduleInterviewModal, type SlotData } from './schedule-interview-modal'
@@ -64,10 +65,11 @@ interface SlotPopoverProps {
   candidateId: string
   canSchedule: boolean
   onCancelled: (slotId: string) => void
+  onEdit: (slot: SlotData) => void
   onClose: () => void
 }
 
-function SlotPopover({ slot, candidateId, canSchedule, onCancelled, onClose }: SlotPopoverProps) {
+function SlotPopover({ slot, candidateId, canSchedule, onCancelled, onEdit, onClose }: SlotPopoverProps) {
   const [cancelling, setCancelling] = useState(false)
   const start = new Date(slot.scheduledAt)
   const end = new Date(start.getTime() + slot.durationMinutes * 60_000)
@@ -119,14 +121,25 @@ function SlotPopover({ slot, candidateId, canSchedule, onCancelled, onClose }: S
       )}
 
       {canSchedule && slot.status !== 'cancelled' && (
-        <button
-          onClick={handleCancel}
-          disabled={cancelling}
-          className="w-full text-xs font-medium text-red-400 border border-red-800 rounded-md
-                     px-3 py-1.5 hover:bg-red-950 transition-colors disabled:opacity-50"
-        >
-          {cancelling ? 'Cancelling...' : 'Cancel interview'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { onEdit(slot); onClose() }}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium
+                       text-violet-300 border border-violet-800 rounded-md
+                       px-3 py-1.5 hover:bg-violet-950 transition-colors"
+          >
+            <PencilIcon className="h-3 w-3" />
+            Edit
+          </button>
+          <button
+            onClick={handleCancel}
+            disabled={cancelling}
+            className="flex-1 text-xs font-medium text-red-400 border border-red-800 rounded-md
+                       px-3 py-1.5 hover:bg-red-950 transition-colors disabled:opacity-50"
+          >
+            {cancelling ? 'Cancelling...' : 'Cancel'}
+          </button>
+        </div>
       )}
     </div>
   )
@@ -145,6 +158,7 @@ export function InterviewCalendar({
   const [slots, setSlots] = useState<SlotData[]>(initialSlots)
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()))
   const [showModal, setShowModal] = useState(false)
+  const [editingSlot, setEditingSlot] = useState<SlotData | null>(null)
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null)
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
@@ -154,8 +168,24 @@ export function InterviewCalendar({
   const goToday = () => setWeekStart(getWeekStart(new Date()))
 
   const handleScheduled = (slot: SlotData) => {
-    setSlots((prev) => [slot, ...prev])
+    if (editingSlot) {
+      // Edit mode: replace the existing slot
+      setSlots((prev) => prev.map((s) => (s.id === editingSlot.id ? { ...s, ...slot, id: editingSlot.id } : s)))
+    } else {
+      setSlots((prev) => [slot, ...prev])
+    }
     setShowModal(false)
+    setEditingSlot(null)
+  }
+
+  const handleEdit = (slot: SlotData) => {
+    setEditingSlot(slot)
+    setShowModal(true)
+  }
+
+  const closeModal = () => {
+    setShowModal(false)
+    setEditingSlot(null)
   }
 
   const handleCancelled = (slotId: string) => {
@@ -333,6 +363,7 @@ export function InterviewCalendar({
                             candidateId={candidateId}
                             canSchedule={canSchedule}
                             onCancelled={handleCancelled}
+                            onEdit={handleEdit}
                             onClose={() => setOpenPopoverId(null)}
                           />
                         )}
@@ -355,17 +386,18 @@ export function InterviewCalendar({
           <div className="space-y-1.5">
             {slots.map((slot) => {
               const d = new Date(slot.scheduledAt)
+              const isCancelled = slot.status === 'cancelled'
               return (
                 <div
                   key={slot.id}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-xs
-                    ${slot.status === 'cancelled' ? 'bg-zinc-800/50' : 'bg-zinc-800'}`}
+                    ${isCancelled ? 'bg-zinc-800/50' : 'bg-zinc-800'}`}
                 >
                   <div className={`w-2 h-2 rounded-full flex-shrink-0
-                    ${slot.status === 'cancelled' ? 'bg-zinc-600' : 'bg-violet-500'}`} />
+                    ${isCancelled ? 'bg-zinc-600' : 'bg-violet-500'}`} />
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium truncate
-                      ${slot.status === 'cancelled' ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
+                      ${isCancelled ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
                       {slot.title}
                     </p>
                     <p className="text-zinc-500">
@@ -376,10 +408,32 @@ export function InterviewCalendar({
                       {d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })} UTC
                     </p>
                   </div>
-                  {slot.status === 'cancelled' && (
+                  {isCancelled ? (
                     <span className="text-[10px] text-zinc-500 bg-zinc-700 px-2 py-0.5 rounded">
                       Cancelled
                     </span>
+                  ) : canSchedule && (
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => handleEdit(slot)}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium
+                                   text-violet-300 border border-violet-800 rounded px-2 py-1
+                                   hover:bg-violet-950 transition-colors"
+                      >
+                        <PencilIcon className="h-3 w-3" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await cancelInterviewSlot(slot.id, candidateId)
+                          handleCancelled(slot.id)
+                        }}
+                        className="text-[11px] font-medium text-red-400 border border-red-800
+                                   rounded px-2 py-1 hover:bg-red-950 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   )}
                 </div>
               )
@@ -388,7 +442,7 @@ export function InterviewCalendar({
         </div>
       )}
 
-      {/* Schedule modal */}
+      {/* Schedule / Edit modal */}
       {showModal && (
         <ScheduleInterviewModal
           candidateId={candidateId}
@@ -396,9 +450,10 @@ export function InterviewCalendar({
           roleId={roleId}
           allRoles={allRoles}
           onScheduled={handleScheduled}
-          onClose={() => setShowModal(false)}
+          onClose={closeModal}
           hasGoogleCalendar={hasGoogleCalendar}
           hasMicrosoftCalendar={hasMicrosoftCalendar}
+          editingSlot={editingSlot}
         />
       )}
     </>

@@ -1,3 +1,5 @@
+export * from './transcript'
+
 /**
  * CV file parser dispatcher
  *

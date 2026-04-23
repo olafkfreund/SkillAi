@@ -14,6 +14,15 @@ interface RoleFields {
   customerId: string
   frameworkLevelId: string
   frameworkLevelLabel: string
+  country: string
+  city: string
+  workMode: string
+  languageRequirements: string
+  targetFillDate: string
+  cutoffDate: string
+  customerPortalPath: string
+  customerDayRate: string
+  rateCurrency: string
 }
 
 type FrameworkLevelOption = {
@@ -43,6 +52,15 @@ export function RoleForm({ customers = [], frameworks = {} }: RoleFormProps) {
     customerId: '',
     frameworkLevelId: '',
     frameworkLevelLabel: '',
+    country: '',
+    city: '',
+    workMode: '',
+    languageRequirements: '',
+    targetFillDate: '',
+    cutoffDate: '',
+    customerPortalPath: '',
+    customerDayRate: '',
+    rateCurrency: '',
   })
 
   const [importFile, setImportFile] = useState<File | null>(null)
@@ -329,6 +347,178 @@ export function RoleForm({ customers = [], frameworks = {} }: RoleFormProps) {
           />
           {fieldErrors?.requirements && (
             <p className="mt-1 text-xs text-red-400">{fieldErrors.requirements[0]}</p>
+          )}
+        </div>
+
+        {/* Location & Language */}
+        <div className="border-t border-zinc-800 pt-4 mt-2">
+          <p className="text-sm font-medium text-zinc-400 mb-3">Location & Language</p>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label htmlFor="country" className="block text-xs font-medium text-zinc-400 mb-1">Country</label>
+              <input
+                id="country"
+                name="country"
+                type="text"
+                disabled={pending}
+                value={fields.country}
+                onChange={(e) => setFields((f) => ({ ...f, country: e.target.value }))}
+                placeholder="United Kingdom"
+                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                           placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              />
+            </div>
+            <div>
+              <label htmlFor="city" className="block text-xs font-medium text-zinc-400 mb-1">City</label>
+              <input
+                id="city"
+                name="city"
+                type="text"
+                disabled={pending}
+                value={fields.city}
+                onChange={(e) => setFields((f) => ({ ...f, city: e.target.value }))}
+                placeholder="London"
+                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                           placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="workMode" className="block text-xs font-medium text-zinc-400 mb-1">Work Mode</label>
+              <select
+                id="workMode"
+                name="workMode"
+                disabled={pending}
+                value={fields.workMode}
+                onChange={(e) => setFields((f) => ({ ...f, workMode: e.target.value }))}
+                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                <option value="">— Not specified —</option>
+                <option value="remote">Remote</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="onsite">Onsite</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="languageRequirements" className="block text-xs font-medium text-zinc-400 mb-1">
+                Language Requirements <span className="text-zinc-600">(comma-separated)</span>
+              </label>
+              <input
+                id="languageRequirements"
+                name="languageRequirements"
+                type="text"
+                disabled={pending}
+                value={fields.languageRequirements}
+                onChange={(e) => setFields((f) => ({ ...f, languageRequirements: e.target.value }))}
+                placeholder="English, German"
+                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                           placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Budget */}
+        <div className="border-t border-zinc-800 pt-4 mt-2">
+          <p className="text-sm font-medium text-zinc-400 mb-3">Budget</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="customerDayRate" className="block text-sm font-medium text-zinc-300 mb-1">
+                Customer Day Rate
+              </label>
+              <input
+                id="customerDayRate"
+                name="customerDayRate"
+                type="number"
+                step="0.01"
+                min="0"
+                value={fields.customerDayRate}
+                onChange={(e) => setFields((f) => ({ ...f, customerDayRate: e.target.value }))}
+                placeholder="850.00"
+                className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-zinc-100 focus:border-blue-500 focus:outline-none"
+              />
+              <p className="mt-1 text-xs text-zinc-500">Budget the client pays per day for this role.</p>
+            </div>
+            <div>
+              <label htmlFor="rateCurrency" className="block text-sm font-medium text-zinc-300 mb-1">
+                Currency
+              </label>
+              <select
+                id="rateCurrency"
+                name="rateCurrency"
+                value={fields.rateCurrency}
+                onChange={(e) => setFields((f) => ({ ...f, rateCurrency: e.target.value }))}
+                className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-zinc-100 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="">—</option>
+                <option value="GBP">GBP</option>
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+              </select>
+            </div>
+          </div>
+          {fieldErrors?.rateCurrency && (
+            <p className="mt-1 text-xs text-red-400">{fieldErrors.rateCurrency[0]}</p>
+          )}
+        </div>
+
+        {/* Deadlines & Customer Portal */}
+        <div className="border-t border-zinc-800 pt-4 mt-2">
+          <p className="text-sm font-medium text-zinc-400 mb-3">Deadlines & Customer Portal</p>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label htmlFor="targetFillDate" className="block text-xs font-medium text-zinc-400 mb-1">
+                Target Fill Date <span className="text-zinc-600">(optional)</span>
+              </label>
+              <input
+                id="targetFillDate"
+                name="targetFillDate"
+                type="date"
+                disabled={pending}
+                value={fields.targetFillDate}
+                onChange={(e) => setFields((f) => ({ ...f, targetFillDate: e.target.value }))}
+                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              />
+            </div>
+            <div>
+              <label htmlFor="cutoffDate" className="block text-xs font-medium text-zinc-400 mb-1">
+                Cut-off Date <span className="text-zinc-600">(absolute deadline)</span>
+              </label>
+              <input
+                id="cutoffDate"
+                name="cutoffDate"
+                type="date"
+                disabled={pending}
+                value={fields.cutoffDate}
+                onChange={(e) => setFields((f) => ({ ...f, cutoffDate: e.target.value }))}
+                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              />
+            </div>
+          </div>
+          {fields.customerId && (
+            <div>
+              <label htmlFor="customerPortalPath" className="block text-xs font-medium text-zinc-400 mb-1">
+                Customer Portal Path <span className="text-zinc-600">(optional)</span>
+              </label>
+              <input
+                id="customerPortalPath"
+                name="customerPortalPath"
+                type="text"
+                disabled={pending}
+                value={fields.customerPortalPath}
+                onChange={(e) => setFields((f) => ({ ...f, customerPortalPath: e.target.value }))}
+                placeholder="/jobs/12345"
+                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                           placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              />
+              <p className="mt-1 text-xs text-zinc-500">
+                Path on the customer&apos;s portal for this role. Combined with the customer&apos;s base URL.
+              </p>
+            </div>
           )}
         </div>
 

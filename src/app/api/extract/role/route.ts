@@ -14,10 +14,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { parseFile } from '@/lib/parsers'
 import { auth } from '@/lib/auth'
 import type { FileType } from '@/lib/parsers'
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+import { resolveAnthropicKey } from '@/lib/ai/keys'
 
 const EXTRACT_TOOL: Anthropic.Tool = {
   name: 'extract_role_details',
@@ -61,6 +58,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.tenantId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const tenantId = session.user.tenantId
 
   try {
     const formData = await req.formData()
@@ -86,18 +84,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Could not extract text from file' }, { status: 422 })
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY
-    if (!apiKey || apiKey.startsWith('sk-ant-placeholder')) {
+    let apiKey: string
+    try {
+      apiKey = await resolveAnthropicKey(tenantId)
+    } catch {
       // Fallback: return raw text in description so the user can still edit it
       const firstLine = text.split('\n').find((l) => l.trim().length > 3)?.trim() ?? ''
       return NextResponse.json({
         title: firstLine.slice(0, 120),
         description: text.slice(0, 1000),
         requirements: text.slice(1000, 3000),
-        _warning: 'ANTHROPIC_API_KEY not configured — raw text returned, please edit fields.',
+        _warning: 'Anthropic API key not configured — raw text returned, please edit fields.',
       })
     }
 
+    const anthropic = new Anthropic({ apiKey, maxRetries: 3 })
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,

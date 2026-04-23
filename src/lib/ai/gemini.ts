@@ -1,7 +1,7 @@
 /**
  * Gemini API client for CV scoring
  *
- * Uses Gemini 3.1 Pro (gemini-3.1-pro-preview) with structured JSON output
+ * Uses Gemini 2.0 Flash (gemini-2.0-flash) with structured JSON output
  * to return a CandidateScore matching the same schema used by Claude scoring.
  *
  * Falls back to tenant API key → GEMINI_API_KEY env var.
@@ -11,7 +11,7 @@ import { GoogleGenerativeAI, SchemaType, type Schema } from '@google/generative-
 import { resolveGoogleKey } from './keys'
 import { CandidateScoreSchema, type CandidateScore } from './schema'
 
-const GEMINI_MODEL = 'models/gemini-3.1-pro-preview'
+const GEMINI_MODEL = 'models/gemini-2.0-flash'
 
 const SCORE_RESPONSE_SCHEMA: Schema = {
   type: SchemaType.OBJECT,
@@ -74,6 +74,7 @@ type ScoringInput = {
   candidateName: string
   tenantId: string
   frameworkContext?: string
+  budgetContext?: string
 }
 
 export async function scoreCandidateWithGemini(input: ScoringInput): Promise<CandidateScore> {
@@ -99,7 +100,7 @@ REQUIREMENTS:
 ${input.roleRequirements}${input.frameworkContext ? `\n\nHIRING FRAMEWORK CONTEXT:\n${input.frameworkContext}` : ''}
 
 CANDIDATE: ${input.candidateName}
-
+${input.budgetContext ? `\n${input.budgetContext}\n` : ''}
 CV:
 ${input.cvText.slice(0, 8000)}
 

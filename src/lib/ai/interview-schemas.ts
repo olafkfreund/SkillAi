@@ -7,6 +7,13 @@ import { z } from 'zod'
 // Stage 1: CV profile extraction
 export const CvProfileSchema = z.object({
   experience_level: z.enum(['junior', 'mid', 'senior', 'lead']).optional(),
+  // Accept any length from Claude and truncate to 800 chars for safety — some
+  // candidates have rich enough backgrounds that Claude writes a slightly
+  // longer summary. Rejecting a 601-char summary would fail the whole extraction.
+  summary: z
+    .string()
+    .optional()
+    .transform((s) => (s && s.length > 800 ? s.slice(0, 797) + '…' : s)),
   companies: z
     .array(
       z.object({
@@ -48,7 +55,7 @@ const CodeChallengeSchema = z.object({
 export const InterviewPackSchema = z.object({
   experience_level: z.enum(['junior', 'mid', 'senior', 'lead']),
   recommended_duration_minutes: z.number().int().positive(),
-  questions: z.array(QuestionSchema).min(6).max(15),
+  questions: z.array(QuestionSchema).min(5).max(15),
   code_challenge: CodeChallengeSchema.optional(),
 })
 

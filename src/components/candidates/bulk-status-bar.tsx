@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, XIcon, CheckIcon } from 'lucide-react'
-import { bulkUpdateCandidateStatus } from '@/actions/candidates'
+import { Loader2, XIcon, CheckIcon, HomeIcon } from 'lucide-react'
+import { bulkUpdateCandidateStatus, bulkAssignToInternalAgency } from '@/actions/candidates'
 import type { CandidateStatus } from '@/db/schema/candidates'
 
 const STATUS_OPTIONS: Array<{ value: CandidateStatus; label: string }> = [
@@ -25,18 +25,35 @@ export function BulkStatusBar({ selectedIds, onClear }: Props) {
   const [isPending, startTransition] = useTransition()
   const [selectedStatus, setSelectedStatus] = useState<CandidateStatus>('shortlisted')
   const [error, setError] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
 
   // Bar is hidden when nothing is selected
   if (selectedIds.length === 0) return null
 
   function handleApply() {
     setError(null)
+    setToast(null)
     startTransition(async () => {
       const result = await bulkUpdateCandidateStatus(selectedIds, selectedStatus)
       if (!result.success) {
         setError(result.error ?? 'Failed to update candidates')
         return
       }
+      onClear()
+      router.refresh()
+    })
+  }
+
+  function handleMarkInternal() {
+    setError(null)
+    setToast(null)
+    startTransition(async () => {
+      const result = await bulkAssignToInternalAgency(selectedIds)
+      if (!result.success) {
+        setError(result.error ?? 'Failed to mark candidates as internal')
+        return
+      }
+      setToast(`Marked ${result.updated} candidate${result.updated === 1 ? '' : 's'} as Internal`)
       onClear()
       router.refresh()
     })
@@ -99,10 +116,28 @@ export function BulkStatusBar({ selectedIds, onClear }: Props) {
           Apply
         </button>
 
-        {/* Error message */}
+        {/* Mark as Internal — secondary action */}
+        <button
+          onClick={handleMarkInternal}
+          disabled={isPending}
+          className="inline-flex items-center gap-1.5 rounded-md border border-blue-800 bg-blue-950 text-blue-300
+                     text-sm font-medium px-3 py-1.5 hover:bg-blue-900 disabled:opacity-50
+                     disabled:cursor-not-allowed transition-colors flex-shrink-0"
+          title="Move selected candidates to the Internal agency"
+        >
+          <HomeIcon className="h-4 w-4" />
+          Mark as Internal
+        </button>
+
+        {/* Error / success message */}
         {error && (
           <span className="text-sm text-red-400 truncate" role="alert">
             {error}
+          </span>
+        )}
+        {toast && !error && (
+          <span className="text-sm text-emerald-400 truncate" role="status">
+            {toast}
           </span>
         )}
       </div>

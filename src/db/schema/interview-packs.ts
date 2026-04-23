@@ -29,6 +29,8 @@ export const experienceLevelEnum = pgEnum('experience_level', [
   'lead',
 ])
 
+export const packTypeEnum = pgEnum('pack_type', ['full', 'pre_screening'])
+
 export const interviewPacks = pgTable(
   'interview_packs',
   {
@@ -43,9 +45,11 @@ export const interviewPacks = pgTable(
       .notNull()
       .references(() => roles.id, { onDelete: 'cascade' }),
     generationStatus: generationStatusEnum('generation_status').notNull().default('pending'),
+    generationStage: text('generation_stage'),
     experienceLevel: experienceLevelEnum('experience_level'),
     recommendedDurationMinutes: integer('recommended_duration_minutes'),
     includesCodeChallenge: boolean('includes_code_challenge').notNull().default(false),
+    packType: packTypeEnum('pack_type').notNull().default('full'),
     errorMessage: text('error_message'),
     createdBy: uuid('created_by')
       .notNull()

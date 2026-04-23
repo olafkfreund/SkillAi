@@ -6,7 +6,7 @@ import { SearchIcon, XIcon, FileXIcon } from 'lucide-react'
 
 type Props = {
   agencies: { id: string; name: string }[]
-  currentFilters: { q?: string; status?: string; agencyId?: string; missingCv?: boolean }
+  currentFilters: { q?: string; status?: string; agencyId?: string; availability?: string; missingCv?: boolean }
 }
 
 const STATUS_OPTIONS = [
@@ -17,6 +17,13 @@ const STATUS_OPTIONS = [
   { value: 'offered', label: 'Offered' },
   { value: 'rejected', label: 'Rejected' },
   { value: 'hired', label: 'Hired' },
+]
+
+const AVAILABILITY_OPTIONS = [
+  { value: '', label: 'All availability' },
+  { value: 'available', label: 'Available' },
+  { value: 'on_project', label: 'On project' },
+  { value: 'unavailable', label: 'Unavailable' },
 ]
 
 export function CandidateFilters({ agencies, currentFilters }: Props) {
@@ -38,6 +45,7 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
       if (currentFilters.q) params.set('q', currentFilters.q)
       if (currentFilters.status) params.set('status', currentFilters.status)
       if (currentFilters.agencyId) params.set('agencyId', currentFilters.agencyId)
+      if (currentFilters.availability) params.set('availability', currentFilters.availability)
       if (currentFilters.missingCv) params.set('missingCv', '1')
       // Reset page on any filter change
       params.delete('page')
@@ -77,8 +85,16 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
     updateParams({ agencyId: value })
   }
 
+  const handleAvailabilityChange = (value: string) => {
+    updateParams({ availability: value })
+  }
+
   const hasActiveFilters =
-    !!currentFilters.q || !!currentFilters.status || !!currentFilters.agencyId || !!currentFilters.missingCv
+    !!currentFilters.q ||
+    !!currentFilters.status ||
+    !!currentFilters.agencyId ||
+    !!currentFilters.availability ||
+    !!currentFilters.missingCv
 
   const clearFilters = () => {
     setSearchValue('')
@@ -138,6 +154,24 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
         {agencies.map((agency) => (
           <option key={agency.id} value={agency.id}>
             {agency.name}
+          </option>
+        ))}
+      </select>
+
+      {/* Availability filter */}
+      <select
+        name="availability"
+        value={currentFilters.availability ?? ''}
+        onChange={(e) => handleAvailabilityChange(e.target.value)}
+        className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
+                   text-sm text-zinc-200
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                   transition-colors cursor-pointer"
+        aria-label="Filter by availability"
+      >
+        {AVAILABILITY_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
           </option>
         ))}
       </select>

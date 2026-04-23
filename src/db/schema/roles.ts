@@ -1,8 +1,10 @@
-import { pgTable, pgPolicy, uuid, varchar, text, boolean, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, pgPolicy, pgEnum, uuid, varchar, text, boolean, timestamp, date, numeric } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 import { users } from './users'
 import { customers } from './customers'
+
+export const workModeEnum = pgEnum('work_mode', ['remote', 'hybrid', 'onsite'])
 
 export const roles = pgTable(
   'roles',
@@ -22,8 +24,17 @@ export const roles = pgTable(
     isActive: boolean('is_active').notNull().default(true),
     frameworkLevelId: varchar('framework_level_id', { length: 50 }),
     frameworkLevelLabel: varchar('framework_level_label', { length: 200 }),
+    country: varchar('country', { length: 100 }),
+    city: varchar('city', { length: 100 }),
+    workMode: workModeEnum('work_mode'),
+    languageRequirements: text('language_requirements').array().notNull().default(sql`'{}'::text[]`),
     keySkills: text('key_skills').array().notNull().default(sql`'{}'::text[]`),
     topRequirements: text('top_requirements').array().notNull().default(sql`'{}'::text[]`),
+    targetFillDate: date('target_fill_date'),
+    cutoffDate: date('cutoff_date'),
+    customerPortalPath: varchar('customer_portal_path', { length: 500 }),
+    customerDayRate: numeric('customer_day_rate', { precision: 10, scale: 2 }),
+    rateCurrency: varchar('rate_currency', { length: 3 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

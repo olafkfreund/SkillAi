@@ -1,7 +1,7 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenerativeAI, TaskType } from '@google/generative-ai'
 
 /**
- * Generate a 768-dimensional embedding using Gemini text-embedding-004.
+ * Generate a 768-dimensional embedding using Gemini embedding-001.
  * Accepts an optional tenantId to resolve the API key from tenant settings.
  * Falls back to GOOGLE_AI_API_KEY env var if no tenantId provided.
  */
@@ -23,10 +23,12 @@ export async function generateEmbedding(
   const genAI = new GoogleGenerativeAI(apiKey)
   const model = genAI.getGenerativeModel({ model: 'models/gemini-embedding-001' })
   // Limit to 8000 chars to stay within model context
-  const result = await model.embedContent({
+  // outputDimensionality is supported by the API but not yet in the SDK types
+  const request = {
     content: { role: 'user', parts: [{ text: text.slice(0, 8000) }] },
-    taskType: 'RETRIEVAL_DOCUMENT' as never,
+    taskType: TaskType.RETRIEVAL_DOCUMENT,
     outputDimensionality: 768,
-  } as never)
+  } as Parameters<typeof model.embedContent>[0]
+  const result = await model.embedContent(request)
   return result.embedding.values
 }
