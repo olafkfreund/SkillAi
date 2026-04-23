@@ -1,4 +1,4 @@
-import { desc, eq, and, ilike, or, count, sql } from 'drizzle-orm'
+import { desc, eq, and, ilike, or, count, sql, isNull } from 'drizzle-orm'
 import Link from 'next/link'
 import { UsersIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { auth } from '@/lib/auth'
@@ -20,6 +20,7 @@ interface PageProps {
     status?: string
     agencyId?: string
     page?: string
+    missingCv?: string
   }>
 }
 
@@ -27,9 +28,10 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
   const session = await auth()
   const tenantId = session?.user.tenantId
 
-  const { q, status, agencyId, page: pageParam } = await searchParams
+  const { q, status, agencyId, page: pageParam, missingCv: missingCvParam } = await searchParams
   const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1)
   const offset = (page - 1) * PAGE_SIZE
+  const missingCvFilter = missingCvParam === '1'
 
   // Validate status is a known enum value
   const validStatuses: CandidateStatus[] = [
@@ -60,6 +62,10 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
 
     if (agencyId?.trim()) {
       conditions.push(eq(candidates.agencyId, agencyId.trim()))
+    }
+
+    if (missingCvFilter) {
+      conditions.push(isNull(candidates.filePath))
     }
 
     return and(...conditions)
@@ -112,7 +118,7 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
   const rangeFrom = totalCount === 0 ? 0 : offset + 1
   const rangeTo = Math.min(offset + PAGE_SIZE, totalCount)
 
-  const currentFilters = { q, status, agencyId }
+  const currentFilters = { q, status, agencyId, missingCv: missingCvFilter }
 
   // Build pagination URL helper
   const buildPageUrl = (p: number) => {
@@ -120,6 +126,7 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
     if (q) params.set('q', q)
     if (status) params.set('status', status)
     if (agencyId) params.set('agencyId', agencyId)
+    if (missingCvFilter) params.set('missingCv', '1')
     params.set('page', String(p))
     return `?${params.toString()}`
   }
@@ -158,7 +165,7 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
         <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed
                         border-zinc-700 bg-zinc-950 px-6 py-16 text-center">
           <UsersIcon className="h-10 w-10 text-zinc-600 mb-3" />
-          {totalCount === 0 && !q && !status && !agencyId ? (
+          {totalCount === 0 && !q && !status && !agencyId && !missingCvFilter ? (
             <>
               <p className="text-zinc-400 font-medium">No candidates yet</p>
               <p className="text-zinc-500 text-sm mt-1">

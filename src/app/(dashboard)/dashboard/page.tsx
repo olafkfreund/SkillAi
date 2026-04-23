@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { desc, eq, and, gte, count, sql } from 'drizzle-orm'
+import { desc, eq, and, gte, count, sql, isNull } from 'drizzle-orm'
 import {
   BriefcaseIcon,
   UsersIcon,
   TrendingUpIcon,
   BrainIcon,
+  FileXIcon,
 } from 'lucide-react'
 
 import { auth } from '@/lib/auth'
@@ -52,6 +53,13 @@ export default async function DashboardPage() {
       .select({ value: count() })
       .from(interviewPacks)
       .where(eq(interviewPacks.generationStatus, 'complete'))
+  )
+
+  const [{ value: missingCvCount }] = await withTenant(tenantId, async (tx) =>
+    tx
+      .select({ value: count() })
+      .from(candidates)
+      .where(and(eq(candidates.isActive, true), isNull(candidates.filePath)))
   )
 
   // ── Recent roles (with candidate count via scores) ───────────────────────
@@ -122,7 +130,7 @@ export default async function DashboardPage() {
       {/* ── Stat cards ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1
                       sm:grid-cols-2
-                      lg:grid-cols-4 gap-4 mb-10">
+                      lg:grid-cols-5 gap-4 mb-10">
         {/* Active Roles */}
         <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-5">
           <div className="flex items-center justify-between mb-3">
@@ -158,6 +166,23 @@ export default async function DashboardPage() {
           </div>
           <p className="text-3xl font-bold text-zinc-100">{packsCount}</p>
         </div>
+
+        {/* Missing CV */}
+        <Link
+          href="/dashboard/candidates?missingCv=1"
+          className="bg-zinc-900 rounded-xl border border-zinc-700 p-5
+                     hover:border-amber-500/60 hover:bg-zinc-800/60 transition-colors group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-zinc-500 group-hover:text-zinc-400 transition-colors">
+              Missing CV
+            </span>
+            <FileXIcon className="h-4 w-4 text-amber-500" />
+          </div>
+          <p className={`text-3xl font-bold ${missingCvCount > 0 ? 'text-amber-400' : 'text-zinc-100'}`}>
+            {missingCvCount}
+          </p>
+        </Link>
       </div>
 
       {/* ── Content grid ────────────────────────────────────────────────── */}
