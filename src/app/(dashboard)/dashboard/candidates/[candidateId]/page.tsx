@@ -20,6 +20,7 @@ import { InterviewCalendar } from '@/components/candidates/interview-calendar'
 import { IcsImportButton } from '@/components/candidates/ics-import-button'
 import { RoleHistoryPanel } from '@/components/candidates/role-history-panel'
 import { MatchingRolesPanel } from '@/components/candidates/matching-roles-panel'
+import { CvFilePanel } from '@/components/candidates/cv-file-panel'
 import { archiveCandidate } from '@/actions/candidates'
 import { hasRole } from '@/lib/auth/require-role'
 import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
@@ -198,6 +199,14 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
                 </button>
               </form>
             )}
+          </div>
+          {/* Original CV — download / attach / replace */}
+          <div className="mt-2">
+            <CvFilePanel
+              candidateId={candidateId}
+              filePath={candidate.filePath ?? null}
+              fileType={candidate.fileType ?? null}
+            />
           </div>
         </div>
         {activeScore?.score.scoreStatus === 'complete' && activeScore.score.overallScore !== null && (

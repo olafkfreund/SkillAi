@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { Download } from 'lucide-react'
 import { ComparisonCheckbox } from './comparison-checkbox'
 import { BulkStatusBar } from './bulk-status-bar'
 
@@ -19,6 +20,7 @@ export type CandidateRow = {
   firstName: string
   lastName: string
   email: string | null
+  filePath: string | null
   status: string
   createdAt: string | Date
   agencyName: string | null
@@ -94,6 +96,7 @@ export function SelectableCandidateList({ candidates }: Props) {
               <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden lg:table-cell">
                 Added
               </th>
+              <th className="w-10 px-4 py-3" aria-label="CV download" />
             </tr>
           </thead>
           <tbody>
@@ -148,6 +151,19 @@ export function SelectableCandidateList({ candidates }: Props) {
                   </td>
                   <td className="px-5 py-3 text-zinc-500 hidden lg:table-cell tabular-nums">
                     {new Date(c.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-4 py-3">
+                    {c.filePath && (
+                      <a
+                        href={`/api/candidates/${c.id}/cv`}
+                        download
+                        title="Download original CV"
+                        className="rounded p-1 text-zinc-600 hover:text-blue-400 hover:bg-blue-950
+                                   transition-colors inline-flex"
+                      >
+                        <Download className="h-4 w-4" />
+                      </a>
+                    )}
                   </td>
                 </tr>
               )

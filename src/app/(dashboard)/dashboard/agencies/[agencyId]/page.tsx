@@ -36,6 +36,7 @@ export default async function AgencyDetailPage({ params }: Props) {
         firstName: candidates.firstName,
         lastName: candidates.lastName,
         email: candidates.email,
+        filePath: candidates.filePath,
         createdAt: candidates.createdAt,
       })
       .from(candidates)
@@ -164,6 +165,7 @@ export default async function AgencyDetailPage({ params }: Props) {
             agencyId={agencyId}
             agencyCandidates={agencyCandidates.map((c) => ({
               ...c,
+              filePath: c.filePath ?? null,
               createdAt: c.createdAt.toISOString(),
             }))}
             unassignedCandidates={unassignedCandidates}

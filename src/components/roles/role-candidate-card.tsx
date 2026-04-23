@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useTransition } from 'react'
-import { XIcon } from 'lucide-react'
+import { Download, XIcon } from 'lucide-react'
 
 type ScorePillProps = { label: string; score: number | null }
 
@@ -27,6 +27,7 @@ type Props = {
   firstName: string
   lastName: string
   email: string | null
+  filePath: string | null
   scoreStatus: string
   overallScore: number | null
   technicalScore: number | null
@@ -44,6 +45,7 @@ export function RoleCandidateCard({
   firstName,
   lastName,
   email,
+  filePath,
   scoreStatus,
   overallScore,
   technicalScore,
@@ -96,6 +98,19 @@ export function RoleCandidateCard({
           </div>
         ) : (
           <span className="text-xs text-red-400">Failed</span>
+        )}
+
+        {filePath && (
+          <a
+            href={`/api/candidates/${candidateId}/cv`}
+            download
+            title="Download original CV"
+            onClick={(e) => e.stopPropagation()}
+            className="p-1.5 rounded-md text-zinc-600 hover:text-blue-400 hover:bg-blue-950/40
+                       border border-transparent hover:border-blue-800 transition-colors"
+          >
+            <Download className="h-4 w-4" />
+          </a>
         )}
 
         {canEdit && (

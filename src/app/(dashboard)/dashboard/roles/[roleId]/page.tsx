@@ -56,6 +56,7 @@ export default async function RoleDetailPage({ params }: Props) {
         firstName: candidates.firstName,
         lastName: candidates.lastName,
         email: candidates.email,
+        filePath: candidates.filePath,
         candidateId: candidates.id,
       })
       .from(scores)
@@ -199,6 +200,7 @@ export default async function RoleDetailPage({ params }: Props) {
                 experienceScore={c.experienceScore}
                 culturalFitScore={c.culturalFitScore}
                 communicationScore={c.communicationScore}
+                filePath={c.filePath ?? null}
                 canEdit={canEdit}
                 removeAction={removeCandidateFromRole}
               />

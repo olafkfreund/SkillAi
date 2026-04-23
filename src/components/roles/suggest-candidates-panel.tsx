@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { SparklesIcon, Loader2Icon, SearchIcon, ZapIcon } from 'lucide-react'
+import { Download, SparklesIcon, Loader2Icon, SearchIcon, ZapIcon } from 'lucide-react'
 import { getSuggestedCandidates } from '@/actions/matching'
 import { rescoreCandidate } from '@/actions/scores'
 
@@ -11,6 +11,7 @@ type SuggestedCandidate = {
   firstName: string
   lastName: string
   email: string | null
+  filePath: string | null
   similarity: number
 }
 
@@ -124,7 +125,18 @@ export function SuggestCandidatesPanel({ roleId, roleText }: Props) {
                 </div>
                 <SimilarityBadge similarity={c.similarity} />
               </div>
-              <div className="flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {c.filePath && (
+                  <a
+                    href={`/api/candidates/${c.id}/cv`}
+                    download
+                    title="Download original CV"
+                    className="rounded p-1.5 text-zinc-600 hover:text-blue-400 hover:bg-blue-950/40
+                               border border-transparent hover:border-blue-800 transition-colors"
+                  >
+                    <Download className="h-4 w-4" />
+                  </a>
+                )}
                 {scoredIds.has(c.id) ? (
                   <span className="text-xs text-green-400 font-medium">Queued for scoring</span>
                 ) : (
