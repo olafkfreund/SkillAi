@@ -1,7 +1,5 @@
 'use server'
 
-import { writeFile, mkdir } from 'fs/promises'
-import { join, extname } from 'path'
 import { randomUUID } from 'crypto'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
@@ -10,34 +8,13 @@ import { eq, and, inArray, or, ilike, notInArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { db, withTenant } from '@/db'
 import { candidates, scores } from '@/db/schema'
-import { parseFile, ParseError } from '@/lib/parsers'
+import { ParseError } from '@/lib/parsers'
 import { triggerScoring } from '@/lib/ai/scoring'
 import { requireRole } from '@/lib/auth/require-role'
 import { writeAuditLog } from '@/lib/audit'
 import { getActionContext } from '@/lib/auth/action-context'
-import type { FileType } from '@/lib/parsers'
+import { validateCvFile, parseCvBuffer, persistCvFile } from '@/lib/cv/store'
 import type { CandidateStatus } from '@/db/schema/candidates'
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
-
-const ACCEPTED_TYPES: Record<string, FileType> = {
-  'application/pdf': 'pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-  'application/vnd.oasis.opendocument.text': 'odt',
-  'application/rtf': 'rtf',
-  'text/rtf': 'rtf',
-  'text/plain': 'txt',
-  'text/markdown': 'md',
-}
-
-const EXT_TO_TYPE: Record<string, FileType> = {
-  '.pdf': 'pdf',
-  '.docx': 'docx',
-  '.odt': 'odt',
-  '.rtf': 'rtf',
-  '.txt': 'txt',
-  '.md': 'md',
-}
 
 const CreateCandidateSchema = z.object({
   firstName: z.string().min(1).max(100),
@@ -88,26 +65,17 @@ export async function createCandidate(
   if (!file || file.size === 0) {
     return { success: false, error: 'CV file is required' }
   }
-  if (file.size > MAX_FILE_SIZE) {
-    return { success: false, error: 'File exceeds 10 MB limit' }
-  }
 
-  // Determine file type from MIME or extension
-  let fileType: FileType | undefined =
-    ACCEPTED_TYPES[file.type] ??
-    EXT_TO_TYPE[extname(file.name).toLowerCase()]
-
-  if (!fileType) {
-    return { success: false, error: `Unsupported file type: ${file.type || extname(file.name)}` }
+  const validated = await validateCvFile(file)
+  if (!validated.ok) {
+    return { success: false, error: validated.error }
   }
+  const { fileType, buffer } = validated
 
   // -- Parse CV text --
-  const buffer = Buffer.from(await file.arrayBuffer())
   let cvText: string
   try {
-    cvText = await parseFile(buffer, fileType)
-    // Strip null bytes and other non-printable control characters PostgreSQL rejects
-    cvText = cvText.replace(/\0/g, '').replace(/[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ')
+    ;({ cvText } = await parseCvBuffer(buffer, fileType))
   } catch (err) {
     if (err instanceof ParseError) {
       return { success: false, error: err.message }
@@ -116,15 +84,7 @@ export async function createCandidate(
   }
 
   // -- Store file on disk --
-  const uploadBase = process.env.UPLOAD_DIR
-    ? join(process.cwd(), process.env.UPLOAD_DIR)
-    : join(process.cwd(), 'uploads')
-  const uploadDir = join(uploadBase, tenantId)
-  await mkdir(uploadDir, { recursive: true })
-  const fileId = randomUUID()
-  const fileName = `${fileId}.${fileType}`
-  const filePath = join(uploadDir, fileName)
-  await writeFile(filePath, buffer)
+  const { filePath } = await persistCvFile(tenantId, buffer, fileType)
 
   // -- Insert candidate + pending score within tenant RLS context --
   const candidateId = randomUUID()
@@ -139,7 +99,7 @@ export async function createCandidate(
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
       cvText,
-      filePath: `/uploads/${tenantId}/${fileName}`,
+      filePath,
       fileType,
     })
 
