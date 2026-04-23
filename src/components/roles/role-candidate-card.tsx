@@ -64,6 +64,22 @@ export function RoleCandidateCard({
     startTransition(() => removeAction(scoreId, roleId))
   }
 
+  async function handleDownloadCv(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    const res = await fetch(`/api/candidates/${candidateId}/cv`)
+    if (!res.ok) return
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    const disposition = res.headers.get('Content-Disposition') ?? ''
+    const match = disposition.match(/filename="([^"]+)"/)
+    a.download = match ? match[1] : `${firstName}-${lastName}-CV`
+    a.href = url
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <Link
       href={`/dashboard/candidates/${candidateId}?roleId=${roleId}`}
@@ -101,16 +117,15 @@ export function RoleCandidateCard({
         )}
 
         {filePath && (
-          <a
-            href={`/api/candidates/${candidateId}/cv`}
-            download
+          <button
+            type="button"
+            onClick={handleDownloadCv}
             title="Download original CV"
-            onClick={(e) => e.stopPropagation()}
             className="p-1.5 rounded-md text-zinc-600 hover:text-blue-400 hover:bg-blue-950/40
                        border border-transparent hover:border-blue-800 transition-colors"
           >
             <Download className="h-4 w-4" />
-          </a>
+          </button>
         )}
 
         {canEdit && (
