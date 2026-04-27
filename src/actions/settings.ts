@@ -176,7 +176,9 @@ export async function getGeneralSettings(tenantId: string): Promise<Record<strin
 // so the value is plain JSON — no encrypt() wrap.
 // ---------------------------------------------------------------------------
 
-export const TRUSTED_HOSTS_KEY = 'trusted_hosts'
+// Module-internal constants — must NOT be exported from a 'use server' file
+// (Next.js requires every export to be an async function).
+const TRUSTED_HOSTS_KEY = 'trusted_hosts'
 const MAX_TRUSTED_HOSTS = 20
 const MAX_HOSTNAME_LENGTH = 253
 // RFC1123-ish hostname regex (lowercased): each label 1-63 chars, alnum + hyphen,
