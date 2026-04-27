@@ -8,6 +8,7 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import { CandidateScoreSchema, type CandidateScore } from './schema'
+import { formatManagerPriorities } from './priorities'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -82,6 +83,7 @@ type ScoringInput = {
   candidateName: string
   frameworkContext?: string
   budgetContext?: string
+  priorityKeywords?: readonly string[]
 }
 
 export async function scoreCandidateWithClaude(input: ScoringInput): Promise<CandidateScore> {
@@ -109,7 +111,7 @@ DESCRIPTION:
 ${input.roleDescription}
 
 REQUIREMENTS:
-${input.roleRequirements}${input.frameworkContext ? `\n\nHIRING FRAMEWORK CONTEXT:\n${input.frameworkContext}` : ''}`,
+${input.roleRequirements}${input.frameworkContext ? `\n\nHIRING FRAMEWORK CONTEXT:\n${input.frameworkContext}` : ''}${formatManagerPriorities(input.priorityKeywords)}`,
             cache_control: { type: 'ephemeral' },
           },
           {

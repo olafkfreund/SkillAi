@@ -99,6 +99,7 @@ When scoring experience_level, assess specifically whether the candidate's senio
       candidateName: `${candidate.firstName} ${candidate.lastName}`,
       frameworkContext,
       budgetContext,
+      priorityKeywords: role.priorityKeywords,
     }
 
     const result = useGemini

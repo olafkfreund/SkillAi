@@ -6,6 +6,7 @@ import { useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 import { updateRole } from '@/actions/roles'
 import type { UpdateRoleState } from '@/actions/roles'
+import { ChipInput } from '@/components/ui/chip-input'
 
 interface RoleData {
   id: string
@@ -20,6 +21,7 @@ interface RoleData {
   customerPortalPath?: string | null
   customerDayRate?: string | null
   rateCurrency?: string | null
+  priorityKeywords?: string[] | null
 }
 
 type FrameworkLevelOption = {
@@ -45,7 +47,20 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
     null
   )
 
-  const [fields, setFields] = useState({
+  const [fields, setFields] = useState<{
+    title: string
+    description: string
+    requirements: string
+    customerId: string
+    frameworkLevelId: string
+    frameworkLevelLabel: string
+    targetFillDate: string
+    cutoffDate: string
+    customerPortalPath: string
+    customerDayRate: string
+    rateCurrency: string
+    priorityKeywords: string[]
+  }>({
     title: role.title,
     description: role.description,
     requirements: role.requirements,
@@ -57,6 +72,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
     customerPortalPath: role.customerPortalPath ?? '',
     customerDayRate: role.customerDayRate ?? '',
     rateCurrency: role.rateCurrency ?? '',
+    priorityKeywords: role.priorityKeywords ?? [],
   })
 
   useEffect(() => {
@@ -81,6 +97,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
         fd.set('customerPortalPath', fields.customerPortalPath)
         fd.set('customerDayRate', fields.customerDayRate)
         fd.set('rateCurrency', fields.rateCurrency)
+        fd.set('priorityKeywords', JSON.stringify(fields.priorityKeywords))
         action(fd)
       }}
       className="space-y-6 max-w-2xl"
@@ -228,6 +245,31 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
         />
         {fieldErrors?.requirements && (
           <p className="mt-1 text-xs text-red-400">{fieldErrors.requirements[0]}</p>
+        )}
+      </div>
+
+      {/* Manager Priorities */}
+      <div className="border-t border-zinc-800 pt-4 mt-2">
+        <label htmlFor="priorityKeywords" className="block text-sm font-medium text-zinc-300 mb-1">
+          Manager Priorities <span className="text-zinc-500 font-normal">(optional)</span>
+        </label>
+        <p id="priorityKeywords-help" className="text-xs text-zinc-500 mb-2">
+          Soft-signal phrases the hiring manager wants prioritised. E.g.{' '}
+          <span className="text-zinc-400">&quot;Self-starting&quot;</span>,{' '}
+          <span className="text-zinc-400">&quot;Engineer who codes&quot;</span>.
+        </p>
+        <ChipInput
+          id="priorityKeywords"
+          aria-describedby="priorityKeywords-help"
+          value={fields.priorityKeywords}
+          onChange={(next) => setFields((f) => ({ ...f, priorityKeywords: next }))}
+          placeholder="Type a phrase, press Enter…"
+          maxChips={15}
+          maxLength={120}
+          disabled={pending}
+        />
+        {fieldErrors?.priorityKeywords && (
+          <p className="mt-1 text-xs text-red-400">{fieldErrors.priorityKeywords[0]}</p>
         )}
       </div>
 

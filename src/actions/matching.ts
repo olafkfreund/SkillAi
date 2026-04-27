@@ -129,6 +129,7 @@ export async function getRoleFitSuggestionsForCandidate(
           id: roles.id,
           title: roles.title,
           requirements: roles.requirements,
+          priorityKeywords: roles.priorityKeywords,
         })
         .from(roles)
         .where(
@@ -147,6 +148,7 @@ export async function getRoleFitSuggestionsForCandidate(
       roleId: r.id,
       roleTitle: r.title,
       roleRequirements: r.requirements,
+      priorityKeywords: r.priorityKeywords,
     }))
 
     const candidateName = `${candidate.firstName} ${candidate.lastName}`

@@ -54,7 +54,8 @@ export async function getShortlistSummary(
         communicationScore: c.communicationScore,
         aiSummary: c.aiSummary,
       })),
-      tenantId
+      tenantId,
+      role.priorityKeywords
     )
 
     return { summary }

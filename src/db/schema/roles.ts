@@ -30,6 +30,8 @@ export const roles = pgTable(
     languageRequirements: text('language_requirements').array().notNull().default(sql`'{}'::text[]`),
     keySkills: text('key_skills').array().notNull().default(sql`'{}'::text[]`),
     topRequirements: text('top_requirements').array().notNull().default(sql`'{}'::text[]`),
+    priorityKeywords: text('priority_keywords').array().notNull().default(sql`'{}'::text[]`),
+    priorityKeywordsUpdatedAt: timestamp('priority_keywords_updated_at'),
     targetFillDate: date('target_fill_date'),
     cutoffDate: date('cutoff_date'),
     customerPortalPath: varchar('customer_portal_path', { length: 500 }),

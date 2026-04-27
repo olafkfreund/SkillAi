@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { resolveAnthropicKey } from './keys'
+import { formatManagerPriorities } from './priorities'
 
 type CandidateSummaryInput = {
   name: string
@@ -15,7 +16,8 @@ export async function generateShortlistSummary(
   roleTitle: string,
   roleRequirements: string,
   candidates: CandidateSummaryInput[],
-  tenantId: string
+  tenantId: string,
+  priorityKeywords?: readonly string[]
 ): Promise<string> {
   const apiKey = await resolveAnthropicKey(tenantId)
   const client = new Anthropic({ apiKey })
@@ -36,7 +38,7 @@ ${i + 1}. ${c.name} — Overall: ${c.overallScore}/100
       content: `You are a senior recruitment advisor. Write a concise hiring recommendation for the following role and shortlisted candidates.
 
 ROLE: ${roleTitle}
-REQUIREMENTS: ${roleRequirements}
+REQUIREMENTS: ${roleRequirements}${formatManagerPriorities(priorityKeywords)}
 
 SHORTLISTED CANDIDATES:
 ${candidateDescriptions}
