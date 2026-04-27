@@ -1,6 +1,6 @@
 # Product Roadmap
 
-> Last Updated: 2026-04-14
+> Last Updated: 2026-04-27
 > Version: 2.0.0
 > Status: Phases 1–4 shipped; Phase 5 partial; further integrations tracked on GitHub
 
@@ -94,16 +94,16 @@
 ### Must-Have Features
 
 - [x] Audit log — track logins, uploads, role changes, deletions _(implemented)_
-- [x] Health endpoint — `/api/health` for Docker health check
+- [ ] Health endpoint — `/api/health` for Docker health check (issue [#35](https://github.com/olafkfreund/SkillAi/issues/35) — corrected 2026-04-27, route does not yet exist)
 - [x] Security hardening — CSP headers, rate limiting on auth, session guards, RLS audits
-- [ ] Admin panel — manage users, roles, tenants; invite/deactivate users
+- [ ] Admin panel — user invite shipped (`src/app/(dashboard)/dashboard/users/invite-form.tsx`); tenant/role management pending (Epic [#37](https://github.com/olafkfreund/SkillAi/issues/37))
 - [ ] File storage migration — switch to Garage (S3-compatible) for production
 - [ ] Rate limiting — per-tenant AI API usage limits to control costs
 - [ ] Backup strategy — documented PostgreSQL dump + volume backup procedure
 
 ### Should-Have Features
 
-- [ ] AI cost tracking — log token usage per scoring run
+- [ ] AI cost tracking — log token usage per scoring run (issue [#36](https://github.com/olafkfreund/SkillAi/issues/36))
 - [ ] Role permission fine-tuning
 - [ ] HTTPS via Caddy
 
@@ -178,11 +178,11 @@ When new large initiatives are scoped, they should follow the same pattern: a tr
 
 Items from the original roadmap that remain open:
 
-- Admin panel (users, tenants, invites) — Phase 5
+- Admin panel (users, tenants, invites) — Phase 5 — Epic [#37](https://github.com/olafkfreund/SkillAi/issues/37)
 - File storage migration to Garage — Phase 5
 - AI API rate limiting per tenant — Phase 5
 - Backup runbook — Phase 5
-- AI cost tracking — Phase 5
+- AI cost tracking — Phase 5 — issue [#36](https://github.com/olafkfreund/SkillAi/issues/36)
 - HTTPS via Caddy — Phase 5
 - Candidate side-by-side comparison tray — Phase 4
 - Keyboard shortcuts — Phase 4
