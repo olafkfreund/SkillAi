@@ -15,6 +15,11 @@ import type { SynechronCvData } from '@/lib/ai/synechron-schema'
 // jsonb and return well under a second.
 export const maxDuration = 60
 
+type Candidate = Awaited<ReturnType<typeof fetchCandidate>>
+type EnsureSynechronResult =
+  | { data: SynechronCvData; wasFreshlyExtracted: boolean }
+  | { error: NextResponse }
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -33,6 +38,75 @@ function sanitiseName(raw: string | null | undefined): string {
   )
 }
 
+function failResponse(category: string, err: unknown, status = 500) {
+  console.error(`[synechron-cv-export] ${category} failed:`, err instanceof Error ? err.stack : err)
+  return NextResponse.json(
+    { error: `${category} failed`, detail: err instanceof Error ? err.message : 'unknown' },
+    { status }
+  )
+}
+
+async function fetchCandidate(tenantId: string, candidateId: string) {
+  return withTenant(tenantId, async (tx) => {
+    const [c] = await tx
+      .select()
+      .from(candidates)
+      .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
+      .limit(1)
+    return c ?? null
+  })
+}
+
+async function ensureSynechronData(
+  candidate: NonNullable<Candidate>,
+  tenantId: string
+): Promise<EnsureSynechronResult> {
+  const cached = candidate.synechronCvData as SynechronCvData | null
+  if (cached) {
+    return { data: cached, wasFreshlyExtracted: false }
+  }
+
+  if (!candidate.cvText) {
+    return {
+      error: NextResponse.json(
+        { error: 'Candidate has no CV text to extract from' },
+        { status: 422 }
+      ),
+    }
+  }
+
+  try {
+    const data = await extractSynechronCvData(candidate.id, tenantId)
+    return { data, wasFreshlyExtracted: true }
+  } catch (err) {
+    return { error: failResponse('Synechron extraction', err) }
+  }
+}
+
+async function renderPdfBuffer(
+  data: SynechronCvData,
+  synechronCandidateId: string | null
+): Promise<Buffer> {
+  return renderToBuffer(
+    React.createElement(SynechronCvPDF, {
+      data,
+      synechronCandidateId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as any
+  )
+}
+
+function buildFilename(candidate: NonNullable<Candidate>): string {
+  const firstName = sanitiseName(candidate.firstName)
+  const lastName = sanitiseName(candidate.lastName)
+  const synechronId = candidate.synechronCandidateId
+    ? sanitiseName(candidate.synechronCandidateId)
+    : null
+  return synechronId
+    ? `${synechronId}-${firstName}-${lastName}-Synechron-CV.pdf`
+    : `${firstName}-${lastName}-Synechron-CV.pdf`
+}
+
 // ---------------------------------------------------------------------------
 // GET /api/export/synechron-cv/[candidateId]
 //
@@ -46,78 +120,31 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ candidateId: string }> }
 ) {
-  // 1. Auth
   const session = await auth()
   if (!session?.user?.tenantId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const tenantId = session.user.tenantId
-
   const { candidateId } = await params
 
   console.log(`[synechron-cv-export] candidateId=${candidateId}`)
 
-  // 2. Fetch candidate (RLS-scoped)
-  const candidate = await withTenant(tenantId, async (tx) => {
-    const [c] = await tx
-      .select()
-      .from(candidates)
-      .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
-      .limit(1)
-    return c ?? null
-  })
-
+  const candidate = await fetchCandidate(tenantId, candidateId)
   if (!candidate) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  // 3. Cache check — extract synchronously if missing
-  let synechronCvData = candidate.synechronCvData as SynechronCvData | null
-  const wasFreshlyExtracted = !synechronCvData
+  const ensured = await ensureSynechronData(candidate, tenantId)
+  if ('error' in ensured) return ensured.error
+  const { data: synechronCvData, wasFreshlyExtracted } = ensured
 
-  if (!synechronCvData) {
-    if (!candidate.cvText) {
-      return NextResponse.json(
-        { error: 'Candidate has no CV text to extract from' },
-        { status: 422 }
-      )
-    }
-    try {
-      synechronCvData = await extractSynechronCvData(candidateId, tenantId)
-    } catch (err) {
-      console.error('[synechron-cv-export] extraction failed:', err instanceof Error ? err.stack : err)
-      return NextResponse.json(
-        {
-          error: 'Synechron extraction failed',
-          detail: err instanceof Error ? err.message : 'unknown',
-        },
-        { status: 500 }
-      )
-    }
-  }
-
-  // 4. Render PDF
   let buffer: Buffer
   try {
-    buffer = await renderToBuffer(
-      React.createElement(SynechronCvPDF, {
-        data: synechronCvData,
-        synechronCandidateId: candidate.synechronCandidateId,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any
-    )
+    buffer = await renderPdfBuffer(synechronCvData, candidate.synechronCandidateId)
   } catch (err) {
-    console.error('[synechron-cv-export] PDF render failed:', err instanceof Error ? err.stack : err)
-    return NextResponse.json(
-      {
-        error: 'PDF generation failed',
-        detail: err instanceof Error ? err.message : 'unknown',
-      },
-      { status: 500 }
-    )
+    return failResponse('PDF generation', err)
   }
 
-  // 5. Audit (best-effort)
   writeAuditLog(tenantId, {
     action: 'candidate.synechron_cv_downloaded',
     entityType: 'candidate',
@@ -128,21 +155,13 @@ export async function GET(
     /* audit failures must not break the download */
   })
 
-  // 6. Build filename — prefer SYNE-#### identifier when present
-  const firstName = sanitiseName(candidate.firstName)
-  const lastName = sanitiseName(candidate.lastName)
-  const synechronId = candidate.synechronCandidateId
-    ? sanitiseName(candidate.synechronCandidateId)
-    : null
-  const filename = synechronId
-    ? `${synechronId}-${firstName}-${lastName}-Synechron-CV.pdf`
-    : `${firstName}-${lastName}-Synechron-CV.pdf`
+  const filename = buildFilename(candidate)
 
   console.log(
     `[synechron-cv-export] ✓ rendered ${filename} (${buffer.length} bytes, freshlyExtracted=${wasFreshlyExtracted})`
   )
 
-  // 7. Stream response — `inline` so the browser opens it in a new tab
+  // `inline` so the browser opens it in a new tab
   // (matches the existing candidate PDF export UX).
   return new NextResponse(buffer as unknown as BodyInit, {
     headers: {

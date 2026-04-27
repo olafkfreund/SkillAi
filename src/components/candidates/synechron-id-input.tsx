@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useRef, useEffect, type FormEvent } from 'react'
+import { useState, useTransition, useRef, useEffect, useCallback, type FormEvent } from 'react'
 import { Loader2 } from 'lucide-react'
 import { updateSynechronCandidateId } from '@/actions/candidates'
 
@@ -31,6 +31,12 @@ export function SynechronIdInput({ candidateId, value }: SynechronIdInputProps) 
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const handleCancel = useCallback(() => {
+    setDraft(value ?? '')
+    setError(null)
+    setOpen(false)
+  }, [value])
+
   // Keep local draft in sync with prop when value changes externally
   useEffect(() => {
     setDraft(value ?? '')
@@ -39,27 +45,23 @@ export function SynechronIdInput({ candidateId, value }: SynechronIdInputProps) 
   // Click-outside to close
   useEffect(() => {
     if (!open) return
-    const onDown = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-        setError(null)
-        setDraft(value ?? '')
+        handleCancel()
       }
     }
-    const onKey = (e: KeyboardEvent) => {
+    const handleEscapeKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setOpen(false)
-        setError(null)
-        setDraft(value ?? '')
+        handleCancel()
       }
     }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscapeKey)
     return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscapeKey)
     }
-  }, [open, value])
+  }, [open, handleCancel])
 
   // Autofocus input when popover opens
   useEffect(() => {
@@ -82,12 +84,6 @@ export function SynechronIdInput({ candidateId, value }: SynechronIdInputProps) 
       }
       setOpen(false)
     })
-  }
-
-  const handleCancel = () => {
-    setDraft(value ?? '')
-    setError(null)
-    setOpen(false)
   }
 
   return (

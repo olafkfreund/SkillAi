@@ -28,6 +28,7 @@ const anthropic = new Anthropic({
 
 const MODEL = 'claude-haiku-4-5-20251001'
 const INPUT_CHAR_CAP = 10_000
+const MAX_OUTPUT_TOKENS = 4096
 
 /**
  * Hand-written JSON Schema mirroring SynechronCvDataSchema.
@@ -159,7 +160,20 @@ export async function extractSynechronCvData(
   candidateId: string,
   tenantId: string
 ): Promise<SynechronCvData> {
-  // 1. Load candidate's CV text under tenant context
+  const cvText = await loadCandidateCvText(candidateId, tenantId)
+  const input = capInputForClaude(cvText, candidateId)
+  const response = await callClaudeWithSynechronTool(input)
+  const data = parseSynechronToolResponse(response)
+  await persistSynechronData(candidateId, tenantId, data)
+  await logExtraction(tenantId, candidateId, response, input.length, data)
+  return data
+}
+
+// 1. Load candidate's CV text under tenant context
+async function loadCandidateCvText(
+  candidateId: string,
+  tenantId: string
+): Promise<string> {
   const [candidate] = await withTenant(tenantId, async (tx) =>
     tx
       .select({ cvText: candidates.cvText })
@@ -170,20 +184,28 @@ export async function extractSynechronCvData(
   if (!candidate?.cvText) {
     throw new Error('Candidate has no CV text to extract Synechron data from')
   }
+  return candidate.cvText
+}
 
-  // 2. Cap input — log if we truncated so we can revisit if it becomes common
-  const originalLength = candidate.cvText.length
-  const input = candidate.cvText.slice(0, INPUT_CHAR_CAP)
+// 2. Cap input — log if we truncated so we can revisit if it becomes common
+function capInputForClaude(cvText: string, candidateId: string): string {
+  const originalLength = cvText.length
+  const input = cvText.slice(0, INPUT_CHAR_CAP)
   if (originalLength > INPUT_CHAR_CAP) {
     console.log(
       `[synechron-extract] candidateId=${candidateId} cvText truncated: ${originalLength} -> ${INPUT_CHAR_CAP} chars`
     )
   }
+  return input
+}
 
-  // 3. Call Claude with tool_use structured output
-  const response = await anthropic.messages.create({
+// 3. Call Claude with tool_use structured output
+async function callClaudeWithSynechronTool(
+  input: string
+): Promise<Anthropic.Message> {
+  return anthropic.messages.create({
     model: MODEL,
-    max_tokens: 4096,
+    max_tokens: MAX_OUTPUT_TOKENS,
     system: SYSTEM_PROMPT,
     tools: [SYNECHRON_TOOL],
     tool_choice: { type: 'tool', name: 'synechron_cv_data' },
@@ -197,12 +219,12 @@ ${input}`,
       },
     ],
   })
+}
 
-  console.log(
-    `[synechron-extract] model=${response.model}, in=${input.length} chars, usage=${JSON.stringify(response.usage)}`
-  )
-
-  // 4. Find the tool_use block
+// 4. Find the tool_use block and 5. validate against the Zod schema
+function parseSynechronToolResponse(
+  response: Anthropic.Message
+): SynechronCvData {
   const toolBlock = response.content.find(
     (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
   )
@@ -212,7 +234,6 @@ ${input}`,
     )
   }
 
-  // 5. Validate against the Zod schema
   const parsed = SynechronCvDataSchema.safeParse(toolBlock.input)
   if (!parsed.success) {
     throw new Error(
@@ -220,28 +241,45 @@ ${input}`,
     )
   }
 
-  const data = parsed.data
-  const outputBytes = Buffer.byteLength(JSON.stringify(data), 'utf8')
+  return parsed.data
+}
 
-  // 6. Persist (critical write — must complete before we declare success)
+// 6. Persist (critical write — must complete before we declare success)
+async function persistSynechronData(
+  candidateId: string,
+  tenantId: string,
+  data: SynechronCvData
+): Promise<void> {
   await withTenant(tenantId, async (tx) =>
     tx
       .update(candidates)
       .set({ synechronCvData: data })
       .where(eq(candidates.id, candidateId))
   )
+}
 
-  // 7. Audit (best-effort — never block return on logging failure)
+// 7. Audit (best-effort — never block return on logging failure)
+async function logExtraction(
+  tenantId: string,
+  candidateId: string,
+  response: Anthropic.Message,
+  inputLength: number,
+  data: SynechronCvData
+): Promise<void> {
+  console.log(
+    `[synechron-extract] model=${response.model}, in=${inputLength} chars, usage=${JSON.stringify(response.usage)}`
+  )
+
+  const outputBytes = Buffer.byteLength(JSON.stringify(data), 'utf8')
+
   await writeAuditLog(tenantId, {
     action: 'candidate.synechron_cv_extracted',
     entityType: 'candidate',
     entityId: candidateId,
     metadata: {
       model: response.model,
-      inputChars: input.length,
+      inputChars: inputLength,
       outputBytes,
     },
   }).catch(() => {})
-
-  return data
 }
