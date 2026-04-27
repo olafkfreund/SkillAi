@@ -8,22 +8,57 @@ import type { SynechronCvData } from '@/lib/ai/synechron-schema'
 // Resolve PNG asset path — relative to project root (process.cwd()).
 const LOGO_PATH = path.join(process.cwd(), 'src', 'lib', 'pdf', 'assets', 'synechron-logo.png')
 
+/**
+ * Layout dimensions for the Synechron CV template.
+ *
+ * Keep these values internally consistent. The page padding values are
+ * tuned to leave room for the fixed wordmark + corner decorations + footer
+ * on every page.
+ */
+const LAYOUT = {
+  page: {
+    paddingTop: 80,           // room for wordmark + top decorations
+    paddingBottom: 50,        // room for footer + bottom decoration
+    paddingHorizontal: 40,
+  },
+  wordmark: {
+    top: 24,
+    right: 32,
+    width: 100,
+  },
+  corners: {
+    yellowTL: { width: 80, height: 30 },
+    greyTR: { width: 60, height: 24 },
+    greyBL: { width: 50, height: 20 },
+    greyOpacity: 0.85,
+  },
+  body: {
+    gap: 16,
+    sidebarFlex: 0.30,
+    mainFlex: 0.70,
+  },
+  footer: {
+    bottom: 24,
+    horizontalInset: 40,
+  },
+} as const
+
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'Inter',
     fontSize: 10,
     color: synechron.darkGrey,
-    paddingTop: 80, // room for top decorations + wordmark
-    paddingBottom: 50, // room for footer + bottom decoration
-    paddingHorizontal: 40,
+    paddingTop: LAYOUT.page.paddingTop,
+    paddingBottom: LAYOUT.page.paddingBottom,
+    paddingHorizontal: LAYOUT.page.paddingHorizontal,
     position: 'relative',
   },
 
   wordmark: {
     position: 'absolute',
-    top: 24,
-    right: 32,
-    width: 100,
+    top: LAYOUT.wordmark.top,
+    right: LAYOUT.wordmark.right,
+    width: LAYOUT.wordmark.width,
   },
 
   // Top-left yellow shape
@@ -32,8 +67,8 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     backgroundColor: synechron.yellow,
-    width: 80,
-    height: 30,
+    width: LAYOUT.corners.yellowTL.width,
+    height: LAYOUT.corners.yellowTL.height,
   },
 
   // Top-right grey shape
@@ -42,9 +77,9 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     backgroundColor: synechron.darkGrey,
-    width: 60,
-    height: 24,
-    opacity: 0.85,
+    width: LAYOUT.corners.greyTR.width,
+    height: LAYOUT.corners.greyTR.height,
+    opacity: LAYOUT.corners.greyOpacity,
   },
 
   // Bottom-left grey shape
@@ -53,25 +88,25 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     backgroundColor: synechron.darkGrey,
-    width: 50,
-    height: 20,
-    opacity: 0.85,
+    width: LAYOUT.corners.greyBL.width,
+    height: LAYOUT.corners.greyBL.height,
+    opacity: LAYOUT.corners.greyOpacity,
   },
 
   body: {
     flexDirection: 'row',
-    gap: 16,
+    gap: LAYOUT.body.gap,
   },
 
   sidebar: {
-    flex: 0.30,
+    flex: LAYOUT.body.sidebarFlex,
     backgroundColor: synechron.lightGrey,
     padding: 12,
     borderRadius: 4,
   },
 
   main: {
-    flex: 0.70,
+    flex: LAYOUT.body.mainFlex,
     paddingLeft: 8,
   },
 
@@ -158,9 +193,9 @@ const styles = StyleSheet.create({
 
   footer: {
     position: 'absolute',
-    bottom: 24,
-    left: 40,
-    right: 40,
+    bottom: LAYOUT.footer.bottom,
+    left: LAYOUT.footer.horizontalInset,
+    right: LAYOUT.footer.horizontalInset,
     fontSize: 8,
     color: '#666',
     textAlign: 'center',
@@ -220,7 +255,7 @@ function EmploymentEntry({ entry }: { entry: EmploymentEntryType }) {
   )
 }
 
-function SidebarSection({ heading, items }: { heading: string; items?: string[] | null }) {
+function SidebarBulletList({ heading, items }: { heading: string; items?: string[] | null }) {
   if (!items || items.length === 0) return null
   return (
     <View>
@@ -234,7 +269,7 @@ function SidebarSection({ heading, items }: { heading: string; items?: string[] 
   )
 }
 
-function SidebarText({ heading, value }: { heading: string; value?: string | null }) {
+function SidebarParagraph({ heading, value }: { heading: string; value?: string | null }) {
   if (!value || !value.trim()) return null
   return (
     <View>
@@ -280,8 +315,8 @@ export function SynechronCvPDF({ data, synechronCandidateId }: SynechronCvPDFPro
         <View style={styles.body}>
           {/* Sidebar (30%) */}
           <View style={styles.sidebar}>
-            <SidebarText heading="Overall Experience" value={data.overallExperience} />
-            <SidebarText heading="Relevant Experience" value={data.relevantExperience} />
+            <SidebarParagraph heading="Overall Experience" value={data.overallExperience} />
+            <SidebarParagraph heading="Relevant Experience" value={data.relevantExperience} />
 
             {data.skillsCategorised && data.skillsCategorised.length > 0 && (
               <View>
@@ -295,8 +330,8 @@ export function SynechronCvPDF({ data, synechronCandidateId }: SynechronCvPDFPro
               </View>
             )}
 
-            <SidebarSection heading="Domains" items={data.domains} />
-            <SidebarSection heading="Achievements" items={data.achievements} />
+            <SidebarBulletList heading="Domains" items={data.domains} />
+            <SidebarBulletList heading="Achievements" items={data.achievements} />
 
             {data.education && data.education.length > 0 && (
               <View>
@@ -310,8 +345,8 @@ export function SynechronCvPDF({ data, synechronCandidateId }: SynechronCvPDFPro
               </View>
             )}
 
-            <SidebarText heading="Visa" value={data.visa} />
-            <SidebarSection
+            <SidebarParagraph heading="Visa" value={data.visa} />
+            <SidebarBulletList
               heading="Training / Certifications"
               items={data.trainingCertifications}
             />
