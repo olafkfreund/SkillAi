@@ -207,6 +207,48 @@ export async function updateCandidateStatus(
 }
 
 // ---------------------------------------------------------------------------
+// updateSynechronCandidateId — set/clear the SYNE-#### tracking ID
+// ---------------------------------------------------------------------------
+
+export async function updateSynechronCandidateId(
+  candidateId: string,
+  rawValue: string | null,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const ctx = await getActionContext()
+  if (!ctx) return { ok: false, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
+
+  try {
+    requireRole(userRole ?? undefined, 'recruiter')
+  } catch {
+    return { ok: false, error: 'Forbidden: recruiters and admins only' }
+  }
+
+  // Validate: trim, allow empty, max 64 chars, regex ^[A-Za-z0-9-]*$
+  const trimmed = (rawValue ?? '').trim()
+  if (trimmed.length > 64) {
+    return { ok: false, error: 'Synechron ID must be 64 characters or fewer.' }
+  }
+  if (trimmed && !/^[A-Za-z0-9-]+$/.test(trimmed)) {
+    return { ok: false, error: 'Only letters, digits, and hyphens are allowed.' }
+  }
+
+  const value = trimmed || null
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .update(candidates)
+      .set({ synechronCandidateId: value })
+      .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
+  })
+
+  revalidatePath(`/dashboard/candidates/${candidateId}`)
+  revalidatePath('/dashboard/candidates')
+
+  return { ok: true }
+}
+
+// ---------------------------------------------------------------------------
 // bulkUpdateCandidateStatus — update status for multiple candidates at once
 // ---------------------------------------------------------------------------
 
