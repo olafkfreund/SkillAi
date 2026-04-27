@@ -4,13 +4,21 @@ import { eq } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import { db } from '@/db'
 import { calendarConnections } from '@/db/schema'
-import { getConfiguredKeys, getGeneralSettings } from '@/actions/settings'
+import {
+  getConfiguredKeys,
+  getGeneralSettings,
+  getTrustedHosts,
+} from '@/actions/settings'
 import { listTenantUsers } from '@/actions/users'
 import { ApiKeyField } from '@/components/settings/api-key-field'
 import { GeneralSettingSelect } from '@/components/settings/general-setting-select'
 import { GeneralSettingNumber } from '@/components/settings/general-setting-number'
 import { UserManagementTable } from '@/components/settings/user-management-table'
 import { CalendarConnect } from '@/components/settings/calendar-connect'
+import { AccountSection } from '@/components/settings/account-section'
+import { CreateUserForm } from '@/components/settings/create-user-form'
+import { TrustedHostsForm } from '@/components/settings/trusted-hosts-form'
+import { AiUsagePanel } from '@/components/settings/ai-usage-panel'
 
 export default async function SettingsPage() {
   const session = await auth()
@@ -21,6 +29,7 @@ export default async function SettingsPage() {
   const configuredKeys = isAdmin ? await getConfiguredKeys(tenantId) : []
   const generalSettings = isAdmin ? await getGeneralSettings(tenantId) : {}
   const tenantUsers = isAdmin ? await listTenantUsers() : []
+  const trustedHosts = isAdmin ? await getTrustedHosts(tenantId) : []
 
   // Calendar connections are per-user, not per-tenant — query directly
   const userId = session.user.id
@@ -48,6 +57,11 @@ export default async function SettingsPage() {
           <h1 className="text-xl font-bold text-zinc-100">Settings</h1>
           <p className="text-sm text-zinc-500">Manage API integrations and tenant configuration</p>
         </div>
+      </div>
+
+      {/* Account — available to all authenticated users */}
+      <div className="mb-10">
+        <AccountSection currentName={session.user.name ?? ''} />
       </div>
 
       {!isAdmin ? (
@@ -138,6 +152,11 @@ export default async function SettingsPage() {
             </div>
           </div>
 
+          {/* Trusted Hosts */}
+          <div>
+            <TrustedHostsForm initialHosts={trustedHosts} />
+          </div>
+
           {/* User Management */}
           <div>
             <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">
@@ -156,6 +175,18 @@ export default async function SettingsPage() {
                 currentUserId={session.user.id}
               />
             )}
+
+            <div className="mt-6 bg-zinc-900 rounded-xl border border-zinc-700 p-6">
+              <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-4">
+                Create user
+              </h3>
+              <CreateUserForm />
+            </div>
+          </div>
+
+          {/* AI Usage & Cost */}
+          <div>
+            <AiUsagePanel />
           </div>
         </div>
       )}
