@@ -11,6 +11,13 @@ services:
       # (p620.tail833f7.ts.net) AND localhost in dev. Without this, auth.js v5
       # throws UntrustedHost for non-localhost hostnames and refuses sessions.
       AUTH_TRUST_HOST: "true"
+    volumes:
+      # Bind-mount host source so the dev server (Turbopack) picks up changes
+      # without rebuilding the image. node_modules + .next stay as anonymous
+      # volumes so they don't shadow what was built into the image.
+      - .:/app
+      - /app/node_modules
+      - /app/.next
   db:
     ports:
       - '5433:5432'

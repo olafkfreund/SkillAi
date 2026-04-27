@@ -23,6 +23,11 @@ export const candidateEnrichments = pgTable(
       .references(() => candidates.id, { onDelete: 'cascade' }),
     webHits: jsonb('web_hits').default([]),
     githubProfile: jsonb('github_profile'),
+    verifiedProfiles: jsonb('verified_profiles').notNull().default(sql`'[]'::jsonb`),
+    rejectedUrls: jsonb('rejected_urls').notNull().default(sql`'[]'::jsonb`),
+    stackOverflowProfile: jsonb('stack_overflow_profile'),
+    devtoProfile: jsonb('devto_profile'),
+    personalSiteSummary: jsonb('personal_site_summary'),
     searchedAt: timestamp('searched_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -51,4 +56,36 @@ export type GitHubProfile = {
   publicRepos: number
   followers: number
   topRepos: Array<{ name: string; description: string | null; stars: number; language: string | null; url: string }>
+}
+export type VerifiedProfile = {
+  source: 'linkedin' | 'github' | 'stack_overflow' | 'devto' | 'medium' | 'personal' | 'web'
+  url: string
+  confidence: number // 0-100
+  category: 'high' | 'medium' | 'low' | 'not_match'
+  reason: string
+  verifiedBy: 'auto' | 'recruiter'
+  verifiedAt: string // ISO
+}
+export type RejectedUrl = {
+  source: string
+  url: string
+  reason: string
+  rejectedAt: string // ISO
+}
+export type StackOverflowProfile = {
+  username: string
+  reputation: number
+  topTags: string[]
+  profileUrl: string
+}
+export type DevtoProfile = {
+  username: string
+  joinedAt: string
+  postsCount: number
+  topPosts: { title: string; url: string }[]
+}
+export type PersonalSiteSummary = {
+  url: string
+  title: string
+  aiSummary: string
 }

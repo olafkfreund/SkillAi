@@ -5,8 +5,21 @@ import {
   Globe, MessageSquare, Loader2, Search, ExternalLink, RefreshCw,
   ChevronDown, ChevronUp, Star, BookOpen, Users, Code2, Link2, GitBranch
 } from 'lucide-react'
-import { enrichCandidate, updateCandidateLinks } from '@/actions/enrichment'
-import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
+import {
+  enrichCandidate,
+  updateCandidateLinks,
+  confirmProfile,
+  dismissProfile,
+} from '@/actions/enrichment'
+import type {
+  WebHit,
+  GitHubProfile,
+  VerifiedProfile,
+  StackOverflowProfile,
+  DevtoProfile,
+  PersonalSiteSummary,
+} from '@/db/schema/candidate-enrichments'
+import { VerifiedProfileChip } from './verified-profile-chip'
 
 interface Props {
   candidateId: string
@@ -16,7 +29,14 @@ interface Props {
     webHits: WebHit[]
     githubProfile: GitHubProfile | null
     searchedAt: string | null
+    verifiedProfiles?: VerifiedProfile[]
+    rejectedUrls?: string[]
+    stackOverflowProfile?: StackOverflowProfile | null
+    devtoProfile?: DevtoProfile | null
+    personalSiteSummary?: PersonalSiteSummary | null
   } | null
+  /** Whether the current user can confirm/dismiss profiles. Defaults to false. */
+  canEdit?: boolean
 }
 
 const SOURCE_ICONS: Record<string, React.ReactNode> = {
@@ -37,7 +57,7 @@ const SOURCE_LABELS: Record<string, string> = {
   medium: 'Medium', devto: 'dev.to', web: 'Web',
 }
 
-export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithubUsername, initialEnrichment }: Props) {
+export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithubUsername, initialEnrichment, canEdit = false }: Props) {
   const [linkedinUrl, setLinkedinUrl] = useState(initialLinkedinUrl ?? '')
   const [githubUsername, setGithubUsername] = useState(initialGithubUsername ?? '')
   const [enrichment, setEnrichment] = useState(initialEnrichment)
@@ -60,10 +80,25 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
         setError(result.error)
         return
       }
+      // Wave 2A extends the result with verifiedProfiles / stackOverflowProfile /
+      // devtoProfile / personalSiteSummary / rejectedUrls. Read them defensively
+      // so this file compiles before 2A lands; spread to preserve any extras.
+      const r = result as typeof result & {
+        verifiedProfiles?: VerifiedProfile[]
+        rejectedUrls?: string[]
+        stackOverflowProfile?: StackOverflowProfile | null
+        devtoProfile?: DevtoProfile | null
+        personalSiteSummary?: PersonalSiteSummary | null
+      }
       setEnrichment({
-        webHits: result.webHits,
-        githubProfile: result.githubProfile,
-        searchedAt: result.searchedAt,
+        webHits: r.webHits,
+        githubProfile: r.githubProfile,
+        searchedAt: r.searchedAt,
+        verifiedProfiles: r.verifiedProfiles,
+        rejectedUrls: r.rejectedUrls,
+        stackOverflowProfile: r.stackOverflowProfile,
+        devtoProfile: r.devtoProfile,
+        personalSiteSummary: r.personalSiteSummary,
       })
     })
   }
@@ -206,6 +241,79 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
             </div>
           )}
         </div>
+      )}
+
+      {/* Confirmed profiles (Wave 2 enrichment) */}
+      {enrichment?.verifiedProfiles && enrichment.verifiedProfiles.length > 0 && (
+        <section>
+          <h4 className="text-sm font-medium text-zinc-200 mb-2">
+            Confirmed profiles ({enrichment.verifiedProfiles.length})
+          </h4>
+          <div className="flex flex-col gap-1.5">
+            {enrichment.verifiedProfiles.map((p) => (
+              <VerifiedProfileChip
+                key={`${p.source}-${p.url}`}
+                source={p.source}
+                url={p.url}
+                confidence={p.confidence}
+                category={p.category}
+                canEdit={canEdit}
+                showConfirm={p.category === 'medium' && p.verifiedBy === 'auto'}
+                onConfirm={async () => { await confirmProfile(candidateId, p.url) }}
+                onDismiss={async () => { await dismissProfile(candidateId, p.url) }}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Stack Overflow card */}
+      {enrichment?.stackOverflowProfile && (
+        <section className="rounded-md border border-zinc-700 bg-zinc-900/50 p-3">
+          <div className="flex items-start gap-2">
+            <div className="text-xs text-zinc-400">Stack Overflow</div>
+            <div className="flex-1">
+              <a
+                href={enrichment.stackOverflowProfile.profileUrl}
+                target="_blank" rel="noopener noreferrer"
+                className="text-sm text-zinc-200 hover:text-white"
+              >
+                {enrichment.stackOverflowProfile.username}
+              </a>
+              <div className="mt-1 text-xs text-zinc-500">
+                Reputation: <span className="text-zinc-300">{enrichment.stackOverflowProfile.reputation.toLocaleString()}</span>
+              </div>
+              {enrichment.stackOverflowProfile.topTags?.length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {enrichment.stackOverflowProfile.topTags.slice(0, 5).map((tag) => (
+                    <span key={tag} className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-300">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Personal site summary card */}
+      {enrichment?.personalSiteSummary && (
+        <section className="rounded-md border border-zinc-700 bg-zinc-900/50 p-3">
+          <div className="text-xs text-zinc-400 mb-1">Personal site</div>
+          <a
+            href={enrichment.personalSiteSummary.url}
+            target="_blank" rel="noopener noreferrer"
+            className="text-sm font-medium text-zinc-200 hover:text-white"
+          >
+            {enrichment.personalSiteSummary.title || enrichment.personalSiteSummary.url}
+          </a>
+          {enrichment.personalSiteSummary.aiSummary && (
+            <p className="mt-1.5 text-xs text-zinc-400 leading-relaxed">
+              {enrichment.personalSiteSummary.aiSummary}
+            </p>
+          )}
+        </section>
       )}
 
       {/* Web hits */}

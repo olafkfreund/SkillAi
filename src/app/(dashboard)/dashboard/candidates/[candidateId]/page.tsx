@@ -402,6 +402,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
           initialLinkedinUrl={candidate.linkedinUrl ?? null}
           initialGithubUsername={candidate.githubUsername ?? null}
           initialEnrichment={initialEnrichment}
+          canEdit={canEdit}
         />
       </div>
 
