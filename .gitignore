@@ -45,6 +45,7 @@ next-env.d.ts
 
 # database backups (contain PII)
 /backups/
+/.backups/
 
 # playwright
 playwright-report/
