@@ -13,6 +13,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { eq } from 'drizzle-orm'
 import { withTenant } from '@/db'
 import { candidates } from '@/db/schema'
+import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -44,10 +45,15 @@ const MAX_INPUT_CHARS = 12_000
  * only. Output uses standard markdown: # / ## headings, - bullets, blank
  * lines between sections.
  */
-export async function reformatCvText(cvText: string): Promise<string> {
+export async function reformatCvText(
+  cvText: string,
+  tenantId: string,
+  candidateId?: string
+): Promise<string> {
   const truncated = cvText.length > MAX_INPUT_CHARS
   const input = truncated ? cvText.slice(0, MAX_INPUT_CHARS) : cvText
 
+  const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 8000,
@@ -82,6 +88,16 @@ ${input}`,
     ],
   })
 
+  logAiUsage({
+    tenantId,
+    userId: null,
+    operation: 'cv_reformat',
+    model: response.model,
+    usage: anthropicUsageToInput(response.usage),
+    durationMs: Date.now() - startedAt,
+    metadata: { candidateId, inputChars: input.length, truncated },
+  }).catch(() => {})
+
   const toolBlock = response.content.find(
     (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
   )
@@ -114,7 +130,7 @@ export async function triggerCvReformat(candidateId: string, tenantId: string): 
     throw new Error('Candidate has no CV text to reformat')
   }
 
-  const formatted = await reformatCvText(candidate.cvText)
+  const formatted = await reformatCvText(candidate.cvText, tenantId, candidateId)
 
   await withTenant(tenantId, async (tx) =>
     tx

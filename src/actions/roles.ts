@@ -366,7 +366,7 @@ async function _saveRoleTags(
   requirements: string
 ): Promise<void> {
   try {
-    const tags = await extractRoleTags(title, description, requirements)
+    const tags = await extractRoleTags(title, description, requirements, tenantId, roleId)
     await withTenant(tenantId, async (tx) => {
       await tx
         .update(roles)

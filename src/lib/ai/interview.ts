@@ -15,6 +15,7 @@ import {
 } from './interview-schemas'
 import { inferExperienceLevel, inferLanguage } from './interview-helpers'
 import { formatManagerPriorities } from './priorities'
+import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 
 export { inferExperienceLevel, inferLanguage }
 
@@ -70,7 +71,12 @@ const CV_PROFILE_TOOL: Anthropic.Tool = {
   },
 }
 
-export async function extractCvProfile(cvText: string): Promise<CvProfile> {
+export async function extractCvProfile(
+  cvText: string,
+  tenantId: string,
+  candidateId?: string
+): Promise<CvProfile> {
+  const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 2048,
@@ -91,6 +97,16 @@ ${cvText.slice(0, 6000)}`,
 
   console.log(`Stage 1 (extractCvProfile): model=${response.model}, usage=${JSON.stringify(response.usage)}`)
 
+  logAiUsage({
+    tenantId,
+    userId: null,
+    operation: 'cv_profile_extract',
+    model: response.model,
+    usage: anthropicUsageToInput(response.usage),
+    durationMs: Date.now() - startedAt,
+    metadata: { candidateId },
+  }).catch(() => {})
+
   const toolBlock = response.content.find(
     (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
   )
@@ -107,7 +123,9 @@ ${cvText.slice(0, 6000)}`,
 export async function generateQuestions(
   cvProfile: CvProfile,
   role: { title: string; description: string; requirements: string; priorityKeywords?: readonly string[] },
-  options: { includeCodeChallenge: boolean; language?: string; packType?: 'full' | 'pre_screening' }
+  options: { includeCodeChallenge: boolean; language?: string; packType?: 'full' | 'pre_screening' },
+  tenantId?: string,
+  metadata?: { candidateId?: string; roleId?: string; packId?: string }
 ): Promise<InterviewPackOutput> {
   const language = options.language ?? inferLanguage(cvProfile.technical_skills)
   const experienceLevel = cvProfile.experience_level ?? 'mid'
@@ -162,6 +180,7 @@ export async function generateQuestions(
     },
   }
 
+  const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 12000,
@@ -229,6 +248,18 @@ ${includeCodeChallenge ? `- Include a ${language} code challenge appropriate for
   })
 
   console.log(`Stage 2 response: stop_reason=${response.stop_reason}, usage=${JSON.stringify(response.usage)}`)
+
+  if (tenantId) {
+    logAiUsage({
+      tenantId,
+      userId: null,
+      operation: 'interview_pack_generate',
+      model: response.model,
+      usage: anthropicUsageToInput(response.usage),
+      durationMs: Date.now() - startedAt,
+      metadata: { ...metadata, packType, includeCodeChallenge },
+    }).catch(() => {})
+  }
 
   const toolBlock = response.content.find(
     (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'

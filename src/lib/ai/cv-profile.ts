@@ -132,7 +132,7 @@ export async function triggerCvProfileExtraction(
       return
     }
 
-    const profile = await extractCvProfile(candidate.cvText)
+    const profile = await extractCvProfile(candidate.cvText, tenantId, candidateId)
     await saveProfile(tenantId, candidateId, profile, 'complete')
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
@@ -161,7 +161,7 @@ export async function getOrExtractCvProfile(
   }
 
   console.log(`[cv-profile] no cached profile for ${candidateId}, extracting…`)
-  const profile = await extractCvProfile(cvText)
+  const profile = await extractCvProfile(cvText, tenantId, candidateId)
   await saveProfile(tenantId, candidateId, profile, 'complete')
   return profile
 }

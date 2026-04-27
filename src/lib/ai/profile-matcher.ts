@@ -13,6 +13,7 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import { z } from 'zod'
+import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -92,6 +93,8 @@ Rules:
 export async function verifyProfilesAgainstCv(
   cvSignals: CvSignals,
   candidates: ProfileCandidate[],
+  tenantId?: string,
+  candidateId?: string,
 ): Promise<MatchVerdict[]> {
   if (candidates.length === 0) return []
 
@@ -108,6 +111,7 @@ export async function verifyProfilesAgainstCv(
     .map((c, i) => `[${i + 1}] ${c.source.toUpperCase()} | ${c.url}\n    Snippet: ${c.snippet}`)
     .join('\n\n')
 
+  const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: MODEL,
     max_tokens: MAX_OUTPUT_TOKENS,
@@ -125,6 +129,18 @@ export async function verifyProfilesAgainstCv(
   console.log(
     `[profile-matcher] model=${response.model}, candidates=${candidates.length}, usage=${JSON.stringify(response.usage)}`,
   )
+
+  if (tenantId) {
+    logAiUsage({
+      tenantId,
+      userId: null,
+      operation: 'profile_match',
+      model: response.model,
+      usage: anthropicUsageToInput(response.usage),
+      durationMs: Date.now() - startedAt,
+      metadata: { candidateId, profileCount: candidates.length },
+    }).catch(() => {})
+  }
 
   const toolBlock = response.content.find(
     (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use',

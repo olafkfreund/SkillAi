@@ -8,6 +8,7 @@ import { candidates, candidateEnrichments, cvProfiles } from '@/db/schema'
 import { getActionContext } from '@/lib/auth/action-context'
 import { requireRole } from '@/lib/auth/require-role'
 import { writeAuditLog } from '@/lib/audit'
+import { logAiUsage, anthropicUsageToInput } from '@/lib/ai/usage-logger'
 import {
   verifyProfilesAgainstCv,
   type CvSignals,
@@ -271,7 +272,9 @@ const personalSiteAnthropic = new Anthropic({
 
 async function fetchPersonalSiteSummary(
   url: string,
-  candidateName: string
+  candidateName: string,
+  tenantId?: string,
+  candidateId?: string
 ): Promise<PersonalSiteSummary | null> {
   const res = await timedFetch(url, {
     headers: { 'User-Agent': 'SkillAI-Enrichment/1.0' },
@@ -306,6 +309,7 @@ async function fetchPersonalSiteSummary(
 
   let aiSummary = ''
   try {
+    const startedAt = Date.now()
     const response = await personalSiteAnthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 200,
@@ -325,6 +329,17 @@ ${visibleText}`,
         },
       ],
     })
+    if (tenantId) {
+      logAiUsage({
+        tenantId,
+        userId: null,
+        operation: 'personal_site_summary',
+        model: response.model,
+        usage: anthropicUsageToInput(response.usage),
+        durationMs: Date.now() - startedAt,
+        metadata: { candidateId, url, inputChars: visibleText.length },
+      }).catch(() => {})
+    }
     const block = response.content.find(
       (b): b is Anthropic.TextBlock => b.type === 'text'
     )
@@ -616,7 +631,7 @@ export async function enrichCandidate(candidateId: string): Promise<EnrichmentRe
 
     if (undecided.length > 0) {
       try {
-        const aiVerdicts = await verifyProfilesAgainstCv(signals, undecided)
+        const aiVerdicts = await verifyProfilesAgainstCv(signals, undecided, tenantId, candidateId)
         allVerdicts.push(...aiVerdicts)
       } catch (err) {
         console.error(
@@ -684,7 +699,7 @@ export async function enrichCandidate(candidateId: string): Promise<EnrichmentRe
     .sort((a, b) => b.confidence - a.confidence)[0]
   let personalSiteSummary: PersonalSiteSummary | null = null
   if (verifiedPersonal) {
-    personalSiteSummary = await fetchPersonalSiteSummary(verifiedPersonal.url, fullName)
+    personalSiteSummary = await fetchPersonalSiteSummary(verifiedPersonal.url, fullName, tenantId, candidateId)
   }
 
   // Merge previouslyRejected with new rejections (dedupe by URL)

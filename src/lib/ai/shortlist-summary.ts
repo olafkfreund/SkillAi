@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { resolveAnthropicKey } from './keys'
 import { formatManagerPriorities } from './priorities'
+import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 
 type CandidateSummaryInput = {
   name: string
@@ -30,6 +31,7 @@ ${i + 1}. ${c.name} — Overall: ${c.overallScore}/100
    AI Summary: ${c.aiSummary ?? 'Not available'}
     `.trim()).join('\n\n')
 
+  const startedAt = Date.now()
   const message = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 800,
@@ -52,6 +54,16 @@ Write a 3-4 paragraph recommendation that:
 Be direct and specific. Reference candidate names. Keep it under 300 words.`
     }]
   })
+
+  logAiUsage({
+    tenantId,
+    userId: null,
+    operation: 'shortlist_summary',
+    model: message.model,
+    usage: anthropicUsageToInput(message.usage),
+    durationMs: Date.now() - startedAt,
+    metadata: { roleTitle, candidateCount: candidates.length },
+  }).catch(() => {})
 
   const content = message.content[0]
   if (content.type !== 'text') throw new Error('Unexpected response type')
