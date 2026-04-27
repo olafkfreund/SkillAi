@@ -1,0 +1,65 @@
+'use client'
+
+import { useState, useEffect, type MouseEvent } from 'react'
+import { DownloadIcon, Loader2 } from 'lucide-react'
+
+interface SynechronCvButtonProps {
+  candidateId: string
+  className?: string
+  disabled?: boolean
+}
+
+/**
+ * "Generate Synechron CV" button.
+ *
+ * Mirrors the simple <a download> pattern from {@link DownloadPdfButton} but
+ * adds a transient loading state so the recruiter sees feedback while the
+ * server-side PDF is being generated. The spinner clears when the window
+ * regains focus (browser download dialog closed) or after a 30s safety
+ * timeout, whichever comes first.
+ */
+export function SynechronCvButton({ candidateId, className, disabled }: SynechronCvButtonProps) {
+  const [loading, setLoading] = useState(false)
+
+  // Defensive cleanup if the component unmounts while a download is in flight.
+  useEffect(() => {
+    return () => setLoading(false)
+  }, [])
+
+  const handleClick = (_e: MouseEvent<HTMLAnchorElement>) => {
+    if (disabled || loading) return
+    setLoading(true)
+    const timeout = setTimeout(() => setLoading(false), 30_000)
+    const onFocus = () => {
+      setLoading(false)
+      clearTimeout(timeout)
+      window.removeEventListener('focus', onFocus)
+    }
+    window.addEventListener('focus', onFocus)
+  }
+
+  const baseClass =
+    'inline-flex items-center gap-1.5 rounded-md border border-zinc-600 text-sm text-zinc-400 px-3 py-1.5 hover:bg-zinc-800 hover:text-zinc-200 transition-colors'
+  const stateClass = loading || disabled ? 'opacity-60 pointer-events-none' : ''
+  const merged = [className ?? baseClass, stateClass].filter(Boolean).join(' ')
+
+  return (
+    <a
+      href={disabled ? undefined : `/api/export/synechron-cv/${candidateId}`}
+      onClick={handleClick}
+      className={merged}
+      download
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-busy={loading}
+      aria-disabled={disabled || loading}
+    >
+      {loading ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <DownloadIcon className="h-3.5 w-3.5" />
+      )}
+      {loading ? 'Generating…' : 'Generate Synechron CV'}
+    </a>
+  )
+}
