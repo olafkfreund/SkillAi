@@ -7,7 +7,7 @@ import { withTenant } from '@/db'
 import { roles, scores, candidates, customers, agencies } from '@/db/schema'
 import { DownloadPdfButton } from '@/components/export/download-pdf-button'
 import { archiveRole, regenerateRoleTags } from '@/actions/roles'
-import { removeCandidateFromRole } from '@/actions/scores'
+import { removeCandidateFromRole, rescoreCandidate } from '@/actions/scores'
 import { hasRole } from '@/lib/auth/require-role'
 import { RoleTagsPanel } from '@/components/roles/role-tags-panel'
 import { RoleMetaBar } from '@/components/roles/role-meta-bar'
@@ -17,6 +17,11 @@ import { SuggestCandidatesPanel } from '@/components/roles/suggest-candidates-pa
 import { AddCandidatePanel } from '@/components/roles/add-candidate-panel'
 import { ShortlistSummaryPanel } from '@/components/roles/shortlist-summary-panel'
 import { DownloadCvsButton } from '@/components/roles/download-cvs-button'
+import {
+  PriorityKeywordsPanel,
+  StaleScorePill,
+} from '@/components/roles/priority-keywords-panel'
+import { isScoreOutdatedAgainstPriorities } from '@/lib/scores/staleness'
 
 type Props = { params: Promise<{ roleId: string }> }
 
@@ -64,6 +69,7 @@ export default async function RoleDetailPage({ params }: Props) {
         experienceScore: scores.experienceScore,
         culturalFitScore: scores.culturalFitScore,
         communicationScore: scores.communicationScore,
+        scoreUpdatedAt: scores.updatedAt,
         firstName: candidates.firstName,
         lastName: candidates.lastName,
         email: candidates.email,
@@ -209,6 +215,13 @@ export default async function RoleDetailPage({ params }: Props) {
 
       <RoleMetaBar role={role} customer={customer} portalUrl={portalUrl} />
 
+      {/* Manager priority keywords — soft signal surfaced in AI scoring */}
+      <PriorityKeywordsPanel
+        keywords={role.priorityKeywords}
+        canEdit={canEdit}
+        roleEditHref={`/dashboard/roles/${roleId}/edit`}
+      />
+
       {/* Tags panel */}
       <RoleTagsPanel
         roleId={roleId}
@@ -252,31 +265,47 @@ export default async function RoleDetailPage({ params }: Props) {
           <p className="text-zinc-500 text-sm">No candidates scored for this role yet.</p>
         ) : (
           <div className="grid gap-2">
-            {scoredCandidates.map((c) => (
-              <RoleCandidateCard
-                key={c.scoreId}
-                scoreId={c.scoreId}
-                roleId={roleId}
-                candidateId={c.candidateId}
-                firstName={c.firstName}
-                lastName={c.lastName}
-                email={c.email}
-                scoreStatus={c.scoreStatus}
-                overallScore={c.overallScore}
-                technicalScore={c.technicalScore}
-                experienceScore={c.experienceScore}
-                culturalFitScore={c.culturalFitScore}
-                communicationScore={c.communicationScore}
-                filePath={c.filePath ?? null}
-                roleDayRate={role.customerDayRate}
-                roleCurrency={role.rateCurrency}
-                candidateRate={c.candidateRate}
-                candidateCurrency={c.candidateCurrency}
-                isInternal={Boolean(c.agencyIsInternal)}
-                canEdit={canEdit}
-                removeAction={removeCandidateFromRole}
-              />
-            ))}
+            {scoredCandidates.map((c) => {
+              const isStale = isScoreOutdatedAgainstPriorities(
+                { updatedAt: c.scoreUpdatedAt },
+                { priorityKeywordsUpdatedAt: role.priorityKeywordsUpdatedAt },
+              )
+              return (
+                <div key={c.scoreId} className="space-y-1">
+                  <RoleCandidateCard
+                    scoreId={c.scoreId}
+                    roleId={roleId}
+                    candidateId={c.candidateId}
+                    firstName={c.firstName}
+                    lastName={c.lastName}
+                    email={c.email}
+                    scoreStatus={c.scoreStatus}
+                    overallScore={c.overallScore}
+                    technicalScore={c.technicalScore}
+                    experienceScore={c.experienceScore}
+                    culturalFitScore={c.culturalFitScore}
+                    communicationScore={c.communicationScore}
+                    filePath={c.filePath ?? null}
+                    roleDayRate={role.customerDayRate}
+                    roleCurrency={role.rateCurrency}
+                    candidateRate={c.candidateRate}
+                    candidateCurrency={c.candidateCurrency}
+                    isInternal={Boolean(c.agencyIsInternal)}
+                    canEdit={canEdit}
+                    removeAction={removeCandidateFromRole}
+                  />
+                  {isStale && canEdit && (
+                    <div className="flex justify-end pr-2">
+                      <StaleScorePill
+                        candidateId={c.candidateId}
+                        roleId={roleId}
+                        rescoreAction={rescoreCandidate}
+                      />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

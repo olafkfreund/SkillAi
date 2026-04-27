@@ -25,7 +25,10 @@ import { MatchingRolesPanel } from '@/components/candidates/matching-roles-panel
 import { CvFilePanel } from '@/components/candidates/cv-file-panel'
 import { TranscriptSection } from '@/components/transcripts/transcript-section'
 import { archiveCandidate } from '@/actions/candidates'
+import { rescoreCandidate } from '@/actions/scores'
 import { hasRole } from '@/lib/auth/require-role'
+import { StaleScorePill } from '@/components/roles/priority-keywords-panel'
+import { isScoreOutdatedAgainstPriorities } from '@/lib/scores/staleness'
 import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
 
 type Props = { params: Promise<{ candidateId: string }>; searchParams: Promise<{ roleId?: string }> }
@@ -339,7 +342,16 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
       ) : activeScore?.score.scoreStatus === 'complete' ? (
         <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-zinc-100">Score for: {activeScore.role.title}</h2>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h2 className="font-semibold text-zinc-100">Score for: {activeScore.role.title}</h2>
+              {isScoreOutdatedAgainstPriorities(activeScore.score, activeScore.role) && canEdit && (
+                <StaleScorePill
+                  candidateId={candidateId}
+                  roleId={activeScore.score.roleId}
+                  rescoreAction={rescoreCandidate}
+                />
+              )}
+            </div>
             {canEdit && (
               <RescoreButton
                 candidateId={candidateId}
