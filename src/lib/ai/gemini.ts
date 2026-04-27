@@ -10,6 +10,7 @@
 import { GoogleGenerativeAI, SchemaType, type Schema } from '@google/generative-ai'
 import { resolveGoogleKey } from './keys'
 import { CandidateScoreSchema, type CandidateScore } from './schema'
+import { formatManagerPriorities } from './priorities'
 
 const GEMINI_MODEL = 'models/gemini-2.0-flash'
 
@@ -75,6 +76,7 @@ type ScoringInput = {
   tenantId: string
   frameworkContext?: string
   budgetContext?: string
+  priorityKeywords?: readonly string[]
 }
 
 export async function scoreCandidateWithGemini(input: ScoringInput): Promise<CandidateScore> {
@@ -97,7 +99,7 @@ DESCRIPTION:
 ${input.roleDescription}
 
 REQUIREMENTS:
-${input.roleRequirements}${input.frameworkContext ? `\n\nHIRING FRAMEWORK CONTEXT:\n${input.frameworkContext}` : ''}
+${input.roleRequirements}${input.frameworkContext ? `\n\nHIRING FRAMEWORK CONTEXT:\n${input.frameworkContext}` : ''}${formatManagerPriorities(input.priorityKeywords)}
 
 CANDIDATE: ${input.candidateName}
 ${input.budgetContext ? `\n${input.budgetContext}\n` : ''}
