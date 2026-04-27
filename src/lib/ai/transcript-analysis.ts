@@ -17,6 +17,7 @@ import {
   TRANSCRIPT_ANALYSIS_TOOL,
   type TranscriptAnalysis,
 } from './transcript-schemas'
+import { formatManagerPriorities } from './priorities'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -46,6 +47,7 @@ type AnalysisInput = {
   roleDescription: string
   roleRequirements: string
   packQuestions?: PackQuestion[]
+  priorityKeywords?: readonly string[]
 }
 
 export async function analyzeTranscriptWithClaude(
@@ -69,7 +71,7 @@ REQUIREMENTS:
 ${input.roleRequirements}
 
 DESCRIPTION:
-${input.roleDescription}${questionsBlock}
+${input.roleDescription}${questionsBlock}${formatManagerPriorities(input.priorityKeywords)}
 
 Score 4 dimensions:
 - communication: clarity, fluency, confidence, listening
@@ -178,6 +180,7 @@ export async function triggerTranscriptAnalysis(
       roleDescription: role.description,
       roleRequirements: role.requirements,
       packQuestions,
+      priorityKeywords: role.priorityKeywords,
     })
 
     // Write analysis result (upsert to support re-analysis)

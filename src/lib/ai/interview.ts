@@ -14,6 +14,7 @@ import {
   type InterviewPackOutput,
 } from './interview-schemas'
 import { inferExperienceLevel, inferLanguage } from './interview-helpers'
+import { formatManagerPriorities } from './priorities'
 
 export { inferExperienceLevel, inferLanguage }
 
@@ -105,7 +106,7 @@ ${cvText.slice(0, 6000)}`,
 
 export async function generateQuestions(
   cvProfile: CvProfile,
-  role: { title: string; description: string; requirements: string },
+  role: { title: string; description: string; requirements: string; priorityKeywords?: readonly string[] },
   options: { includeCodeChallenge: boolean; language?: string; packType?: 'full' | 'pre_screening' }
 ): Promise<InterviewPackOutput> {
   const language = options.language ?? inferLanguage(cvProfile.technical_skills)
@@ -182,7 +183,7 @@ export async function generateQuestions(
             text: `ROLE: ${role.title}
 DESCRIPTION: ${role.description}
 REQUIREMENTS:
-${role.requirements}`,
+${role.requirements}${formatManagerPriorities(role.priorityKeywords)}`,
             cache_control: { type: 'ephemeral' },
           },
           {

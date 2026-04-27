@@ -1,10 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { resolveAnthropicKey } from './keys'
+import { formatManagerPriorities } from './priorities'
 
 type RoleInput = {
   roleId: string
   roleTitle: string
   roleRequirements: string
+  priorityKeywords?: readonly string[]
 }
 
 export type RoleFitResult = {
@@ -52,7 +54,7 @@ export async function analyseRoleFitForCandidate(
   const rolesBlock = roles
     .map(
       (r, i) =>
-        `${i + 1}. ${r.roleTitle} (id: ${r.roleId})\nRequirements: ${r.roleRequirements.slice(0, 500)}`
+        `${i + 1}. ${r.roleTitle} (id: ${r.roleId})\nRequirements: ${r.roleRequirements.slice(0, 500)}${formatManagerPriorities(r.priorityKeywords)}`
     )
     .join('\n\n')
 
