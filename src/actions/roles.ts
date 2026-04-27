@@ -12,6 +12,24 @@ import { writeAuditLog } from '@/lib/audit'
 import { extractRoleTags } from '@/lib/ai/role-tags'
 import { getActionContext } from '@/lib/auth/action-context'
 
+// Preprocess priorityKeywords: form sends a JSON-stringified array via FormData.
+// Accepts an actual array (programmatic call) OR a JSON string (FormData);
+// invalid/empty strings normalise to [].
+const priorityKeywordsField = z.preprocess(
+  (raw) => {
+    if (Array.isArray(raw)) return raw
+    if (typeof raw !== 'string') return []
+    if (raw.trim() === '') return []
+    try {
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  },
+  z.array(z.string().min(2).max(120)).max(15).default([])
+)
+
 const CreateRoleSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
   description: z.string().min(10, 'Description must be at least 10 characters'),
@@ -28,6 +46,7 @@ const CreateRoleSchema = z.object({
   customerPortalPath: z.string().max(500).optional().or(z.literal('')),
   customerDayRate: z.coerce.number().min(0).optional().or(z.literal('')),
   rateCurrency: z.string().max(3).toUpperCase().optional().or(z.literal('')),
+  priorityKeywords: priorityKeywordsField,
 }).refine(
   (data) => {
     const hasRate = typeof data.customerDayRate === 'number'
@@ -71,6 +90,7 @@ export async function createRole(
     customerPortalPath: formData.get('customerPortalPath') || undefined,
     customerDayRate: formData.get('customerDayRate') || undefined,
     rateCurrency: formData.get('rateCurrency') || undefined,
+    priorityKeywords: formData.get('priorityKeywords') ?? undefined,
   })
 
   if (!parsed.success) {
@@ -104,6 +124,8 @@ export async function createRole(
         customerPortalPath: parsed.data.customerPortalPath || null,
         customerDayRate: typeof parsed.data.customerDayRate === 'number' ? String(parsed.data.customerDayRate) : null,
         rateCurrency: parsed.data.rateCurrency || null,
+        priorityKeywords: parsed.data.priorityKeywords,
+        priorityKeywordsUpdatedAt: parsed.data.priorityKeywords.length > 0 ? new Date() : null,
         isActive: true,
       })
       .returning({ id: roles.id })
@@ -145,6 +167,7 @@ const UpdateRoleSchema = z.object({
   customerPortalPath: z.string().max(500).optional().or(z.literal('')),
   customerDayRate: z.coerce.number().min(0).optional().or(z.literal('')),
   rateCurrency: z.string().max(3).toUpperCase().optional().or(z.literal('')),
+  priorityKeywords: priorityKeywordsField,
 }).refine(
   (data) => {
     const hasRate = typeof data.customerDayRate === 'number'
@@ -191,6 +214,7 @@ export async function updateRole(
     customerPortalPath: formData.get('customerPortalPath') || undefined,
     customerDayRate: formData.get('customerDayRate') || undefined,
     rateCurrency: formData.get('rateCurrency') || undefined,
+    priorityKeywords: formData.get('priorityKeywords') ?? undefined,
   })
 
   if (!parsed.success) {
@@ -200,6 +224,30 @@ export async function updateRole(
       fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
     }
   }
+
+  // Load existing role so we can diff priorityKeywords and only bump
+  // priorityKeywordsUpdatedAt when the set actually changes.
+  const [existingRole] = await withTenant(tenantId, async (tx) =>
+    tx
+      .select({
+        title: roles.title,
+        priorityKeywords: roles.priorityKeywords,
+      })
+      .from(roles)
+      .where(and(eq(roles.id, roleId), eq(roles.tenantId, tenantId)))
+      .limit(1)
+  )
+  if (!existingRole) {
+    return { success: false, error: 'Role not found' }
+  }
+
+  const oldKeywords = existingRole.priorityKeywords ?? []
+  const newKeywords = parsed.data.priorityKeywords
+  const oldSet = new Set(oldKeywords)
+  const newSet = new Set(newKeywords)
+  const added = newKeywords.filter((k) => !oldSet.has(k))
+  const removed = oldKeywords.filter((k) => !newSet.has(k))
+  const keywordsChanged = added.length > 0 || removed.length > 0
 
   await withTenant(tenantId, async (tx) => {
     await tx
@@ -222,9 +270,24 @@ export async function updateRole(
         customerPortalPath: parsed.data.customerPortalPath || null,
         customerDayRate: typeof parsed.data.customerDayRate === 'number' ? String(parsed.data.customerDayRate) : null,
         rateCurrency: parsed.data.rateCurrency || null,
+        priorityKeywords: newKeywords,
+        ...(keywordsChanged ? { priorityKeywordsUpdatedAt: new Date() } : {}),
       })
       .where(and(eq(roles.id, roleId), eq(roles.tenantId, tenantId)))
   })
+
+  // Audit: only emit when priorityKeywords actually changed. Mirrors the
+  // existing pattern in createRole / archiveRole (writeAuditLog with
+  // action / entityType / entityId / entityLabel + optional metadata).
+  if (keywordsChanged) {
+    await writeAuditLog(tenantId, {
+      action: 'role.updated',
+      entityType: 'role',
+      entityId: roleId,
+      entityLabel: parsed.data.title,
+      metadata: { field: 'priorityKeywords', added, removed },
+    })
+  }
 
   after(async () => {
     await _saveRoleTags(roleId, tenantId, parsed.data.title, parsed.data.description, parsed.data.requirements)

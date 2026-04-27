@@ -6,6 +6,7 @@ import { useEffect } from 'react'
 import { Loader2, Sparkles, UploadCloud, X } from 'lucide-react'
 import { createRole } from '@/actions/roles'
 import type { CreateRoleState } from '@/actions/roles'
+import { ChipInput } from '@/components/ui/chip-input'
 
 interface RoleFields {
   title: string
@@ -23,6 +24,7 @@ interface RoleFields {
   customerPortalPath: string
   customerDayRate: string
   rateCurrency: string
+  priorityKeywords: string[]
 }
 
 type FrameworkLevelOption = {
@@ -61,6 +63,7 @@ export function RoleForm({ customers = [], frameworks = {} }: RoleFormProps) {
     customerPortalPath: '',
     customerDayRate: '',
     rateCurrency: '',
+    priorityKeywords: [],
   })
 
   const [importFile, setImportFile] = useState<File | null>(null)
@@ -202,6 +205,7 @@ export function RoleForm({ customers = [], frameworks = {} }: RoleFormProps) {
         fd.set('customerId', fields.customerId)
         fd.set('frameworkLevelId', fields.frameworkLevelId)
         fd.set('frameworkLevelLabel', fields.frameworkLevelLabel)
+        fd.set('priorityKeywords', JSON.stringify(fields.priorityKeywords))
         action(fd)
       }} className="space-y-6">
         {state && !state.success && !state.fieldErrors && (
@@ -347,6 +351,31 @@ export function RoleForm({ customers = [], frameworks = {} }: RoleFormProps) {
           />
           {fieldErrors?.requirements && (
             <p className="mt-1 text-xs text-red-400">{fieldErrors.requirements[0]}</p>
+          )}
+        </div>
+
+        {/* Manager Priorities */}
+        <div className="border-t border-zinc-800 pt-4 mt-2">
+          <label htmlFor="priorityKeywords" className="block text-sm font-medium text-zinc-300 mb-1">
+            Manager Priorities <span className="text-zinc-500 font-normal">(optional)</span>
+          </label>
+          <p id="priorityKeywords-help" className="text-xs text-zinc-500 mb-2">
+            Soft-signal phrases the hiring manager wants prioritised. E.g.{' '}
+            <span className="text-zinc-400">&quot;Self-starting&quot;</span>,{' '}
+            <span className="text-zinc-400">&quot;Engineer who codes&quot;</span>.
+          </p>
+          <ChipInput
+            id="priorityKeywords"
+            aria-describedby="priorityKeywords-help"
+            value={fields.priorityKeywords}
+            onChange={(next) => setFields((f) => ({ ...f, priorityKeywords: next }))}
+            placeholder="Type a phrase, press Enter…"
+            maxChips={15}
+            maxLength={120}
+            disabled={pending || importing}
+          />
+          {fieldErrors?.priorityKeywords && (
+            <p className="mt-1 text-xs text-red-400">{fieldErrors.priorityKeywords[0]}</p>
           )}
         </div>
 
