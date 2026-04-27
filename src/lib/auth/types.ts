@@ -6,6 +6,7 @@
  */
 
 import type { DefaultSession } from 'next-auth'
+import 'next-auth/jwt'
 
 export type UserRole = 'admin' | 'recruiter' | 'viewer'
 
@@ -15,12 +16,23 @@ declare module 'next-auth' {
       id: string
       role: UserRole
       tenantId: string
+      passwordResetRequired: boolean
     } & DefaultSession['user']
   }
 
   interface User {
     role: UserRole
     tenantId: string
+    passwordResetRequired?: boolean
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id?: string
+    role?: UserRole
+    tenantId?: string
+    passwordResetRequired?: boolean
   }
 }
 

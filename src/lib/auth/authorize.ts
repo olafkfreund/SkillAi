@@ -16,6 +16,7 @@ export type AuthUser = {
   name: string
   role: 'admin' | 'recruiter' | 'viewer'
   tenantId: string
+  passwordResetRequired: boolean
 }
 
 export async function authorizeUser(
@@ -40,5 +41,6 @@ export async function authorizeUser(
     name: user.name,
     role: user.role,
     tenantId: user.tenantId,
+    passwordResetRequired: user.passwordResetRequired ?? false,
   }
 }
