@@ -31,7 +31,7 @@
     "file-type": "^22.0.1",
     "lucide-react": "^1.8.0",
     "mammoth": "^1.12.0",
-    "next": "16.2.3",
+    "next": "16.2.4",
     "next-auth": "^5.0.0-beta.30",
     "node-odt": "^1.0.1",
     "pdf-parse": "^2.4.5",
