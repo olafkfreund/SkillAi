@@ -11,9 +11,11 @@ import { RescoreButton } from '@/components/candidates/rescore-button'
 import { PackGenerator } from '@/components/interview/pack-generator'
 import { PackList } from '@/components/interview/pack-list'
 import { DownloadPdfButton } from '@/components/export/download-pdf-button'
+import { SynechronCvButton } from '@/components/export/synechron-cv-button'
 import { EnrichmentPanel } from '@/components/candidates/enrichment-panel'
 import { NotesPanel } from '@/components/candidates/notes-panel'
 import { StatusSelector } from '@/components/candidates/status-selector'
+import { SynechronIdInput } from '@/components/candidates/synechron-id-input'
 import { CandidateCvProfile } from '@/components/candidates/candidate-cv-profile'
 import { EditDetailsForm } from '@/components/candidates/edit-details-form'
 import { InterviewCalendar } from '@/components/candidates/interview-calendar'
@@ -185,6 +187,12 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
                 currentStatus={candidate.status ?? 'new'}
               />
             )}
+            {canEdit && (
+              <SynechronIdInput
+                candidateId={candidateId}
+                value={candidate.synechronCandidateId ?? null}
+              />
+            )}
           </div>
           <div className="flex items-center gap-3 mt-1 text-sm text-zinc-500">
             {candidate.email && <span>{candidate.email}</span>}
@@ -200,6 +208,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
               href={`/api/export/candidate/${candidateId}?audience=customer${roleId ? `&roleId=${roleId}` : ''}`}
               label="Customer PDF"
             />
+            <SynechronCvButton candidateId={candidateId} />
             {canEdit && candidate.isActive && (
               <form action={archiveCandidate.bind(null, candidateId)}>
                 <button

@@ -19,6 +19,14 @@ export const colors = {
   violet50: '#f5f3ff',
 }
 
+// Synechron brand palette — used by the Synechron-format CV PDF renderer.
+export const synechron = {
+  yellow: '#F9E800',     // brand yellow
+  darkGrey: '#4C4948',   // brand dark grey (logo letters)
+  lightGrey: '#F5F5F5',  // sidebar background tint
+  black: '#000000',
+}
+
 export const base = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
