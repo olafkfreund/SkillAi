@@ -16,6 +16,10 @@ interface RoleData {
   customerId: string | null
   frameworkLevelId?: string | null
   frameworkLevelLabel?: string | null
+  country?: string | null
+  city?: string | null
+  workMode?: 'remote' | 'hybrid' | 'onsite' | null
+  languageRequirements?: string[] | null
   targetFillDate?: string | null
   cutoffDate?: string | null
   customerPortalPath?: string | null
@@ -54,6 +58,10 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
     customerId: string
     frameworkLevelId: string
     frameworkLevelLabel: string
+    country: string
+    city: string
+    workMode: string
+    languageRequirements: string
     targetFillDate: string
     cutoffDate: string
     customerPortalPath: string
@@ -67,6 +75,10 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
     customerId: role.customerId ?? '',
     frameworkLevelId: role.frameworkLevelId ?? '',
     frameworkLevelLabel: role.frameworkLevelLabel ?? '',
+    country: role.country ?? '',
+    city: role.city ?? '',
+    workMode: role.workMode ?? '',
+    languageRequirements: (role.languageRequirements ?? []).join(', '),
     targetFillDate: role.targetFillDate ?? '',
     cutoffDate: role.cutoffDate ?? '',
     customerPortalPath: role.customerPortalPath ?? '',
@@ -92,6 +104,10 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
         fd.set('customerId', fields.customerId)
         fd.set('frameworkLevelId', fields.frameworkLevelId)
         fd.set('frameworkLevelLabel', fields.frameworkLevelLabel)
+        fd.set('country', fields.country)
+        fd.set('city', fields.city)
+        fd.set('workMode', fields.workMode)
+        fd.set('languageRequirements', fields.languageRequirements)
         fd.set('targetFillDate', fields.targetFillDate)
         fd.set('cutoffDate', fields.cutoffDate)
         fd.set('customerPortalPath', fields.customerPortalPath)
@@ -271,6 +287,76 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
         {fieldErrors?.priorityKeywords && (
           <p className="mt-1 text-xs text-red-400">{fieldErrors.priorityKeywords[0]}</p>
         )}
+      </div>
+
+      {/* Location & Language */}
+      <div className="border-t border-zinc-800 pt-4 mt-2">
+        <p className="text-sm font-medium text-zinc-400 mb-3">Location & Language</p>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label htmlFor="country" className="block text-xs font-medium text-zinc-400 mb-1">Country</label>
+            <input
+              id="country"
+              name="country"
+              type="text"
+              disabled={pending}
+              value={fields.country}
+              onChange={(e) => setFields((f) => ({ ...f, country: e.target.value }))}
+              placeholder="United Kingdom"
+              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                         placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+          <div>
+            <label htmlFor="city" className="block text-xs font-medium text-zinc-400 mb-1">City</label>
+            <input
+              id="city"
+              name="city"
+              type="text"
+              disabled={pending}
+              value={fields.city}
+              onChange={(e) => setFields((f) => ({ ...f, city: e.target.value }))}
+              placeholder="London"
+              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                         placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="workMode" className="block text-xs font-medium text-zinc-400 mb-1">Work Mode</label>
+            <select
+              id="workMode"
+              name="workMode"
+              disabled={pending}
+              value={fields.workMode}
+              onChange={(e) => setFields((f) => ({ ...f, workMode: e.target.value }))}
+              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              <option value="">— Not specified —</option>
+              <option value="remote">Remote</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="onsite">Onsite</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="languageRequirements" className="block text-xs font-medium text-zinc-400 mb-1">
+              Language Requirements <span className="text-zinc-600">(comma-separated)</span>
+            </label>
+            <input
+              id="languageRequirements"
+              name="languageRequirements"
+              type="text"
+              disabled={pending}
+              value={fields.languageRequirements}
+              onChange={(e) => setFields((f) => ({ ...f, languageRequirements: e.target.value }))}
+              placeholder="English, German"
+              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                         placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Budget */}
