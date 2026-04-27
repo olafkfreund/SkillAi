@@ -3,6 +3,15 @@
 import { useState, useEffect, type MouseEvent } from 'react'
 import { DownloadIcon, Loader2 } from 'lucide-react'
 
+/**
+ * Safety timeout for the loading spinner. Should match (and slightly exceed)
+ * the API route's `maxDuration` so the spinner does not clear before the
+ * server-side AI extraction can possibly complete.
+ *
+ * Route: src/app/api/export/synechron-cv/[candidateId]/route.ts (maxDuration = 60)
+ */
+const SAFETY_TIMEOUT_MS = 30_000
+
 interface SynechronCvButtonProps {
   candidateId: string
   className?: string
@@ -29,7 +38,7 @@ export function SynechronCvButton({ candidateId, className, disabled }: Synechro
   const handleClick = (_e: MouseEvent<HTMLAnchorElement>) => {
     if (disabled || loading) return
     setLoading(true)
-    const timeout = setTimeout(() => setLoading(false), 30_000)
+    const timeout = setTimeout(() => setLoading(false), SAFETY_TIMEOUT_MS)
     const onFocus = () => {
       setLoading(false)
       clearTimeout(timeout)
