@@ -7,6 +7,10 @@ services:
     environment:
       NODE_ENV: production
       ANTHROPIC_API_KEY: ${SKILLAI_ANTHROPIC_API_KEY}
+      # Trust any host that hits this container — the app runs behind Tailscale
+      # (p620.tail833f7.ts.net) AND localhost in dev. Without this, auth.js v5
+      # throws UntrustedHost for non-localhost hostnames and refuses sessions.
+      AUTH_TRUST_HOST: "true"
   db:
     ports:
       - '5433:5432'
