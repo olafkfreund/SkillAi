@@ -10,6 +10,7 @@ import {
   numeric,
   index,
   date,
+  jsonb,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
@@ -74,6 +75,8 @@ export const candidates = pgTable(
     availabilityStatus: availabilityStatusEnum('availability_status').notNull().default('available'),
     availableFrom: date('available_from'),
     isActive: boolean('is_active').notNull().default(true),
+    synechronCvData: jsonb('synechron_cv_data'),
+    synechronCandidateId: varchar('synechron_candidate_id', { length: 64 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
