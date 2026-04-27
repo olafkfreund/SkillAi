@@ -112,11 +112,17 @@ export async function POST(request: Request) {
       ? 'Generating 5 pre-screening questions…'
       : 'Generating personalised interview questions…')
     const language = inferLanguage(cvProfile.technical_skills)
-    const result = await generateQuestions(cvProfile, role, {
-      includeCodeChallenge,
-      language,
-      packType: pack.packType,
-    })
+    const result = await generateQuestions(
+      cvProfile,
+      role,
+      {
+        includeCodeChallenge,
+        language,
+        packType: pack.packType,
+      },
+      tenantId,
+      { candidateId: pack.candidateId, roleId: pack.roleId, packId }
+    )
 
     // Stage 3: Save results
     await setStage(tenantId, packId, 'Saving interview pack…')

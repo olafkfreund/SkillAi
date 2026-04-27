@@ -4,6 +4,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
+import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -40,8 +41,11 @@ export interface RoleTags {
 export async function extractRoleTags(
   title: string,
   description: string,
-  requirements: string
+  requirements: string,
+  tenantId: string,
+  roleId?: string
 ): Promise<RoleTags> {
+  const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 512,
@@ -68,6 +72,16 @@ Rules:
       },
     ],
   })
+
+  logAiUsage({
+    tenantId,
+    userId: null,
+    operation: 'role_tag_extract',
+    model: response.model,
+    usage: anthropicUsageToInput(response.usage),
+    durationMs: Date.now() - startedAt,
+    metadata: { roleId, title },
+  }).catch(() => {})
 
   const toolUse = response.content.find((b) => b.type === 'tool_use')
   if (!toolUse || toolUse.type !== 'tool_use') {

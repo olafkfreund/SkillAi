@@ -15,6 +15,7 @@ import { eq } from 'drizzle-orm'
 import { withTenant } from '@/db'
 import { candidates } from '@/db/schema/candidates'
 import { writeAuditLog } from '@/lib/audit'
+import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 import {
   SynechronCvDataSchema,
   type SynechronCvData,
@@ -162,7 +163,17 @@ export async function extractSynechronCvData(
 ): Promise<SynechronCvData> {
   const cvText = await loadCandidateCvText(candidateId, tenantId)
   const input = capInputForClaude(cvText, candidateId)
+  const startedAt = Date.now()
   const response = await callClaudeWithSynechronTool(input)
+  logAiUsage({
+    tenantId,
+    userId: null,
+    operation: 'synechron_extract',
+    model: response.model,
+    usage: anthropicUsageToInput(response.usage),
+    durationMs: Date.now() - startedAt,
+    metadata: { candidateId, inputChars: input.length },
+  }).catch(() => {})
   const data = parseSynechronToolResponse(response)
   await persistSynechronData(candidateId, tenantId, data)
   await logExtraction(tenantId, candidateId, response, input.length, data)

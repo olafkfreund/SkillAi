@@ -19,6 +19,11 @@ export type AuditAction =
   | 'interview_slot.created' | 'interview_slot.updated' | 'interview_slot.cancelled'
   | 'note.created' | 'note.deleted'
   | 'user.invited' | 'user.role_changed' | 'user.deactivated'
+  | 'user.created'
+  | 'user.password_changed'
+  | 'user.email_changed'
+  | 'settings.trusted_hosts_updated'
+  | 'auth.untrusted_host_blocked'
   | 'agency.created' | 'agency.archived'
 
 type AuditEntry = {

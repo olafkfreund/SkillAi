@@ -9,6 +9,7 @@ import { users } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { requireRole } from '@/lib/auth/require-role'
 import { getActionContext } from '@/lib/auth/action-context'
+import { writeAuditLog } from '@/lib/audit'
 import type { UserRole } from '@/lib/auth/types'
 import type { User } from '@/db/schema/users'
 
@@ -76,7 +77,7 @@ export type PasswordState = {
 const PasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Current password is required'),
-    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+    newPassword: z.string().min(12, 'New password must be at least 12 characters'),
     confirmPassword: z.string().min(1, 'Please confirm your new password'),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
@@ -135,7 +136,11 @@ export async function changePassword(
   await withTenant(session.user.tenantId, async (tx) => {
     await tx
       .update(users)
-      .set({ passwordHash: newHash })
+      .set({
+        passwordHash: newHash,
+        lastPasswordChangeAt: new Date(),
+        passwordResetRequired: false,
+      })
       .where(
         and(
           eq(users.id, session.user.id),
@@ -143,6 +148,12 @@ export async function changePassword(
         )
       )
   })
+
+  writeAuditLog(session.user.tenantId, {
+    action: 'user.password_changed',
+    entityType: 'user',
+    entityId: session.user.id,
+  }).catch(() => {})
 
   return { success: true }
 }
@@ -225,4 +236,97 @@ export async function deactivateUser(userId: string): Promise<void> {
   })
 
   revalidatePath('/settings')
+}
+
+// ---------------------------------------------------------------------------
+// Create user directly (admin only) — bypasses invitation flow.
+// User is created with passwordResetRequired=true so the middleware will
+// force them to /settings#change-password on first login.
+// ---------------------------------------------------------------------------
+
+const CreateUserDirectSchema = z.object({
+  email: z.string().email('Invalid email address').max(255, 'Email must be 255 characters or fewer'),
+  name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or fewer'),
+  role: z.enum(['admin', 'recruiter', 'viewer']),
+  tempPassword: z
+    .string()
+    .min(12, 'Temporary password must be at least 12 characters')
+    .max(128, 'Temporary password must be 128 characters or fewer'),
+})
+
+export async function createUserDirect(
+  formData: FormData
+): Promise<{ ok: true; userId: string } | { ok: false; error: string }> {
+  const ctx = await getActionContext()
+  if (!ctx) return { ok: false, error: 'Unauthorized' }
+
+  try {
+    requireRole(ctx.userRole, 'admin')
+  } catch {
+    return { ok: false, error: 'Forbidden: admins only' }
+  }
+
+  const parsed = CreateUserDirectSchema.safeParse({
+    email: formData.get('email'),
+    name: formData.get('name'),
+    role: formData.get('role'),
+    tempPassword: formData.get('tempPassword'),
+  })
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? 'Validation failed',
+    }
+  }
+
+  // Check email uniqueness within tenant
+  const existing = await withTenant(ctx.tenantId, async (tx) =>
+    tx
+      .select({ id: users.id })
+      .from(users)
+      .where(
+        and(
+          eq(users.email, parsed.data.email),
+          eq(users.tenantId, ctx.tenantId)
+        )
+      )
+      .limit(1)
+  )
+  if (existing.length > 0) {
+    return { ok: false, error: 'A user with this email already exists in this tenant.' }
+  }
+
+  const passwordHash = await bcrypt.hash(parsed.data.tempPassword, 12)
+
+  const inserted = await withTenant(ctx.tenantId, async (tx) =>
+    tx
+      .insert(users)
+      .values({
+        tenantId: ctx.tenantId,
+        email: parsed.data.email,
+        name: parsed.data.name,
+        role: parsed.data.role,
+        passwordHash,
+        passwordResetRequired: true,
+        isActive: true,
+      })
+      .returning({ id: users.id })
+  )
+
+  const created = inserted[0]
+  if (!created) {
+    return { ok: false, error: 'Failed to create user' }
+  }
+
+  writeAuditLog(ctx.tenantId, {
+    action: 'user.created',
+    entityType: 'user',
+    entityId: created.id,
+    entityLabel: parsed.data.email,
+    metadata: { createdVia: 'manual', role: parsed.data.role },
+  }).catch(() => {})
+
+  revalidatePath('/settings')
+
+  return { ok: true, userId: created.id }
 }

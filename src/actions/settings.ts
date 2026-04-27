@@ -8,6 +8,7 @@ import { tenantSettings } from '@/db/schema'
 import { requireRole } from '@/lib/auth/require-role'
 import { encrypt } from '@/lib/crypto'
 import { getActionContext } from '@/lib/auth/action-context'
+import { writeAuditLog } from '@/lib/audit'
 
 const ALLOWED_KEYS = [
   'anthropic_api_key',
@@ -167,4 +168,116 @@ export async function getGeneralSettings(tenantId: string): Promise<Record<strin
   )
 
   return Object.fromEntries(rows.map((r) => [r.key, r.value]))
+}
+
+// ---------------------------------------------------------------------------
+// Trusted hosts (plain JSON list of hostnames the auth system trusts)
+// Stored under tenant_settings.key = 'trusted_hosts'. Hosts are not secrets,
+// so the value is plain JSON — no encrypt() wrap.
+// ---------------------------------------------------------------------------
+
+// Module-internal constants — must NOT be exported from a 'use server' file
+// (Next.js requires every export to be an async function).
+const TRUSTED_HOSTS_KEY = 'trusted_hosts'
+const MAX_TRUSTED_HOSTS = 20
+const MAX_HOSTNAME_LENGTH = 253
+// RFC1123-ish hostname regex (lowercased): each label 1-63 chars, alnum + hyphen,
+// labels separated by dots. Does not validate IPs — those are always-trusted
+// fallbacks (localhost, 127.0.0.1) and don't need to be entered here.
+const HOSTNAME_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/
+
+export type TrustedHostsState =
+  | { success: true }
+  | { success: false; error: string }
+
+export async function saveTrustedHosts(
+  hostnames: string[]
+): Promise<TrustedHostsState> {
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
+
+  try { requireRole(userRole ?? undefined, 'admin') } catch {
+    return { success: false, error: 'Only admins can manage trusted hosts' }
+  }
+
+  if (!Array.isArray(hostnames)) {
+    return { success: false, error: 'Hostnames must be a list' }
+  }
+
+  // Normalise: trim + lowercase + drop empties + dedupe (case-insensitive)
+  const seen = new Set<string>()
+  const cleaned: string[] = []
+  for (const raw of hostnames) {
+    if (typeof raw !== 'string') continue
+    const host = raw.trim().toLowerCase()
+    if (!host) continue
+    if (seen.has(host)) continue
+    seen.add(host)
+    cleaned.push(host)
+  }
+
+  for (const host of cleaned) {
+    if (host.length > MAX_HOSTNAME_LENGTH) {
+      return { success: false, error: `Hostname too long: ${host}` }
+    }
+    if (!HOSTNAME_RE.test(host)) {
+      return { success: false, error: `Invalid hostname: ${host}` }
+    }
+  }
+
+  if (cleaned.length > MAX_TRUSTED_HOSTS) {
+    return { success: false, error: `Maximum ${MAX_TRUSTED_HOSTS} trusted hosts.` }
+  }
+
+  // Compute diff for audit metadata
+  const previous = await getTrustedHosts(tenantId)
+  const added = cleaned.filter((h) => !previous.includes(h))
+  const removed = previous.filter((h) => !cleaned.includes(h))
+
+  const serialised = JSON.stringify(cleaned)
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .insert(tenantSettings)
+      .values({ tenantId, key: TRUSTED_HOSTS_KEY, value: serialised, updatedBy: userId })
+      .onConflictDoUpdate({
+        target: [tenantSettings.tenantId, tenantSettings.key],
+        set: { value: serialised, updatedBy: userId, updatedAt: new Date() },
+      })
+  })
+
+  if (added.length > 0 || removed.length > 0) {
+    writeAuditLog(tenantId, {
+      action: 'settings.trusted_hosts_updated',
+      entityType: 'settings',
+      metadata: { added, removed },
+    }).catch(() => {})
+  }
+
+  revalidatePath('/dashboard/settings')
+  return { success: true }
+}
+
+export async function getTrustedHosts(tenantId: string): Promise<string[]> {
+  const rows = await withTenant(tenantId, async (tx) =>
+    tx
+      .select({ value: tenantSettings.value })
+      .from(tenantSettings)
+      .where(
+        and(
+          eq(tenantSettings.tenantId, tenantId),
+          eq(tenantSettings.key, TRUSTED_HOSTS_KEY)
+        )
+      )
+      .limit(1)
+  )
+  if (rows.length === 0) return []
+  try {
+    const parsed = JSON.parse(rows[0].value) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((h): h is string => typeof h === 'string')
+  } catch {
+    return []
+  }
 }

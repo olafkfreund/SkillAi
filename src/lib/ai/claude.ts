@@ -9,6 +9,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { CandidateScoreSchema, type CandidateScore } from './schema'
 import { formatManagerPriorities } from './priorities'
+import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -81,12 +82,14 @@ type ScoringInput = {
   roleRequirements: string
   cvText: string
   candidateName: string
+  tenantId: string
   frameworkContext?: string
   budgetContext?: string
   priorityKeywords?: readonly string[]
 }
 
 export async function scoreCandidateWithClaude(input: ScoringInput): Promise<CandidateScore> {
+  const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2048,
@@ -132,6 +135,16 @@ Use the submit_candidate_score tool to return your assessment.`,
   })
 
   console.log(`Scoring: model=${response.model}, usage=${JSON.stringify(response.usage)}`)
+
+  logAiUsage({
+    tenantId: input.tenantId,
+    userId: null,
+    operation: 'cv_scoring_claude',
+    model: response.model,
+    usage: anthropicUsageToInput(response.usage),
+    durationMs: Date.now() - startedAt,
+    metadata: { candidateName: input.candidateName, roleTitle: input.roleTitle },
+  }).catch(() => {})
 
   // Extract the tool_use block
   const toolBlock = response.content.find((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')

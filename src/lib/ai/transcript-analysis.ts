@@ -18,6 +18,7 @@ import {
   type TranscriptAnalysis,
 } from './transcript-schemas'
 import { formatManagerPriorities } from './priorities'
+import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -48,6 +49,8 @@ type AnalysisInput = {
   roleRequirements: string
   packQuestions?: PackQuestion[]
   priorityKeywords?: readonly string[]
+  tenantId?: string
+  transcriptId?: string
 }
 
 export async function analyzeTranscriptWithClaude(
@@ -81,6 +84,7 @@ Score 4 dimensions:
 
 ${input.packQuestions?.length ? 'Map transcript excerpts to each interview question and score quality (strong/acceptable/weak).' : 'Provide overall assessment without per-question breakdown.'}`
 
+  const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 4096,
@@ -109,6 +113,18 @@ ${input.packQuestions?.length ? 'Map transcript excerpts to each interview quest
       },
     ],
   })
+
+  if (input.tenantId) {
+    logAiUsage({
+      tenantId: input.tenantId,
+      userId: null,
+      operation: 'transcript_analysis',
+      model: response.model,
+      usage: anthropicUsageToInput(response.usage),
+      durationMs: Date.now() - startedAt,
+      metadata: { transcriptId: input.transcriptId, roleTitle: input.roleTitle },
+    }).catch(() => {})
+  }
 
   const toolBlock = response.content.find(
     (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
@@ -181,6 +197,8 @@ export async function triggerTranscriptAnalysis(
       roleRequirements: role.requirements,
       packQuestions,
       priorityKeywords: role.priorityKeywords,
+      tenantId,
+      transcriptId,
     })
 
     // Write analysis result (upsert to support re-analysis)

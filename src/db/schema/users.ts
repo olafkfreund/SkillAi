@@ -16,6 +16,8 @@ export const users = pgTable(
     role: userRoleEnum('role').notNull().default('recruiter'),
     passwordHash: varchar('password_hash', { length: 255 }).notNull(),
     isActive: boolean('is_active').notNull().default(true),
+    passwordResetRequired: boolean('password_reset_required').notNull().default(false),
+    lastPasswordChangeAt: timestamp('last_password_change_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

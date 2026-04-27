@@ -9,6 +9,7 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import { authorizeUser } from '@/lib/auth/authorize'
+import type { UserRole } from '@/lib/auth/types'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -35,9 +36,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // Embed custom claims into the JWT on sign-in
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
-        token.role = (user as { role: string }).role
-        token.tenantId = (user as { tenantId: string }).tenantId
+        const u = user as {
+          id?: string
+          role: UserRole
+          tenantId: string
+          passwordResetRequired?: boolean
+        }
+        token.id = u.id
+        token.role = u.role
+        token.tenantId = u.tenantId
+        token.passwordResetRequired = u.passwordResetRequired ?? false
       }
       return token
     },
@@ -46,8 +54,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string
-        ;(session.user as { role: string }).role = token.role as string
-        ;(session.user as { tenantId: string }).tenantId = token.tenantId as string
+        session.user.role = (token.role ?? 'viewer') as UserRole
+        session.user.tenantId = (token.tenantId ?? '') as string
+        session.user.passwordResetRequired = token.passwordResetRequired ?? false
       }
       return session
     },

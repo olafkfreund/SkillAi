@@ -11,6 +11,7 @@ import { GoogleGenerativeAI, SchemaType, type Schema } from '@google/generative-
 import { resolveGoogleKey } from './keys'
 import { CandidateScoreSchema, type CandidateScore } from './schema'
 import { formatManagerPriorities } from './priorities'
+import { logAiUsage, geminiUsageToInput } from './usage-logger'
 
 const GEMINI_MODEL = 'models/gemini-2.0-flash'
 
@@ -114,8 +115,23 @@ Score this candidate on:
 
 Return an overall_score (0-100) plus a brief summary (2-4 sentences).`
 
+  const startedAt = Date.now()
   const result = await model.generateContent(prompt)
   const text = result.response.text()
+
+  // Best-effort usage tracking — Gemini's usageMetadata may be absent on some responses
+  const usageMeta = result.response.usageMetadata
+  if (usageMeta) {
+    logAiUsage({
+      tenantId: input.tenantId,
+      userId: null,
+      operation: 'cv_scoring_gemini',
+      model: GEMINI_MODEL,
+      usage: geminiUsageToInput(usageMeta),
+      durationMs: Date.now() - startedAt,
+      metadata: { candidateName: input.candidateName, roleTitle: input.roleTitle },
+    }).catch(() => {})
+  }
 
   let raw: unknown
   try {

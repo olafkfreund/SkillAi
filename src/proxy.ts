@@ -42,6 +42,16 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl)
   }
 
+  // Force password change for users with passwordResetRequired === true.
+  // Allow them to reach /settings (where the change-password form lives)
+  // and the auth API; everything else dashboard-side redirects to settings.
+  const mustResetPassword =
+    (session.user as { passwordResetRequired?: boolean }).passwordResetRequired === true
+  if (mustResetPassword && isDashboard && !pathname.startsWith('/settings')) {
+    const url = new URL('/settings#change-password', req.url)
+    return NextResponse.redirect(url)
+  }
+
   // Forward tenant + role as request headers for downstream handlers
   const requestHeaders = new Headers(req.headers)
   requestHeaders.set('x-tenant-id', session.user.tenantId)

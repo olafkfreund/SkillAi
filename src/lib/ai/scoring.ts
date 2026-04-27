@@ -104,7 +104,7 @@ When scoring experience_level, assess specifically whether the candidate's senio
 
     const result = useGemini
       ? await scoreCandidateWithGemini({ ...scoringInput, tenantId })
-      : await scoreCandidateWithClaude(scoringInput)
+      : await scoreCandidateWithClaude({ ...scoringInput, tenantId })
 
     // Write results
     await withTenant(tenantId, async (tx) => {

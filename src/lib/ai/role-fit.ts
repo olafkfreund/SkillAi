@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { resolveAnthropicKey } from './keys'
 import { formatManagerPriorities } from './priorities'
+import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 
 type RoleInput = {
   roleId: string
@@ -75,6 +76,7 @@ For each role, return:
 
 Be specific and reference the CV content. Use the submit_role_fits tool.`
 
+  const startedAt = Date.now()
   const message = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2048,
@@ -107,6 +109,16 @@ Be specific and reference the CV content. Use the submit_role_fits tool.`
     ],
     messages: [{ role: 'user', content: userPrompt }],
   })
+
+  logAiUsage({
+    tenantId,
+    userId: null,
+    operation: 'role_fit',
+    model: message.model,
+    usage: anthropicUsageToInput(message.usage),
+    durationMs: Date.now() - startedAt,
+    metadata: { candidateName, roleCount: roles.length },
+  }).catch(() => {})
 
   // Extract the tool_use block from the response
   const toolUseBlock = message.content.find((block) => block.type === 'tool_use')
