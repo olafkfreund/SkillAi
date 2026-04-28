@@ -6,6 +6,7 @@ import {
   integer,
   boolean,
   text,
+  varchar,
   timestamp,
   index,
 } from 'drizzle-orm/pg-core'
@@ -50,6 +51,7 @@ export const interviewPacks = pgTable(
     recommendedDurationMinutes: integer('recommended_duration_minutes'),
     includesCodeChallenge: boolean('includes_code_challenge').notNull().default(false),
     packType: packTypeEnum('pack_type').notNull().default('full'),
+    language: varchar('language', { length: 10 }).notNull().default('en'),
     errorMessage: text('error_message'),
     createdBy: uuid('created_by')
       .notNull()
