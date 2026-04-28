@@ -45,6 +45,7 @@ export type AuditAction =
   | 'settings.oauth_credentials_removed'
   | 'candidate.deleted_gdpr'
   | 'candidate.dsar_exported'
+  | 'tenant.exported'
 
 type AuditEntry = {
   action: AuditAction

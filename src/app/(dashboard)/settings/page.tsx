@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation'
 import { SettingsIcon } from 'lucide-react'
-import { eq } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
-import { db } from '@/db'
-import { calendarConnections } from '@/db/schema'
+import { db, withTenant } from '@/db'
+import { calendarConnections, auditLogs } from '@/db/schema'
 import {
   getConfiguredKeys,
   getGeneralSettings,
@@ -28,6 +28,7 @@ import { ApiTokensPanel } from '@/components/settings/api-tokens-panel'
 import { SmtpSettingsPanel } from '@/components/settings/smtp-settings-panel'
 import { EmailTemplatesPanel } from '@/components/settings/email-templates-panel'
 import { OAuthCredentialsForm } from '@/components/settings/oauth-credentials-form'
+import { BackupsPanel } from '@/components/settings/backups-panel'
 
 export default async function SettingsPage() {
   const session = await auth()
@@ -42,6 +43,26 @@ export default async function SettingsPage() {
   const defaultPackLanguage = isAdmin ? await getDefaultPackLanguage(tenantId) : 'en'
   const smtpSettings = isAdmin ? await getSmtpSettings(tenantId) : null
   const emailTemplates = isAdmin ? await listEmailTemplates() : []
+
+  // Last manual tenant export timestamp — admin only
+  const lastExportAt: Date | null = isAdmin
+    ? await (async () => {
+        const [row] = await withTenant(tenantId, (tx) =>
+          tx
+            .select({ createdAt: auditLogs.createdAt })
+            .from(auditLogs)
+            .where(
+              and(
+                eq(auditLogs.tenantId, tenantId),
+                eq(auditLogs.action, 'tenant.exported')
+              )
+            )
+            .orderBy(desc(auditLogs.createdAt))
+            .limit(1)
+        )
+        return row?.createdAt ?? null
+      })()
+    : null
 
   // API tokens — available to recruiter+ (not admin-only); fetch for all authenticated users
   const tokensResult = await listApiTokens()
@@ -189,6 +210,14 @@ export default async function SettingsPage() {
               Credentials are encrypted at rest and take precedence over deployment env vars.
             </p>
             <OAuthCredentialsForm configuredKeys={configuredKeys} />
+          </div>
+
+          {/* Backups & Data Export */}
+          <div>
+            <h2 className="text-sm font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide mb-3">
+              Backups &amp; Data Export
+            </h2>
+            <BackupsPanel lastExportAt={lastExportAt} />
           </div>
 
           {/* Default pack language */}
