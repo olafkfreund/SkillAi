@@ -11,6 +11,7 @@ import {
   getDefaultPackLanguage,
 } from '@/actions/settings'
 import { listTenantUsers } from '@/actions/users'
+import { listApiTokens } from '@/actions/api-tokens'
 import { ApiKeyField } from '@/components/settings/api-key-field'
 import { GeneralSettingSelect } from '@/components/settings/general-setting-select'
 import { GeneralSettingNumber } from '@/components/settings/general-setting-number'
@@ -21,6 +22,7 @@ import { CreateUserForm } from '@/components/settings/create-user-form'
 import { TrustedHostsForm } from '@/components/settings/trusted-hosts-form'
 import { DefaultLanguageForm } from '@/components/settings/default-language-form'
 import { AiUsagePanel } from '@/components/settings/ai-usage-panel'
+import { ApiTokensPanel } from '@/components/settings/api-tokens-panel'
 
 export default async function SettingsPage() {
   const session = await auth()
@@ -33,6 +35,10 @@ export default async function SettingsPage() {
   const tenantUsers = isAdmin ? await listTenantUsers() : []
   const trustedHosts = isAdmin ? await getTrustedHosts(tenantId) : []
   const defaultPackLanguage = isAdmin ? await getDefaultPackLanguage(tenantId) : 'en'
+
+  // API tokens — available to recruiter+ (not admin-only); fetch for all authenticated users
+  const tokensResult = await listApiTokens()
+  const apiTokensList = tokensResult.success ? tokensResult.data : []
 
   // Calendar connections are per-user, not per-tenant — query directly
   const userId = session.user.id
@@ -124,6 +130,17 @@ export default async function SettingsPage() {
                 <li>System environment variable (ANTHROPIC_API_KEY / GOOGLE_AI_API_KEY / etc.)</li>
               </ol>
             </div>
+          </div>
+
+          {/* API Tokens */}
+          <div>
+            <h2 className="text-sm font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide mb-3">
+              API Tokens
+            </h2>
+            <ApiTokensPanel
+              tokens={apiTokensList}
+              currentUserRole={session.user.role ?? 'recruiter'}
+            />
           </div>
 
           {/* General Settings */}
