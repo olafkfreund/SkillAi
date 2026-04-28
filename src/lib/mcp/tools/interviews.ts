@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { eq, desc, and } from 'drizzle-orm'
 import { withTenant } from '@/db'
 import { interviewPacks, interviewQuestions } from '@/db/schema'
+import { createInterviewPack } from '@/actions/interview'
 import { runTool } from '../context'
 import type { McpContext } from '../context'
 import { jsonResult } from './candidates'
@@ -22,6 +23,24 @@ export const ListPacksInput = {
 
 export const GetPackInput = {
   packId: z.string().uuid(),
+}
+
+export const GenerateInterviewPackInput = {
+  candidateId: z.string().uuid(),
+  roleId: z.string().uuid(),
+  language: z
+    .string()
+    .optional()
+    .describe('ISO 639-1 language code, e.g. "en", "pl". Defaults to "en".'),
+  includeCodeChallenge: z
+    .boolean()
+    .optional()
+    .describe('Only honoured for level=full_technical. Pre-screening packs never include code.'),
+  level: z
+    .enum(['pre_screening', 'full_technical'])
+    .optional()
+    .describe('Pack type. Defaults to "full_technical".'),
+  confirmed: z.literal(true),
 }
 
 export function registerInterviewTools(server: McpServer, ctx: McpContext): void {
@@ -52,6 +71,34 @@ export function registerInterviewTools(server: McpServer, ctx: McpContext): void
           return rows
         })
         return jsonResult({ packs: result })
+      })
+  )
+
+  server.registerTool(
+    'generate_interview_pack',
+    {
+      title: 'Generate interview pack',
+      description:
+        'Queue an interview pack generation job for a candidate × role pair. The pack is created ' +
+        'with status="pending" — actual AI generation runs in the background; the LLM should poll ' +
+        'get_interview_pack to fetch the questions once status="complete". Pre-screening packs ' +
+        'are short, full_technical packs are longer and may include a code challenge. Recruiter/admin only. ' +
+        'Requires write scope and confirmed: true.',
+      inputSchema: GenerateInterviewPackInput,
+    },
+    async (args) =>
+      runTool(ctx, 'generate_interview_pack', 'write', true, args, async () => {
+        const fd = new FormData()
+        fd.set('candidateId', args.candidateId)
+        fd.set('roleId', args.roleId)
+        fd.set('packType', args.level ?? 'full_technical')
+        fd.set('language', args.language ?? 'en')
+        // The action coerces 'true'/'false' strings to bool. Pre-screening
+        // path always wins regardless of this flag (server-side override).
+        fd.set('includeCodeChallenge', args.includeCodeChallenge ? 'true' : 'false')
+        const result = await createInterviewPack(null, fd)
+        if (!result.success) throw new Error(result.error)
+        return jsonResult({ packId: result.packId, status: 'queued' })
       })
   )
 

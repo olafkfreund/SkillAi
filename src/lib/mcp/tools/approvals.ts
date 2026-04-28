@@ -12,6 +12,8 @@ import {
   approveCandidate,
   rejectCandidate,
   getApprovalsForRole,
+  sendShortlistForApproval,
+  approveAllRemaining,
 } from '@/actions/approvals'
 import { runTool } from '../context'
 import type { McpContext } from '../context'
@@ -25,6 +27,17 @@ export const GetApprovalsInput = {
 export const DecisionInput = {
   roleId: z.string().uuid(),
   candidateId: z.string().uuid(),
+  comment: z.string().max(2000).optional(),
+  confirmed: z.literal(true),
+}
+
+export const SendShortlistInput = {
+  roleId: z.string().uuid(),
+  confirmed: z.literal(true),
+}
+
+export const ApproveAllInput = {
+  roleId: z.string().uuid(),
   comment: z.string().max(2000).optional(),
   confirmed: z.literal(true),
 }
@@ -61,6 +74,42 @@ export function registerApprovalTools(server: McpServer, ctx: McpContext): void 
         const result = await approveCandidate(args.roleId, args.candidateId, args.comment)
         if (!result.success) throw new Error(result.error)
         return jsonResult({ ok: true })
+      })
+  )
+
+  server.registerTool(
+    'send_shortlist_for_approval',
+    {
+      title: 'Send shortlist for approval',
+      description:
+        'Mark a role\'s shortlist as sent to its assigned hiring managers and seed pending ' +
+        'approval rows for every (shortlisted candidate × manager) pair. Idempotent — re-sending ' +
+        'does not reset existing decisions. Recruiter/admin only. Requires write scope and confirmed: true.',
+      inputSchema: SendShortlistInput,
+    },
+    async (args) =>
+      runTool(ctx, 'send_shortlist_for_approval', 'write', true, args, async () => {
+        const result = await sendShortlistForApproval(args.roleId)
+        if (!result.success) throw new Error(result.error)
+        return jsonResult({ ok: true, roleId: args.roleId })
+      })
+  )
+
+  server.registerTool(
+    'approve_all_remaining',
+    {
+      title: 'Approve all remaining candidates (hiring manager)',
+      description:
+        'Bulk-approve every still-pending approval row owned by the calling manager on the role. ' +
+        'Manager scope (the calling user must be assigned as a manager on the role). Optional ' +
+        'comment is applied to every row. Requires write scope and confirmed: true.',
+      inputSchema: ApproveAllInput,
+    },
+    async (args) =>
+      runTool(ctx, 'approve_all_remaining', 'write', true, args, async () => {
+        const result = await approveAllRemaining(args.roleId, args.comment)
+        if (!result.success) throw new Error(result.error)
+        return jsonResult({ ok: true, roleId: args.roleId })
       })
   )
 

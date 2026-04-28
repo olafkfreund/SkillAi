@@ -20,6 +20,7 @@ import { registerManagerTools } from './managers'
 import { registerNoteTools } from './notes'
 import { registerUserTools } from './users'
 import { registerSettingsTools } from './settings'
+import { registerExportTools } from './exports'
 
 export function registerAllTools(server: McpServer, ctx: McpContext): void {
   registerCandidateTools(server, ctx)
@@ -33,4 +34,5 @@ export function registerAllTools(server: McpServer, ctx: McpContext): void {
   registerNoteTools(server, ctx)
   registerUserTools(server, ctx)
   registerSettingsTools(server, ctx)
+  registerExportTools(server, ctx)
 }
