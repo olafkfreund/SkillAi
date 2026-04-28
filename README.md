@@ -25,10 +25,76 @@ The goal is not to replace an ATS. The goal is to give any recruiter or hiring m
 - Archives all candidates with scoring history so past candidates can be re-evaluated against future roles
 - Provides semantic search across the candidate archive using vector embeddings
 - Tracks recruitment agencies and their candidate submissions
-- Supports multiple users per tenant with role-based access (admin, recruiter, viewer)
+- Supports multiple users per tenant with role-based access (admin, hiring manager, recruiter, viewer)
 - Extracts skill and requirement tags from role descriptions for fast visual comparison
 - Exports candidate profiles, shortlists, and interview packs as PDFs
 - Supports Google Calendar and Microsoft Calendar integration for interview scheduling
+- Routes shortlists through a hiring manager approval flow with sanitised candidate views (no rates, margins, or internal notes)
+- Hosts an in-app help centre with persona-tagged articles surfaced to the right user
+- Supports agency and customer logo branding on lists, detail headers, and PDF exports
+- Ships with a light/dark theme toggle backed by a CSS-variable token system
+- Exposes a full REST API (36 routes) plus an MCP server so claude-desktop and other MCP clients can read and act on SkillAI data
+
+---
+
+## Architecture in three sentences
+
+SkillAI is a multi-tenant Next.js 16 web application backed by PostgreSQL 17 with pgvector, with row-level security enforced via the `app.tenant_id` session variable so cross-tenant reads are architecturally impossible. A REST + MCP API layer sits in the same Next.js process, sharing the same auth, scope, RLS, rate-limit, and audit primitives. The standalone `skillai-mcp` stdio bridge is the canonical way for claude-desktop to talk to a SkillAI instance — it is purely a transport adapter that forwards bearer-token-authenticated calls to `/api/mcp`.
+
+---
+
+## Connecting from claude-desktop and other MCP clients
+
+### Why an MCP server
+
+SkillAI is an internal tool deliberately scoped to one job: rank candidates fast. But recruiters increasingly want to compose their day around chat — "find me bench candidates who match this role, draft an introduction email for the top three, and schedule a screening call." Building email, scheduling, and shared-drive integrations into SkillAI would explode the scope and dilute the focus.
+
+The MCP server takes the opposite approach. It exposes SkillAI's data and actions to any MCP-aware client (claude-desktop is the primary target) so users can compose workflows by combining SkillAI with whichever other MCP servers they already use — Gmail, Calendar, Drive, Slack, anything. SkillAI stays focused on ranking. Orchestration of multi-tool workflows lives in the LLM where it belongs.
+
+### What it unlocks
+
+Three concrete workflows that are now one chat message each:
+
+- **Bench-to-role match.** "Find me available internal bench candidates who match the new platform engineering role at ACME Corp." The model calls `semantic_search_candidates`, filters by availability, and presents ranked matches inline.
+- **Compose introduction email with attachments.** "Draft an intro email to recruiter@example.com for Bob Smith — attach his CV and the interview pack." The model calls `compose_candidate_email_attachments` to fetch the assets from SkillAI, then hands off to the Gmail MCP server to compose the draft.
+- **Manager shortlist decisions.** "Approve Alice Doe and reject Bob Smith for the Senior Backend role with the note 'too junior for this band'." The model calls `approve_candidate` and `reject_candidate` — both are write-scoped tools and require `confirmed: true` so accidental approvals are not possible.
+
+### Install
+
+The bridge is published as a standalone `skillai-mcp` binary via [GitHub Releases](https://github.com/olafkfreund/SkillAi/releases). Pick the channel that matches your platform:
+
+| Platform | Install |
+|---|---|
+| NixOS / Nix | `nix profile install github:olafkfreund/SkillAi?dir=skillai-mcp` |
+| Linux (Debian/Ubuntu) | Download `skillai-mcp_<version>_amd64.deb` from Releases and `sudo dpkg -i` |
+| Linux (RHEL/Fedora) | Download `skillai-mcp-<version>.x86_64.rpm` from Releases and `sudo rpm -i` |
+| macOS / Linux / Windows | Download the matching pre-built binary from Releases and place on `$PATH` |
+
+`npm` distribution is staged behind `NPM_TOKEN` and not currently published to the public registry — use the binary or Nix paths.
+
+### Configure claude-desktop
+
+Add the following to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "skillai": {
+      "command": "skillai-mcp",
+      "env": {
+        "SKILLAI_URL": "https://your-skillai-instance.example.com",
+        "SKILLAI_TOKEN": "skl_prod_xxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+    }
+  }
+}
+```
+
+### Token generation
+
+Tokens are minted in the SkillAI web UI at `/settings/api-tokens`. You choose a scope (`read`, `write`, or `admin`), give the token a name, and the secret is shown **once** — copy it into your client config immediately. Tokens are stored as argon2 hashes, never recoverable, and can be revoked at any time. Rate limits apply per-token and per-tenant.
+
+See [`skillai-mcp/README.md`](skillai-mcp/README.md) for the full tool / resource / prompt catalogue.
 
 ---
 
