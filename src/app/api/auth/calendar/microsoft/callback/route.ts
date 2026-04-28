@@ -31,7 +31,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   if (!code || !state || !storedState || state !== storedState) {
     return NextResponse.redirect(
-      new URL('/dashboard/settings?error=calendar_state_mismatch', req.url)
+      new URL('/settings?error=calendar_state_mismatch', req.url)
     )
   }
 
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(
-      new URL('/dashboard/settings?error=calendar_not_configured', req.url)
+      new URL('/settings?error=calendar_not_configured', req.url)
     )
   }
 
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   if (!tokenRes.ok) {
     return NextResponse.redirect(
-      new URL('/dashboard/settings?error=calendar_token_exchange_failed', req.url)
+      new URL('/settings?error=calendar_token_exchange_failed', req.url)
     )
   }
 
@@ -114,7 +114,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 
   const response = NextResponse.redirect(
-    new URL('/dashboard/settings?calendarConnected=microsoft', req.url)
+    new URL('/settings?calendarConnected=microsoft', req.url)
   )
   response.cookies.delete('calendar_oauth_state')
 
