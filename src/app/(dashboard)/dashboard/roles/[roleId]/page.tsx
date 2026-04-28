@@ -100,7 +100,7 @@ export default async function RoleDetailPage({ params }: Props) {
         <div>
           <h1 className="text-2xl font-bold text-zinc-100">{role.title}</h1>
           <div className="flex items-center gap-3 mt-1 text-sm text-zinc-500 flex-wrap">
-            <span>Created {new Date(role.createdAt).toLocaleDateString()}</span>
+            <span>Created {new Date(role.createdAt).toLocaleDateString('en-GB')}</span>
             {customer && (
               <span className="text-zinc-400">
                 &middot; <span className="font-medium text-zinc-300">{customer.name}</span>
