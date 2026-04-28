@@ -85,10 +85,10 @@ export function SelectableCandidateList({ candidates }: Props) {
 
   return (
     <>
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 overflow-hidden">
+      <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-700 bg-zinc-800">
+            <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg-input)]">
               {/* Bulk-select all checkbox */}
               <th className="w-10 px-4 py-3" aria-label="Select all candidates">
                 <input
@@ -98,24 +98,24 @@ export function SelectableCandidateList({ candidates }: Props) {
                     if (el) el.indeterminate = someSelected
                   }}
                   onChange={toggleAll}
-                  className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-blue-600 cursor-pointer
-                             focus:ring-blue-500 focus:ring-offset-zinc-900"
+                  className="h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-bg-input)] text-blue-600 cursor-pointer
+                             focus:ring-blue-500 focus:ring-offset-[var(--color-bg-elevated)]"
                   aria-label={allSelected ? 'Deselect all candidates' : 'Select all candidates'}
                   title={allSelected ? 'Deselect all' : 'Select all'}
                 />
               </th>
-              <th className="text-left px-5 py-3 font-medium text-zinc-400">Name</th>
-              <th className="text-left px-5 py-3 font-medium text-zinc-400">Email</th>
-              <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden sm:table-cell">
+              <th className="text-left px-5 py-3 font-medium text-[var(--color-fg-muted)]">Name</th>
+              <th className="text-left px-5 py-3 font-medium text-[var(--color-fg-muted)]">Email</th>
+              <th className="text-left px-5 py-3 font-medium text-[var(--color-fg-muted)] hidden sm:table-cell">
                 Agency
               </th>
-              <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden lg:table-cell">
+              <th className="text-left px-5 py-3 font-medium text-[var(--color-fg-muted)] hidden lg:table-cell">
                 Rate/day
               </th>
-              <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden md:table-cell">
+              <th className="text-left px-5 py-3 font-medium text-[var(--color-fg-muted)] hidden md:table-cell">
                 Status
               </th>
-              <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden lg:table-cell">
+              <th className="text-left px-5 py-3 font-medium text-[var(--color-fg-muted)] hidden lg:table-cell">
                 Added
               </th>
               <th className="w-10 px-4 py-3" aria-label="CV download" />
@@ -127,8 +127,8 @@ export function SelectableCandidateList({ candidates }: Props) {
               return (
                 <tr
                   key={c.id}
-                  className={`border-b border-zinc-700 transition-colors last:border-0
-                              ${isSelected ? 'bg-zinc-800/70' : 'hover:bg-zinc-800'}`}
+                  className={`border-b border-[var(--color-border)] transition-colors last:border-0
+                              ${isSelected ? 'bg-[var(--color-bg-input)]' : 'hover:bg-[var(--color-bg-input)]'}`}
                 >
                   {/* Bulk-select checkbox */}
                   <td className="px-4 py-3">
@@ -136,8 +136,8 @@ export function SelectableCandidateList({ candidates }: Props) {
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleOne(c.id)}
-                      className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-blue-600 cursor-pointer
-                                 focus:ring-blue-500 focus:ring-offset-zinc-900"
+                      className="h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-bg-input)] text-blue-600 cursor-pointer
+                                 focus:ring-blue-500 focus:ring-offset-[var(--color-bg-elevated)]"
                       aria-label={`Select ${c.firstName} ${c.lastName}`}
                       title={isSelected ? 'Deselect candidate' : 'Select candidate'}
                     />
@@ -146,7 +146,7 @@ export function SelectableCandidateList({ candidates }: Props) {
                     <div className="flex items-center gap-2 flex-wrap">
                       <Link
                         href={`/dashboard/candidates/${c.id}`}
-                        className="font-medium text-zinc-100 hover:text-blue-400 transition-colors"
+                        className="font-medium text-[var(--color-fg)] hover:text-blue-400 transition-colors"
                       >
                         {c.firstName} {c.lastName}
                       </Link>
@@ -163,15 +163,15 @@ export function SelectableCandidateList({ candidates }: Props) {
                       )}
                       {c.availabilityStatus === 'unavailable' && (
                         <span
-                          className="inline-flex items-center rounded-full border border-zinc-600 bg-zinc-800
-                                     text-zinc-300 text-xs font-medium px-2 py-0.5"
+                          className="inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-input)]
+                                     text-[var(--color-fg)] text-xs font-medium px-2 py-0.5"
                         >
                           Unavailable
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-5 py-3 text-zinc-500 truncate max-w-[200px]">
+                  <td className="px-5 py-3 text-[var(--color-fg-subtle)] truncate max-w-[200px]">
                     {c.email ?? '—'}
                   </td>
                   <td className="px-5 py-3 hidden sm:table-cell">
@@ -184,7 +184,7 @@ export function SelectableCandidateList({ candidates }: Props) {
                         Internal
                       </span>
                     ) : c.agencyId ? (
-                      <span className="inline-flex items-center gap-1.5 text-zinc-500">
+                      <span className="inline-flex items-center gap-1.5 text-[var(--color-fg-subtle)]">
                         {c.agencyLogoPath ? (
                           <img
                             src={`/api/agencies/${c.agencyId}/logo`}
@@ -192,12 +192,12 @@ export function SelectableCandidateList({ candidates }: Props) {
                             width={20}
                             height={20}
                             style={{ width: 20, height: 20 }}
-                            className="rounded-full border border-zinc-700 bg-zinc-800 object-contain shrink-0"
+                            className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-input)] object-contain shrink-0"
                           />
                         ) : (
                           <div
-                            className="flex items-center justify-center rounded-full bg-zinc-800
-                                       text-zinc-400 text-xs font-semibold shrink-0"
+                            className="flex items-center justify-center rounded-full bg-[var(--color-bg-input)]
+                                       text-[var(--color-fg-muted)] text-xs font-semibold shrink-0"
                             style={{ width: 20, height: 20 }}
                             aria-hidden="true"
                           >
@@ -207,10 +207,10 @@ export function SelectableCandidateList({ candidates }: Props) {
                         {c.agencyName ?? '—'}
                       </span>
                     ) : (
-                      <span className="text-zinc-500">—</span>
+                      <span className="text-[var(--color-fg-subtle)]">—</span>
                     )}
                   </td>
-                  <td className="px-5 py-3 text-zinc-400 hidden lg:table-cell tabular-nums text-sm">
+                  <td className="px-5 py-3 text-[var(--color-fg-muted)] hidden lg:table-cell tabular-nums text-sm">
                     {c.candidateRate
                       ? `${c.rateCurrency ?? ''} ${Number(c.candidateRate).toFixed(0)}`
                       : '—'}
@@ -223,7 +223,7 @@ export function SelectableCandidateList({ candidates }: Props) {
                       {c.status}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-zinc-500 hidden lg:table-cell tabular-nums">
+                  <td className="px-5 py-3 text-[var(--color-fg-subtle)] hidden lg:table-cell tabular-nums">
                     {new Date(c.createdAt).toLocaleDateString('en-GB')}
                   </td>
                   <td className="px-4 py-3">
@@ -237,7 +237,7 @@ export function SelectableCandidateList({ candidates }: Props) {
                           href={`/api/candidates/${c.id}/cv`}
                           download
                           title="Download original CV"
-                          className="rounded p-1 text-zinc-600 hover:text-blue-400 hover:bg-blue-950
+                          className="rounded p-1 text-[var(--color-fg-subtle)] hover:text-blue-400 hover:bg-blue-950
                                      transition-colors inline-flex"
                         >
                           <Download className="h-4 w-4" />

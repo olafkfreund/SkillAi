@@ -181,8 +181,8 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100">Candidates</h1>
-          <p className="text-zinc-500 mt-1">
+          <h1 className="text-2xl font-bold text-[var(--color-fg)]">Candidates</h1>
+          <p className="text-[var(--color-fg-subtle)] mt-1">
             {totalCount} candidate{totalCount !== 1 ? 's' : ''}
           </p>
         </div>
@@ -214,7 +214,7 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
 
       {/* Result count */}
       {totalCount > 0 && (
-        <p className="text-xs text-zinc-500 mb-3 tabular-nums">
+        <p className="text-xs text-[var(--color-fg-subtle)] mb-3 tabular-nums">
           Showing {rangeFrom}–{rangeTo} of {totalCount} candidate{totalCount !== 1 ? 's' : ''}
         </p>
       )}
@@ -222,12 +222,12 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
       {/* Empty state */}
       {allCandidates.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed
-                        border-zinc-700 bg-zinc-950 px-6 py-16 text-center">
-          <UsersIcon className="h-10 w-10 text-zinc-600 mb-3" />
+                        border-[var(--color-border)] bg-[var(--color-bg-app)] px-6 py-16 text-center">
+          <UsersIcon className="h-10 w-10 text-[var(--color-fg-subtle)] mb-3" />
           {totalCount === 0 && !q && !status && !agencyId && !availability && !missingCvFilter ? (
             <>
-              <p className="text-zinc-400 font-medium">No candidates yet</p>
-              <p className="text-zinc-500 text-sm mt-1">
+              <p className="text-[var(--color-fg-muted)] font-medium">No candidates yet</p>
+              <p className="text-[var(--color-fg-subtle)] text-sm mt-1">
                 Upload CVs from a{' '}
                 <Link href="/dashboard/roles" className="text-blue-400 hover:underline">
                   role page
@@ -237,8 +237,8 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
             </>
           ) : (
             <>
-              <p className="text-zinc-400 font-medium">No candidates match your filters</p>
-              <p className="text-zinc-500 text-sm mt-1">
+              <p className="text-[var(--color-fg-muted)] font-medium">No candidates match your filters</p>
+              <p className="text-[var(--color-fg-subtle)] text-sm mt-1">
                 Try adjusting or{' '}
                 <Link href="/dashboard/candidates" className="text-blue-400 hover:underline">
                   clearing your filters
@@ -267,15 +267,15 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-5 text-sm">
-              <span className="text-zinc-500 tabular-nums">
+              <span className="text-[var(--color-fg-subtle)] tabular-nums">
                 Page {page} of {totalPages}
               </span>
               <div className="flex gap-2">
                 {page > 1 ? (
                   <Link
                     href={buildPageUrl(page - 1)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700
-                               bg-zinc-800 px-3 py-1.5 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)]
+                               bg-[var(--color-bg-elevated)] px-3 py-1.5 text-[var(--color-fg)] hover:bg-[var(--color-bg-input)]
                                transition-colors"
                     aria-label="Previous page"
                   >
@@ -284,8 +284,8 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
                   </Link>
                 ) : (
                   <span
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700/50
-                               bg-zinc-800/50 px-3 py-1.5 text-zinc-600 cursor-not-allowed"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)]
+                               bg-[var(--color-bg-elevated)] px-3 py-1.5 text-[var(--color-fg-subtle)] cursor-not-allowed opacity-50"
                     aria-disabled="true"
                   >
                     <ChevronLeftIcon className="h-4 w-4" />
@@ -296,8 +296,8 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
                 {page < totalPages ? (
                   <Link
                     href={buildPageUrl(page + 1)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700
-                               bg-zinc-800 px-3 py-1.5 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)]
+                               bg-[var(--color-bg-elevated)] px-3 py-1.5 text-[var(--color-fg)] hover:bg-[var(--color-bg-input)]
                                transition-colors"
                     aria-label="Next page"
                   >
@@ -306,8 +306,8 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
                   </Link>
                 ) : (
                   <span
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700/50
-                               bg-zinc-800/50 px-3 py-1.5 text-zinc-600 cursor-not-allowed"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)]
+                               bg-[var(--color-bg-elevated)] px-3 py-1.5 text-[var(--color-fg-subtle)] cursor-not-allowed opacity-50"
                     aria-disabled="true"
                   >
                     Next

@@ -38,8 +38,8 @@ export default async function RolesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100">Roles</h1>
-          <p className="text-zinc-500 mt-1">{allRoles.length} active role{allRoles.length !== 1 ? 's' : ''}</p>
+          <h1 className="text-2xl font-bold text-[var(--color-fg)]">Roles</h1>
+          <p className="text-[var(--color-fg-subtle)] mt-1">{allRoles.length} active role{allRoles.length !== 1 ? 's' : ''}</p>
         </div>
         {canCreate && (
           <Link
@@ -55,11 +55,11 @@ export default async function RolesPage() {
 
       {allRoles.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed
-                        border-zinc-700 bg-zinc-950 px-6 py-16 text-center">
-          <BriefcaseIcon className="h-10 w-10 text-zinc-600 mb-3" />
-          <p className="text-zinc-400 font-medium">No roles yet</p>
+                        border-[var(--color-border)] bg-[var(--color-bg-app)] px-6 py-16 text-center">
+          <BriefcaseIcon className="h-10 w-10 text-[var(--color-fg-subtle)] mb-3" />
+          <p className="text-[var(--color-fg-muted)] font-medium">No roles yet</p>
           {canCreate && (
-            <p className="text-zinc-500 text-sm mt-1">
+            <p className="text-[var(--color-fg-subtle)] text-sm mt-1">
               <Link href="/dashboard/roles/new" className="text-blue-400 hover:underline">
                 Create your first role
               </Link>{' '}
@@ -73,12 +73,12 @@ export default async function RolesPage() {
             <Link
               key={role.id}
               href={`/dashboard/roles/${role.id}`}
-              className="rounded-xl bg-zinc-900 border border-zinc-700 px-6 py-5
+              className="rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] px-6 py-5
                          hover:border-blue-500 hover:shadow-sm transition-all block"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="font-semibold text-zinc-100">{role.title}</h2>
+                  <h2 className="font-semibold text-[var(--color-fg)]">{role.title}</h2>
                   {(() => {
                     if (!role.cutoffDate) return null
                     const target = new Date(role.cutoffDate)
@@ -108,11 +108,11 @@ export default async function RolesPage() {
                     </span>
                   )}
                 </div>
-                <time className="text-xs text-zinc-500 whitespace-nowrap ml-4 mt-0.5 flex-shrink-0">
+                <time className="text-xs text-[var(--color-fg-subtle)] whitespace-nowrap ml-4 mt-0.5 flex-shrink-0">
                   {new Date(role.createdAt).toLocaleDateString('en-GB')}
                 </time>
               </div>
-              <p className="text-sm text-zinc-500 mt-0.5 line-clamp-2">{role.description}</p>
+              <p className="text-sm text-[var(--color-fg-subtle)] mt-0.5 line-clamp-2">{role.description}</p>
               {(role.keySkills.length > 0 || role.topRequirements.length > 0) && (
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {role.keySkills.slice(0, 6).map((s) => (

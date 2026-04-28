@@ -109,14 +109,14 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
       {/* Search input */}
       <div className="relative flex-1 min-w-0
                       sm:min-w-[240px] sm:max-w-sm">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
+        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-fg-subtle)] pointer-events-none" />
         <input
           type="text"
           value={searchValue}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search by name or email..."
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-9 pr-3 py-2
-                     text-sm text-zinc-200 placeholder:text-zinc-500
+          className="w-full bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg pl-9 pr-3 py-2
+                     text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)]
                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                      transition-colors"
           aria-label="Search candidates"
@@ -127,8 +127,8 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
       <select
         value={currentFilters.status ?? ''}
         onChange={(e) => handleStatusChange(e.target.value)}
-        className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
-                   text-sm text-zinc-200
+        className="bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-2
+                   text-sm text-[var(--color-fg)]
                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                    transition-colors cursor-pointer"
         aria-label="Filter by status"
@@ -144,8 +144,8 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
       <select
         value={currentFilters.agencyId ?? ''}
         onChange={(e) => handleAgencyChange(e.target.value)}
-        className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
-                   text-sm text-zinc-200
+        className="bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-2
+                   text-sm text-[var(--color-fg)]
                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                    transition-colors cursor-pointer"
         aria-label="Filter by agency"
@@ -163,8 +163,8 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
         name="availability"
         value={currentFilters.availability ?? ''}
         onChange={(e) => handleAvailabilityChange(e.target.value)}
-        className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
-                   text-sm text-zinc-200
+        className="bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-2
+                   text-sm text-[var(--color-fg)]
                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                    transition-colors cursor-pointer"
         aria-label="Filter by availability"
@@ -183,7 +183,7 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
                     transition-colors cursor-pointer
                     ${currentFilters.missingCv
                       ? 'border-amber-500 bg-amber-900/30 text-amber-300 hover:bg-amber-900/50'
-                      : 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100'
+                      : 'border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] hover:bg-[var(--color-bg-elevated)]'
                     }`}
         aria-pressed={!!currentFilters.missingCv}
         aria-label="Filter to candidates missing original CV"
@@ -199,7 +199,7 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
       {hasActiveFilters && (
         <button
           onClick={clearFilters}
-          className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-200
+          className="inline-flex items-center gap-1.5 text-sm text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]
                      transition-colors px-2 py-2"
           aria-label="Clear all filters"
         >
