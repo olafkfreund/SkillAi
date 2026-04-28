@@ -6,13 +6,15 @@ import { Download, HomeIcon } from 'lucide-react'
 import { ComparisonCheckbox } from './comparison-checkbox'
 import { BulkStatusBar } from './bulk-status-bar'
 
+// Status pills resolve through CSS-var tokens so each status reads correctly
+// in both dark and light themes. See globals.css for the per-theme palette.
 const STATUS_BADGE: Record<string, string> = {
-  new: 'bg-zinc-700 text-zinc-300',
-  shortlisted: 'bg-blue-900/50 text-blue-300',
-  interviewing: 'bg-purple-900/50 text-purple-300',
-  offered: 'bg-amber-900/50 text-amber-300',
-  hired: 'bg-green-900/50 text-green-300',
-  rejected: 'bg-red-900/50 text-red-300',
+  new:          'bg-[var(--color-status-new-bg)]          text-[var(--color-status-new-fg)]',
+  shortlisted:  'bg-[var(--color-status-shortlisted-bg)]  text-[var(--color-status-shortlisted-fg)]',
+  interviewing: 'bg-[var(--color-status-interviewing-bg)] text-[var(--color-status-interviewing-fg)]',
+  offered:      'bg-[var(--color-status-offered-bg)]      text-[var(--color-status-offered-fg)]',
+  hired:        'bg-[var(--color-status-hired-bg)]        text-[var(--color-status-hired-fg)]',
+  rejected:     'bg-[var(--color-status-rejected-bg)]     text-[var(--color-status-rejected-fg)]',
 }
 
 export type CandidateRow = {
@@ -152,8 +154,8 @@ export function SelectableCandidateList({ candidates }: Props) {
                       </Link>
                       {c.availabilityStatus === 'on_project' && (
                         <span
-                          className="inline-flex items-center rounded-full border border-amber-800 bg-amber-950
-                                     text-amber-300 text-xs font-medium px-2 py-0.5"
+                          className="inline-flex items-center rounded-full bg-[var(--color-status-offered-bg)]
+                                     text-[var(--color-status-offered-fg)] text-xs font-medium px-2 py-0.5"
                           title="On project"
                         >
                           {c.availableFrom
@@ -177,8 +179,8 @@ export function SelectableCandidateList({ candidates }: Props) {
                   <td className="px-5 py-3 hidden sm:table-cell">
                     {c.isInternalAgency ? (
                       <span
-                        className="inline-flex items-center gap-1 rounded-full border border-blue-800 bg-blue-950
-                                   text-blue-300 text-xs font-medium px-2 py-0.5"
+                        className="inline-flex items-center gap-1 rounded-full bg-[var(--color-status-shortlisted-bg)]
+                                   text-[var(--color-status-shortlisted-fg)] text-xs font-medium px-2 py-0.5"
                       >
                         <HomeIcon className="h-3 w-3" />
                         Internal
@@ -218,7 +220,7 @@ export function SelectableCandidateList({ candidates }: Props) {
                   <td className="px-5 py-3 hidden md:table-cell">
                     <span
                       className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium capitalize
-                                  ${STATUS_BADGE[c.status] ?? 'bg-zinc-700 text-zinc-300'}`}
+                                  ${STATUS_BADGE[c.status] ?? 'bg-[var(--color-status-new-bg)] text-[var(--color-status-new-fg)]'}`}
                     >
                       {c.status}
                     </span>

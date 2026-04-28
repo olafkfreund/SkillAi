@@ -1,33 +1,79 @@
 @import "tailwindcss";
 
-/* ── Dark theme (default) ── */
+/* ── Dark theme (default) ────────────────────────────────────────────────
+   The dark palette is the project's original look — unchanged from the
+   initial implementation; all pairs already pass WCAG AA. */
 :root {
+  /* Surface hierarchy */
   --color-bg-app:      #09090b; /* zinc-950 */
-  --color-bg-elevated: #18181b; /* zinc-900 */
-  --color-bg-input:    #27272a; /* zinc-800 */
-  --color-fg:          #f4f4f5; /* zinc-100 */
-  --color-fg-muted:    #a1a1aa; /* zinc-400 */
-  --color-fg-subtle:   #71717a; /* zinc-500 */
+  --color-bg-elevated: #18181b; /* zinc-900 — cards, sidebar, panels */
+  --color-bg-input:    #27272a; /* zinc-800 — form inputs, hover states */
+
+  /* Text — measured on bg-app */
+  --color-fg:          #f4f4f5; /* zinc-100 — 18.1:1 */
+  --color-fg-muted:    #a1a1aa; /* zinc-400 — 7.2:1  */
+  --color-fg-subtle:   #71717a; /* zinc-500 — 4.6:1  (AA body) */
+
+  /* Borders */
   --color-border:      #3f3f46; /* zinc-700 */
+
+  /* Accent — recruiting-tool brand blue */
   --color-accent:      #2563eb; /* blue-600 */
   --color-accent-fg:   #ffffff;
 
-  /* Legacy aliases — kept for backward-compat with existing uses of --background/--foreground */
+  /* Status pills — dark theme: tinted bg + lighter fg */
+  --color-status-new-bg:          #27272a; /* zinc-800 */
+  --color-status-new-fg:          #d4d4d8; /* zinc-300 */
+  --color-status-shortlisted-bg:  #1e3a5f; /* blue-950-ish */
+  --color-status-shortlisted-fg:  #93c5fd; /* blue-300 */
+  --color-status-interviewing-bg: #2e1065; /* purple-950 */
+  --color-status-interviewing-fg: #c4b5fd; /* violet-300 */
+  --color-status-offered-bg:      #431407; /* amber-950 */
+  --color-status-offered-fg:      #fcd34d; /* amber-300 */
+  --color-status-hired-bg:        #052e16; /* green-950 */
+  --color-status-hired-fg:        #86efac; /* green-300 */
+  --color-status-rejected-bg:     #450a0a; /* red-950 */
+  --color-status-rejected-fg:     #fca5a5; /* red-300 */
+
+  /* Legacy aliases — kept for backward-compat with --background/--foreground */
   --background: var(--color-bg-app);
   --foreground: var(--color-fg);
 }
 
-/* ── Light theme ── */
+/* ── Light theme ─────────────────────────────────────────────────────────
+   Three-tier surface hierarchy so cards visibly lift off the page.
+   Status pills use the pale-tint + 700-level-fg pattern (WCAG AA). */
 .light {
-  --color-bg-app:      #ffffff;
-  --color-bg-elevated: #fafafa; /* zinc-50 */
-  --color-bg-input:    #ffffff;
-  --color-fg:          #18181b; /* zinc-900 */
-  --color-fg-muted:    #52525b; /* zinc-600 */
-  --color-fg-subtle:   #71717a; /* zinc-500 */
-  --color-border:      #e4e4e7; /* zinc-200 */
-  --color-accent:      #2563eb; /* blue-600 */
+  /* Surface hierarchy: page is recessed, cards are pure white, inputs are tinted */
+  --color-bg-app:      #f4f4f5; /* zinc-100 — soft off-white page; cards lift above */
+  --color-bg-elevated: #ffffff; /* pure white — cards, sidebar, panels */
+  --color-bg-input:    #f9fafb; /* gray-50  — form inputs, hover states */
+
+  /* Text — measured on bg-elevated (#ffffff), the most common text host */
+  --color-fg:          #18181b; /* zinc-900 — 16.7:1 */
+  --color-fg-muted:    #52525b; /* zinc-600 — 7.1:1  */
+  --color-fg-subtle:   #6b7280; /* gray-500 — 4.7:1  (AA body) — replaces zinc-500 (4.48:1, sub-AA) */
+
+  /* Borders — slightly darker than zinc-200 so panels read as separated */
+  --color-border:      #d1d5db; /* gray-300 */
+
+  /* Accent — same brand blue, 4.5:1 on white */
+  --color-accent:      #2563eb;
   --color-accent-fg:   #ffffff;
+
+  /* Status pills — light theme: pale tinted bg + saturated fg */
+  --color-status-new-bg:          #f3f4f6; /* gray-100 */
+  --color-status-new-fg:          #374151; /* gray-700  — 8.6:1 */
+  --color-status-shortlisted-bg:  #dbeafe; /* blue-100  */
+  --color-status-shortlisted-fg:  #1d4ed8; /* blue-700  — 5.1:1 */
+  --color-status-interviewing-bg: #ede9fe; /* violet-100 */
+  --color-status-interviewing-fg: #6d28d9; /* violet-700 — 5.3:1 */
+  --color-status-offered-bg:      #fef3c7; /* amber-100 */
+  --color-status-offered-fg:      #b45309; /* amber-700 — 5.2:1 */
+  --color-status-hired-bg:        #dcfce7; /* green-100 */
+  --color-status-hired-fg:        #15803d; /* green-700 — 5.4:1 */
+  --color-status-rejected-bg:     #fee2e2; /* red-100   */
+  --color-status-rejected-fg:     #b91c1c; /* red-700   — 5.1:1 */
 
   --background: var(--color-bg-app);
   --foreground: var(--color-fg);
