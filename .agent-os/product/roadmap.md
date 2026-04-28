@@ -1,8 +1,8 @@
 # Product Roadmap
 
 > Last Updated: 2026-04-28
-> Version: 2.3.0
-> Status: Phases 1–4 shipped; Phase 5 partial; Hiring Manager persona shipped (Epic #73); in-app help, branding logos, candidate-list cleanup, and light/dark mode v1 shipped; further integrations tracked on GitHub
+> Version: 2.4.0
+> Status: Phases 1–4 shipped; Phase 5 partial (health endpoint now shipped); Hiring Manager persona shipped (Epic #73); in-app help, branding logos, candidate-list cleanup, and light/dark mode v1 shipped; REST API parity, API token system, per-tenant rate limiting, and MCP server (Epic #105) shipped; cross-platform `skillai-mcp` packaging (Epic #115) shipped; further integrations tracked on GitHub
 
 ## Phase 1: Foundation & Core MVP ✅ SHIPPED
 
@@ -94,7 +94,7 @@
 ### Must-Have Features
 
 - [x] Audit log — track logins, uploads, role changes, deletions _(implemented)_
-- [ ] Health endpoint — `/api/health` for Docker health check (issue [#35](https://github.com/olafkfreund/SkillAi/issues/35) — corrected 2026-04-27, route does not yet exist)
+- [x] Health endpoint — `/api/health` for Docker health check; returns `{status, db, uptime, timestamp}`, unauthenticated (issue [#35](https://github.com/olafkfreund/SkillAi/issues/35))
 - [x] Security hardening — CSP headers, rate limiting on auth, session guards, RLS audits
 - [ ] Admin panel — user invite shipped (`src/app/(dashboard)/dashboard/users/invite-form.tsx`); tenant/role management pending (Epic [#37](https://github.com/olafkfreund/SkillAi/issues/37))
 - [ ] File storage migration — switch to Garage (S3-compatible) for production
@@ -174,6 +174,17 @@ Features delivered mid-flight, not in the original v1.0.0 plan.
 ### Theme & Polish
 
 - [x] **Light/dark mode toggle (v1 — shell only)** — `next-themes` provider + CSS-var token system in `globals.css`; sidebar, dashboard outer wrapper, and login page converted; toggle lives in the sidebar above sign-out; system preference detected via `enableSystem`. Detail pages, forms, and modals remain dark-only and will migrate incrementally — full conversion tracked in Epic [#103](https://github.com/olafkfreund/SkillAi/issues/103).
+- [x] **Refined Material 3 / Linear-inspired palette** — surface tokens (`--color-bg-app`, `--color-bg-elevated`, `--color-fg`, `--color-fg-muted`, `--color-fg-subtle`, `--color-border`, `--color-accent`) plus 12 status-pill tokens; WCAG AA contrast verified per token in both modes; ~325 components migrated to token references.
+
+### MCP & Integrations (Epic #105)
+
+- [x] **REST API parity** — 36 new HTTP routes wrapping every server-action-only mutation; OpenAPI 3.1 spec served at `/api/openapi.json` (auth-required); `withApiAuth` middleware unifies bearer-token auth, scope, RLS, rate-limit, and audit
+- [x] **API token system** — new `api_tokens` table with argon2-hashed secrets via `@node-rs/argon2`; format `skl_<env>_<24-base62>`; scopes `read` / `write` / `admin` (with `admin > write > read` inclusion); UI at `/settings/api-tokens` to mint, view-once, and revoke
+- [x] **Per-tenant rate limiting** — sliding-window per-token, per-tenant, and per-write; configurable via `tenant_settings`; Postgres-backed; applied to both REST and MCP entry points
+- [x] **MCP server** — hosted at `/api/mcp` via streamable-HTTP transport; **48 tools** across 12 modules, **4 resources**, **3 prompts**; bearer-token auth; scope checks; write tools refuse to execute without `confirmed: true`; per-call audit log entry
+- [x] **Cross-platform packaging (Epic #115)** — standalone `skillai-mcp` stdio bridge for claude-desktop subprocess integration; reads `SKILLAI_URL` + `SKILLAI_TOKEN` from env; cross-platform via Bun-built single-file binaries; **Nix flake + NixOS module shipped**; `.deb` + `.rpm` packages via `nfpm`; Homebrew / AUR / Scoop staged but **deferred** (operator chose not to maintain external repos); release pipeline self-hosted at `.github/workflows/skillai-mcp-release.yml`
+- [x] **First MCP release — `skillai-mcp v0.1.0`** — 14 artefacts on GitHub Releases: 5 Bun-compiled binaries (linux x64, linux arm64, macos x64, macos arm64, windows x64) + 4 OS packages (.deb, .rpm, source tarball, Nix flake) + 5 SHA256 sidecars
+- [x] **Health endpoint** — `/api/health` returns `{status, db, uptime, timestamp}`; unauthenticated for Docker healthchecks; `db` reflects pool reachability
 
 ### Exports & PDFs
 
