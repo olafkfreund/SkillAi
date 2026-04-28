@@ -27,6 +27,12 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       BRAVE_SEARCH_API_KEY: ${BRAVE_SEARCH_API_KEY}
       GITHUB_TOKEN: ${GITHUB_TOKEN}
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:3000/api/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     volumes:
       - uploads_data:/app/uploads
     depends_on:
