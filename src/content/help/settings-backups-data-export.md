@@ -3,7 +3,7 @@ title: "Backups and data export"
 category: "Settings & Admin"
 audience: ["admin"]
 order: 70
-lastUpdated: "2026-04-29"
+lastUpdated: "2026-04-28"
 tags: ["backups", "data export", "gdpr", "recovery"]
 ---
 
@@ -108,6 +108,38 @@ Restore-from-export is not yet available in-app. A future PR will deliver an imp
 - For partial data recovery (e.g. accidentally deleted candidates), you can read the JSON files directly to extract the rows you need.
 
 If you need to restore from a pg_dump, contact your SkillAI operator or refer to the **"Production Considerations"** section of `docs/setup.md`.
+
+## Per-Entity CSV Exports
+
+In addition to the full tenant ZIP, admins can download a focused CSV for any single entity. This is useful when you need a spreadsheet to hand off to a colleague, run a mail merge, or do a quick audit without downloading the entire archive.
+
+### What each CSV contains
+
+| Entity | Included columns | Excluded columns |
+|---|---|---|
+| **Candidates** | ID, name, contact details, file path, file type, LinkedIn/GitHub, status, location, rate, availability, Synechron ID, created date | `cvText`, `cvTextFormatted`, `embedding` (vector), `synechronCvData` (JSONB) |
+| **Roles** | ID, title, file path, creator, customer, status, framework level, location, work mode, skills arrays, keywords, dates, budget, portal path, created date | `description`, `requirements` (large text fields) |
+| **AI Scores** | ID, candidate ID, role ID, status, all five numeric scores, error message, created/updated dates | `technicalReasoning`, `experienceReasoning`, `culturalFitReasoning`, `communicationReasoning`, `aiSummary` (long reasoning text) |
+| **Agencies** | All columns — ID, name, contact details, notes, logo path, status flags, created date | Nothing excluded |
+
+Heavy text fields (CV text, AI reasoning, role descriptions) and binary/vector columns are excluded to keep files small and suitable for spreadsheet use. The full text is available in the ZIP export if needed.
+
+Array-valued columns (language requirements, key skills, priority keywords, languages spoken) are serialised as semicolon-delimited values within the cell.
+
+### When to use CSV vs the full ZIP
+
+- **CSV** — when you want a single table in a spreadsheet, for mail merges, or for a quick audit of a specific entity. Lightweight, instant download.
+- **ZIP** — when you need a complete point-in-time tenant snapshot for disaster recovery, compliance archival, or data migration. Includes every table and optionally binary file attachments.
+
+### File naming
+
+CSV files are named: `skillai-{entity}-{tenantId}-{YYYY-MM-DD}.csv`
+
+The date is in UTC. Example: `skillai-candidates-550e8400-e29b-41d4-a716-446655440000-2026-04-28.csv`
+
+### Access
+
+Only admins can download these files. The buttons appear in the **Per-Entity CSV Exports** card on the Settings page, directly below the Backups & Data Export card. Non-admin roles will receive a `403 Forbidden` response if the URL is accessed directly.
 
 ## Troubleshooting
 
