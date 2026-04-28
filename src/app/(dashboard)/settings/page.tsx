@@ -29,6 +29,7 @@ import { SmtpSettingsPanel } from '@/components/settings/smtp-settings-panel'
 import { EmailTemplatesPanel } from '@/components/settings/email-templates-panel'
 import { OAuthCredentialsForm } from '@/components/settings/oauth-credentials-form'
 import { BackupsPanel } from '@/components/settings/backups-panel'
+import { CsvExportPanel } from '@/components/settings/csv-export-panel'
 
 export default async function SettingsPage() {
   const session = await auth()
@@ -218,6 +219,11 @@ export default async function SettingsPage() {
               Backups &amp; Data Export
             </h2>
             <BackupsPanel lastExportAt={lastExportAt} />
+          </div>
+
+          {/* Per-Entity CSV Exports */}
+          <div>
+            <CsvExportPanel />
           </div>
 
           {/* Default pack language */}

@@ -46,6 +46,7 @@ export type AuditAction =
   | 'candidate.deleted_gdpr'
   | 'candidate.dsar_exported'
   | 'tenant.exported'
+  | 'tenant.csv_exported'
 
 type AuditEntry = {
   action: AuditAction
