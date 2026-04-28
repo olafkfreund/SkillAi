@@ -57,7 +57,10 @@ vi.mock('@/lib/ai/transcript-analysis', () => ({
 }))
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function makeRequest(url: string, init?: RequestInit) {
+// Use the NextRequest constructor's own init type — Next's flavour of
+// RequestInit diverges from the DOM lib's, so a plain DOM RequestInit isn't
+// assignable here.
+function makeRequest(url: string, init?: ConstructorParameters<typeof NextRequest>[1]) {
   return new NextRequest(new URL(url, 'http://localhost'), init)
 }
 
@@ -69,8 +72,9 @@ function chainableMock(returnValue: unknown) {
   })
   // Terminal: awaiting resolves to returnValue
   m[Symbol.iterator as unknown as string] = undefined
-  // Make it thenable
-  ;(m as Promise<unknown> & Record<string, unknown>).then = (resolve: (v: unknown) => unknown) =>
+  // Make it thenable. Loosely typed because we only support the single-arg
+  // resolver shape — full Promise#then would force two generics + onrejected.
+  ;(m as { then: unknown }).then = (resolve: (v: unknown) => unknown) =>
     Promise.resolve(returnValue).then(resolve)
   return m
 }
@@ -88,7 +92,9 @@ describe('POST /api/transcripts/upload', () => {
 
   it('returns 401 when unauthenticated', async () => {
     const { auth } = await import('@/lib/auth')
-    vi.mocked(auth).mockResolvedValueOnce(null)
+    // auth() is an overloaded NextAuth callable — TS picks the middleware
+    // overload here, so mock return type doesn't accept null directly.
+    vi.mocked(auth).mockResolvedValueOnce(null as never)
 
     const { POST } = await import('@/app/api/transcripts/upload/route')
     const req = makeRequest('http://localhost/api/transcripts/upload', { method: 'POST' })
@@ -177,7 +183,9 @@ describe('GET /api/transcripts/[transcriptId]/status', () => {
 
   it('returns 401 when unauthenticated', async () => {
     const { auth } = await import('@/lib/auth')
-    vi.mocked(auth).mockResolvedValueOnce(null)
+    // auth() is an overloaded NextAuth callable — TS picks the middleware
+    // overload here, so mock return type doesn't accept null directly.
+    vi.mocked(auth).mockResolvedValueOnce(null as never)
 
     const { GET } = await import('@/app/api/transcripts/[transcriptId]/status/route')
     const req = makeRequest(`http://localhost/api/transcripts/${TRANSCRIPT_ID}/status`)
@@ -212,7 +220,9 @@ describe('GET /api/transcripts/[transcriptId]', () => {
 
   it('returns 401 when unauthenticated', async () => {
     const { auth } = await import('@/lib/auth')
-    vi.mocked(auth).mockResolvedValueOnce(null)
+    // auth() is an overloaded NextAuth callable — TS picks the middleware
+    // overload here, so mock return type doesn't accept null directly.
+    vi.mocked(auth).mockResolvedValueOnce(null as never)
 
     const { GET } = await import('@/app/api/transcripts/[transcriptId]/route')
     const req = makeRequest(`http://localhost/api/transcripts/${TRANSCRIPT_ID}`)
@@ -254,7 +264,9 @@ describe('GET /api/candidates/[candidateId]/transcripts', () => {
 
   it('returns 401 when unauthenticated', async () => {
     const { auth } = await import('@/lib/auth')
-    vi.mocked(auth).mockResolvedValueOnce(null)
+    // auth() is an overloaded NextAuth callable — TS picks the middleware
+    // overload here, so mock return type doesn't accept null directly.
+    vi.mocked(auth).mockResolvedValueOnce(null as never)
 
     const { GET } = await import('@/app/api/candidates/[candidateId]/transcripts/route')
     const req = makeRequest(`http://localhost/api/candidates/${CANDIDATE_ID}/transcripts`)
