@@ -243,10 +243,10 @@ jobs:
 
       - name: Install nfpm (pinned release)
         # Pinning to nfpm v2.41.3 — goreleaser/nfpm, MIT licence.
-        # SHA256 verified against the upstream release page.
+        # Real SHA256 from https://github.com/goreleaser/nfpm/releases/download/v2.41.3/checksums.txt
         env:
           NFPM_VERSION: '2.41.3'
-          NFPM_SHA256: 'a70c4ad59de3a38e5a77a975d7ba2e4d10b8cd4e5c07b46a6c6aeefc1fcc2f38'
+          NFPM_SHA256: '22aa6d3bc2ec239d62d3d190bcb036a47f2b24e0c3c6edfccebb6a55fbb2078e'
         run: |
           wget -q "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz" \
                -O /tmp/nfpm.tar.gz
