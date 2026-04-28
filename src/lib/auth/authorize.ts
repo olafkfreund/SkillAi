@@ -9,12 +9,13 @@ import bcrypt from 'bcryptjs'
 import { db } from '@/db'
 import { users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import type { UserRole } from './types'
 
 export type AuthUser = {
   id: string
   email: string
   name: string
-  role: 'admin' | 'recruiter' | 'viewer'
+  role: UserRole
   tenantId: string
   passwordResetRequired: boolean
 }

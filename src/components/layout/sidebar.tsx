@@ -11,6 +11,7 @@ import {
   LogOutIcon,
   UserCogIcon,
   ShieldCheckIcon,
+  ListChecksIcon,
 } from 'lucide-react'
 import type { UserRole } from '@/lib/auth/types'
 
@@ -19,12 +20,35 @@ type NavItem = {
   label: string
   icon: React.ComponentType<{ className?: string }>
   minRole: UserRole
+  // If set, the item is hidden when the viewing user has one of these roles,
+  // even if their rank would otherwise grant access. Used to keep the manager
+  // (client-stakeholder) view focused on assigned shortlists rather than the
+  // full recruiter workspace.
+  hideForRoles?: UserRole[]
 }
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: BriefcaseIcon, minRole: 'viewer' },
-  { href: '/dashboard/roles', label: 'Roles', icon: BriefcaseIcon, minRole: 'viewer' },
-  { href: '/dashboard/candidates', label: 'Candidates', icon: UsersIcon, minRole: 'viewer' },
+  {
+    href: '/dashboard/roles',
+    label: 'Roles',
+    icon: BriefcaseIcon,
+    minRole: 'viewer',
+    hideForRoles: ['hiring_manager'],
+  },
+  {
+    href: '/dashboard/candidates',
+    label: 'Candidates',
+    icon: UsersIcon,
+    minRole: 'viewer',
+    hideForRoles: ['hiring_manager'],
+  },
+  {
+    href: '/dashboard/manager',
+    label: 'My Shortlists',
+    icon: ListChecksIcon,
+    minRole: 'hiring_manager',
+  },
   { href: '/dashboard/customers', label: 'Customers', icon: BuildingIcon, minRole: 'recruiter' },
   { href: '/dashboard/agencies', label: 'Agencies', icon: BuildingIcon, minRole: 'recruiter' },
   { href: '/dashboard/users', label: 'Users', icon: UserCogIcon, minRole: 'admin' },
@@ -32,7 +56,12 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/settings', label: 'Settings', icon: SettingsIcon, minRole: 'admin' },
 ]
 
-const ROLE_RANK: Record<UserRole, number> = { viewer: 0, recruiter: 1, admin: 2 }
+const ROLE_RANK: Record<UserRole, number> = {
+  viewer: 0,
+  hiring_manager: 0.5,
+  recruiter: 1,
+  admin: 2,
+}
 
 type Props = {
   role: UserRole
@@ -43,7 +72,9 @@ export function Sidebar({ role, userName }: Props) {
   const pathname = usePathname()
 
   const visibleItems = NAV_ITEMS.filter(
-    (item) => ROLE_RANK[role] >= ROLE_RANK[item.minRole]
+    (item) =>
+      ROLE_RANK[role] >= ROLE_RANK[item.minRole] &&
+      !(item.hideForRoles?.includes(role))
   )
 
   return (
