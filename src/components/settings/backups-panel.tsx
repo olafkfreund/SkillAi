@@ -1,13 +1,17 @@
+'use client'
+
 /**
  * BackupsPanel — admin-only "Backups & Data Export" card on the settings page.
  *
  * Shows the timestamp of the most recent manual tenant export (from audit_logs)
  * and a download link that triggers /api/export/tenant.
  *
- * This is a Server Component — no client-side state needed.
+ * Accepts lastExportAt as a serialisable prop from the parent server component.
+ * The "Include file attachments" checkbox controls whether ?files=1 is appended
+ * to the download URL.
  */
 
-// No 'use client' — runs on the server
+import { useState } from 'react'
 
 interface BackupsPanelProps {
   lastExportAt: Date | null
@@ -42,6 +46,10 @@ function formatRelative(date: Date): string {
 }
 
 export function BackupsPanel({ lastExportAt }: BackupsPanelProps) {
+  const [includeFiles, setIncludeFiles] = useState(false)
+
+  const downloadHref = `/api/export/tenant${includeFiles ? '?files=1' : ''}`
+
   return (
     <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-5">
       <h2 className="text-base font-medium text-[var(--color-fg)] mb-1">
@@ -49,7 +57,7 @@ export function BackupsPanel({ lastExportAt }: BackupsPanelProps) {
       </h2>
       <p className="text-sm text-[var(--color-fg-muted)] mb-4">
         Download a snapshot of all data for your tenant. Includes JSON for every
-        table; file binaries (CVs, logos) are not included in this version.{' '}
+        table. Optionally include binary file attachments (CVs, logos).{' '}
         <a
           className="underline"
           href="/dashboard/help/settings-backups-data-export"
@@ -58,23 +66,40 @@ export function BackupsPanel({ lastExportAt }: BackupsPanelProps) {
         </a>
         .
       </p>
-      <div className="flex items-center justify-between gap-4">
-        <div className="text-sm text-[var(--color-fg-muted)]">
-          Last manual export:{' '}
-          <span
-            className="text-[var(--color-fg)]"
-            title={lastExportAt?.toISOString() ?? 'Never'}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-sm text-[var(--color-fg-muted)]">
+            Last manual export:{' '}
+            <span
+              className="text-[var(--color-fg)]"
+              title={lastExportAt?.toISOString() ?? 'Never'}
+            >
+              {lastExportAt ? formatRelative(lastExportAt) : 'Never'}
+            </span>
+          </div>
+          <a
+            href={downloadHref}
+            download
+            className="inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium whitespace-nowrap"
           >
-            {lastExportAt ? formatRelative(lastExportAt) : 'Never'}
-          </span>
+            Download tenant export now
+          </a>
         </div>
-        <a
-          href="/api/export/tenant"
-          download
-          className="inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium whitespace-nowrap"
-        >
-          Download tenant export now
-        </a>
+        <div className="mt-2 flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="include-files"
+            checked={includeFiles}
+            onChange={(e) => setIncludeFiles(e.target.checked)}
+            className="rounded border-[var(--color-border)] bg-[var(--color-bg-input)]"
+          />
+          <label htmlFor="include-files" className="text-sm text-[var(--color-fg-muted)]">
+            Include file attachments (CVs, logos)
+            <span className="ml-1 text-xs text-[var(--color-fg-subtle)]">
+              — may produce a much larger file
+            </span>
+          </label>
+        </div>
       </div>
     </div>
   )

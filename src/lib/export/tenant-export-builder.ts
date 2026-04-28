@@ -13,6 +13,12 @@
  * it promptly; archive.finalize() is called internally before this function
  * returns.
  *
+ * When opts.includeFiles is true, the ZIP also contains a `files/` directory
+ * with the original binary files (CVs, logos) for the tenant. Each file is
+ * streamed directly from disk by archiver — no in-memory load. Missing or
+ * inaccessible files are recorded in manifest.skippedFiles[] rather than
+ * failing the export.
+ *
  * EXCLUDED tables:
  *   - tenants         — only contains the tenant's own metadata row; not useful
  *   - calendarConnections — no tenantId column; per-user, not per-tenant
@@ -20,7 +26,9 @@
 
 import archiver from 'archiver'
 import type { Archiver } from 'archiver'
-import { eq } from 'drizzle-orm'
+import { stat } from 'fs/promises'
+import { join, basename } from 'path'
+import { eq, isNotNull } from 'drizzle-orm'
 import { withTenant } from '@/db'
 import {
   agencies,
@@ -49,16 +57,64 @@ import {
   users,
   codeChallenges,
 } from '@/db/schema'
+import { getLogoAbsolutePath } from '@/lib/branding/store'
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+export type BuildTenantExportOpts = {
+  tenantId: string
+  includeFiles?: boolean
+}
+
+export type SkippedFile = {
+  path: string
+  reason: string
+}
 
 export type TenantExportManifest = {
   tenantId: string
   exportedAt: string  // ISO 8601
   schemaVersion: '1'
   tables: { name: string; rowCount: number }[]
+  includesFiles: boolean
+  binaryFileCount: number
+  totalBinaryBytes: number
+  skippedFiles: SkippedFile[]
+}
+
+// ---------------------------------------------------------------------------
+// Path helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves a DB-stored web-relative CV/role file path to an absolute
+ * filesystem path. The DB stores `/uploads/{tenantId}/{uuid}.ext` with a
+ * leading slash; we strip it and join with cwd, mirroring deleteCvFile.
+ */
+function getCvAbsolutePath(filePath: string): string {
+  const relative = filePath.startsWith('/') ? filePath.slice(1) : filePath
+  return join(process.cwd(), relative)
+}
+
+/**
+ * Returns the absolute tenant upload root for path-traversal guard.
+ * All tenant files (CVs and logos) must reside under this directory.
+ */
+function tenantUploadRoot(tenantId: string): string {
+  return join(process.cwd(), 'uploads', tenantId)
+}
+
+/**
+ * Sanitises a filename for use inside the ZIP to guard against pathological
+ * names (path separators, control chars, null bytes, dotdot).
+ */
+function sanitiseFilename(name: string): string {
+  return name
+    .replace(/\//g, '_')
+    .replace(/\.\./g, '_')
+    .replace(/[\x00-\x1f\x7f]/g, '_')
 }
 
 // ---------------------------------------------------------------------------
@@ -129,7 +185,9 @@ async function fetchGrandchildRows<T>(
 // buildTenantExportZip
 // ---------------------------------------------------------------------------
 
-export async function buildTenantExportZip(tenantId: string): Promise<Archiver> {
+export async function buildTenantExportZip(opts: BuildTenantExportOpts): Promise<Archiver> {
+  const { tenantId, includeFiles = false } = opts
+
   const archive = archiver('zip', { zlib: { level: 6 } })
 
   archive.on('warning', (err) => {
@@ -137,7 +195,13 @@ export async function buildTenantExportZip(tenantId: string): Promise<Archiver> 
   })
 
   const manifestTables: TenantExportManifest['tables'] = []
+  const skippedFiles: SkippedFile[] = []
+  let binaryFileCount = 0
+  let totalBinaryBytes = 0
   const exportedAt = new Date().toISOString()
+
+  // The tenant upload root — all binary paths must resolve inside this prefix.
+  const uploadRoot = tenantUploadRoot(tenantId)
 
   await withTenant(tenantId, async (tx) => {
     // Helper: collect rows, append to archive, record manifest entry
@@ -195,6 +259,106 @@ export async function buildTenantExportZip(tenantId: string): Promise<Archiver> 
       packIds
     )
     await appendTable('code_challenges', challengeRows)
+
+    // ── Optional binary files ─────────────────────────────────────────────────
+
+    if (includeFiles) {
+      /**
+       * Validates and appends a single binary file to the archive.
+       *
+       * Safety checks (defence-in-depth — applied even if the upstream helper
+       * already validates the path):
+       *   1. The resolved absolute path must begin with the tenant upload root.
+       *   2. fs.stat must succeed (file exists and is accessible).
+       *
+       * On any failure: skip + record in skippedFiles[]. Never throws.
+       */
+      async function appendBinaryFile(
+        dbPath: string,
+        zipSubdir: string,
+        entityId: string
+      ): Promise<void> {
+        let absPath: string
+        try {
+          absPath = dbPath.startsWith('/uploads/')
+            ? getCvAbsolutePath(dbPath)
+            : getLogoAbsolutePath(dbPath)
+        } catch {
+          skippedFiles.push({ path: dbPath, reason: 'path-resolution-error' })
+          return
+        }
+
+        // Security guard: resolved path must be inside the tenant upload dir.
+        if (!absPath.startsWith(uploadRoot + '/') && absPath !== uploadRoot) {
+          skippedFiles.push({ path: dbPath, reason: 'path-outside-tenant' })
+          return
+        }
+
+        let fileSize: number
+        try {
+          const stats = await stat(absPath)
+          fileSize = stats.size
+        } catch (err) {
+          const code = (err as NodeJS.ErrnoException).code
+          const reason =
+            code === 'ENOENT' ? 'not-found' :
+            code === 'EACCES' ? 'permission-denied' :
+            `stat-error:${code ?? 'unknown'}`
+          skippedFiles.push({ path: dbPath, reason })
+          return
+        }
+
+        const safeName = sanitiseFilename(basename(dbPath))
+        const entryName = `files/${zipSubdir}/${entityId}-${safeName}`
+        archive.file(absPath, { name: entryName })
+        binaryFileCount++
+        totalBinaryBytes += fileSize
+      }
+
+      // Candidate CVs
+      const candidateFiles = await tx
+        .select({ id: candidates.id, filePath: candidates.filePath })
+        .from(candidates)
+        .where(isNotNull(candidates.filePath))
+      for (const row of candidateFiles) {
+        if (row.filePath) {
+          await appendBinaryFile(row.filePath, 'candidates', row.id)
+        }
+      }
+
+      // Agency logos
+      const agencyLogos = await tx
+        .select({ id: agencies.id, logoPath: agencies.logoPath })
+        .from(agencies)
+        .where(isNotNull(agencies.logoPath))
+      for (const row of agencyLogos) {
+        if (row.logoPath) {
+          await appendBinaryFile(row.logoPath, 'agencies', row.id)
+        }
+      }
+
+      // Customer logos
+      const customerLogos = await tx
+        .select({ id: customers.id, logoPath: customers.logoPath })
+        .from(customers)
+        .where(isNotNull(customers.logoPath))
+      for (const row of customerLogos) {
+        if (row.logoPath) {
+          await appendBinaryFile(row.logoPath, 'customers', row.id)
+        }
+      }
+
+      // Role attachments (roles.filePath exists per schema)
+      const roleFiles = await tx
+        .select({ id: roles.id, filePath: roles.filePath })
+        .from(roles)
+        .where(isNotNull(roles.filePath))
+      for (const row of roleFiles) {
+        if (row.filePath) {
+          await appendBinaryFile(row.filePath, 'roles', row.id)
+        }
+      }
+    }
   })
 
   // ── Manifest ──────────────────────────────────────────────────────────────
@@ -204,6 +368,10 @@ export async function buildTenantExportZip(tenantId: string): Promise<Archiver> 
     exportedAt,
     schemaVersion: '1',
     tables: manifestTables,
+    includesFiles: includeFiles,
+    binaryFileCount,
+    totalBinaryBytes,
+    skippedFiles,
   }
   archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' })
 
