@@ -60,6 +60,9 @@ type Props = {
   candidateRate: string | null
   candidateCurrency: string | null
   isInternal?: boolean
+  agencyId?: string
+  agencyName?: string | null
+  agencyLogoPath?: string | null
   canEdit: boolean
   audience?: 'recruiter' | 'customer' | 'manager'
   removeAction: (scoreId: string, roleId: string) => Promise<void>
@@ -84,6 +87,9 @@ export function RoleCandidateCard({
   candidateRate,
   candidateCurrency,
   isInternal,
+  agencyId,
+  agencyName,
+  agencyLogoPath,
   canEdit,
   audience = 'recruiter',
   removeAction,
@@ -149,6 +155,30 @@ export function RoleCandidateCard({
                 candCurrency={candidateCurrency}
               />
             )}
+          </div>
+        )}
+        {agencyId && !isInternal && agencyName && (
+          <div className="flex items-center gap-1.5 mt-1.5">
+            {agencyLogoPath ? (
+              <img
+                src={`/api/agencies/${agencyId}/logo`}
+                alt=""
+                width={20}
+                height={20}
+                style={{ width: 20, height: 20 }}
+                className="rounded-full border border-zinc-700 bg-zinc-800 object-contain shrink-0"
+              />
+            ) : (
+              <div
+                className="flex items-center justify-center rounded-full bg-zinc-800
+                           text-zinc-400 text-xs font-semibold shrink-0"
+                style={{ width: 20, height: 20 }}
+                aria-hidden="true"
+              >
+                {agencyName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span className="text-xs text-zinc-500">{agencyName}</span>
           </div>
         )}
       </div>

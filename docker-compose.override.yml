@@ -11,6 +11,10 @@ services:
       # (p620.tail833f7.ts.net) AND localhost in dev. Without this, auth.js v5
       # throws UntrustedHost for non-localhost hostnames and refuses sessions.
       AUTH_TRUST_HOST: "true"
+    # Bootstrap dev deps into the anonymous /app/node_modules volume on first
+    # start, then exec into next dev. Subsequent starts skip the npm install
+    # noise because the lockfile is already satisfied.
+    command: sh -c "NODE_ENV=development npm install --silent && exec npm run dev"
     volumes:
       # Bind-mount host source so the dev server (Turbopack) picks up changes
       # without rebuilding the image. node_modules + .next stay as anonymous

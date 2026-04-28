@@ -247,7 +247,30 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
           <div className="flex items-center gap-3 mt-1 text-sm text-zinc-500">
             {candidate.email && <span>{candidate.email}</span>}
             {candidate.phone && <span>{candidate.phone}</span>}
-            {agency && <span>via {agency.name}</span>}
+            {agency && audience !== 'manager' && (
+              <span className="inline-flex items-center gap-1.5">
+                {agency.logoPath ? (
+                  <img
+                    src={`/api/agencies/${agency.id}/logo`}
+                    alt=""
+                    width={24}
+                    height={24}
+                    style={{ width: 24, height: 24 }}
+                    className="rounded-full border border-zinc-700 bg-zinc-800 object-contain shrink-0"
+                  />
+                ) : (
+                  <div
+                    className="flex items-center justify-center rounded-full bg-zinc-800
+                               text-zinc-400 text-xs font-semibold shrink-0"
+                    style={{ width: 24, height: 24 }}
+                    aria-hidden="true"
+                  >
+                    {agency.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                via {agency.name}
+              </span>
+            )}
           </div>
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             <DownloadPdfButton

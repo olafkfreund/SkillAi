@@ -36,8 +36,8 @@ export default async function CustomersPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100">Customers</h1>
-          <p className="text-zinc-500 mt-1">
+          <h1 className="text-2xl font-bold text-[var(--color-fg)]">Customers</h1>
+          <p className="text-[var(--color-fg-subtle)] mt-1">
             {allCustomers.length} active {allCustomers.length !== 1 ? 'customers' : 'customer'}
           </p>
         </div>
@@ -55,11 +55,11 @@ export default async function CustomersPage() {
 
       {allCustomers.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed
-                        border-zinc-700 bg-zinc-950 px-6 py-16 text-center">
-          <BuildingIcon className="h-10 w-10 text-zinc-600 mb-3" />
-          <p className="text-zinc-400 font-medium">No customers yet</p>
+                        border-[var(--color-border)] bg-[var(--color-bg-app)] px-6 py-16 text-center">
+          <BuildingIcon className="h-10 w-10 text-[var(--color-fg-subtle)] mb-3" />
+          <p className="text-[var(--color-fg-muted)] font-medium">No customers yet</p>
           {canCreate && (
-            <p className="text-zinc-500 text-sm mt-1">
+            <p className="text-[var(--color-fg-subtle)] text-sm mt-1">
               <Link href="/dashboard/customers/new" className="text-blue-400 hover:underline">
                 Add your first customer
               </Link>{' '}
@@ -68,30 +68,30 @@ export default async function CustomersPage() {
           )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900">
+        <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-700">
-                <th className="px-5 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">
+              <tr className="border-b border-[var(--color-border)]">
+                <th className="px-5 py-3 text-left text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide">
                   Name
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">
+                <th className="px-5 py-3 text-left text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide">
                   Contact name
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">
+                <th className="px-5 py-3 text-left text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide">
                   Contact email
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">
+                <th className="px-5 py-3 text-left text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide">
                   Website
                 </th>
-                <th className="px-5 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">
+                <th className="px-5 py-3 text-right text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800">
+            <tbody className="divide-y divide-[var(--color-border)]">
               {allCustomers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-zinc-800/50 transition-colors">
+                <tr key={customer.id} className="hover:bg-[var(--color-bg-input)]/50 transition-colors">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       {/* 40px logo or initials avatar */}
@@ -101,12 +101,12 @@ export default async function CustomersPage() {
                           alt=""
                           width={40}
                           height={40}
-                          className="rounded-lg border border-zinc-700 bg-zinc-800 object-contain shrink-0"
+                          className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-input)] object-contain shrink-0"
                           style={{ width: 40, height: 40 }}
                         />
                       ) : (
                         <div
-                          className="flex items-center justify-center rounded-lg bg-zinc-800 text-zinc-400
+                          className="flex items-center justify-center rounded-lg bg-[var(--color-bg-input)] text-[var(--color-fg-muted)]
                                      text-sm font-semibold shrink-0"
                           style={{ width: 40, height: 40 }}
                           aria-hidden="true"
@@ -114,16 +114,16 @@ export default async function CustomersPage() {
                           {customer.name.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <span className="font-medium text-zinc-100">{customer.name}</span>
+                      <span className="font-medium text-[var(--color-fg)]">{customer.name}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-zinc-400">
-                    {customer.contactName ?? <span className="text-zinc-600">—</span>}
+                  <td className="px-5 py-4 text-[var(--color-fg-muted)]">
+                    {customer.contactName ?? <span className="text-[var(--color-fg-subtle)]">—</span>}
                   </td>
-                  <td className="px-5 py-4 text-zinc-400">
-                    {customer.contactEmail ?? <span className="text-zinc-600">—</span>}
+                  <td className="px-5 py-4 text-[var(--color-fg-muted)]">
+                    {customer.contactEmail ?? <span className="text-[var(--color-fg-subtle)]">—</span>}
                   </td>
-                  <td className="px-5 py-4 text-zinc-400">
+                  <td className="px-5 py-4 text-[var(--color-fg-muted)]">
                     {customer.website ? (
                       <a
                         href={customer.website}
@@ -134,7 +134,7 @@ export default async function CustomersPage() {
                         {customer.website.replace(/^https?:\/\//, '')}
                       </a>
                     ) : (
-                      <span className="text-zinc-600">—</span>
+                      <span className="text-[var(--color-fg-subtle)]">—</span>
                     )}
                   </td>
                   <td className="px-5 py-4 text-right">

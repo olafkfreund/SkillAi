@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { eq, and, desc } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import React from 'react'
+import fs from 'fs/promises'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { withTenant } from '@/db'
 import {
@@ -16,6 +17,7 @@ import {
 } from '@/db/schema'
 import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
 import { CandidatePDF } from '@/lib/pdf'
+import { getLogoAbsolutePath } from '@/lib/branding/store'
 
 type Audience = 'internal' | 'customer'
 
@@ -184,10 +186,29 @@ export async function GET(
     isEdited: n.isEdited,
   }))
 
+  // Best-effort: read agency logo from disk and encode as base64 data URI.
+  // Only for internal PDFs — customer PDFs hide agency info entirely.
+  let agencyLogoBase64: string | undefined
+  if (audience === 'internal' && agency?.logoPath) {
+    try {
+      const absPath = getLogoAbsolutePath(agency.logoPath)
+      const logoBuffer = await fs.readFile(absPath)
+      const ext = agency.logoPath.split('.').pop()?.toLowerCase() ?? 'png'
+      const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+        : ext === 'webp' ? 'image/webp'
+        : ext === 'svg' ? 'image/svg+xml'
+        : 'image/png'
+      agencyLogoBase64 = `data:${mime};base64,${logoBuffer.toString('base64')}`
+    } catch {
+      // File unreadable — proceed without logo
+    }
+  }
+
   const buffer = await renderToBuffer(
     React.createElement(CandidatePDF, {
       candidate,
       agencyName: agency?.name ?? null,
+      agencyLogoBase64,
       audience,
       activeScore,
       activeRole,

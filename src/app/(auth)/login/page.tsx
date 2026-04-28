@@ -16,15 +16,15 @@ export default async function LoginPage({
   const { callbackUrl, error } = await searchParams
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-zinc-950">
+    <main className="min-h-screen flex items-center justify-center bg-[var(--color-bg-app)]">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-zinc-100">SkillAI</h1>
-          <p className="mt-1 text-sm text-zinc-500">Internal recruiting portal</p>
+          <h1 className="text-2xl font-bold text-[var(--color-fg)]">SkillAI</h1>
+          <p className="mt-1 text-sm text-[var(--color-fg-subtle)]">Internal recruiting portal</p>
         </div>
 
-        <div className="bg-zinc-900 rounded-xl shadow-sm border border-zinc-700 p-8">
-          <h2 className="text-lg font-semibold text-zinc-100 mb-6">Sign in</h2>
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl shadow-sm border border-[var(--color-border)] p-8">
+          <h2 className="text-lg font-semibold text-[var(--color-fg)] mb-6">Sign in</h2>
           <LoginForm callbackUrl={callbackUrl} error={error} />
         </div>
       </div>

@@ -1,8 +1,8 @@
 # Product Roadmap
 
 > Last Updated: 2026-04-28
-> Version: 2.2.0
-> Status: Phases 1–4 shipped; Phase 5 partial; Hiring Manager persona shipped (Epic #73); in-app help, branding logos, and candidate-list cleanup shipped; further integrations tracked on GitHub
+> Version: 2.3.0
+> Status: Phases 1–4 shipped; Phase 5 partial; Hiring Manager persona shipped (Epic #73); in-app help, branding logos, candidate-list cleanup, and light/dark mode v1 shipped; further integrations tracked on GitHub
 
 ## Phase 1: Foundation & Core MVP ✅ SHIPPED
 
@@ -169,6 +169,11 @@ Features delivered mid-flight, not in the original v1.0.0 plan.
 
 - [x] **Agency + customer logos** — upload via existing entity edit forms; PNG / JPEG / WebP only with a 2 MB cap; rendered at 32 px in lists and 64 px on detail headers; initials avatar fallback when no logo is set
 - [x] **Single checkbox column on candidate list** — consolidated bulk-select into one left-edge column; comparison icon button moved adjacent to the CV download action for a cleaner row
+- [x] **Agency logo on candidate displays** — 20–32 px agency logo with initials fallback in the candidate list, role-detail cards, candidate detail header, and candidate PDF export, so the source of every candidate is visible at a glance
+
+### Theme & Polish
+
+- [x] **Light/dark mode toggle (v1 — shell only)** — `next-themes` provider + CSS-var token system in `globals.css`; sidebar, dashboard outer wrapper, and login page converted; toggle lives in the sidebar above sign-out; system preference detected via `enableSystem`. Detail pages, forms, and modals remain dark-only and will migrate incrementally — full conversion tracked in Epic [#103](https://github.com/olafkfreund/SkillAi/issues/103).
 
 ### Exports & PDFs
 

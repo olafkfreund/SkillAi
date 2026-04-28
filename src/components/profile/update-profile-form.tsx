@@ -18,7 +18,7 @@ export function UpdateProfileForm({ currentName }: Props) {
   return (
     <form action={formAction} className="space-y-4">
       <div>
-        <label htmlFor="name" className="block text-xs font-medium text-zinc-400 mb-1.5">
+        <label htmlFor="name" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1.5">
           Name
         </label>
         <input
@@ -29,9 +29,9 @@ export function UpdateProfileForm({ currentName }: Props) {
           maxLength={100}
           disabled={pending}
           required
-          className="w-full text-sm rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100
+          className="w-full text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)]
                      px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
-                     placeholder:text-zinc-500 disabled:opacity-60"
+                     placeholder:text-[var(--color-fg-subtle)] disabled:opacity-60"
         />
         {state?.fieldErrors?.name && (
           <p className="text-xs text-red-400 mt-1">{state.fieldErrors.name[0]}</p>

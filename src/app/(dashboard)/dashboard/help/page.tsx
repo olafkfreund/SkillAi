@@ -59,9 +59,9 @@ export default async function HelpPage({ searchParams }: Props) {
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
           <BookOpenIcon className="h-6 w-6 text-violet-400 flex-shrink-0" />
-          <h1 className="text-2xl font-bold text-zinc-100">Help Centre</h1>
+          <h1 className="text-2xl font-bold text-[var(--color-fg)]">Help Centre</h1>
         </div>
-        <p className="text-zinc-500 text-sm">
+        <p className="text-[var(--color-fg-subtle)] text-sm">
           Guides and tips for getting the most from SkillAI.
         </p>
       </div>
@@ -73,13 +73,13 @@ export default async function HelpPage({ searchParams }: Props) {
 
       {/* Article grid, grouped by category */}
       {categoryMap.size === 0 ? (
-        <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-12 text-center">
-          <BookOpenIcon className="mx-auto mb-3 h-8 w-8 text-zinc-600" />
-          <p className="text-zinc-400 text-sm">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-12 text-center">
+          <BookOpenIcon className="mx-auto mb-3 h-8 w-8 text-[var(--color-fg-subtle)]" />
+          <p className="text-[var(--color-fg-muted)] text-sm">
             {q || cat ? 'No articles match your search.' : 'No help articles available yet.'}
           </p>
           {(q || cat) && (
-            <p className="text-zinc-600 text-xs mt-1">
+            <p className="text-[var(--color-fg-subtle)] text-xs mt-1">
               Try a different search term or clear the filters.
             </p>
           )}
@@ -90,7 +90,7 @@ export default async function HelpPage({ searchParams }: Props) {
             <section key={category} aria-labelledby={`cat-${category}`}>
               <h2
                 id={`cat-${category}`}
-                className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4"
+                className="text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wider mb-4"
               >
                 {category}
               </h2>

@@ -10,8 +10,8 @@ export function InviteForm() {
   const [state, formAction, isPending] = useActionState(createInvitation, initialState)
 
   return (
-    <div className="rounded-xl bg-zinc-900 border border-zinc-700 p-6">
-      <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-4">
+    <div className="rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] p-6">
+      <h2 className="text-sm font-semibold text-[var(--color-fg)] uppercase tracking-wide mb-4">
         Invite User
       </h2>
 
@@ -19,15 +19,15 @@ export function InviteForm() {
         <div className="flex flex-col gap-3 sm:flex-row">
           {/* Email (optional) */}
           <div className="flex-1">
-            <label htmlFor="invite-email" className="block text-sm font-medium text-zinc-400 mb-1.5">
-              Email <span className="text-zinc-600">(optional)</span>
+            <label htmlFor="invite-email" className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1.5">
+              Email <span className="text-[var(--color-fg-subtle)]">(optional)</span>
             </label>
             <input
               id="invite-email"
               name="email"
               type="email"
-              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2.5 text-sm
-                         text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2
+              className="w-full rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)] px-3 py-2.5 text-sm
+                         text-[var(--color-fg)] placeholder-[var(--color-fg-subtle)] focus:outline-none focus:ring-2
                          focus:ring-blue-600 focus:border-transparent"
               placeholder="colleague@company.com"
             />
@@ -38,15 +38,15 @@ export function InviteForm() {
 
           {/* Role */}
           <div className="sm:w-40">
-            <label htmlFor="invite-role" className="block text-sm font-medium text-zinc-400 mb-1.5">
+            <label htmlFor="invite-role" className="block text-sm font-medium text-[var(--color-fg-muted)] mb-1.5">
               Role
             </label>
             <select
               id="invite-role"
               name="role"
               defaultValue="recruiter"
-              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2.5 text-sm
-                         text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-600
+              className="w-full rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)] px-3 py-2.5 text-sm
+                         text-[var(--color-fg)] focus:outline-none focus:ring-2 focus:ring-blue-600
                          focus:border-transparent"
             >
               <option value="viewer">Viewer</option>

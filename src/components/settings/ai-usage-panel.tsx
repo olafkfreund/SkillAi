@@ -16,12 +16,12 @@ export async function AiUsagePanel() {
 
   if (summary.totalCalls === 0) {
     return (
-      <section className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-6">
+      <section className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6">
         <div className="flex items-center gap-2 mb-2">
-          <BarChart3Icon className="h-4 w-4 text-zinc-400" aria-hidden="true" />
-          <h2 className="text-lg font-semibold text-zinc-100">AI Usage & Cost</h2>
+          <BarChart3Icon className="h-4 w-4 text-[var(--color-fg-muted)]" aria-hidden="true" />
+          <h2 className="text-lg font-semibold text-[var(--color-fg)]">AI Usage & Cost</h2>
         </div>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-[var(--color-fg-subtle)]">
           No AI usage recorded yet. Statistics will appear here once you score
           candidates or generate interview packs.
         </p>
@@ -34,11 +34,11 @@ export async function AiUsagePanel() {
   const topOp = summary.byOperation[0]?.operation ?? '—'
 
   return (
-    <section className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-6">
+    <section className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6">
       <div className="flex items-center gap-2 mb-4">
-        <BarChart3Icon className="h-4 w-4 text-zinc-400" aria-hidden="true" />
-        <h2 className="text-lg font-semibold text-zinc-100">AI Usage & Cost</h2>
-        <span className="ml-auto text-xs text-zinc-500">last 30 days</span>
+        <BarChart3Icon className="h-4 w-4 text-[var(--color-fg-muted)]" aria-hidden="true" />
+        <h2 className="text-lg font-semibold text-[var(--color-fg)]">AI Usage & Cost</h2>
+        <span className="ml-auto text-xs text-[var(--color-fg-subtle)]">last 30 days</span>
       </div>
 
       {/* Stat cards */}
@@ -51,7 +51,7 @@ export async function AiUsagePanel() {
 
       {/* Cost trend chart */}
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-zinc-300 mb-2">
+        <h3 className="text-sm font-medium text-[var(--color-fg-muted)] mb-2">
           Cost trend (last 30 days)
         </h3>
         <AiUsageChart data={summary.byDayLast30} />
@@ -59,11 +59,11 @@ export async function AiUsagePanel() {
 
       {/* Operation breakdown table */}
       <div>
-        <h3 className="text-sm font-medium text-zinc-300 mb-2">By operation</h3>
+        <h3 className="text-sm font-medium text-[var(--color-fg-muted)] mb-2">By operation</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-zinc-500 border-b border-zinc-800">
+              <tr className="text-left text-xs text-[var(--color-fg-subtle)] border-b border-[var(--color-border)]">
                 <th className="py-2 pr-2">Operation</th>
                 <th className="py-2 px-2">Model</th>
                 <th className="py-2 px-2 text-right">Calls</th>
@@ -76,20 +76,20 @@ export async function AiUsagePanel() {
               {summary.byOperation.map((row) => (
                 <tr
                   key={`${row.operation}-${row.model}`}
-                  className="border-b border-zinc-900"
+                  className="border-b border-[var(--color-border)]"
                 >
-                  <td className="py-1.5 pr-2 text-zinc-200">{row.operation}</td>
-                  <td className="py-1.5 px-2 text-zinc-400 text-xs">{row.model}</td>
-                  <td className="py-1.5 px-2 text-right text-zinc-300">
+                  <td className="py-1.5 pr-2 text-[var(--color-fg)]">{row.operation}</td>
+                  <td className="py-1.5 px-2 text-[var(--color-fg-muted)] text-xs">{row.model}</td>
+                  <td className="py-1.5 px-2 text-right text-[var(--color-fg-muted)]">
                     {row.calls.toLocaleString('en-GB')}
                   </td>
-                  <td className="py-1.5 px-2 text-right text-zinc-300">
+                  <td className="py-1.5 px-2 text-right text-[var(--color-fg-muted)]">
                     {row.inputTokens.toLocaleString('en-GB')}
                   </td>
-                  <td className="py-1.5 px-2 text-right text-zinc-300">
+                  <td className="py-1.5 px-2 text-right text-[var(--color-fg-muted)]">
                     {row.outputTokens.toLocaleString('en-GB')}
                   </td>
-                  <td className="py-1.5 pl-2 text-right text-zinc-200 font-mono">
+                  <td className="py-1.5 pl-2 text-right text-[var(--color-fg)] font-mono">
                     ${row.costUsd.toFixed(4)}
                   </td>
                 </tr>
@@ -104,9 +104,9 @@ export async function AiUsagePanel() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-zinc-800 bg-zinc-950 p-3">
-      <div className="text-xs text-zinc-500">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-zinc-100">{value}</div>
+    <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-app)] p-3">
+      <div className="text-xs text-[var(--color-fg-subtle)]">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-[var(--color-fg)]">{value}</div>
     </div>
   )
 }

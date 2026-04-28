@@ -95,14 +95,14 @@ export function HelpSearch({ currentQ, currentCat }: Props) {
       {/* Search */}
       <div className="relative flex-1 min-w-0
                       sm:min-w-[260px] sm:max-w-md">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
+        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-fg-subtle)] pointer-events-none" />
         <input
           type="text"
           value={searchValue}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search help articles..."
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-9 pr-3 py-2
-                     text-sm text-zinc-200 placeholder:text-zinc-500
+          className="w-full bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg pl-9 pr-3 py-2
+                     text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)]
                      focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent
                      transition-colors"
           aria-label="Search help articles"
@@ -113,8 +113,8 @@ export function HelpSearch({ currentQ, currentCat }: Props) {
       <select
         value={currentCat}
         onChange={(e) => handleCategoryChange(e.target.value)}
-        className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
-                   text-sm text-zinc-200
+        className="bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-2
+                   text-sm text-[var(--color-fg)]
                    focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent
                    transition-colors cursor-pointer"
         aria-label="Filter by category"
@@ -130,7 +130,7 @@ export function HelpSearch({ currentQ, currentCat }: Props) {
       {hasActive && (
         <button
           onClick={clearFilters}
-          className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-200
+          className="inline-flex items-center gap-1.5 text-sm text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]
                      transition-colors px-2 py-2"
           aria-label="Clear search and filters"
         >

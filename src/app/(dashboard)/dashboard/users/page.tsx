@@ -31,12 +31,12 @@ export default async function UsersPage() {
     <div className="max-w-4xl">
       {/* Page header */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 bg-zinc-800 rounded-lg">
-          <UsersIcon className="h-5 w-5 text-zinc-400" />
+        <div className="p-2 bg-[var(--color-bg-elevated)] rounded-lg">
+          <UsersIcon className="h-5 w-5 text-[var(--color-fg-muted)]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-zinc-100">Team Management</h1>
-          <p className="text-sm text-zinc-500">Manage users and send invitations</p>
+          <h1 className="text-xl font-bold text-[var(--color-fg)]">Team Management</h1>
+          <p className="text-sm text-[var(--color-fg-subtle)]">Manage users and send invitations</p>
         </div>
       </div>
 
@@ -55,36 +55,36 @@ export default async function UsersPage() {
           {/* Pending invitations */}
           {pendingInvitations.length > 0 && (
             <div>
-              <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">
+              <h2 className="text-sm font-semibold text-[var(--color-fg)] uppercase tracking-wide mb-3">
                 Pending Invitations
               </h2>
-              <div className="rounded-xl border border-zinc-700 overflow-hidden">
+              <div className="rounded-xl border border-[var(--color-border)] overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-zinc-700 bg-zinc-800">
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                    <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg-elevated)]">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
                         Email
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
                         Role
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
                         Expires
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-800">
+                  <tbody className="divide-y divide-[var(--color-bg-elevated)]">
                     {pendingInvitations.map((inv) => {
                       const inviteUrl = `${BASE_URL}/invite/${inv.token}`
                       const role = (inv.role as UserRole) ?? 'recruiter'
                       return (
-                        <tr key={inv.id} className="bg-zinc-900 hover:bg-zinc-800/50 transition-colors">
-                          <td className="px-4 py-3 text-zinc-400">
+                        <tr key={inv.id} className="bg-[var(--color-bg-app)] hover:bg-[var(--color-bg-input)] transition-colors">
+                          <td className="px-4 py-3 text-[var(--color-fg-muted)]">
                             {inv.email ?? (
-                              <span className="italic text-zinc-600">Open invitation</span>
+                              <span className="italic text-[var(--color-fg-subtle)]">Open invitation</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
@@ -94,7 +94,7 @@ export default async function UsersPage() {
                               {role}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-zinc-500 text-xs">
+                          <td className="px-4 py-3 text-[var(--color-fg-subtle)] text-xs">
                             {inv.expiresAt.toLocaleDateString('en-GB', {
                               day: '2-digit',
                               month: 'short',
@@ -118,15 +118,15 @@ export default async function UsersPage() {
 
           {/* Team members table */}
           <div>
-            <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">
+            <h2 className="text-sm font-semibold text-[var(--color-fg)] uppercase tracking-wide mb-3">
               Team Members
             </h2>
-            <p className="text-xs text-zinc-500 mb-4">
+            <p className="text-xs text-[var(--color-fg-subtle)] mb-4">
               You cannot change your own role or deactivate your own account.
             </p>
             {tenantUsers.length === 0 ? (
-              <div className="rounded-xl bg-zinc-800 border border-zinc-700 px-5 py-4">
-                <p className="text-sm text-zinc-500">No users found.</p>
+              <div className="rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] px-5 py-4">
+                <p className="text-sm text-[var(--color-fg-subtle)]">No users found.</p>
               </div>
             ) : (
               <UserManagementTable

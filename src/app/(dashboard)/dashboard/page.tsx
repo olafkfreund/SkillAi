@@ -150,10 +150,10 @@ export default async function DashboardPage() {
     <div>
       {/* Page header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-100">Dashboard</h1>
-        <p className="text-zinc-500 mt-1">
+        <h1 className="text-2xl font-bold text-[var(--color-fg)]">Dashboard</h1>
+        <p className="text-[var(--color-fg-subtle)] mt-1">
           Welcome back,{' '}
-          <span className="font-medium text-zinc-300">{session?.user.name}</span>.
+          <span className="font-medium text-[var(--color-fg-muted)]">{session?.user.name}</span>.
         </p>
       </div>
 
@@ -165,54 +165,54 @@ export default async function DashboardPage() {
                       sm:grid-cols-2
                       lg:grid-cols-5 gap-4 mb-10">
         {/* Active Roles */}
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-5">
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-zinc-500">Active Roles</span>
+            <span className="text-sm text-[var(--color-fg-subtle)]">Active Roles</span>
             <BriefcaseIcon className="h-4 w-4 text-violet-500" />
           </div>
-          <p className="text-3xl font-bold text-zinc-100">{roleCount}</p>
+          <p className="text-3xl font-bold text-[var(--color-fg)]">{roleCount}</p>
         </div>
 
         {/* Total Candidates */}
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-5">
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-zinc-500">Total Candidates</span>
+            <span className="text-sm text-[var(--color-fg-subtle)]">Total Candidates</span>
             <UsersIcon className="h-4 w-4 text-blue-500" />
           </div>
-          <p className="text-3xl font-bold text-zinc-100">{candidateCount}</p>
+          <p className="text-3xl font-bold text-[var(--color-fg)]">{candidateCount}</p>
         </div>
 
         {/* Scored This Week */}
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-5">
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-zinc-500">Scored This Week</span>
+            <span className="text-sm text-[var(--color-fg-subtle)]">Scored This Week</span>
             <TrendingUpIcon className="h-4 w-4 text-green-500" />
           </div>
-          <p className="text-3xl font-bold text-zinc-100">{scoredCount}</p>
+          <p className="text-3xl font-bold text-[var(--color-fg)]">{scoredCount}</p>
         </div>
 
         {/* Interview Packs Ready */}
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-5">
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-zinc-500">Interview Packs Ready</span>
+            <span className="text-sm text-[var(--color-fg-subtle)]">Interview Packs Ready</span>
             <BrainIcon className="h-4 w-4 text-amber-500" />
           </div>
-          <p className="text-3xl font-bold text-zinc-100">{packsCount}</p>
+          <p className="text-3xl font-bold text-[var(--color-fg)]">{packsCount}</p>
         </div>
 
         {/* Missing CV */}
         <Link
           href="/dashboard/candidates?missingCv=1"
-          className="bg-zinc-900 rounded-xl border border-zinc-700 p-5
-                     hover:border-amber-500/60 hover:bg-zinc-800/60 transition-colors group"
+          className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-5
+                     hover:border-amber-500/60 hover:bg-[var(--color-bg-input)]/60 transition-colors group"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-zinc-500 group-hover:text-zinc-400 transition-colors">
+            <span className="text-sm text-[var(--color-fg-subtle)] group-hover:text-[var(--color-fg-muted)] transition-colors">
               Missing CV
             </span>
             <FileXIcon className="h-4 w-4 text-amber-500" />
           </div>
-          <p className={`text-3xl font-bold ${missingCvCount > 0 ? 'text-amber-400' : 'text-zinc-100'}`}>
+          <p className={`text-3xl font-bold ${missingCvCount > 0 ? 'text-amber-400' : 'text-[var(--color-fg)]'}`}>
             {missingCvCount}
           </p>
         </Link>
@@ -223,9 +223,9 @@ export default async function DashboardPage() {
                       lg:grid-cols-3 gap-6">
 
         {/* Recent Roles */}
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-5">
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
               Recent Roles
             </h2>
             <Link
@@ -237,9 +237,9 @@ export default async function DashboardPage() {
           </div>
 
           {recentRoles.length === 0 ? (
-            <p className="text-sm text-zinc-500 py-4 text-center">No active roles yet.</p>
+            <p className="text-sm text-[var(--color-fg-subtle)] py-4 text-center">No active roles yet.</p>
           ) : (
-            <ul className="divide-y divide-zinc-800">
+            <ul className="divide-y divide-[var(--color-border)]">
               {recentRoles.map((role) => (
                 <li key={role.id} className="py-3 first:pt-0 last:pb-0">
                   <Link
@@ -247,14 +247,14 @@ export default async function DashboardPage() {
                     className="flex items-center justify-between group"
                   >
                     <div className="min-w-0 pr-2">
-                      <span className="text-sm text-zinc-200 group-hover:text-white transition-colors truncate block">
+                      <span className="text-sm text-[var(--color-fg-muted)] group-hover:text-[var(--color-fg)] transition-colors truncate block">
                         {role.title}
                       </span>
-                      <span className="text-xs text-zinc-500">
+                      <span className="text-xs text-[var(--color-fg-subtle)]">
                         {role.candidateCount} candidate{role.candidateCount === 1 ? '' : 's'}
                       </span>
                     </div>
-                    <time className="text-xs text-zinc-500 whitespace-nowrap">
+                    <time className="text-xs text-[var(--color-fg-subtle)] whitespace-nowrap">
                       {new Date(role.createdAt).toLocaleDateString('en-GB')}
                     </time>
                   </Link>
@@ -265,9 +265,9 @@ export default async function DashboardPage() {
         </div>
 
         {/* Top Candidates This Week */}
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-5">
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
               Top Candidates This Week
             </h2>
             <Link
@@ -279,9 +279,9 @@ export default async function DashboardPage() {
           </div>
 
           {topCandidates.length === 0 ? (
-            <p className="text-sm text-zinc-500 py-4 text-center">No scored candidates this week.</p>
+            <p className="text-sm text-[var(--color-fg-subtle)] py-4 text-center">No scored candidates this week.</p>
           ) : (
-            <ul className="divide-y divide-zinc-800">
+            <ul className="divide-y divide-[var(--color-border)]">
               {topCandidates.map((c) => (
                 <li key={`${c.candidateId}-${c.roleId}`} className="py-3 first:pt-0 last:pb-0">
                   <Link
@@ -289,10 +289,10 @@ export default async function DashboardPage() {
                     className="flex items-center justify-between group"
                   >
                     <div className="min-w-0 pr-2">
-                      <p className="text-sm text-zinc-200 group-hover:text-white transition-colors truncate">
+                      <p className="text-sm text-[var(--color-fg-muted)] group-hover:text-[var(--color-fg)] transition-colors truncate">
                         {c.firstName} {c.lastName}
                       </p>
-                      <p className="text-xs text-zinc-500 truncate">{c.roleTitle}</p>
+                      <p className="text-xs text-[var(--color-fg-subtle)] truncate">{c.roleTitle}</p>
                     </div>
                     <span className="text-sm font-semibold text-green-400 whitespace-nowrap">
                       {c.overallScore ?? '—'}/100
@@ -305,9 +305,9 @@ export default async function DashboardPage() {
         </div>
 
         {/* Recent Uploads */}
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-5">
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
               Recent Uploads
             </h2>
             <Link
@@ -319,9 +319,9 @@ export default async function DashboardPage() {
           </div>
 
           {recentUploads.length === 0 ? (
-            <p className="text-sm text-zinc-500 py-4 text-center">No candidates uploaded yet.</p>
+            <p className="text-sm text-[var(--color-fg-subtle)] py-4 text-center">No candidates uploaded yet.</p>
           ) : (
-            <ul className="divide-y divide-zinc-800">
+            <ul className="divide-y divide-[var(--color-border)]">
               {recentUploads.map((c) => (
                 <li key={c.id} className="py-3 first:pt-0 last:pb-0">
                   <Link
@@ -329,10 +329,10 @@ export default async function DashboardPage() {
                     className="flex items-center justify-between group"
                   >
                     <div className="min-w-0 pr-2">
-                      <p className="text-sm text-zinc-200 group-hover:text-white transition-colors truncate">
+                      <p className="text-sm text-[var(--color-fg-muted)] group-hover:text-[var(--color-fg)] transition-colors truncate">
                         {c.firstName} {c.lastName}
                       </p>
-                      <p className="text-xs text-zinc-500 truncate">
+                      <p className="text-xs text-[var(--color-fg-subtle)] truncate">
                         {c.agencyName ?? 'Direct'} ·{' '}
                         <time>{new Date(c.createdAt).toLocaleDateString('en-GB')}</time>
                       </p>

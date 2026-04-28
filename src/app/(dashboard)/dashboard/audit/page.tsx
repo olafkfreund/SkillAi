@@ -23,7 +23,7 @@ function actionBadgeClass(action: string): string {
   if (action.endsWith('.updated') || action.endsWith('.changed') || action.endsWith('.retried')) {
     return 'bg-amber-950 text-amber-400 border border-amber-700'
   }
-  return 'bg-zinc-800 text-zinc-400 border border-zinc-700'
+  return 'bg-[var(--color-bg-elevated)] text-[var(--color-fg-muted)] border border-[var(--color-border)]'
 }
 
 function formatMetadata(metadata: AuditLog['metadata']): string {
@@ -64,45 +64,45 @@ export default async function AuditLogPage() {
     <div className="max-w-6xl">
       {/* Page header */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 bg-zinc-800 rounded-lg">
-          <ShieldCheckIcon className="h-5 w-5 text-zinc-400" />
+        <div className="p-2 bg-[var(--color-bg-elevated)] rounded-lg">
+          <ShieldCheckIcon className="h-5 w-5 text-[var(--color-fg-muted)]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-zinc-100">Audit Log</h1>
-          <p className="text-sm text-zinc-500">Last 100 events for your tenant</p>
+          <h1 className="text-xl font-bold text-[var(--color-fg)]">Audit Log</h1>
+          <p className="text-sm text-[var(--color-fg-subtle)]">Last 100 events for your tenant</p>
         </div>
       </div>
 
       {logs.length === 0 ? (
-        <div className="rounded-xl bg-zinc-800 border border-zinc-700 px-5 py-4">
-          <p className="text-sm text-zinc-500">No audit events recorded yet.</p>
+        <div className="rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] px-5 py-4">
+          <p className="text-sm text-[var(--color-fg-subtle)]">No audit events recorded yet.</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-zinc-700 overflow-hidden">
+        <div className="rounded-xl border border-[var(--color-border)] overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-700 bg-zinc-800">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide whitespace-nowrap">
+              <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg-elevated)]">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide whitespace-nowrap">
                   Date / Time
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
                   User
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
                   Action
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
                   Entity
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
                   Details
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800">
+            <tbody className="divide-y divide-[var(--color-bg-elevated)]">
               {logs.map((log) => (
-                <tr key={log.id} className="bg-zinc-900 hover:bg-zinc-800/50 transition-colors">
-                  <td className="px-4 py-3 text-zinc-500 text-xs whitespace-nowrap">
+                <tr key={log.id} className="bg-[var(--color-bg-app)] hover:bg-[var(--color-bg-input)] transition-colors">
+                  <td className="px-4 py-3 text-[var(--color-fg-subtle)] text-xs whitespace-nowrap">
                     {new Date(log.createdAt).toLocaleString('en-GB', {
                       day: '2-digit',
                       month: 'short',
@@ -111,9 +111,9 @@ export default async function AuditLogPage() {
                       minute: '2-digit',
                     })}
                   </td>
-                  <td className="px-4 py-3 text-zinc-400 text-xs">
+                  <td className="px-4 py-3 text-[var(--color-fg-muted)] text-xs">
                     {log.userEmail ?? log.userId?.slice(0, 8) ?? (
-                      <span className="italic text-zinc-600">system</span>
+                      <span className="italic text-[var(--color-fg-subtle)]">system</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -123,13 +123,13 @@ export default async function AuditLogPage() {
                       {log.action}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-zinc-400 text-xs">
-                    <span className="text-zinc-500">{log.entityType}</span>
+                  <td className="px-4 py-3 text-[var(--color-fg-muted)] text-xs">
+                    <span className="text-[var(--color-fg-subtle)]">{log.entityType}</span>
                     {log.entityLabel && (
-                      <span className="ml-1 text-zinc-300">{log.entityLabel}</span>
+                      <span className="ml-1 text-[var(--color-fg)]">{log.entityLabel}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-zinc-500 text-xs">
+                  <td className="px-4 py-3 text-[var(--color-fg-subtle)] text-xs">
                     {formatMetadata(log.metadata)}
                   </td>
                 </tr>

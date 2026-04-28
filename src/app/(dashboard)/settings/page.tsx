@@ -53,12 +53,12 @@ export default async function SettingsPage() {
   return (
     <div className="max-w-2xl">
       <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 bg-zinc-800 rounded-lg">
-          <SettingsIcon className="h-5 w-5 text-zinc-400" />
+        <div className="p-2 bg-[var(--color-bg-input)] rounded-lg">
+          <SettingsIcon className="h-5 w-5 text-[var(--color-fg-muted)]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-zinc-100">Settings</h1>
-          <p className="text-sm text-zinc-500">Manage API integrations and tenant configuration</p>
+          <h1 className="text-xl font-bold text-[var(--color-fg)]">Settings</h1>
+          <p className="text-sm text-[var(--color-fg-subtle)]">Manage API integrations and tenant configuration</p>
         </div>
       </div>
 
@@ -78,10 +78,10 @@ export default async function SettingsPage() {
         <div className="space-y-10">
           {/* AI Provider Keys */}
           <div>
-            <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">
+            <h2 className="text-sm font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide mb-3">
               AI Provider Keys
             </h2>
-            <p className="text-xs text-zinc-500 mb-4">
+            <p className="text-xs text-[var(--color-fg-subtle)] mb-4">
               Tenant-specific keys override the system environment variables. Keys are encrypted at rest.
             </p>
             <div className="space-y-3">
@@ -117,9 +117,9 @@ export default async function SettingsPage() {
               />
             </div>
 
-            <div className="mt-4 rounded-xl bg-zinc-800 border border-zinc-700 px-5 py-4">
-              <p className="text-xs font-semibold text-zinc-400 mb-1">Key resolution order</p>
-              <ol className="text-xs text-zinc-500 space-y-0.5 list-decimal list-inside">
+            <div className="mt-4 rounded-xl bg-[var(--color-bg-input)] border border-[var(--color-border)] px-5 py-4">
+              <p className="text-xs font-semibold text-[var(--color-fg-muted)] mb-1">Key resolution order</p>
+              <ol className="text-xs text-[var(--color-fg-subtle)] space-y-0.5 list-decimal list-inside">
                 <li>Tenant-specific key stored here (encrypted in database)</li>
                 <li>System environment variable (ANTHROPIC_API_KEY / GOOGLE_AI_API_KEY / etc.)</li>
               </ol>
@@ -128,10 +128,10 @@ export default async function SettingsPage() {
 
           {/* General Settings */}
           <div>
-            <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">
+            <h2 className="text-sm font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide mb-3">
               General Settings
             </h2>
-            <p className="text-xs text-zinc-500 mb-4">
+            <p className="text-xs text-[var(--color-fg-subtle)] mb-4">
               Configuration values for this tenant. These are stored as plain text.
             </p>
             <div className="space-y-3">
@@ -167,15 +167,15 @@ export default async function SettingsPage() {
 
           {/* User Management */}
           <div>
-            <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">
+            <h2 className="text-sm font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide mb-3">
               User Management
             </h2>
-            <p className="text-xs text-zinc-500 mb-4">
+            <p className="text-xs text-[var(--color-fg-subtle)] mb-4">
               Manage users in this tenant. You cannot change your own role or deactivate your own account.
             </p>
             {tenantUsers.length === 0 ? (
-              <div className="rounded-xl bg-zinc-800 border border-zinc-700 px-5 py-4">
-                <p className="text-sm text-zinc-500">No users found.</p>
+              <div className="rounded-xl bg-[var(--color-bg-input)] border border-[var(--color-border)] px-5 py-4">
+                <p className="text-sm text-[var(--color-fg-subtle)]">No users found.</p>
               </div>
             ) : (
               <UserManagementTable
@@ -184,8 +184,8 @@ export default async function SettingsPage() {
               />
             )}
 
-            <div className="mt-6 bg-zinc-900 rounded-xl border border-zinc-700 p-6">
-              <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-4">
+            <div className="mt-6 bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6">
+              <h3 className="text-sm font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide mb-4">
                 Create user
               </h3>
               <CreateUserForm />
@@ -201,10 +201,10 @@ export default async function SettingsPage() {
 
       {/* Calendar Integration — available to all authenticated users */}
       <div className="mt-10">
-        <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide mb-3">
           Calendar Integration
         </h2>
-        <p className="text-xs text-zinc-500 mb-4">
+        <p className="text-xs text-[var(--color-fg-subtle)] mb-4">
           Connect your personal calendar to automatically sync interview slots when you schedule them.
           These connections are per-user and only visible to you.
         </p>

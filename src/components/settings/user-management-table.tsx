@@ -40,35 +40,35 @@ export function UserManagementTable({ users, currentUserId }: Props) {
   }
 
   return (
-    <div className="rounded-xl border border-zinc-700 overflow-hidden">
+    <div className="rounded-xl border border-[var(--color-border)] overflow-hidden">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-zinc-700 bg-zinc-800">
-            <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+          <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg-elevated)]">
+            <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
               Name
             </th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+            <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
               Email
             </th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+            <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
               Role
             </th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+            <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
               Status
             </th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+            <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide">
               Actions
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-800">
+        <tbody className="divide-y divide-[var(--color-bg-elevated)]">
           {users.map((user) => {
             const isSelf = user.id === currentUserId
             const isInactive = user.isActive === false
             return (
-              <tr key={user.id} className="bg-zinc-900 hover:bg-zinc-800/50 transition-colors">
-                <td className="px-4 py-3 text-zinc-100 font-medium">{user.name}</td>
-                <td className="px-4 py-3 text-zinc-400">{user.email}</td>
+              <tr key={user.id} className="bg-[var(--color-bg-app)] hover:bg-[var(--color-bg-input)] transition-colors">
+                <td className="px-4 py-3 text-[var(--color-fg)] font-medium">{user.name}</td>
+                <td className="px-4 py-3 text-[var(--color-fg-muted)]">{user.email}</td>
                 <td className="px-4 py-3">
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${ROLE_BADGE[user.role]}`}
@@ -93,7 +93,7 @@ export function UserManagementTable({ users, currentUserId }: Props) {
                       defaultValue={user.role}
                       disabled={isSelf || isInactive || pending}
                       onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
-                      className="text-xs rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100
+                      className="text-xs rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)]
                                  px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500
                                  disabled:opacity-40 disabled:cursor-not-allowed"
                     >

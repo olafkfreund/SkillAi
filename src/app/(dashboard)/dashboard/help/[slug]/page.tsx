@@ -51,27 +51,27 @@ export default async function HelpArticlePage({ params }: Props) {
   return (
     <div className="max-w-3xl">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-xs text-zinc-500 mb-6" aria-label="Breadcrumb">
-        <Link href="/dashboard/help" className="hover:text-zinc-300 transition-colors">
+      <nav className="flex items-center gap-1.5 text-xs text-[var(--color-fg-subtle)] mb-6" aria-label="Breadcrumb">
+        <Link href="/dashboard/help" className="hover:text-[var(--color-fg)] transition-colors">
           Help Centre
         </Link>
         <ChevronRightIcon className="h-3 w-3 flex-shrink-0" />
         <span className="text-violet-400">{article.category}</span>
         <ChevronRightIcon className="h-3 w-3 flex-shrink-0" />
-        <span className="text-zinc-300 truncate">{article.title}</span>
+        <span className="text-[var(--color-fg)] truncate">{article.title}</span>
       </nav>
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-100 mb-4 leading-tight">
+        <h1 className="text-2xl font-bold text-[var(--color-fg)] mb-4 leading-tight">
           {article.title}
         </h1>
 
         {/* Meta row */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Last updated pill */}
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-800 border border-zinc-700
-                           px-3 py-1 text-xs text-zinc-400">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-bg-input)] border border-[var(--color-border)]
+                           px-3 py-1 text-xs text-[var(--color-fg-muted)]">
             <CalendarIcon className="h-3 w-3" />
             Updated{' '}
             <time dateTime={article.lastUpdated}>{updatedLabel}</time>
@@ -92,8 +92,8 @@ export default async function HelpArticlePage({ params }: Props) {
           {article.tags.map((tag) => (
             <span
               key={tag}
-              className="inline-block rounded-full bg-zinc-800 border border-zinc-700
-                         px-2 py-0.5 text-xs text-zinc-500"
+              className="inline-block rounded-full bg-[var(--color-bg-input)] border border-[var(--color-border)]
+                         px-2 py-0.5 text-xs text-[var(--color-fg-subtle)]"
             >
               {tag}
             </span>
@@ -102,29 +102,29 @@ export default async function HelpArticlePage({ params }: Props) {
       </div>
 
       {/* Article body — identical component map to role-content.tsx */}
-      <article className="text-sm text-zinc-300 leading-relaxed space-y-3">
+      <article className="text-sm text-[var(--color-fg)] leading-relaxed space-y-3">
         <ReactMarkdown
           components={{
             h1: ({ children }) => (
-              <h3 className="text-base font-semibold text-zinc-100 mt-4 mb-2">{children}</h3>
+              <h3 className="text-base font-semibold text-[var(--color-fg)] mt-4 mb-2">{children}</h3>
             ),
             h2: ({ children }) => (
-              <h3 className="text-sm font-semibold text-zinc-100 mt-4 mb-2 uppercase tracking-wide">{children}</h3>
+              <h3 className="text-sm font-semibold text-[var(--color-fg)] mt-4 mb-2 uppercase tracking-wide">{children}</h3>
             ),
             h3: ({ children }) => (
-              <h4 className="text-sm font-semibold text-zinc-200 mt-3 mb-1.5">{children}</h4>
+              <h4 className="text-sm font-semibold text-[var(--color-fg)] mt-3 mb-1.5">{children}</h4>
             ),
             h4: ({ children }) => (
-              <h5 className="text-xs font-semibold text-zinc-200 mt-2 mb-1 uppercase tracking-wide">{children}</h5>
+              <h5 className="text-xs font-semibold text-[var(--color-fg)] mt-2 mb-1 uppercase tracking-wide">{children}</h5>
             ),
-            p: ({ children }) => <p className="text-zinc-300">{children}</p>,
-            ul: ({ children }) => <ul className="list-disc pl-5 space-y-1 text-zinc-300">{children}</ul>,
-            ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1 text-zinc-300">{children}</ol>,
-            li: ({ children }) => <li className="text-zinc-300">{children}</li>,
-            strong: ({ children }) => <strong className="font-semibold text-zinc-100">{children}</strong>,
-            em: ({ children }) => <em className="italic text-zinc-200">{children}</em>,
+            p: ({ children }) => <p className="text-[var(--color-fg)]">{children}</p>,
+            ul: ({ children }) => <ul className="list-disc pl-5 space-y-1 text-[var(--color-fg)]">{children}</ul>,
+            ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1 text-[var(--color-fg)]">{children}</ol>,
+            li: ({ children }) => <li className="text-[var(--color-fg)]">{children}</li>,
+            strong: ({ children }) => <strong className="font-semibold text-[var(--color-fg)]">{children}</strong>,
+            em: ({ children }) => <em className="italic text-[var(--color-fg)]">{children}</em>,
             code: ({ children }) => (
-              <code className="rounded bg-zinc-800 border border-zinc-700 px-1.5 py-0.5 text-xs font-mono text-violet-300">
+              <code className="rounded bg-[var(--color-bg-input)] border border-[var(--color-border)] px-1.5 py-0.5 text-xs font-mono text-violet-300">
                 {children}
               </code>
             ),
@@ -139,7 +139,7 @@ export default async function HelpArticlePage({ params }: Props) {
               </a>
             ),
             blockquote: ({ children }) => (
-              <blockquote className="border-l-2 border-zinc-700 pl-3 italic text-zinc-400">{children}</blockquote>
+              <blockquote className="border-l-2 border-[var(--color-border)] pl-3 italic text-[var(--color-fg-muted)]">{children}</blockquote>
             ),
           }}
         >
@@ -148,10 +148,10 @@ export default async function HelpArticlePage({ params }: Props) {
       </article>
 
       {/* Back link */}
-      <div className="mt-10 pt-6 border-t border-zinc-800">
+      <div className="mt-10 pt-6 border-t border-[var(--color-border)]">
         <Link
           href="/dashboard/help"
-          className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
+          className="text-sm text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors"
         >
           ← Back to Help Centre
         </Link>

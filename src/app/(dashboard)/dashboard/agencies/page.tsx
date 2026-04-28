@@ -38,8 +38,8 @@ export default async function AgenciesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100">Agencies</h1>
-          <p className="text-zinc-500 mt-1">
+          <h1 className="text-2xl font-bold text-[var(--color-fg)]">Agencies</h1>
+          <p className="text-[var(--color-fg-subtle)] mt-1">
             {allAgencies.length} active {allAgencies.length !== 1 ? 'agencies' : 'agency'}
           </p>
         </div>
@@ -57,11 +57,11 @@ export default async function AgenciesPage() {
 
       {allAgencies.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed
-                        border-zinc-700 bg-zinc-950 px-6 py-16 text-center">
-          <BuildingIcon className="h-10 w-10 text-zinc-600 mb-3" />
-          <p className="text-zinc-400 font-medium">No agencies yet</p>
+                        border-[var(--color-border)] bg-[var(--color-bg-app)] px-6 py-16 text-center">
+          <BuildingIcon className="h-10 w-10 text-[var(--color-fg-subtle)] mb-3" />
+          <p className="text-[var(--color-fg-muted)] font-medium">No agencies yet</p>
           {canCreate && (
-            <p className="text-zinc-500 text-sm mt-1">
+            <p className="text-[var(--color-fg-subtle)] text-sm mt-1">
               <Link href="/dashboard/agencies/new" className="text-blue-400 hover:underline">
                 Add your first agency
               </Link>{' '}
@@ -82,7 +82,7 @@ export default async function AgenciesPage() {
                             hover:shadow-sm transition-all
                             ${isInternal
                               ? 'bg-blue-950/30 border-blue-800 hover:border-blue-600'
-                              : 'bg-zinc-900 border-zinc-700 hover:border-blue-500'}`}
+                              : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)] hover:border-blue-500'}`}
               >
                 <div className="flex items-start gap-3">
                   {/* 32px logo or initials avatar */}
@@ -92,12 +92,12 @@ export default async function AgenciesPage() {
                       alt=""
                       width={32}
                       height={32}
-                      className="rounded-full border border-zinc-700 bg-zinc-800 object-contain shrink-0 mt-0.5"
+                      className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-input)] object-contain shrink-0 mt-0.5"
                       style={{ width: 32, height: 32 }}
                     />
                   ) : (
                     <div
-                      className="flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400
+                      className="flex items-center justify-center rounded-full bg-[var(--color-bg-input)] text-[var(--color-fg-muted)]
                                  text-xs font-semibold shrink-0 mt-0.5"
                       style={{ width: 32, height: 32 }}
                       aria-hidden="true"
@@ -106,13 +106,13 @@ export default async function AgenciesPage() {
                     </div>
                   )}
                 <div>
-                  <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
+                  <h2 className="flex items-center gap-2 font-semibold text-[var(--color-fg)]">
                     {isInternal && <HomeIcon className="h-4 w-4 text-blue-400" />}
                     {agency.name}
                     {isSystem && (
                       <span
-                        className="inline-flex items-center gap-1 rounded-full border border-zinc-600 bg-zinc-800
-                                   text-zinc-300 text-xs font-medium px-2 py-0.5"
+                        className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-input)]
+                                   text-[var(--color-fg-muted)] text-xs font-medium px-2 py-0.5"
                         title="System agency — managed by SkillAI"
                       >
                         <LockIcon className="h-3 w-3" />
@@ -122,18 +122,18 @@ export default async function AgenciesPage() {
                   </h2>
                   <div className="flex gap-4 mt-1">
                     {agency.contactEmail && (
-                      <span className="text-sm text-zinc-500">{agency.contactEmail}</span>
+                      <span className="text-sm text-[var(--color-fg-subtle)]">{agency.contactEmail}</span>
                     )}
                     {agency.contactPhone && (
-                      <span className="text-sm text-zinc-500">{agency.contactPhone}</span>
+                      <span className="text-sm text-[var(--color-fg-subtle)]">{agency.contactPhone}</span>
                     )}
                   </div>
                   {agency.notes && (
-                    <p className="text-sm text-zinc-500 mt-1 line-clamp-1">{agency.notes}</p>
+                    <p className="text-sm text-[var(--color-fg-subtle)] mt-1 line-clamp-1">{agency.notes}</p>
                   )}
                 </div>
                 </div>
-                <time className="text-xs text-zinc-500 whitespace-nowrap ml-4 mt-0.5">
+                <time className="text-xs text-[var(--color-fg-subtle)] whitespace-nowrap ml-4 mt-0.5">
                   {new Date(agency.createdAt).toLocaleDateString('en-GB')}
                 </time>
               </Link>
