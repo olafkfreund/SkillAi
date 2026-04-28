@@ -39,6 +39,14 @@ When asked to work on this codebase:
 - **ORM:** Drizzle only. No raw SQL except for RLS session variable setting. Schema in `src/db/schema/`.
 - **pgvector:** Embeddings stored in `candidates.embedding` (vector(1536)). Use HNSW index. Cosine similarity for search.
 
+## Patterns introduced recently
+
+These patterns are load-bearing across multiple pages — follow them when extending the same surfaces.
+
+- **Audience-based view sanitisation** — pages and shared components accept an `audience: 'recruiter' | 'customer' | 'manager'` prop and strip fields accordingly. Recruiters see everything; customers see no internal notes / rates / margin / agency; managers see score breakdown + reasoning + interview pack but no rates / margin / agency, and edit controls become read-only. Threaded through the role detail and candidate detail pages, plus `RoleCandidateCard`, `EditDetailsForm`, `NotesPanel`, `RoleTagsPanel`, `PriorityKeywordsPanel`. Notes additionally honour `is_shareable=true` for the manager audience. When adding new fields with commercial / internal data, gate them on `audience === 'recruiter'` explicitly — do not default to visible. (PR #95)
+- **Logo upload pattern** — agency and customer logos stored at DB path `/uploads/{tenantId}/logos/{uuid}.{ext}` (web-relative, leading slash). The filesystem write path MUST be derived from that same DB path via the storage helper so write and read stay symmetric (regression risk: see issue #98). Allowed MIME types: PNG / JPEG / WebP only. Hard cap 2 MB. Lists render at 32 px, detail headers at 64 px, with an initials avatar fallback when absent. (PR #97)
+- **Help-tab content pattern** — in-app docs live as markdown files in `src/content/help/*.md` with YAML front-matter (`title`, `category`, `audience`, `order`, `summary`). `gray-matter` parses; a Zod schema validates each file at load time so a malformed doc fails loudly rather than silently. The loader filters by the current user's role so each persona sees only their relevant articles. To add a new article, drop a file in `src/content/help/` — no code change needed. (PR #96)
+
 ## Important Notes
 
 - Product-specific files in `.agent-os/product/` override any global standards

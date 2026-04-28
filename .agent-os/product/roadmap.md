@@ -1,8 +1,8 @@
 # Product Roadmap
 
 > Last Updated: 2026-04-28
-> Version: 2.1.0
-> Status: Phases 1–4 shipped; Phase 5 partial; Hiring Manager persona shipped (Epic #73); further integrations tracked on GitHub
+> Version: 2.2.0
+> Status: Phases 1–4 shipped; Phase 5 partial; Hiring Manager persona shipped (Epic #73); in-app help, branding logos, and candidate-list cleanup shipped; further integrations tracked on GitHub
 
 ## Phase 1: Foundation & Core MVP ✅ SHIPPED
 
@@ -157,6 +157,18 @@ Features delivered mid-flight, not in the original v1.0.0 plan.
 - [x] **Recruiter-side controls** — `ManagerAssignmentDialog` to assign managers, `SendForApprovalButton` to dispatch the shortlist, `ShortlistStatusPill` showing "Sent Nd ago — A/T approved, R rejected, P pending"
 - [x] **Audit trail** — four new actions: `shortlist.sent`, `candidate.approved_by_manager`, `candidate.rejected_by_manager`, `role.manager_assigned`
 - [x] **`notes.is_shareable`** — recruiters opt-in per note; default-private to avoid leaking internal language to managers
+
+### Help & In-App Documentation (PR #96)
+
+- [x] **`/dashboard/help` route** — searchable in-app documentation hub with category navigation
+- [x] **20 articles across 8 categories** — Getting Started, Roles & Candidates, AI Scoring & Interviews, Hiring Manager Workflow, Agencies & Customers, Settings & Admin, Tips & Best Practice, Troubleshooting
+- [x] **Audience-tagged front-matter** — each article declares its target persona (recruiter / manager / admin / all); loader filters articles to the current user's role so each persona only sees relevant content
+- [x] **Static markdown loader** — `gray-matter` + Zod-validated front-matter; articles live in `src/content/help/*.md` so authoring is a flat-file drop-in with no code change
+
+### Branding & UI Polish (PR #97)
+
+- [x] **Agency + customer logos** — upload via existing entity edit forms; PNG / JPEG / WebP only with a 2 MB cap; rendered at 32 px in lists and 64 px on detail headers; initials avatar fallback when no logo is set
+- [x] **Single checkbox column on candidate list** — consolidated bulk-select into one left-edge column; comparison icon button moved adjacent to the CV download action for a cleaner row
 
 ### Exports & PDFs
 
