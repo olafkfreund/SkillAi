@@ -145,7 +145,7 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
           {isComplete && profile?.extractedAt && (
             <span className="inline-flex items-center gap-1 text-xs text-zinc-500">
               <CheckCircle2Icon className="h-3 w-3 text-emerald-500" />
-              Extracted {new Date(profile.extractedAt).toLocaleDateString()}
+              Extracted {new Date(profile.extractedAt).toLocaleDateString('en-GB')}
             </span>
           )}
           {isProcessing && (

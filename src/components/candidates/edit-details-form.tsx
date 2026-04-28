@@ -31,9 +31,11 @@ interface Agency {
 interface EditDetailsFormProps {
   candidate: CandidateDetails
   agencies: Agency[]
+  audience?: 'recruiter' | 'customer' | 'manager'
 }
 
-export function EditDetailsForm({ candidate, agencies }: EditDetailsFormProps) {
+export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }: EditDetailsFormProps) {
+  if (audience === 'manager') return null
   const [isOpen, setIsOpen] = useState(false)
 
   const boundAction = updateCandidateDetails.bind(null, candidate.id)

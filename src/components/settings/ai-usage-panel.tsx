@@ -44,7 +44,7 @@ export async function AiUsagePanel() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 mb-6">
         <StatCard label="Total cost" value={`$${summary.totalCostUsd.toFixed(2)}`} />
-        <StatCard label="Total calls" value={summary.totalCalls.toLocaleString()} />
+        <StatCard label="Total calls" value={summary.totalCalls.toLocaleString('en-GB')} />
         <StatCard label="Avg cost / call" value={`$${avgCostPerCall.toFixed(4)}`} />
         <StatCard label="Top operation" value={topOp} />
       </div>
@@ -81,13 +81,13 @@ export async function AiUsagePanel() {
                   <td className="py-1.5 pr-2 text-zinc-200">{row.operation}</td>
                   <td className="py-1.5 px-2 text-zinc-400 text-xs">{row.model}</td>
                   <td className="py-1.5 px-2 text-right text-zinc-300">
-                    {row.calls.toLocaleString()}
+                    {row.calls.toLocaleString('en-GB')}
                   </td>
                   <td className="py-1.5 px-2 text-right text-zinc-300">
-                    {row.inputTokens.toLocaleString()}
+                    {row.inputTokens.toLocaleString('en-GB')}
                   </td>
                   <td className="py-1.5 px-2 text-right text-zinc-300">
-                    {row.outputTokens.toLocaleString()}
+                    {row.outputTokens.toLocaleString('en-GB')}
                   </td>
                   <td className="py-1.5 pl-2 text-right text-zinc-200 font-mono">
                     ${row.costUsd.toFixed(4)}

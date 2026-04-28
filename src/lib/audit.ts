@@ -29,6 +29,10 @@ export type AuditAction =
   | 'agency.created' | 'agency.archived'
   | 'agency.logo_uploaded' | 'agency.logo_removed'
   | 'customer.logo_uploaded' | 'customer.logo_removed'
+  | 'shortlist.sent'
+  | 'candidate.approved_by_manager'
+  | 'candidate.rejected_by_manager'
+  | 'role.manager_assigned'
 
 type AuditEntry = {
   action: AuditAction

@@ -35,7 +35,7 @@ export type CandidateRow = {
 function formatAvailableFrom(date: string | null | undefined): string {
   if (!date) return ''
   try {
-    return new Date(date).toLocaleDateString(undefined, {
+    return new Date(date).toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -199,7 +199,7 @@ export function SelectableCandidateList({ candidates }: Props) {
                     </span>
                   </td>
                   <td className="px-5 py-3 text-zinc-500 hidden lg:table-cell tabular-nums">
-                    {new Date(c.createdAt).toLocaleDateString()}
+                    {new Date(c.createdAt).toLocaleDateString('en-GB')}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-end">

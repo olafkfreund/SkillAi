@@ -134,7 +134,7 @@ export default async function AgenciesPage() {
                 </div>
                 </div>
                 <time className="text-xs text-zinc-500 whitespace-nowrap ml-4 mt-0.5">
-                  {new Date(agency.createdAt).toLocaleDateString()}
+                  {new Date(agency.createdAt).toLocaleDateString('en-GB')}
                 </time>
               </Link>
             )

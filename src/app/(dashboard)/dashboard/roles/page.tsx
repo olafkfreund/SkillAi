@@ -109,7 +109,7 @@ export default async function RolesPage() {
                   )}
                 </div>
                 <time className="text-xs text-zinc-500 whitespace-nowrap ml-4 mt-0.5 flex-shrink-0">
-                  {new Date(role.createdAt).toLocaleDateString()}
+                  {new Date(role.createdAt).toLocaleDateString('en-GB')}
                 </time>
               </div>
               <p className="text-sm text-zinc-500 mt-0.5 line-clamp-2">{role.description}</p>

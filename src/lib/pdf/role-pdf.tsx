@@ -109,7 +109,7 @@ export function RolePDF({ role, customerName }: Props) {
         <Text style={base.h1}>{role.title}</Text>
         <Text style={base.small}>
           {customerName && <>{customerName} · </>}
-          Created {new Date(role.createdAt).toLocaleDateString()}
+          Created {new Date(role.createdAt).toLocaleDateString('en-GB')}
           {role.isActive ? '' : ' · Archived'}
         </Text>
 
@@ -171,7 +171,7 @@ export function RolePDF({ role, customerName }: Props) {
         <View style={base.footer} fixed>
           <Text style={base.small}>SkillAI — Confidential</Text>
           <Text style={{ ...base.small, color: colors.slate400 }}>
-            {new Date().toLocaleDateString()}
+            {new Date().toLocaleDateString('en-GB')}
           </Text>
         </View>
       </Page>

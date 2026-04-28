@@ -61,6 +61,7 @@ type Props = {
   candidateCurrency: string | null
   isInternal?: boolean
   canEdit: boolean
+  audience?: 'recruiter' | 'customer' | 'manager'
   removeAction: (scoreId: string, roleId: string) => Promise<void>
 }
 
@@ -84,8 +85,10 @@ export function RoleCandidateCard({
   candidateCurrency,
   isInternal,
   canEdit,
+  audience = 'recruiter',
   removeAction,
 }: Props) {
+  const isManagerView = audience === 'manager'
   const [isPending, startTransition] = useTransition()
 
   function handleRemove(e: React.MouseEvent) {
@@ -138,12 +141,14 @@ export function RoleCandidateCard({
             <ScorePill label="Exp" score={experienceScore} />
             <ScorePill label="Fit" score={culturalFitScore} />
             <ScorePill label="Comm" score={communicationScore} />
-            <MarginPill
-              roleRate={roleDayRate}
-              roleCurrency={roleCurrency}
-              candRate={candidateRate}
-              candCurrency={candidateCurrency}
-            />
+            {!isManagerView && (
+              <MarginPill
+                roleRate={roleDayRate}
+                roleCurrency={roleCurrency}
+                candRate={candidateRate}
+                candCurrency={candidateCurrency}
+              />
+            )}
           </div>
         )}
       </div>
@@ -174,7 +179,7 @@ export function RoleCandidateCard({
           </button>
         )}
 
-        {canEdit && (
+        {canEdit && !isManagerView && (
           <button
             onClick={handleRemove}
             title="Remove from role"
