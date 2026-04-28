@@ -12,6 +12,7 @@ import {
   UserCogIcon,
   ShieldCheckIcon,
   ListChecksIcon,
+  HelpCircleIcon,
 } from 'lucide-react'
 import type { UserRole } from '@/lib/auth/types'
 
@@ -57,6 +58,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard/users', label: 'Users', icon: UserCogIcon, minRole: 'admin' },
   { href: '/dashboard/audit', label: 'Audit Log', icon: ShieldCheckIcon, minRole: 'admin' },
   { href: '/settings', label: 'Settings', icon: SettingsIcon, minRole: 'admin' },
+  { href: '/dashboard/help', label: 'Help', icon: HelpCircleIcon, minRole: 'viewer' },
 ]
 
 const ROLE_RANK: Record<UserRole, number> = {
