@@ -38,6 +38,7 @@ import { SendEmailButton } from '@/components/candidates/send-email-button'
 import { EmailHistory } from '@/components/candidates/email-history'
 import { listEmailTemplates } from '@/actions/email-templates'
 import { listSentEmailsForCandidate } from '@/actions/emails'
+import { GdprActionsPanel } from '@/components/candidates/gdpr-actions-panel'
 
 type Props = { params: Promise<{ candidateId: string }>; searchParams: Promise<{ roleId?: string }> }
 
@@ -627,6 +628,14 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
 
       {/* Email history — hidden for hiring managers (EmailHistory handles null-guard internally) */}
       <EmailHistory sentEmails={sentEmailRows} audience={audience} />
+
+      {/* GDPR actions — admin only */}
+      {userRole === 'admin' && (
+        <GdprActionsPanel
+          candidateId={candidateId}
+          candidateName={`${candidate.firstName} ${candidate.lastName}`}
+        />
+      )}
     </div>
   )
 }
