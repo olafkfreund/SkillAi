@@ -140,7 +140,7 @@ export async function parseCvBuffer(
 // ---------------------------------------------------------------------------
 
 /**
- * Writes the CV buffer to `{UPLOAD_DIR}/{tenantId}/{uuid}.{ext}` on disk.
+ * Writes the CV buffer to `/uploads/{tenantId}/{uuid}.{ext}` on disk.
  *
  * Returns:
  * - `fileId`   — the UUID used as the filename stem (useful for linking back)
@@ -152,17 +152,18 @@ export async function persistCvFile(
   buffer: Buffer,
   fileType: CvFileType
 ): Promise<{ filePath: string; fileId: string }> {
-  const uploadBase = join(process.cwd(), process.env.UPLOAD_DIR ?? 'uploads')
-  const uploadDir = join(uploadBase, tenantId)
-  await mkdir(uploadDir, { recursive: true })
-
   const fileId = randomUUID()
   const fileName = `${fileId}.${fileType}`
-  const absolutePath = join(uploadDir, fileName)
-  await writeFile(absolutePath, buffer)
 
-  // DB-stored path uses a leading slash to match existing conventions.
+  // Compute the DB path first, then derive the absolute path from it — the same
+  // resolution rule used by deleteCvFile — so write and read sides are always
+  // symmetric. Using UPLOAD_DIR directly on the write side caused double-prefix
+  // bugs when the env var is an absolute path (e.g. /app/app/uploads). See #98.
   const filePath = `/uploads/${tenantId}/${fileName}`
+  const absolutePath = join(process.cwd(), filePath.slice(1))
+
+  await mkdir(join(absolutePath, '..'), { recursive: true })
+  await writeFile(absolutePath, buffer)
 
   return { filePath, fileId }
 }
