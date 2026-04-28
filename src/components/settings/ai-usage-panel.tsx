@@ -104,9 +104,14 @@ export async function AiUsagePanel() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-app)] p-3">
+    <div className="min-w-0 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-app)] p-3">
       <div className="text-xs text-[var(--color-fg-subtle)]">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-[var(--color-fg)]">{value}</div>
+      <div
+        className="mt-1 truncate text-lg font-semibold text-[var(--color-fg)]"
+        title={value}
+      >
+        {value}
+      </div>
     </div>
   )
 }
