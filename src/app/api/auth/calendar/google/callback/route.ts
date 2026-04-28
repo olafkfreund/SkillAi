@@ -1,4 +1,9 @@
-// Required env vars:
+// Credential resolution order:
+// 1. Per-tenant google_oauth_client_id / google_oauth_client_secret in tenant_settings (encrypted)
+// 2. GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET env vars
+// 3. Redirect to /settings?error=calendar_not_configured
+//
+// Required env vars (fallback):
 // GOOGLE_CLIENT_ID=
 // GOOGLE_CLIENT_SECRET=
 // NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -9,6 +14,7 @@ import { auth } from '@/lib/auth'
 import { db } from '@/db'
 import { calendarConnections } from '@/db/schema'
 import { encrypt } from '@/lib/crypto'
+import { getOAuthCredentials } from '@/lib/calendar/credentials'
 
 interface GoogleTokenResponse {
   access_token: string
@@ -34,16 +40,17 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  const clientId = process.env.GOOGLE_CLIENT_ID
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  const creds = await getOAuthCredentials(session.user.tenantId, 'google')
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
   const redirectUri = `${appUrl}/api/auth/calendar/google/callback`
 
-  if (!clientId || !clientSecret) {
+  if (!creds) {
     return NextResponse.redirect(
       new URL('/settings?error=calendar_not_configured', req.url)
     )
   }
+
+  const { clientId, clientSecret } = creds
 
   // Exchange authorization code for tokens
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {

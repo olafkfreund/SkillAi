@@ -14,12 +14,26 @@ import { getSenderForTenant } from '@/lib/email/sender'
 
 const ALLOWED_KEYS = [
   'anthropic_api_key',
-  'google_ai_api_key',
-  'openai_api_key',
   'brave_search_api_key',
   'github_token',
+  'google_ai_api_key',
+  'google_oauth_client_id',
+  'google_oauth_client_secret',
+  'microsoft_oauth_client_id',
+  'microsoft_oauth_client_secret',
+  'microsoft_oauth_tenant_id',
+  'openai_api_key',
 ] as const
 type SettingKey = (typeof ALLOWED_KEYS)[number]
+
+// Keys that belong to OAuth credential groups — used to emit targeted audit events.
+const OAUTH_KEY_META: Record<string, { provider: 'google' | 'microsoft'; field: 'client_id' | 'client_secret' | 'tenant_id' }> = {
+  google_oauth_client_id:     { provider: 'google',    field: 'client_id' },
+  google_oauth_client_secret: { provider: 'google',    field: 'client_secret' },
+  microsoft_oauth_client_id:     { provider: 'microsoft', field: 'client_id' },
+  microsoft_oauth_client_secret: { provider: 'microsoft', field: 'client_secret' },
+  microsoft_oauth_tenant_id:     { provider: 'microsoft', field: 'tenant_id' },
+}
 
 const GENERAL_KEYS = ['default_ai_model', 'max_upload_mb'] as const
 type GeneralKey = (typeof GENERAL_KEYS)[number]
@@ -64,6 +78,16 @@ export async function saveApiKey(
       })
   })
 
+  // Emit targeted audit event for OAuth credential writes
+  const oauthMeta = OAUTH_KEY_META[key]
+  if (oauthMeta) {
+    writeAuditLog(tenantId, {
+      action: 'settings.oauth_credentials_updated',
+      entityType: 'settings',
+      metadata: { provider: oauthMeta.provider, field: oauthMeta.field },
+    }).catch(() => {})
+  }
+
   revalidatePath('/dashboard/settings')
   return { success: true }
 }
@@ -90,6 +114,16 @@ export async function removeApiKey(
       .delete(tenantSettings)
       .where(and(eq(tenantSettings.tenantId, tenantId), eq(tenantSettings.key, key)))
   })
+
+  // Emit targeted audit event for OAuth credential removals
+  const oauthMeta = OAUTH_KEY_META[key]
+  if (oauthMeta) {
+    writeAuditLog(tenantId, {
+      action: 'settings.oauth_credentials_removed',
+      entityType: 'settings',
+      metadata: { provider: oauthMeta.provider, field: oauthMeta.field },
+    }).catch(() => {})
+  }
 
   revalidatePath('/dashboard/settings')
   return { success: true }

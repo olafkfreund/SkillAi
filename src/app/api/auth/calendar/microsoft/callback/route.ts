@@ -1,4 +1,10 @@
-// Required env vars:
+// Credential resolution order:
+// 1. Per-tenant microsoft_oauth_* keys in tenant_settings (encrypted)
+// 2. MICROSOFT_CLIENT_ID / MICROSOFT_CLIENT_SECRET / MICROSOFT_TENANT_ID env vars
+// 3. microsoft_oauth_tenant_id falls back to 'common' when absent in both sources
+// 4. Redirect to /settings?error=calendar_not_configured when client_id + client_secret absent
+//
+// Required env vars (fallback):
 // MICROSOFT_CLIENT_ID=
 // MICROSOFT_CLIENT_SECRET=
 // MICROSOFT_TENANT_ID=common
@@ -10,6 +16,7 @@ import { auth } from '@/lib/auth'
 import { db } from '@/db'
 import { calendarConnections } from '@/db/schema'
 import { encrypt } from '@/lib/crypto'
+import { getOAuthCredentials } from '@/lib/calendar/credentials'
 
 interface MicrosoftTokenResponse {
   access_token: string
@@ -35,17 +42,17 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  const clientId = process.env.MICROSOFT_CLIENT_ID
-  const clientSecret = process.env.MICROSOFT_CLIENT_SECRET
-  const tenantId = process.env.MICROSOFT_TENANT_ID ?? 'common'
+  const creds = await getOAuthCredentials(session.user.tenantId, 'microsoft')
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
   const redirectUri = `${appUrl}/api/auth/calendar/microsoft/callback`
 
-  if (!clientId || !clientSecret) {
+  if (!creds) {
     return NextResponse.redirect(
       new URL('/settings?error=calendar_not_configured', req.url)
     )
   }
+
+  const { clientId, clientSecret, microsoftTenantId: tenantId } = creds
 
   // Exchange authorization code for tokens
   const tokenRes = await fetch(

@@ -41,6 +41,8 @@ export type AuditAction =
   | 'candidate.email_sent'
   | 'email_template.created' | 'email_template.updated' | 'email_template.deleted'
   | 'settings.smtp_updated'
+  | 'settings.oauth_credentials_updated'
+  | 'settings.oauth_credentials_removed'
   | 'candidate.deleted_gdpr'
   | 'candidate.dsar_exported'
 
