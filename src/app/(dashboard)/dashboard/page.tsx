@@ -13,6 +13,8 @@ import { auth } from '@/lib/auth'
 import { withTenant } from '@/db'
 import { roles, candidates, scores, interviewPacks, agencies, interviewSlots, users } from '@/db/schema'
 import { NextInterviewsCard } from '@/components/dashboard/next-interviews-card'
+import { ForYouSection } from '@/components/dashboard/for-you-section'
+import { getForYouFeed } from '@/actions/dashboard-tasks'
 
 export const metadata = { title: 'Dashboard — SkillAI' }
 
@@ -32,6 +34,13 @@ export default async function DashboardPage() {
   if (!tenantId) notFound()
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+  // ── For You feed ──────────────────────────────────────────────────────────
+  const feed = await getForYouFeed(
+    session.user.id,
+    session.user.role as 'admin' | 'recruiter' | 'hiring_manager' | 'viewer',
+    tenantId,
+  )
 
   // ── Stat queries ─────────────────────────────────────────────────────────
   const [{ value: roleCount }] = await withTenant(tenantId, async (tx) =>
@@ -156,6 +165,9 @@ export default async function DashboardPage() {
           <span className="font-medium text-[var(--color-fg-muted)]">{session?.user.name}</span>.
         </p>
       </div>
+
+      {/* ── For You section ────────────────────────────────────────────── */}
+      <ForYouSection feed={feed} />
 
       {/* ── Next interviews widget ──────────────────────────────────────── */}
       <NextInterviewsCard interviews={upcomingInterviews} />
