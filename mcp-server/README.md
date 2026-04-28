@@ -5,6 +5,104 @@ endpoint over HTTPS. claude-desktop spawns this binary as a subprocess and commu
 via JSON-RPC 2.0 over stdin/stdout. The bridge authenticates every request with a
 bearer token you generate in the SkillAi web UI.
 
+---
+
+## Install
+
+### npm (global, any platform with Node 22+)
+
+```bash
+npm install -g @skillai/mcp-bridge
+```
+
+### Standalone binary (no Node required)
+
+Download the binary for your platform from the
+[latest GitHub Release](https://github.com/olafkfreund/SkillAi/releases?q=mcp-bridge-v&expanded=true),
+then make it executable:
+
+**Linux x64**
+```bash
+curl -fsSL https://github.com/olafkfreund/SkillAi/releases/latest/download/skillai-mcp-linux-x64 \
+     -o ~/.local/bin/skillai-mcp
+chmod +x ~/.local/bin/skillai-mcp
+```
+
+**Linux arm64**
+```bash
+curl -fsSL https://github.com/olafkfreund/SkillAi/releases/latest/download/skillai-mcp-linux-arm64 \
+     -o ~/.local/bin/skillai-mcp
+chmod +x ~/.local/bin/skillai-mcp
+```
+
+**macOS x64**
+```bash
+curl -fsSL https://github.com/olafkfreund/SkillAi/releases/latest/download/skillai-mcp-darwin-x64 \
+     -o /usr/local/bin/skillai-mcp
+chmod +x /usr/local/bin/skillai-mcp
+```
+
+**macOS arm64 (Apple Silicon)**
+```bash
+curl -fsSL https://github.com/olafkfreund/SkillAi/releases/latest/download/skillai-mcp-darwin-arm64 \
+     -o /usr/local/bin/skillai-mcp
+chmod +x /usr/local/bin/skillai-mcp
+```
+
+**Windows x64**
+```powershell
+curl -fsSL https://github.com/olafkfreund/SkillAi/releases/latest/download/skillai-mcp-windows-x64.exe `
+     -o "$env:LOCALAPPDATA\Programs\skillai-mcp.exe"
+```
+
+Each binary ships with a `.sha256` sidecar file for integrity verification.
+
+### Linux .deb package (Debian / Ubuntu)
+
+```bash
+# Replace VERSION with the release version, e.g. 1.0.0
+VERSION=1.0.0
+wget https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v${VERSION}/skillai-mcp_${VERSION}_amd64.deb
+sudo dpkg -i skillai-mcp_${VERSION}_amd64.deb
+# or: sudo apt install ./skillai-mcp_${VERSION}_amd64.deb
+```
+
+arm64:
+```bash
+wget https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v${VERSION}/skillai-mcp_${VERSION}_arm64.deb
+sudo dpkg -i skillai-mcp_${VERSION}_arm64.deb
+```
+
+### Linux .rpm package (RHEL / Fedora / openSUSE)
+
+```bash
+VERSION=1.0.0
+sudo rpm -i https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v${VERSION}/skillai-mcp_${VERSION}_amd64.rpm
+# or with dnf:
+sudo dnf install https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v${VERSION}/skillai-mcp_${VERSION}_amd64.rpm
+```
+
+### NixOS
+
+See the [NixOS install section](#install-on-nixos) below.
+
+---
+
+## Releases
+
+Releases are tagged `mcp-bridge-vX.Y.Z` and published automatically by the
+`.github/workflows/mcp-bridge-release.yml` workflow when that tag is pushed.
+
+Each release includes:
+- 5 standalone binaries (linux-x64, linux-arm64, darwin-x64, darwin-arm64, windows-x64)
+- SHA256 checksums for each binary
+- .deb and .rpm packages for linux-x64 and linux-arm64
+- The `@skillai/mcp-bridge` npm package is published with provenance attestation
+
+To view all releases: <https://github.com/olafkfreund/SkillAi/releases?q=mcp-bridge-v&expanded=true>
+
+---
+
 ## Architecture
 
 ```
@@ -126,6 +224,28 @@ nix develop ./mcp-server
 npm install
 npm run dev
 ```
+
+### Build a local standalone binary (Bun)
+
+[Bun](https://bun.sh) compiles the bridge to a single self-contained binary
+with no Node or Bun runtime required on the target machine:
+
+```bash
+cd mcp-server
+bun install --frozen-lockfile
+
+# Linux x64 (run on any linux-x64 machine):
+bun build src/index.ts --compile --target=bun-linux-x64 --outfile=dist/skillai-mcp-linux-x64
+
+# macOS Apple Silicon:
+bun build src/index.ts --compile --target=bun-darwin-arm64 --outfile=dist/skillai-mcp-darwin-arm64
+
+# Windows x64 (cross-compile from Linux/macOS):
+bun build src/index.ts --compile --target=bun-windows-x64 --outfile=dist/skillai-mcp-windows-x64.exe
+```
+
+The CI release workflow runs these cross-compilation commands on Ubuntu and
+uploads the results to the GitHub Release.
 
 ### Manual JSON-RPC test
 

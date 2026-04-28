@@ -1,0 +1,50 @@
+# nfpm.yaml — package configuration for skillai-mcp .deb and .rpm builds.
+#
+# Used by the mcp-bridge-release GitHub Actions workflow.
+#
+# nfpm arch templating judgment call:
+#   nfpm's ${ARCH} variable controls package *metadata* (deb Architecture /
+#   rpm BuildArch) but does NOT allow different src paths per arch within a
+#   single config invocation.  We use a two-pass approach in the workflow:
+#     ARCH=amd64  BIN_ARCH=x64   → src: ./dist/skillai-mcp-linux-x64
+#     ARCH=arm64  BIN_ARCH=arm64 → src: ./dist/skillai-mcp-linux-arm64
+#   Both ARCH and BIN_ARCH are exported env vars before each `nfpm pkg` call.
+#   nfpm v2.x expands ${VAR} in yaml values from the process environment.
+
+name: skillai-mcp
+arch: "${ARCH}"
+version: "${VERSION}"
+section: utils
+priority: optional
+homepage: https://github.com/olafkfreund/SkillAi
+maintainer: "Olaf Krasicki-Freund <olaf@freundcloud.com>"
+description: |
+  Stdio MCP bridge between claude-desktop and SkillAi /api/mcp.
+  Reads SKILLAI_URL and SKILLAI_TOKEN from /etc/skillai-mcp/env or
+  from environment variables set in claude-desktop's mcp.config.json.
+license: MIT
+vendor: SkillAi
+
+contents:
+  # Main binary — installed to /usr/bin so it is on PATH system-wide.
+  - src: ./dist/skillai-mcp-linux-${BIN_ARCH}
+    dst: /usr/bin/skillai-mcp
+    file_info:
+      mode: 0755
+
+  # Example env file — installed as .example so dpkg/rpm never overwrites
+  # a user-edited /etc/skillai-mcp/env on upgrade.
+  - src: ./packaging/etc/env.example
+    dst: /etc/skillai-mcp/env.example
+    type: config
+
+  # Package documentation.
+  - src: ./packaging/usr/share/doc/skillai-mcp/README.md
+    dst: /usr/share/doc/skillai-mcp/README.md
+
+deb:
+  fields:
+    Bugs: https://github.com/olafkfreund/SkillAi/issues
+
+rpm:
+  group: System Environment/Base

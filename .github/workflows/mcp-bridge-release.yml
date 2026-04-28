@@ -1,0 +1,344 @@
+# mcp-bridge-release.yml
+#
+# Release pipeline for @skillai/mcp-bridge.
+#
+# Trigger: push a tag matching  mcp-bridge-vX.Y.Z
+# Example: git tag mcp-bridge-v1.0.1 && git push origin mcp-bridge-v1.0.1
+#
+# Required repository secrets:
+#   NPM_TOKEN — npm automation token with publish access to @skillai/mcp-bridge.
+#               Create at npmjs.com → Access Tokens → Automation (granular preferred).
+#
+# Produces (attached to the GitHub Release):
+#   skillai-mcp-linux-x64          + .sha256
+#   skillai-mcp-linux-arm64        + .sha256
+#   skillai-mcp-darwin-x64         + .sha256
+#   skillai-mcp-darwin-arm64       + .sha256
+#   skillai-mcp-windows-x64.exe    + .sha256
+#   skillai-mcp_<ver>_amd64.deb
+#   skillai-mcp_<ver>_arm64.deb
+#   skillai-mcp_<ver>_amd64.rpm
+#   skillai-mcp_<ver>_arm64.rpm
+
+name: mcp-bridge release
+
+on:
+  push:
+    tags:
+      - 'mcp-bridge-v*'
+
+permissions:
+  contents: write   # create GitHub Release + upload artefacts
+  id-token: write   # npm provenance attestation
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. validate — fast sanity checks before spending build matrix minutes
+  # ---------------------------------------------------------------------------
+  validate:
+    name: Validate version + lockfile
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Extract version from tag
+        id: extract
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/mcp-bridge-v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Tag version: ${VERSION}"
+
+      - name: Verify package.json version matches tag
+        run: |
+          PKG_VERSION=$(node -p "require('./mcp-server/package.json').version")
+          TAG_VERSION="${{ steps.extract.outputs.version }}"
+          echo "package.json: ${PKG_VERSION}  |  tag: ${TAG_VERSION}"
+          if [ "${PKG_VERSION}" != "${TAG_VERSION}" ]; then
+            echo "::error::Version mismatch — package.json has ${PKG_VERSION} but tag is mcp-bridge-v${TAG_VERSION}"
+            echo "::error::Update mcp-server/package.json version before pushing the tag."
+            exit 1
+          fi
+
+      - name: Validate lockfile is consistent
+        # npm ci with --dry-run verifies the lockfile satisfies package.json
+        # without installing anything.
+        run: |
+          cd mcp-server
+          npm ci --dry-run
+
+  # ---------------------------------------------------------------------------
+  # 2. build-binaries — Bun cross-compile matrix (all on ubuntu; Bun handles cross)
+  # ---------------------------------------------------------------------------
+  build-binaries:
+    name: Build ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    needs: validate
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: bun-linux-x64
+            outfile: dist/skillai-mcp-linux-x64
+            artefact: linux-x64
+
+          - target: bun-linux-arm64
+            outfile: dist/skillai-mcp-linux-arm64
+            artefact: linux-arm64
+
+          - target: bun-darwin-x64
+            outfile: dist/skillai-mcp-darwin-x64
+            artefact: darwin-x64
+
+          - target: bun-darwin-arm64
+            outfile: dist/skillai-mcp-darwin-arm64
+            artefact: darwin-arm64
+
+          - target: bun-windows-x64
+            outfile: dist/skillai-mcp-windows-x64.exe
+            artefact: windows-x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5  # v2.0.2
+        with:
+          bun-version: '1.2.13'  # pinned for reproducibility; bump deliberately
+
+      - name: Install dependencies
+        working-directory: mcp-server
+        run: bun install --frozen-lockfile
+
+      - name: Compile standalone binary
+        working-directory: mcp-server
+        run: |
+          bun build src/index.ts \
+            --compile \
+            --target=${{ matrix.target }} \
+            --outfile=${{ matrix.outfile }}
+
+      - name: Compute SHA256
+        working-directory: mcp-server
+        run: |
+          OUTFILE="${{ matrix.outfile }}"
+          # Single lowercase hex line — format Scoop autoupdate expects
+          sha256sum "${OUTFILE}" | awk '{print $1}' > "${OUTFILE}.sha256"
+          echo "SHA256: $(cat "${OUTFILE}.sha256")"
+
+      - name: Upload binary artefact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: binary-${{ matrix.artefact }}
+          path: |
+            mcp-server/${{ matrix.outfile }}
+            mcp-server/${{ matrix.outfile }}.sha256
+          if-no-files-found: error
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # 3. npm-publish — compile via tsc + publish to npm registry with provenance
+  # ---------------------------------------------------------------------------
+  npm-publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install and build
+        working-directory: mcp-server
+        run: |
+          npm ci
+          npm run build
+
+      - name: Temporarily set package to public for publish
+        # The package.json has "private": true for repo-level hygiene.
+        # We remove that flag only for the publish step so npm doesn't refuse.
+        working-directory: mcp-server
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            delete pkg.private;
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+      - name: Publish to npm
+        working-directory: mcp-server
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance
+
+  # ---------------------------------------------------------------------------
+  # 4. package-deb-rpm — build .deb + .rpm for linux-x64 and linux-arm64
+  # ---------------------------------------------------------------------------
+  package-deb-rpm:
+    name: Build deb + rpm packages
+    runs-on: ubuntu-latest
+    needs: build-binaries
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Download linux-x64 binary
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        with:
+          name: binary-linux-x64
+          path: mcp-server/dist/
+
+      - name: Download linux-arm64 binary
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        with:
+          name: binary-linux-arm64
+          path: mcp-server/dist/
+
+      - name: Restore binary execute permissions
+        working-directory: mcp-server/dist
+        run: chmod +x skillai-mcp-linux-x64 skillai-mcp-linux-arm64
+
+      - name: Install nfpm (pinned release)
+        # Pinning to nfpm v2.41.3 — goreleaser/nfpm, MIT licence.
+        # SHA256 verified against the upstream release page.
+        env:
+          NFPM_VERSION: '2.41.3'
+          NFPM_SHA256: 'a70c4ad59de3a38e5a77a975d7ba2e4d10b8cd4e5c07b46a6c6aeefc1fcc2f38'
+        run: |
+          wget -q "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz" \
+               -O /tmp/nfpm.tar.gz
+          echo "${NFPM_SHA256}  /tmp/nfpm.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/nfpm.tar.gz -C /tmp nfpm
+          sudo mv /tmp/nfpm /usr/local/bin/nfpm
+          nfpm --version
+
+      - name: Build packages (two-pass per arch)
+        # Judgment call on nfpm arch handling:
+        # nfpm's ${ARCH} variable controls the *package metadata* arch but NOT which src
+        # file to pick up — src paths in nfpm.yaml are evaluated once per run, not per
+        # matrix entry. The cleanest approach is a two-pass build: we set BIN_ARCH to
+        # the platform-specific binary suffix (x64 → x86_64, arm64 → aarch64) and let
+        # the YAML ${BIN_ARCH} expansion pick the right binary on each pass.
+        # We also export ARCH so nfpm sets correct package metadata (amd64/arm64).
+        working-directory: mcp-server
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          for COMBO in "amd64:x64" "arm64:arm64"; do
+            PKG_ARCH="${COMBO%%:*}"
+            BIN_ARCH="${COMBO##*:}"
+
+            export ARCH="${PKG_ARCH}"
+            export BIN_ARCH="${BIN_ARCH}"
+            export VERSION="${VERSION}"
+
+            for PKG_TYPE in deb rpm; do
+              EXT="${PKG_TYPE}"
+              nfpm pkg \
+                --packager="${PKG_TYPE}" \
+                --config=nfpm.yaml \
+                --target="skillai-mcp_${VERSION}_${PKG_ARCH}.${EXT}"
+              echo "Built: skillai-mcp_${VERSION}_${PKG_ARCH}.${EXT}"
+            done
+          done
+
+      - name: Upload package artefacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: packages-deb-rpm
+          path: mcp-server/skillai-mcp_*.{deb,rpm}
+          if-no-files-found: error
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # 5. release — create GitHub Release and attach all 9 artefacts
+  # ---------------------------------------------------------------------------
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs:
+      - validate
+      - build-binaries
+      - package-deb-rpm
+      - npm-publish
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Download all binary artefacts
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        with:
+          pattern: binary-*
+          path: release-assets/
+          merge-multiple: true
+
+      - name: Download package artefacts
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
+        with:
+          name: packages-deb-rpm
+          path: release-assets/
+
+      - name: List artefacts
+        run: find release-assets/ -type f | sort
+
+      - name: Generate release notes via GitHub API
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          # Use the GitHub generate-notes API for auto-changelog from PRs/commits.
+          NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes \
+            -F tag_name="mcp-bridge-v${VERSION}" \
+            --jq '.body')
+          # Prepend install instructions header to the generated notes.
+          HEADER="## Install \`@skillai/mcp-bridge\` v${VERSION}
+
+          **npm (global):**
+          \`\`\`
+          npm install -g @skillai/mcp-bridge@${VERSION}
+          \`\`\`
+
+          **Standalone binary (Linux x64):**
+          \`\`\`
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/mcp-bridge-v${VERSION}/skillai-mcp-linux-x64 \\
+               -o ~/.local/bin/skillai-mcp && chmod +x ~/.local/bin/skillai-mcp
+          \`\`\`
+
+          **Linux deb/rpm:** download the package below and install with \`dpkg -i\` / \`rpm -i\`.
+
+          ---
+
+          "
+          FULL_NOTES="${HEADER}${NOTES}"
+          # Write to file to safely pass multi-line string
+          printf '%s' "${FULL_NOTES}" > /tmp/release-notes.md
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          TAG="mcp-bridge-v${VERSION}"
+
+          # Delete existing release if re-running on the same tag (idempotency).
+          gh release delete "${TAG}" --yes 2>/dev/null || true
+
+          gh release create "${TAG}" \
+            --title "@skillai/mcp-bridge v${VERSION}" \
+            --notes-file /tmp/release-notes.md \
+            release-assets/*
