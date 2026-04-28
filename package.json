@@ -21,6 +21,7 @@
     "@anthropic-ai/sdk": "^0.86.1",
     "@auth/drizzle-adapter": "^1.11.1",
     "@google/generative-ai": "^0.24.1",
+    "@node-rs/argon2": "^2.0.2",
     "@react-pdf/renderer": "^4.4.0",
     "@tanstack/react-query": "^5.97.0",
     "@tanstack/react-table": "^8.21.3",
