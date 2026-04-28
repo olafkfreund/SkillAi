@@ -301,7 +301,11 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: packages-deb-rpm
-          path: skillai-mcp/skillai-mcp_*.{deb,rpm}
+          # actions/upload-artifact uses minimatch globs — no brace expansion.
+          # Two patterns on separate lines.
+          path: |
+            skillai-mcp/skillai-mcp_*.deb
+            skillai-mcp/skillai-mcp_*.rpm
           if-no-files-found: error
           retention-days: 1
 
