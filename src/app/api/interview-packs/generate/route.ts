@@ -15,6 +15,7 @@ import {
 import { generateQuestions } from '@/lib/ai/interview'
 import { getOrExtractCvProfile } from '@/lib/ai/cv-profile'
 import { inferLanguage } from '@/lib/ai/interview-helpers'
+import { SUPPORTED_LANGUAGES, isSupportedLanguage, type SupportedLanguage } from '@/lib/ai/language'
 import { writeAuditLog } from '@/lib/audit'
 
 export const maxDuration = 300
@@ -22,6 +23,7 @@ export const maxDuration = 300
 const GenerateSchema = z.object({
   packId: z.string().uuid(),
   includeCodeChallenge: z.boolean().default(false),
+  language: z.enum(SUPPORTED_LANGUAGES).optional(),
 })
 
 async function setStage(tenantId: string, packId: string, stage: string) {
@@ -63,7 +65,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
-  const { packId, includeCodeChallenge } = parsed.data
+  const { packId, includeCodeChallenge, language: languageFromBody } = parsed.data
 
   const [pack] = await withTenant(tenantId, async (tx) =>
     tx.select().from(interviewPacks).where(eq(interviewPacks.id, packId)).limit(1)
@@ -82,7 +84,13 @@ export async function POST(request: Request) {
 
   await withTenant(tenantId, async (tx) =>
     tx.update(interviewPacks)
-      .set({ generationStatus: 'processing', generationStage: 'Loading candidate and role data…', updatedAt: new Date() })
+      .set({
+        generationStatus: 'processing',
+        generationStage: 'Loading candidate and role data…',
+        // Persist explicit body-supplied language override so retry uses the same value
+        ...(languageFromBody ? { language: languageFromBody } : {}),
+        updatedAt: new Date(),
+      })
       .where(eq(interviewPacks.id, packId))
   )
 
@@ -112,6 +120,10 @@ export async function POST(request: Request) {
       ? 'Generating 5 pre-screening questions…'
       : 'Generating personalised interview questions…')
     const language = inferLanguage(cvProfile.technical_skills)
+    // Resolve response language: explicit body override > stored pack column > 'en'
+    const responseLanguage: SupportedLanguage =
+      languageFromBody
+      ?? (isSupportedLanguage(pack.language) ? pack.language : 'en')
     const result = await generateQuestions(
       cvProfile,
       role,
@@ -119,6 +131,7 @@ export async function POST(request: Request) {
         includeCodeChallenge,
         language,
         packType: pack.packType,
+        responseLanguage,
       },
       tenantId,
       { candidateId: pack.candidateId, roleId: pack.roleId, packId }

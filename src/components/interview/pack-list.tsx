@@ -12,6 +12,7 @@ type Pack = {
   recommendedDurationMinutes: number | null
   includesCodeChallenge: boolean
   packType: 'full' | 'pre_screening'
+  language: string
   createdAt: string
   updatedAt: string
   roleTitle: string | null
@@ -100,6 +101,11 @@ export function PackList({ candidateId }: Props) {
                 {pack.packType === 'pre_screening' && (
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-950 text-amber-300 border border-amber-800 flex-shrink-0">
                     Pre-screening
+                  </span>
+                )}
+                {pack.language && pack.language !== 'en' && (
+                  <span className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-300 flex-shrink-0">
+                    {pack.language.toUpperCase()}
                   </span>
                 )}
               </p>

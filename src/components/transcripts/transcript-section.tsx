@@ -7,6 +7,7 @@ import { TranscriptUploadForm } from './transcript-upload-form'
 import { TranscriptAnalysisView } from './transcript-analysis-view'
 import { FileTextIcon, ClockIcon } from 'lucide-react'
 import type { QuestionResponse } from '@/db/schema/transcript-analyses'
+import { getDisplayName, isSupportedLanguage } from '@/lib/ai/language'
 
 type Props = {
   candidateId: string
@@ -64,6 +65,7 @@ export async function TranscriptSection({ candidateId, defaultRoleId }: Props) {
           redFlags: transcriptAnalyses.redFlags,
           recommendedDecision: transcriptAnalyses.recommendedDecision,
           questionResponses: transcriptAnalyses.questionResponses,
+          detectedLanguage: transcriptAnalyses.detectedLanguage,
         })
         .from(interviewTranscripts)
         .leftJoin(transcriptAnalyses, eq(transcriptAnalyses.transcriptId, interviewTranscripts.id))
@@ -134,6 +136,13 @@ export async function TranscriptSection({ candidateId, defaultRoleId }: Props) {
                 })
               : null
 
+            // Only show the language badge for non-English analyses — keeps
+            // the UI quiet for the common English case. `detectedLanguage`
+            // may be null on rows where analysis is still pending.
+            const langCode = t.detectedLanguage
+            const showLanguageBadge =
+              isComplete && langCode && langCode !== 'en' && isSupportedLanguage(langCode)
+
             return (
               <div key={t.id} className="rounded-lg border border-zinc-700 overflow-hidden">
                 {/* Transcript header */}
@@ -144,6 +153,11 @@ export async function TranscriptSection({ candidateId, defaultRoleId }: Props) {
                       <span className="text-sm font-medium text-zinc-200">{platform}</span>
                       {interviewDateStr && (
                         <span className="ml-2 text-xs text-zinc-500">{interviewDateStr}</span>
+                      )}
+                      {showLanguageBadge && (
+                        <span className="ml-2 inline-flex items-center rounded-full border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-300">
+                          Analysis in {getDisplayName(langCode)}
+                        </span>
                       )}
                     </div>
                   </div>

@@ -15,6 +15,7 @@ import {
 } from './interview-schemas'
 import { inferExperienceLevel, inferLanguage } from './interview-helpers'
 import { formatManagerPriorities } from './priorities'
+import { formatLanguageDirective, TOOL_LANGUAGE_REINFORCEMENT, type SupportedLanguage } from './language'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 
 export { inferExperienceLevel, inferLanguage }
@@ -123,11 +124,12 @@ ${cvText.slice(0, 6000)}`,
 export async function generateQuestions(
   cvProfile: CvProfile,
   role: { title: string; description: string; requirements: string; priorityKeywords?: readonly string[] },
-  options: { includeCodeChallenge: boolean; language?: string; packType?: 'full' | 'pre_screening' },
+  options: { includeCodeChallenge: boolean; language?: string; packType?: 'full' | 'pre_screening'; responseLanguage?: SupportedLanguage },
   tenantId?: string,
   metadata?: { candidateId?: string; roleId?: string; packId?: string }
 ): Promise<InterviewPackOutput> {
   const language = options.language ?? inferLanguage(cvProfile.technical_skills)
+  const responseLanguage: SupportedLanguage = options.responseLanguage ?? 'en'
   const experienceLevel = cvProfile.experience_level ?? 'mid'
   const packType = options.packType ?? 'full'
   const isPreScreening = packType === 'pre_screening'
@@ -136,7 +138,9 @@ export async function generateQuestions(
 
   const QUESTION_TOOL: Anthropic.Tool = {
     name: 'submit_interview_pack',
-    description: 'Submit a complete interview pack',
+    description: responseLanguage === 'en'
+      ? 'Submit a complete interview pack'
+      : `Submit a complete interview pack. ${TOOL_LANGUAGE_REINFORCEMENT}`,
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -207,7 +211,7 @@ ${role.requirements}${formatManagerPriorities(role.priorityKeywords)}`,
           },
           {
             type: 'text',
-            text: isPreScreening
+            text: (isPreScreening
               ? `Create a SHORT pre-screening interview pack for this ${experienceLevel}-level candidate.
 
 CANDIDATE PROFILE:
@@ -240,14 +244,14 @@ Requirements:
 - Include scoring rubric: strong/acceptable/weak answer signals
 - Include up to 2 follow-up questions per question
 ${includeCodeChallenge ? `- Include a ${language} code challenge appropriate for ${experienceLevel} level` : '- Do NOT include a code challenge'}
-- Calibrate difficulty to ${experienceLevel} level`,
+- Calibrate difficulty to ${experienceLevel} level`) + formatLanguageDirective(responseLanguage),
           },
         ],
       },
     ],
   })
 
-  console.log(`Stage 2 response: stop_reason=${response.stop_reason}, usage=${JSON.stringify(response.usage)}`)
+  console.log(`Stage 2 response: stop_reason=${response.stop_reason}, language=${responseLanguage}, usage=${JSON.stringify(response.usage)}`)
 
   if (tenantId) {
     logAiUsage({
@@ -257,7 +261,7 @@ ${includeCodeChallenge ? `- Include a ${language} code challenge appropriate for
       model: response.model,
       usage: anthropicUsageToInput(response.usage),
       durationMs: Date.now() - startedAt,
-      metadata: { ...metadata, packType, includeCodeChallenge },
+      metadata: { ...metadata, packType, includeCodeChallenge, language: responseLanguage },
     }).catch(() => {})
   }
 

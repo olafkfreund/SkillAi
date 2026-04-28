@@ -13,12 +13,14 @@ import {
 import { requireRole } from '@/lib/auth/require-role'
 import { inferExperienceLevel } from '@/lib/ai/interview-helpers'
 import { getActionContext } from '@/lib/auth/action-context'
+import { SUPPORTED_LANGUAGES } from '@/lib/ai/language'
 
 const CreatePackSchema = z.object({
   candidateId: z.string().uuid(),
   roleId: z.string().uuid(),
   includeCodeChallenge: z.boolean().default(false),
   packType: z.enum(['full', 'pre_screening']).default('full'),
+  language: z.enum(SUPPORTED_LANGUAGES).default('en'),
 })
 
 export type CreatePackState =
@@ -42,10 +44,11 @@ export async function createInterviewPack(
     roleId: formData.get('roleId'),
     includeCodeChallenge: formData.get('includeCodeChallenge') === 'true',
     packType: formData.get('packType') || 'full',
+    language: formData.get('language') || 'en',
   })
   if (!parsed.success) return { success: false, error: 'Invalid input' }
 
-  const { candidateId, roleId, packType } = parsed.data
+  const { candidateId, roleId, packType, language } = parsed.data
   // Pre-screening never includes code challenge
   const includeCodeChallenge = packType === 'pre_screening' ? false : parsed.data.includeCodeChallenge
 
@@ -70,6 +73,7 @@ export async function createInterviewPack(
       experienceLevel,
       includesCodeChallenge: includeCodeChallenge,
       packType,
+      language,
       createdBy: userId,
     })
   })

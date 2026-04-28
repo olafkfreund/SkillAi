@@ -16,6 +16,7 @@ export type AuditAction =
   | 'score.completed' | 'score.failed' | 'score.removed'
   | 'interview_pack.created' | 'interview_pack.completed' | 'interview_pack.failed'
   | 'interview_pack.deleted' | 'interview_pack.retried'
+  | 'interview_pack.generated_in_language'
   | 'interview_slot.created' | 'interview_slot.updated' | 'interview_slot.cancelled'
   | 'note.created' | 'note.deleted'
   | 'user.invited' | 'user.role_changed' | 'user.deactivated'
@@ -23,6 +24,7 @@ export type AuditAction =
   | 'user.password_changed'
   | 'user.email_changed'
   | 'settings.trusted_hosts_updated'
+  | 'settings.default_pack_language_updated'
   | 'auth.untrusted_host_blocked'
   | 'agency.created' | 'agency.archived'
 

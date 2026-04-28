@@ -5,15 +5,73 @@ import { useRouter } from 'next/navigation'
 import { SparklesIcon, Loader2Icon } from 'lucide-react'
 import { createInterviewPack } from '@/actions/interview'
 import type { CreatePackState } from '@/actions/interview'
+import { isSupportedLanguage, type SupportedLanguage } from '@/lib/ai/language'
+import { PackLanguagePicker } from './pack-language-picker'
 
-type Props = { candidateId: string; roleId: string; roleName: string }
+type Props = {
+  candidateId: string
+  roleId: string
+  roleName: string
+  candidateLanguages?: string[]
+  /**
+   * Tenant-wide default pack language (BCP 47 short code). Used when the
+   * candidate has no usable language preference. Falls through to 'en' if
+   * absent or unsupported.
+   */
+  tenantDefaultLanguage?: string
+}
 type PackType = 'full' | 'pre_screening'
 
-export function PackGenerator({ candidateId, roleId, roleName }: Props) {
+/**
+ * Resolve the default pack language using the 3-tier fallback chain:
+ *   1. candidate.languagesSpoken[0..n] (first entry that maps to a SupportedLanguage)
+ *   2. tenant default (admin-configurable in /dashboard/settings)
+ *   3. 'en'
+ *
+ * Matches both BCP 47 codes ('pl') and full names ('Polish').
+ */
+function resolveDefaultLanguage(
+  candidateLanguages: string[] | undefined,
+  tenantDefaultLanguage: string | undefined
+): SupportedLanguage {
+  // Tier 1: candidate-spoken languages
+  if (candidateLanguages?.length) {
+    for (const raw of candidateLanguages) {
+      const normalised = raw.trim().toLowerCase()
+      if (isSupportedLanguage(normalised)) return normalised
+      // Try mapping common display names back to a code
+      const codeFromName: Record<string, SupportedLanguage> = {
+        english: 'en',
+        polish: 'pl',
+        german: 'de',
+        french: 'fr',
+        spanish: 'es',
+        italian: 'it',
+        portuguese: 'pt',
+        dutch: 'nl',
+        czech: 'cs',
+        swedish: 'sv',
+      }
+      const mapped = codeFromName[normalised]
+      if (mapped) return mapped
+    }
+  }
+
+  // Tier 2: tenant default
+  if (isSupportedLanguage(tenantDefaultLanguage)) return tenantDefaultLanguage
+
+  // Tier 3: hard fallback
+  return 'en'
+}
+
+export function PackGenerator({ candidateId, roleId, roleName, candidateLanguages, tenantDefaultLanguage }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [includeCode, setIncludeCode] = useState(false)
   const [packType, setPackType] = useState<PackType>('full')
+  const [language, setLanguage] = useState<SupportedLanguage>(() =>
+    resolveDefaultLanguage(candidateLanguages, tenantDefaultLanguage)
+  )
 
   const isPreScreening = packType === 'pre_screening'
   const effectiveIncludeCode = isPreScreening ? false : includeCode
@@ -33,6 +91,7 @@ export function PackGenerator({ candidateId, roleId, roleName }: Props) {
           packId: state.packId,
           includeCodeChallenge: effectiveIncludeCode,
           packType,
+          language,
         }),
       }).catch((err) => console.error('Failed to trigger generation:', err))
 
@@ -40,7 +99,7 @@ export function PackGenerator({ candidateId, roleId, roleName }: Props) {
       router.push(`/dashboard/candidates/${candidateId}/interview/${state.packId}`)
       router.refresh()
     }
-  }, [state, router, candidateId, effectiveIncludeCode, packType])
+  }, [state, router, candidateId, effectiveIncludeCode, packType, language])
 
   return (
     <>
@@ -82,6 +141,13 @@ export function PackGenerator({ candidateId, roleId, roleName }: Props) {
               <input type="hidden" name="roleId" value={roleId} />
               <input type="hidden" name="includeCodeChallenge" value={String(effectiveIncludeCode)} />
               <input type="hidden" name="packType" value={packType} />
+
+              {/* Language picker — defaults to candidate's primary spoken language if supported */}
+              <PackLanguagePicker
+                value={language}
+                onChange={setLanguage}
+                disabled={pending}
+              />
 
               {/* Pack type radio group */}
               <fieldset className="space-y-2">

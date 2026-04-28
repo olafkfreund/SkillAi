@@ -18,6 +18,12 @@ import {
   type TranscriptAnalysis,
 } from './transcript-schemas'
 import { formatManagerPriorities } from './priorities'
+import {
+  SUPPORTED_LANGUAGES,
+  formatLanguageDirective,
+  isSupportedLanguage,
+  type SupportedLanguage,
+} from './language'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 
 const anthropic = new Anthropic({
@@ -53,9 +59,49 @@ type AnalysisInput = {
   transcriptId?: string
 }
 
+export type AnalyzeTranscriptResult = {
+  analysis: TranscriptAnalysis
+  detectedLanguage: SupportedLanguage
+}
+
+/**
+ * Detect the primary language of a transcript using Claude Haiku.
+ * Cheap and fast (~50 tokens, sub-second). Falls back to 'en' on any
+ * uncertainty or error — analysis works either way, only the language
+ * directive injection differs.
+ */
+async function detectTranscriptLanguage(
+  transcriptText: string
+): Promise<SupportedLanguage> {
+  const sample = transcriptText.slice(0, 500)
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 50,
+      messages: [
+        {
+          role: 'user',
+          content: `What language is this text written in? Reply ONLY with a BCP 47 short code from this list: ${SUPPORTED_LANGUAGES.join(', ')}. If uncertain or not in the list, reply "en".\n\nText:\n${sample}`,
+        },
+      ],
+    })
+    const block = response.content.find(
+      (b): b is Anthropic.TextBlock => b.type === 'text'
+    )
+    const code = block?.text.trim().toLowerCase().slice(0, 2)
+    return isSupportedLanguage(code) ? code : 'en'
+  } catch (err) {
+    console.warn(
+      `[transcript-analysis] language detection failed, defaulting to 'en':`,
+      err instanceof Error ? err.message : err
+    )
+    return 'en'
+  }
+}
+
 export async function analyzeTranscriptWithClaude(
   input: AnalysisInput
-): Promise<TranscriptAnalysis> {
+): Promise<AnalyzeTranscriptResult> {
   const questionsBlock =
     input.packQuestions && input.packQuestions.length > 0
       ? `\n\nINTERVIEW QUESTIONS (score responses against these):\n${input.packQuestions
@@ -82,7 +128,19 @@ Score 4 dimensions:
 - problem_solving: structure, approach, adaptability
 - social_fit: collaboration language, humility, team-first framing
 
-${input.packQuestions?.length ? 'Map transcript excerpts to each interview question and score quality (strong/acceptable/weak).' : 'Provide overall assessment without per-question breakdown.'}`
+${input.packQuestions?.length ? 'Map transcript excerpts to each interview question and score quality (strong/acceptable/weak).' : 'Provide overall assessment without per-question breakdown.'}
+
+Numeric scores are language-agnostic. Reasoning text and the summary must be in the response language indicated below.`
+
+  // Detect language BEFORE the main analysis call so we can inject the
+  // language directive into the uncached per-transcript block. Putting
+  // it in the cached system block would fragment the prompt cache per
+  // language. Falls back to 'en' on any failure (analysis still works).
+  const detectedLanguage = await detectTranscriptLanguage(input.transcriptText)
+  console.log(
+    `[transcript-analysis] detected language=${detectedLanguage} for transcript=${input.transcriptId ?? '<unknown>'}`
+  )
+  const languageDirective = formatLanguageDirective(detectedLanguage)
 
   const startedAt = Date.now()
   const response = await anthropic.messages.create({
@@ -107,7 +165,7 @@ ${input.packQuestions?.length ? 'Map transcript excerpts to each interview quest
                 ? input.transcriptText.slice(0, MAX_TRANSCRIPT_CHARS) +
                   '\n\n[...transcript truncated to fit AI context window...]'
                 : input.transcriptText
-            }\n\nUse the submit_transcript_analysis tool to return your structured assessment.`,
+            }\n\nUse the submit_transcript_analysis tool to return your structured assessment.${languageDirective}`,
           },
         ],
       },
@@ -138,7 +196,7 @@ ${input.packQuestions?.length ? 'Map transcript excerpts to each interview quest
     throw new Error(`Claude response failed schema validation: ${parsed.error.message}`)
   }
 
-  return parsed.data
+  return { analysis: parsed.data, detectedLanguage }
 }
 
 export async function triggerTranscriptAnalysis(
@@ -190,7 +248,7 @@ export async function triggerTranscriptAnalysis(
       }
     }
 
-    const result = await analyzeTranscriptWithClaude({
+    const { analysis: result, detectedLanguage } = await analyzeTranscriptWithClaude({
       transcriptText: transcript.rawTranscriptText,
       roleTitle: role.title,
       roleDescription: role.description,
@@ -218,6 +276,7 @@ export async function triggerTranscriptAnalysis(
       strengths: result.strengths,
       redFlags: result.red_flags,
       recommendedDecision: result.recommended_decision,
+      detectedLanguage,
       questionResponses: result.question_responses.map((qr) => ({
         questionText: qr.question_text,
         transcriptExcerpt: qr.transcript_excerpt,
