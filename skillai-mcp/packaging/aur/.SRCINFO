@@ -9,8 +9,8 @@ pkgbase = skillai-mcp-bin
 	provides = skillai-mcp
 	conflicts = skillai-mcp
 	options = !strip
-	source_x86_64 = skillai-mcp-0.1.0-x86_64::https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v0.1.0/skillai-mcp-linux-x64
-	source_aarch64 = skillai-mcp-0.1.0-aarch64::https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v0.1.0/skillai-mcp-linux-arm64
+	source_x86_64 = skillai-mcp-0.1.0-x86_64::https://github.com/olafkfreund/SkillAi/releases/download/skillai-mcp-v0.1.0/skillai-mcp-linux-x64
+	source_aarch64 = skillai-mcp-0.1.0-aarch64::https://github.com/olafkfreund/SkillAi/releases/download/skillai-mcp-v0.1.0/skillai-mcp-linux-arm64
 	sha256sums_x86_64 = SKIP
 	sha256sums_aarch64 = SKIP
 

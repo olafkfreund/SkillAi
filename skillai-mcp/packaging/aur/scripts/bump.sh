@@ -21,7 +21,7 @@ sed -i "s/^pkgver=.*/pkgver=$VERSION/" "$PKGBUILD"
 sed -i "s/^pkgrel=.*/pkgrel=1/" "$PKGBUILD"
 
 # 2. Compute sha256 for each architecture artefact
-BASE_URL="https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v${VERSION}"
+BASE_URL="https://github.com/olafkfreund/SkillAi/releases/download/skillai-mcp-v${VERSION}"
 
 compute_sha256() {
   local url="$1"

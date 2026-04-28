@@ -4,7 +4,7 @@ Stdio MCP bridge that connects **claude-desktop** to the SkillAi `/api/mcp`
 endpoint over HTTPS.  claude-desktop spawns this binary as a subprocess and
 communicates via JSON-RPC 2.0 over stdin/stdout.
 
-Full documentation: <https://github.com/olafkfreund/SkillAi/tree/main/mcp-server>
+Full documentation: <https://github.com/olafkfreund/SkillAi/tree/main/skillai-mcp>
 
 ---
 

@@ -37,7 +37,7 @@
 
             # The binary is at dist/index.js — make it executable
             postInstall = ''
-              chmod +x $out/lib/node_modules/@skillai/mcp-bridge/dist/index.js
+              chmod +x $out/lib/node_modules/skillai-mcp/dist/index.js
             '';
 
             meta = with pkgs.lib; {
