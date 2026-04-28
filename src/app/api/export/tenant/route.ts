@@ -33,7 +33,7 @@ function buildTimestamp(): string {
   return `${year}${month}${day}-${hours}${mins}${secs}`
 }
 
-export async function GET(_req: Request): Promise<Response> {
+export async function GET(req: Request): Promise<Response> {
   // 1. Auth
   const session = await auth()
   if (!session?.user?.tenantId) {
@@ -50,7 +50,11 @@ export async function GET(_req: Request): Promise<Response> {
 
   const tenantId = session.user.tenantId
 
-  // 3. Rate-limit check: query audit_logs for most recent tenant.exported
+  // 3. Parse query params
+  const url = new URL(req.url)
+  const includeFiles = url.searchParams.get('files') === '1'
+
+  // 4. Rate-limit check: query audit_logs for most recent tenant.exported
   try {
     const [lastExport] = await withTenant(tenantId, async (tx) =>
       tx
@@ -85,14 +89,15 @@ export async function GET(_req: Request): Promise<Response> {
   }
 
   try {
-    // 4. Build the ZIP stream
-    const archive = await buildTenantExportZip(tenantId)
+    // 5. Build the ZIP stream
+    const archive = await buildTenantExportZip({ tenantId, includeFiles })
 
-    // 5. Build filename with safe UTC timestamp
+    // 6. Build filename with safe UTC timestamp
     const timestamp = buildTimestamp()
-    const filename = `skillai-tenant-export-${tenantId}-${timestamp}.zip`
+    const filesSuffix = includeFiles ? '-with-files' : ''
+    const filename = `skillai-tenant-export-${tenantId}-${timestamp}${filesSuffix}.zip`
 
-    // 6. Wrap archiver in a ReadableStream for the Response body
+    // 7. Wrap archiver in a ReadableStream for the Response body
     //    Audit log is written on the 'end' event so tableCounts are available
     //    in the manifest (the archive already has the data at that point).
     const stream = new ReadableStream({
@@ -110,6 +115,7 @@ export async function GET(_req: Request): Promise<Response> {
             metadata: {
               exportedAt: new Date().toISOString(),
               exportedBy: session.user.id,
+              includedFiles: includeFiles,
             },
           }).catch(() => {})
           controller.close()

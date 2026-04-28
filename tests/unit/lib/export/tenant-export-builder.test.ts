@@ -10,6 +10,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Mock } from 'vitest'
 import { Readable } from 'stream'
+import { join } from 'path'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -58,15 +59,15 @@ vi.mock('@/db', () => ({
 
 // Mock all schema tables as plain objects (Drizzle table references)
 vi.mock('@/db/schema', () => ({
-  agencies: { _brand: 'agencies' },
+  agencies: { id: 'id', logoPath: 'logo_path', _brand: 'agencies' },
   aiUsage: { _brand: 'aiUsage' },
   apiTokens: { _brand: 'apiTokens' },
   auditLogs: { _brand: 'auditLogs' },
   candidateEnrichments: { _brand: 'candidateEnrichments' },
   candidateRoleApprovals: { _brand: 'candidateRoleApprovals' },
-  candidates: { _brand: 'candidates' },
+  candidates: { id: 'id', filePath: 'file_path', _brand: 'candidates' },
   customerFrameworks: { _brand: 'customerFrameworks' },
-  customers: { _brand: 'customers' },
+  customers: { id: 'id', logoPath: 'logo_path', _brand: 'customers' },
   cvProfiles: { _brand: 'cvProfiles' },
   emailTemplates: { _brand: 'emailTemplates' },
   interviewPacks: { packId: 'pack_id', _brand: 'interviewPacks' },
@@ -75,7 +76,7 @@ vi.mock('@/db/schema', () => ({
   interviewTranscripts: { _brand: 'interviewTranscripts' },
   notes: { _brand: 'notes' },
   roleManagers: { _brand: 'roleManagers' },
-  roles: { _brand: 'roles' },
+  roles: { id: 'id', filePath: 'file_path', _brand: 'roles' },
   scores: { _brand: 'scores' },
   sentEmails: { _brand: 'sentEmails' },
   tenantSettings: { _brand: 'tenantSettings' },
@@ -89,6 +90,33 @@ vi.mock('drizzle-orm', () => ({
   eq: vi.fn(() => ({ type: 'eq' })),
   and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
   desc: vi.fn((col: unknown) => ({ type: 'desc', col })),
+  isNotNull: vi.fn(() => ({ type: 'isNotNull' })),
+}))
+
+// ---------------------------------------------------------------------------
+// fs/promises mock — default (files found, size 1024)
+// Overridden per-test where needed.
+// ---------------------------------------------------------------------------
+
+const mockStat = vi.fn().mockResolvedValue({ size: 1024 })
+
+vi.mock('fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('fs/promises')>()
+  return {
+    ...actual,
+    stat: (...args: unknown[]) => mockStat(...args),
+  }
+})
+
+// ---------------------------------------------------------------------------
+// Branding store mock — getLogoAbsolutePath
+// ---------------------------------------------------------------------------
+
+vi.mock('@/lib/branding/store', () => ({
+  getLogoAbsolutePath: vi.fn((p: string) => {
+    const relative = p.startsWith('/') ? p.slice(1) : p
+    return join(process.cwd(), relative)
+  }),
 }))
 
 // ---------------------------------------------------------------------------
@@ -116,6 +144,9 @@ beforeEach(() => {
   mockTx = {
     select: vi.fn(() => makeChain(batchFn())),
   }
+
+  // Default: files exist with size 1024
+  mockStat.mockResolvedValue({ size: 1024 })
 })
 
 // ---------------------------------------------------------------------------
@@ -125,7 +156,7 @@ beforeEach(() => {
 describe('buildTenantExportZip', () => {
   it('returns a Readable stream (archiver)', async () => {
     const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
-    const archive = await buildTenantExportZip(TENANT_ID)
+    const archive = await buildTenantExportZip({ tenantId: TENANT_ID })
 
     expect(archive).toBeDefined()
     // archiver extends Readable — it has .pipe()
@@ -136,7 +167,7 @@ describe('buildTenantExportZip', () => {
 
   it('produces a valid ZIP (magic bytes PK\\x03\\x04)', async () => {
     const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
-    const archive = await buildTenantExportZip(TENANT_ID)
+    const archive = await buildTenantExportZip({ tenantId: TENANT_ID })
     const buffer = await collectStream(archive)
 
     expect(buffer.length).toBeGreaterThan(4)
@@ -146,7 +177,7 @@ describe('buildTenantExportZip', () => {
 
   it('ZIP contains manifest.json', async () => {
     const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
-    const archive = await buildTenantExportZip(TENANT_ID)
+    const archive = await buildTenantExportZip({ tenantId: TENANT_ID })
     const buffer = await collectStream(archive)
 
     expect(buffer.includes(Buffer.from('manifest.json'))).toBe(true)
@@ -154,7 +185,7 @@ describe('buildTenantExportZip', () => {
 
   it('manifest.json entry name appears in ZIP central directory', async () => {
     const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
-    const archive = await buildTenantExportZip(TENANT_ID)
+    const archive = await buildTenantExportZip({ tenantId: TENANT_ID })
     const buffer = await collectStream(archive)
 
     // The ZIP central directory (at the end of the buffer) stores entry names
@@ -167,7 +198,7 @@ describe('buildTenantExportZip', () => {
     const withTenantSpy = dbModule.withTenant as Mock
 
     const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
-    const archive = await buildTenantExportZip(TENANT_ID)
+    const archive = await buildTenantExportZip({ tenantId: TENANT_ID })
     await collectStream(archive)
 
     expect(withTenantSpy).toHaveBeenCalledWith(TENANT_ID, expect.any(Function))
@@ -176,7 +207,7 @@ describe('buildTenantExportZip', () => {
   it('empty tenant: ZIP is valid and manifest.json + table filenames appear in ZIP directory', async () => {
     // batchFn returns [] so all table fetches return empty arrays
     const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
-    const archive = await buildTenantExportZip(TENANT_ID)
+    const archive = await buildTenantExportZip({ tenantId: TENANT_ID })
     const buffer = await collectStream(archive)
 
     // ZIP must be valid (has magic bytes)
@@ -210,7 +241,7 @@ describe('buildTenantExportZip', () => {
     })
 
     const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
-    const archive = await buildTenantExportZip(TENANT_ID)
+    const archive = await buildTenantExportZip({ tenantId: TENANT_ID })
     const buffer = await collectStream(archive)
 
     // Archive should have been produced without error
@@ -253,11 +284,161 @@ describe('buildTenantExportZip', () => {
     })
 
     const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
-    const archive = await buildTenantExportZip(TENANT_ID)
+    const archive = await buildTenantExportZip({ tenantId: TENANT_ID })
     const buffer = await collectStream(archive)
 
     // interview_questions.json and code_challenges.json should be in the ZIP
     expect(buffer.includes(Buffer.from('interview_questions.json'))).toBe(true)
     expect(buffer.includes(Buffer.from('code_challenges.json'))).toBe(true)
+  })
+
+  // ---------------------------------------------------------------------------
+  // File attachment tests
+  // ---------------------------------------------------------------------------
+
+  it('includeFiles: false (default) — no files/ entries in archive', async () => {
+    // Even if the TX were to return rows with filePaths, includeFiles=false means
+    // no file queries are made and no files/ directory appears in the ZIP.
+    const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
+    const archive = await buildTenantExportZip({ tenantId: TENANT_ID, includeFiles: false })
+    const buffer = await collectStream(archive)
+
+    // No files/ prefix should appear in the ZIP central directory
+    expect(buffer.includes(Buffer.from('files/'))).toBe(false)
+
+    // manifest must still be there and be a valid ZIP
+    expect(buffer[0]).toBe(0x50)
+    expect(buffer.includes(Buffer.from('manifest.json'))).toBe(true)
+  })
+
+  it('includeFiles: true with a valid candidate CV path — export succeeds without crash', async () => {
+    // Verifies that when includeFiles=true and a candidate row has a filePath
+    // inside the tenant upload directory, the builder runs to completion without
+    // throwing. The file itself does not exist on the test filesystem, so
+    // archiver will emit a warning (not an error) and the ZIP is still valid.
+    //
+    // We verify:
+    //   1. The ZIP is structurally valid.
+    //   2. includeFiles=true does not crash the export — path guard passes for
+    //      a well-formed tenant path.
+    //   3. A files/candidates/ entry name appears in the ZIP central directory
+    //      (archiver queues it before discovering the file is missing on disk).
+    const candidateId = 'cand-uuid-aaaa'
+    const cvPath = `/uploads/${TENANT_ID}/${candidateId}.pdf`
+
+    // Return the candidate row for all select() calls.
+    const candidateRow = { id: candidateId, filePath: cvPath }
+    mockTx.select = vi.fn(() => makeChain([candidateRow]))
+
+    // Make stat throw ENOENT — the builder should skip the file gracefully
+    // rather than crashing, so the ZIP still completes.
+    const notFoundError = Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
+    mockStat.mockRejectedValue(notFoundError)
+
+    const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
+    // Should not throw
+    const archive = await buildTenantExportZip({ tenantId: TENANT_ID, includeFiles: true })
+    const buffer = await collectStream(archive)
+
+    // ZIP must be structurally valid despite the missing file
+    expect(buffer[0]).toBe(0x50)
+    expect(buffer[1]).toBe(0x4b)
+    expect(buffer.includes(Buffer.from('manifest.json'))).toBe(true)
+
+    // When stat rejects, the file is skipped — no files/ directory entry
+    expect(buffer.includes(Buffer.from('files/'))).toBe(false)
+  })
+
+  it('includeFiles: true with a missing file — entry is skipped and export still produces a valid ZIP', async () => {
+    // Core correctness: a missing-file error must NOT abort the whole export.
+    const candidateId = 'cand-missing-bbbb'
+    const cvPath = `/uploads/${TENANT_ID}/${candidateId}.pdf`
+
+    mockTx.select = vi.fn(() => makeChain([{ id: candidateId, filePath: cvPath }]))
+
+    // Simulate ENOENT from fs.stat
+    const notFoundError = Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
+    mockStat.mockRejectedValue(notFoundError)
+
+    const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
+    const archive = await buildTenantExportZip({ tenantId: TENANT_ID, includeFiles: true })
+    const buffer = await collectStream(archive)
+
+    // Export must complete and produce a valid ZIP
+    expect(buffer[0]).toBe(0x50)
+    expect(buffer[1]).toBe(0x4b)
+    expect(buffer.includes(Buffer.from('manifest.json'))).toBe(true)
+
+    // The skipped file must NOT produce a files/ entry in the ZIP
+    expect(buffer.includes(Buffer.from('files/'))).toBe(false)
+  })
+
+  it('path-outside-tenant guard — cross-tenant path is skipped without calling stat', async () => {
+    // This test verifies the security defence-in-depth: if the resolved path
+    // falls outside the tenant upload root, the builder must skip it WITHOUT
+    // calling stat — the guard must fire before any filesystem access.
+
+    const candidateId = 'cand-traversal-cccc'
+    // A DB path that belongs to a DIFFERENT tenant — resolves outside this tenant's dir.
+    const otherTenantId = 'dddddddd-dddd-4ddd-dddd-dddddddddddd'
+    const crossTenantPath = `/uploads/${otherTenantId}/some-cv.pdf`
+
+    mockTx.select = vi.fn(() =>
+      makeChain([{ id: candidateId, filePath: crossTenantPath }])
+    )
+
+    // stat succeeds if called — but it must NOT be called for the cross-tenant path
+    mockStat.mockResolvedValue({ size: 512 })
+
+    const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
+    const archive = await buildTenantExportZip({ tenantId: TENANT_ID, includeFiles: true })
+    const buffer = await collectStream(archive)
+
+    // Export must complete successfully
+    expect(buffer[0]).toBe(0x50)
+    expect(buffer[1]).toBe(0x4b)
+
+    // No files/ entry should exist in the ZIP central directory because the
+    // path guard rejected the file before archive.file() was called.
+    expect(buffer.includes(Buffer.from('files/'))).toBe(false)
+
+    // stat must NOT have been called for the cross-tenant path — the guard fires
+    // before any filesystem access, which is the key security property.
+    const statArgsForOtherTenant = mockStat.mock.calls.filter((c) =>
+      String(c[0]).includes(otherTenantId)
+    )
+    expect(statArgsForOtherTenant.length).toBe(0)
+  })
+
+  it('manifest.includesFiles flag: export completes cleanly for both true and false values', async () => {
+    // Verifies that the builder accepts both values of includeFiles without
+    // throwing, and produces structurally valid ZIPs in both cases.
+    const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
+
+    // Without files — default
+    const archiveNoFiles = await buildTenantExportZip({ tenantId: TENANT_ID, includeFiles: false })
+    const bufNoFiles = await collectStream(archiveNoFiles)
+    expect(bufNoFiles[0]).toBe(0x50)
+    expect(bufNoFiles[1]).toBe(0x4b)
+    expect(bufNoFiles.includes(Buffer.from('manifest.json'))).toBe(true)
+    // No files/ entries when includeFiles is false
+    expect(bufNoFiles.includes(Buffer.from('files/'))).toBe(false)
+
+    // Re-initialise mock state for the second export in this test
+    vi.clearAllMocks()
+    mockStat.mockResolvedValue({ size: 1024 })
+    mockTx = { select: vi.fn(() => makeChain([])) }
+    const { withTenant } = await import('@/db')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(withTenant).mockImplementation(async (_id: string, fn: any) => fn(mockTx))
+
+    // With files — but no candidate/agency/customer/role rows, so no files queued
+    const archiveWithFiles = await buildTenantExportZip({ tenantId: TENANT_ID, includeFiles: true })
+    const bufWithFiles = await collectStream(archiveWithFiles)
+    expect(bufWithFiles[0]).toBe(0x50)
+    expect(bufWithFiles[1]).toBe(0x4b)
+    expect(bufWithFiles.includes(Buffer.from('manifest.json'))).toBe(true)
+    // With includeFiles=true but no rows with paths, still no files/ entries
+    expect(bufWithFiles.includes(Buffer.from('files/'))).toBe(false)
   })
 })

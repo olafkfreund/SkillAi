@@ -3,7 +3,7 @@ title: "Backups and data export"
 category: "Settings & Admin"
 audience: ["admin"]
 order: 70
-lastUpdated: "2026-04-28"
+lastUpdated: "2026-04-29"
 tags: ["backups", "data export", "gdpr", "recovery"]
 ---
 
@@ -46,22 +46,39 @@ The ZIP contains JSON files for the following tables, all scoped to your tenant:
 - **users.json** — all user accounts for your tenant (passwords are bcrypt-hashed)
 - **manifest.json** — export metadata: tenant ID, export timestamp, schema version, and row counts per table
 
-## What is NOT included (yet)
+## Including file attachments (CVs, logos)
 
-Binary files are not part of this export:
+By default the export contains JSON only. To also bundle the original binary files, check **Include file attachments (CVs, logos)** before clicking the download button.
 
-- **CV files** — uploaded PDFs and DOCX files stored on disk. The `filePath` field in `candidates.json` contains the server-side path so you can identify which files belong to which candidate, but the binaries themselves are not bundled into the ZIP. To back up CV files, copy the uploads volume (see the setup guide).
-- **Agency and customer logos** — similarly stored on disk; paths are in the respective JSON files.
+When enabled:
 
-File binary export will be added in a future release.
+- The ZIP filename gains a `-with-files` suffix so you can tell exports apart at a glance: `skillai-tenant-export-<tenantId>-<YYYYMMDD-HHMMSS>-with-files.zip`.
+- A `files/` directory is added inside the ZIP with subdirectories for each entity type:
+  - `files/candidates/` — original CV uploads (PDF, DOCX, etc.)
+  - `files/agencies/` — agency logo images
+  - `files/customers/` — customer logo images
+  - `files/roles/` — role attachment files (if any)
+- Each file is named `{entityId}-{originalFilename}`.
+- Files are streamed directly from disk; they are never loaded entirely into server memory.
+- `manifest.json` gains three extra fields: `binaryFileCount`, `totalBinaryBytes`, and `skippedFiles` (an array listing any files that could not be included, with a reason).
+
+**This option may produce a much larger file** — typically 10–100× the size of the JSON-only export depending on how many CVs you have. Allow extra time for the download to start on large tenants.
+
+**What is NOT included**
+
+- Files that were deleted from disk after upload (recorded in `manifest.skippedFiles` with reason `not-found`).
+- Files outside your tenant's upload directory (a safety check; recorded with reason `path-outside-tenant` if ever triggered).
 
 ## How to download
 
 1. Log in as an admin.
 2. Go to **Settings** (sidebar or top navigation).
 3. Scroll to the **Backups & Data Export** card.
-4. Click **Download tenant export now**.
-5. The browser will download a file named `skillai-tenant-export-<tenantId>-<YYYYMMDD-HHMMSS>.zip`.
+4. Optionally check **Include file attachments (CVs, logos)** to bundle binary files into the ZIP.
+5. Click **Download tenant export now**.
+6. The browser will download a file named:
+   - `skillai-tenant-export-<tenantId>-<YYYYMMDD-HHMMSS>.zip` (JSON only), or
+   - `skillai-tenant-export-<tenantId>-<YYYYMMDD-HHMMSS>-with-files.zip` (JSON + binaries).
 
 The export runs entirely in-memory on the server; there is no background job or notification. For large tenants, the connection may take 15–60 seconds to complete before the download starts.
 
