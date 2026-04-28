@@ -13,45 +13,64 @@ type Props = {
   roleId: string
   roleName: string
   candidateLanguages?: string[]
+  /**
+   * Tenant-wide default pack language (BCP 47 short code). Used when the
+   * candidate has no usable language preference. Falls through to 'en' if
+   * absent or unsupported.
+   */
+  tenantDefaultLanguage?: string
 }
 type PackType = 'full' | 'pre_screening'
 
 /**
- * Resolve the default pack language from the candidate's spoken languages.
- * Picks the first entry that maps to a SupportedLanguage; otherwise falls back
- * to English. Matches both BCP 47 codes ('pl') and full names ('Polish').
+ * Resolve the default pack language using the 3-tier fallback chain:
+ *   1. candidate.languagesSpoken[0..n] (first entry that maps to a SupportedLanguage)
+ *   2. tenant default (admin-configurable in /dashboard/settings)
+ *   3. 'en'
+ *
+ * Matches both BCP 47 codes ('pl') and full names ('Polish').
  */
-function resolveDefaultLanguage(candidateLanguages: string[] | undefined): SupportedLanguage {
-  if (!candidateLanguages?.length) return 'en'
-  for (const raw of candidateLanguages) {
-    const normalised = raw.trim().toLowerCase()
-    if (isSupportedLanguage(normalised)) return normalised
-    // Try mapping common display names back to a code
-    const codeFromName: Record<string, SupportedLanguage> = {
-      english: 'en',
-      polish: 'pl',
-      german: 'de',
-      french: 'fr',
-      spanish: 'es',
-      italian: 'it',
-      portuguese: 'pt',
-      dutch: 'nl',
-      czech: 'cs',
-      swedish: 'sv',
+function resolveDefaultLanguage(
+  candidateLanguages: string[] | undefined,
+  tenantDefaultLanguage: string | undefined
+): SupportedLanguage {
+  // Tier 1: candidate-spoken languages
+  if (candidateLanguages?.length) {
+    for (const raw of candidateLanguages) {
+      const normalised = raw.trim().toLowerCase()
+      if (isSupportedLanguage(normalised)) return normalised
+      // Try mapping common display names back to a code
+      const codeFromName: Record<string, SupportedLanguage> = {
+        english: 'en',
+        polish: 'pl',
+        german: 'de',
+        french: 'fr',
+        spanish: 'es',
+        italian: 'it',
+        portuguese: 'pt',
+        dutch: 'nl',
+        czech: 'cs',
+        swedish: 'sv',
+      }
+      const mapped = codeFromName[normalised]
+      if (mapped) return mapped
     }
-    const mapped = codeFromName[normalised]
-    if (mapped) return mapped
   }
+
+  // Tier 2: tenant default
+  if (isSupportedLanguage(tenantDefaultLanguage)) return tenantDefaultLanguage
+
+  // Tier 3: hard fallback
   return 'en'
 }
 
-export function PackGenerator({ candidateId, roleId, roleName, candidateLanguages }: Props) {
+export function PackGenerator({ candidateId, roleId, roleName, candidateLanguages, tenantDefaultLanguage }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [includeCode, setIncludeCode] = useState(false)
   const [packType, setPackType] = useState<PackType>('full')
   const [language, setLanguage] = useState<SupportedLanguage>(() =>
-    resolveDefaultLanguage(candidateLanguages)
+    resolveDefaultLanguage(candidateLanguages, tenantDefaultLanguage)
   )
 
   const isPreScreening = packType === 'pre_screening'

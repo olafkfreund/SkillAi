@@ -26,6 +26,7 @@ import { CvFilePanel } from '@/components/candidates/cv-file-panel'
 import { TranscriptSection } from '@/components/transcripts/transcript-section'
 import { archiveCandidate } from '@/actions/candidates'
 import { rescoreCandidate } from '@/actions/scores'
+import { getDefaultPackLanguage } from '@/actions/settings'
 import { hasRole } from '@/lib/auth/require-role'
 import { StaleScorePill } from '@/components/roles/priority-keywords-panel'
 import { isScoreOutdatedAgainstPriorities } from '@/lib/scores/staleness'
@@ -71,6 +72,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
     calendarConns,
     [enrichmentRow],
     [cvProfileRow],
+    tenantDefaultLanguage,
   ] = await Promise.all([
     withTenant(tenantId, async (tx) =>
       tx
@@ -122,6 +124,8 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
         .where(eq(cvProfiles.candidateId, candidateId))
         .limit(1)
     ),
+    // Tenant-wide default pack language (3-tier fallback: candidate → tenant → 'en')
+    getDefaultPackLanguage(tenantId),
   ])
 
   const activeScore = roleId
@@ -419,6 +423,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
                   roleId={role.id}
                   roleName={role.title}
                   candidateLanguages={candidate.languagesSpoken ?? []}
+                  tenantDefaultLanguage={tenantDefaultLanguage}
                 />
               ))}
             </div>

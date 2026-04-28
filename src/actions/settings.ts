@@ -9,6 +9,7 @@ import { requireRole } from '@/lib/auth/require-role'
 import { encrypt } from '@/lib/crypto'
 import { getActionContext } from '@/lib/auth/action-context'
 import { writeAuditLog } from '@/lib/audit'
+import { isSupportedLanguage } from '@/lib/ai/language'
 
 const ALLOWED_KEYS = [
   'anthropic_api_key',
@@ -280,4 +281,70 @@ export async function getTrustedHosts(tenantId: string): Promise<string[]> {
   } catch {
     return []
   }
+}
+
+// ---------------------------------------------------------------------------
+// Default pack language (tenant-wide fallback for interview/screening pack
+// generation when the candidate has no language preference). Stored as plain
+// text under tenant_settings.key = 'default_pack_language' — a BCP 47 short
+// code from SUPPORTED_LANGUAGES (en, pl, de, ...).
+// ---------------------------------------------------------------------------
+
+const DEFAULT_PACK_LANGUAGE_KEY = 'default_pack_language'
+
+export async function saveDefaultPackLanguage(
+  language: string
+): Promise<TrustedHostsState> {
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
+
+  try { requireRole(userRole ?? undefined, 'admin') } catch {
+    return { success: false, error: 'Only admins can set the default pack language' }
+  }
+
+  if (!isSupportedLanguage(language)) {
+    return { success: false, error: 'Unsupported language code' }
+  }
+
+  // Read previous for audit diff
+  const previous = await getDefaultPackLanguage(tenantId)
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .insert(tenantSettings)
+      .values({ tenantId, key: DEFAULT_PACK_LANGUAGE_KEY, value: language, updatedBy: userId })
+      .onConflictDoUpdate({
+        target: [tenantSettings.tenantId, tenantSettings.key],
+        set: { value: language, updatedBy: userId, updatedAt: new Date() },
+      })
+  })
+
+  if (previous !== language) {
+    writeAuditLog(tenantId, {
+      action: 'settings.default_pack_language_updated',
+      entityType: 'settings',
+      metadata: { setting: DEFAULT_PACK_LANGUAGE_KEY, previous, current: language },
+    }).catch(() => {})
+  }
+
+  revalidatePath('/dashboard/settings')
+  return { success: true }
+}
+
+export async function getDefaultPackLanguage(tenantId: string): Promise<string> {
+  const rows = await withTenant(tenantId, async (tx) =>
+    tx
+      .select({ value: tenantSettings.value })
+      .from(tenantSettings)
+      .where(
+        and(
+          eq(tenantSettings.tenantId, tenantId),
+          eq(tenantSettings.key, DEFAULT_PACK_LANGUAGE_KEY)
+        )
+      )
+      .limit(1)
+  )
+  const value = rows[0]?.value
+  return isSupportedLanguage(value) ? value : 'en'
 }

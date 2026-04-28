@@ -8,6 +8,7 @@ import {
   getConfiguredKeys,
   getGeneralSettings,
   getTrustedHosts,
+  getDefaultPackLanguage,
 } from '@/actions/settings'
 import { listTenantUsers } from '@/actions/users'
 import { ApiKeyField } from '@/components/settings/api-key-field'
@@ -18,6 +19,7 @@ import { CalendarConnect } from '@/components/settings/calendar-connect'
 import { AccountSection } from '@/components/settings/account-section'
 import { CreateUserForm } from '@/components/settings/create-user-form'
 import { TrustedHostsForm } from '@/components/settings/trusted-hosts-form'
+import { DefaultLanguageForm } from '@/components/settings/default-language-form'
 import { AiUsagePanel } from '@/components/settings/ai-usage-panel'
 
 export default async function SettingsPage() {
@@ -30,6 +32,7 @@ export default async function SettingsPage() {
   const generalSettings = isAdmin ? await getGeneralSettings(tenantId) : {}
   const tenantUsers = isAdmin ? await listTenantUsers() : []
   const trustedHosts = isAdmin ? await getTrustedHosts(tenantId) : []
+  const defaultPackLanguage = isAdmin ? await getDefaultPackLanguage(tenantId) : 'en'
 
   // Calendar connections are per-user, not per-tenant — query directly
   const userId = session.user.id
@@ -150,6 +153,11 @@ export default async function SettingsPage() {
                 unit="MB"
               />
             </div>
+          </div>
+
+          {/* Default pack language */}
+          <div>
+            <DefaultLanguageForm initial={defaultPackLanguage} />
           </div>
 
           {/* Trusted Hosts */}

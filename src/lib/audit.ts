@@ -24,6 +24,7 @@ export type AuditAction =
   | 'user.password_changed'
   | 'user.email_changed'
   | 'settings.trusted_hosts_updated'
+  | 'settings.default_pack_language_updated'
   | 'auth.untrusted_host_blocked'
   | 'agency.created' | 'agency.archived'
 
