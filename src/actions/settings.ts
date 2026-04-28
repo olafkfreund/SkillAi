@@ -3,13 +3,14 @@
 import { revalidatePath } from 'next/cache'
 import { eq, and, notInArray } from 'drizzle-orm'
 import { z } from 'zod'
-import { withTenant } from '@/db'
-import { tenantSettings } from '@/db/schema'
+import { withTenant, db } from '@/db'
+import { tenantSettings, users } from '@/db/schema'
 import { requireRole } from '@/lib/auth/require-role'
 import { encrypt } from '@/lib/crypto'
 import { getActionContext } from '@/lib/auth/action-context'
 import { writeAuditLog } from '@/lib/audit'
 import { isSupportedLanguage } from '@/lib/ai/language'
+import { getSenderForTenant } from '@/lib/email/sender'
 
 const ALLOWED_KEYS = [
   'anthropic_api_key',
@@ -347,4 +348,159 @@ export async function getDefaultPackLanguage(tenantId: string): Promise<string> 
   )
   const value = rows[0]?.value
   return isSupportedLanguage(value) ? value : 'en'
+}
+
+// ---------------------------------------------------------------------------
+// SMTP settings
+// ---------------------------------------------------------------------------
+
+const SMTP_KEYS = [
+  'smtp_host',
+  'smtp_port',
+  'smtp_secure',
+  'smtp_user',
+  'smtp_pass',
+  'smtp_from_email',
+  'smtp_from_name',
+] as const
+type SmtpKey = (typeof SMTP_KEYS)[number]
+
+export type SmtpSettingsState =
+  | { success: true }
+  | { success: false; error: string }
+
+/**
+ * Saves a single SMTP setting. smtp_pass is encrypted; all others are stored
+ * as plain text. Validates the key is in the smtp_* set before writing.
+ */
+export async function saveSmtpSetting(
+  key: string,
+  value: string
+): Promise<SmtpSettingsState> {
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
+
+  try { requireRole(userRole ?? undefined, 'admin') } catch {
+    return { success: false, error: 'Only admins can manage SMTP settings' }
+  }
+
+  if (!SMTP_KEYS.includes(key as SmtpKey)) {
+    return { success: false, error: 'Invalid SMTP setting key' }
+  }
+
+  if (!value || value.trim().length === 0) {
+    return { success: false, error: 'Value cannot be empty' }
+  }
+
+  const storedValue = key === 'smtp_pass' ? encrypt(value) : value.trim()
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .insert(tenantSettings)
+      .values({ tenantId, key, value: storedValue, updatedBy: userId })
+      .onConflictDoUpdate({
+        target: [tenantSettings.tenantId, tenantSettings.key],
+        set: { value: storedValue, updatedBy: userId, updatedAt: new Date() },
+      })
+  })
+
+  writeAuditLog(tenantId, {
+    action: 'settings.smtp_updated',
+    entityType: 'settings',
+    metadata: { key },
+  }).catch(() => {})
+
+  revalidatePath('/dashboard/settings')
+  return { success: true }
+}
+
+export type SmtpSettingsRecord = {
+  smtp_host: string
+  smtp_port: string
+  smtp_secure: string
+  smtp_user: string
+  smtp_from_email: string
+  smtp_from_name: string
+  smtp_pass_configured: boolean
+}
+
+/**
+ * Returns SMTP settings for the given tenant. smtp_pass is never returned —
+ * only a boolean indicating whether it is configured.
+ */
+export async function getSmtpSettings(tenantId: string): Promise<SmtpSettingsRecord> {
+  const rows = await withTenant(tenantId, async (tx) =>
+    tx
+      .select({ key: tenantSettings.key, value: tenantSettings.value })
+      .from(tenantSettings)
+      .where(eq(tenantSettings.tenantId, tenantId))
+  )
+
+  const map: Record<string, string> = {}
+  for (const row of rows) {
+    if (SMTP_KEYS.includes(row.key as SmtpKey)) {
+      map[row.key] = row.value
+    }
+  }
+
+  return {
+    smtp_host: map['smtp_host'] ?? '',
+    smtp_port: map['smtp_port'] ?? '587',
+    smtp_secure: map['smtp_secure'] ?? 'false',
+    smtp_user: map['smtp_user'] ?? '',
+    smtp_from_email: map['smtp_from_email'] ?? '',
+    smtp_from_name: map['smtp_from_name'] ?? '',
+    smtp_pass_configured: Boolean(map['smtp_pass']),
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SMTP test send
+// ---------------------------------------------------------------------------
+
+/**
+ * Sends a test email to the current user's address using the tenant's
+ * stored SMTP credentials. Reports success or a descriptive error inline.
+ */
+export async function sendSmtpTestEmail(): Promise<SmtpSettingsState> {
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
+
+  try { requireRole(userRole ?? undefined, 'admin') } catch {
+    return { success: false, error: 'Only admins can send test emails' }
+  }
+
+  const sender = await getSenderForTenant(tenantId)
+  if (!sender) {
+    return { success: false, error: 'SMTP is not fully configured. Set host, user, password, and from address first.' }
+  }
+
+  // Look up the current user's email address
+  const [userRow] = await db
+    .select({ email: users.email, name: users.name })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  if (!userRow?.email) {
+    return { success: false, error: 'Could not determine your email address.' }
+  }
+
+  const result = await sender.send({
+    to: userRow.email,
+    toName: userRow.name,
+    from: '',      // sender.ts uses fromEmail from config
+    fromName: '',  // same — ignored by SmtpSender
+    subject: 'SkillAI — SMTP test message',
+    bodyHtml: '<p>Your SMTP configuration is working correctly.</p>',
+    bodyText: 'Your SMTP configuration is working correctly.',
+  })
+
+  if (!result.ok) {
+    return { success: false, error: result.error }
+  }
+
+  return { success: true }
 }
