@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   description: "AI-powered candidate ranking and interview management",
 };
 
+// SkillAI is a session-gated internal tool. There are no public-facing pages
+// that benefit from static prerendering, and Next 16.2 / React 19 has a framework
+// bug that throws `Cannot read properties of null (reading 'useContext')` during
+// static prerender of any route under this layout (#41). Marking the segment
+// dynamic skips static prerender entirely; pages still render on request.
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: Readonly<{
