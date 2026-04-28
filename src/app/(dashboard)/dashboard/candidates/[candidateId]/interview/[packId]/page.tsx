@@ -95,6 +95,11 @@ export default async function InterviewPackPage({ params }: Props) {
                 Pre-screening · 30 min
               </span>
             )}
+            {pack.language && pack.language !== 'en' && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
+                {pack.language.toUpperCase()}
+              </span>
+            )}
             {pack.experienceLevel && (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-950 text-blue-300 border border-blue-700 capitalize">
                 {pack.experienceLevel} level

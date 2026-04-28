@@ -418,6 +418,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
                   candidateId={candidateId}
                   roleId={role.id}
                   roleName={role.title}
+                  candidateLanguages={candidate.languagesSpoken ?? []}
                 />
               ))}
             </div>

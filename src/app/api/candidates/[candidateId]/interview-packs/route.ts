@@ -26,6 +26,7 @@ export async function GET(
         recommendedDurationMinutes: interviewPacks.recommendedDurationMinutes,
         includesCodeChallenge: interviewPacks.includesCodeChallenge,
         packType: interviewPacks.packType,
+        language: interviewPacks.language,
         createdAt: interviewPacks.createdAt,
         updatedAt: interviewPacks.updatedAt,
         roleTitle: roles.title,
