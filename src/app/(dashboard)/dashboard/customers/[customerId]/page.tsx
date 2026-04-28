@@ -159,7 +159,7 @@ export default async function CustomerDetailPage({ params }: Props) {
                   >
                     <span className="text-sm font-medium text-zinc-100">{role.title}</span>
                     <time className="text-xs text-zinc-500">
-                      {new Date(role.createdAt).toLocaleDateString()}
+                      {new Date(role.createdAt).toLocaleDateString('en-GB')}
                     </time>
                   </Link>
                 ))}

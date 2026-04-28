@@ -11,6 +11,7 @@ export type NoteItem = {
   createdAt: string
   updatedAt: string | null
   isEdited: boolean
+  isShareable?: boolean
 }
 
 type Props = {
@@ -18,6 +19,7 @@ type Props = {
   currentUserId: string
   canEdit: boolean
   initialNotes: NoteItem[]
+  audience?: 'recruiter' | 'customer' | 'manager'
 }
 
 function formatTimestamp(iso: string): string {
@@ -27,10 +29,16 @@ function formatTimestamp(iso: string): string {
   })
 }
 
-export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes }: Props) {
-  // Newest first
+export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, audience = 'recruiter' }: Props) {
+  const isManagerView = audience === 'manager'
+
+  // Newest first; manager sees only shareable notes
+  const filteredInitial = isManagerView
+    ? initialNotes.filter((n) => n.isShareable)
+    : initialNotes
+
   const [notesList, setNotesList] = useState<NoteItem[]>(
-    [...initialNotes].sort(
+    [...filteredInitial].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
   )
@@ -147,7 +155,7 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes }
       </h2>
 
       {/* Add note textarea */}
-      {canEdit && (
+      {canEdit && !isManagerView && (
         <div className="mb-5">
           <textarea
             value={newBody}

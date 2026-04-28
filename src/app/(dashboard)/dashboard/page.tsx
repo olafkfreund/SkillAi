@@ -255,7 +255,7 @@ export default async function DashboardPage() {
                       </span>
                     </div>
                     <time className="text-xs text-zinc-500 whitespace-nowrap">
-                      {new Date(role.createdAt).toLocaleDateString()}
+                      {new Date(role.createdAt).toLocaleDateString('en-GB')}
                     </time>
                   </Link>
                 </li>
@@ -334,7 +334,7 @@ export default async function DashboardPage() {
                       </p>
                       <p className="text-xs text-zinc-500 truncate">
                         {c.agencyName ?? 'Direct'} ·{' '}
-                        <time>{new Date(c.createdAt).toLocaleDateString()}</time>
+                        <time>{new Date(c.createdAt).toLocaleDateString('en-GB')}</time>
                       </p>
                     </div>
                     <span

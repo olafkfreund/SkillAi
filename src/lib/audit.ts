@@ -27,6 +27,10 @@ export type AuditAction =
   | 'settings.default_pack_language_updated'
   | 'auth.untrusted_host_blocked'
   | 'agency.created' | 'agency.archived'
+  | 'shortlist.sent'
+  | 'candidate.approved_by_manager'
+  | 'candidate.rejected_by_manager'
+  | 'role.manager_assigned'
 
 type AuditEntry = {
   action: AuditAction

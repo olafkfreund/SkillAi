@@ -1,8 +1,8 @@
 # Product Roadmap
 
-> Last Updated: 2026-04-27
-> Version: 2.0.0
-> Status: Phases 1–4 shipped; Phase 5 partial; further integrations tracked on GitHub
+> Last Updated: 2026-04-28
+> Version: 2.1.0
+> Status: Phases 1–4 shipped; Phase 5 partial; Hiring Manager persona shipped (Epic #73); further integrations tracked on GitHub
 
 ## Phase 1: Foundation & Core MVP ✅ SHIPPED
 
@@ -145,6 +145,18 @@ Features delivered mid-flight, not in the original v1.0.0 plan.
 
 - [x] **Customers as first-class entities** — customer CRUD, per-customer hiring framework, roles linked to customers
 - [x] **Customer-facing sanitised candidate PDF** — strips internal notes, rates, margin
+
+### Hiring Manager Persona (Epic #73)
+
+- [x] **`hiring_manager` role** — added at rank 0.5 between viewer and recruiter; existing `requireRole(_, 'recruiter')` calls block managers cleanly with no call-site changes
+- [x] **`role_managers` junction** — many-to-many assignment of managers to roles, RLS-isolated, with `is_primary` flag (any-one-approves semantics in v1)
+- [x] **`candidate_role_approvals`** — per-(role × candidate × manager) decision rows; shortlist state derived in code (pending / in_review / complete); decision is `pending` / `approved` / `rejected` with optional comment
+- [x] **`/dashboard/manager` landing page** — manager sees only their assigned roles with pending-count pills + "Sent N days ago" badges
+- [x] **`audience='manager'` sanitisation** — extends the existing recruiter/customer audience pattern: strip rates / margin / agency / internal notes; keep score breakdown, reasoning, interview pack; tags / keywords / role / candidate edit controls become read-only; only `is_shareable=true` notes show
+- [x] **Per-candidate approval UI** — Approve / Reject / Clear with comment textarea + "Approve all remaining" with inline two-step confirm
+- [x] **Recruiter-side controls** — `ManagerAssignmentDialog` to assign managers, `SendForApprovalButton` to dispatch the shortlist, `ShortlistStatusPill` showing "Sent Nd ago — A/T approved, R rejected, P pending"
+- [x] **Audit trail** — four new actions: `shortlist.sent`, `candidate.approved_by_manager`, `candidate.rejected_by_manager`, `role.manager_assigned`
+- [x] **`notes.is_shareable`** — recruiters opt-in per note; default-private to avoid leaking internal language to managers
 
 ### Exports & PDFs
 

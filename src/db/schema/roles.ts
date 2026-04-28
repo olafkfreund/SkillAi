@@ -37,6 +37,7 @@ export const roles = pgTable(
     customerPortalPath: varchar('customer_portal_path', { length: 500 }),
     customerDayRate: numeric('customer_day_rate', { precision: 10, scale: 2 }),
     rateCurrency: varchar('rate_currency', { length: 3 }),
+    shortlistSentAt: timestamp('shortlist_sent_at'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

@@ -7,6 +7,7 @@ import { SparklesIcon, RefreshCwIcon } from 'lucide-react'
 interface PriorityKeywordsPanelProps {
   keywords: string[] | null
   canEdit: boolean
+  audience?: 'recruiter' | 'customer' | 'manager'
   /** Where to send the recruiter to edit priorities (the existing role edit page). */
   roleEditHref: string
 }
@@ -18,8 +19,10 @@ interface PriorityKeywordsPanelProps {
 export function PriorityKeywordsPanel({
   keywords,
   canEdit,
+  audience = 'recruiter',
   roleEditHref,
 }: PriorityKeywordsPanelProps) {
+  const isManagerView = audience === 'manager'
   const items = (keywords ?? []).filter((k) => k.trim().length > 0)
   const empty = items.length === 0
 
@@ -30,7 +33,7 @@ export function PriorityKeywordsPanel({
           <SparklesIcon className="h-4 w-4 text-yellow-400" />
           Manager Priorities
         </h2>
-        {canEdit && (
+        {canEdit && !isManagerView && (
           <a
             href={roleEditHref}
             className="text-xs text-zinc-400 border border-zinc-600 rounded-md px-3 py-1.5

@@ -126,7 +126,7 @@ export function AgencyCandidatePanel({ agencyId, agencyCandidates, unassignedCan
               </Link>
               <div className="flex items-center gap-3 ml-3 flex-shrink-0">
                 <time className="text-xs text-zinc-500">
-                  {new Date(c.createdAt).toLocaleDateString()}
+                  {new Date(c.createdAt).toLocaleDateString('en-GB')}
                 </time>
                 {c.filePath && (
                   <a

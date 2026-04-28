@@ -118,14 +118,14 @@ export function PackList({ candidateId }: Props) {
                       ? ` · ${pack.recommendedDurationMinutes} min`
                       : ''}
                     {pack.experienceLevel ? ` · ${pack.experienceLevel}` : ''}
-                    {' · '}{new Date(pack.createdAt).toLocaleDateString()}
+                    {' · '}{new Date(pack.createdAt).toLocaleDateString('en-GB')}
                   </>
                 ) : isStuck ? (
                   'Stuck — click to retry'
                 ) : isPending && pack.generationStage ? (
                   pack.generationStage
                 ) : (
-                  new Date(pack.createdAt).toLocaleDateString()
+                  new Date(pack.createdAt).toLocaleDateString('en-GB')
                 )}
               </p>
             </div>
