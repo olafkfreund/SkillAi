@@ -31,6 +31,9 @@ import { hasRole } from '@/lib/auth/require-role'
 import { StaleScorePill } from '@/components/roles/priority-keywords-panel'
 import { isScoreOutdatedAgainstPriorities } from '@/lib/scores/staleness'
 import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
+import { ApprovalControls } from '@/components/manager/approval-controls'
+import { getMyAssignedRoles } from '@/actions/role-managers'
+import { getApprovalsForRole } from '@/actions/approvals'
 
 type Props = { params: Promise<{ candidateId: string }>; searchParams: Promise<{ roleId?: string }> }
 
@@ -138,6 +141,35 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
     // Tenant-wide default pack language (3-tier fallback: candidate → tenant → 'en')
     getDefaultPackLanguage(tenantId),
   ])
+
+  // Manager-specific data: which roles am I assigned to, and what are my
+  // approval decisions for those roles that also include this candidate?
+  // We only pay this cost for hiring_manager sessions.
+  const myAssignedRoles = isHiringManager ? await getMyAssignedRoles() : []
+
+  // For each assigned role that this candidate has been scored on, fetch approvals.
+  // candidateScores already contains the full role list — we intersect.
+  const assignedRoleIds = new Set(myAssignedRoles.map((r) => r.roleId))
+  const rolesWithThisCandidate = candidateScores
+    .map((s) => s.role.id)
+    .filter((id) => assignedRoleIds.has(id))
+
+  // Fetch approval rows for each relevant role in parallel (usually 0-3 roles)
+  const approvalsByRole = isHiringManager && rolesWithThisCandidate.length > 0
+    ? await Promise.all(
+        rolesWithThisCandidate.map((rid) => getApprovalsForRole(rid))
+      )
+    : []
+
+  // Build a map: roleId → my approval row for this candidate
+  const myApprovalByRole = new Map<string, { decision: 'pending' | 'approved' | 'rejected'; comment: string | null }>(
+    rolesWithThisCandidate.map((rid, idx) => {
+      const row = (approvalsByRole[idx] ?? []).find(
+        (a) => a.candidateId === candidateId && a.managerId === session.user.id
+      )
+      return [rid, row ? { decision: row.decision, comment: row.comment } : { decision: 'pending', comment: null }]
+    })
+  )
 
   const activeScore = roleId
     ? candidateScores.find((s) => s.score.roleId === roleId)
@@ -402,6 +434,37 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
 
       {/* Role history */}
       <RoleHistoryPanel roleHistory={roleHistory} />
+
+      {/* Manager approval controls — shown when the manager is assigned to one or
+          more roles that this candidate has been scored on */}
+      {isHiringManager && rolesWithThisCandidate.length > 0 && (
+        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+          <h2 className="font-semibold text-zinc-100 mb-1">Your Approval</h2>
+          <p className="text-xs text-zinc-500 mb-4">
+            Record your approval decision for each role this candidate has been shortlisted on.
+          </p>
+          <div className="space-y-4">
+            {rolesWithThisCandidate.map((rid) => {
+              const roleEntry = candidateScores.find((s) => s.role.id === rid)
+              const approval = myApprovalByRole.get(rid)
+              if (!roleEntry) return null
+              return (
+                <div key={rid}>
+                  <p className="text-xs font-medium text-zinc-400 mb-2 uppercase tracking-wide">
+                    {roleEntry.role.title}
+                  </p>
+                  <ApprovalControls
+                    roleId={rid}
+                    candidateId={candidateId}
+                    currentDecision={approval?.decision ?? 'pending'}
+                    currentComment={approval?.comment ?? null}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Web intelligence */}
       <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
