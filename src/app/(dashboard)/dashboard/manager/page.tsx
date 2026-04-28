@@ -15,7 +15,13 @@ export const metadata = { title: 'My Shortlists — SkillAI' }
 export default async function ManagerPage() {
   const session = await auth()
 
-  if (session?.user.role !== 'hiring_manager') {
+  // Hiring managers see their own assigned roles; admins can view the page
+  // (will show their own assignments — typically none — useful for support).
+  // Recruiters/viewers don't have a use case here.
+  if (
+    session?.user.role !== 'hiring_manager' &&
+    session?.user.role !== 'admin'
+  ) {
     notFound()
   }
 

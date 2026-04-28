@@ -48,6 +48,9 @@ const NAV_ITEMS: NavItem[] = [
     label: 'My Shortlists',
     icon: ListChecksIcon,
     minRole: 'hiring_manager',
+    // Recruiters have /dashboard/roles instead — hide the manager landing
+    // from them to keep the IA clean. Admins keep visibility for support.
+    hideForRoles: ['recruiter'],
   },
   { href: '/dashboard/customers', label: 'Customers', icon: BuildingIcon, minRole: 'recruiter' },
   { href: '/dashboard/agencies', label: 'Agencies', icon: BuildingIcon, minRole: 'recruiter' },
