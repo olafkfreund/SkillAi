@@ -2,7 +2,7 @@ import { pgTable, pgPolicy, pgEnum, uuid, varchar, timestamp, boolean } from 'dr
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 
-export const userRoleEnum = pgEnum('user_role', ['admin', 'recruiter', 'viewer'])
+export const userRoleEnum = pgEnum('user_role', ['admin', 'recruiter', 'hiring_manager', 'viewer'])
 
 export const users = pgTable(
   'users',
