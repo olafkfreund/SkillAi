@@ -23,7 +23,9 @@ export type CandidateRow = {
   filePath: string | null
   status: string
   createdAt: string | Date
+  agencyId: string | null
   agencyName: string | null
+  agencyLogoPath: string | null
   candidateRate: string | null
   customerRate: string | null
   rateCurrency: string | null
@@ -181,8 +183,31 @@ export function SelectableCandidateList({ candidates }: Props) {
                         <HomeIcon className="h-3 w-3" />
                         Internal
                       </span>
+                    ) : c.agencyId ? (
+                      <span className="inline-flex items-center gap-1.5 text-zinc-500">
+                        {c.agencyLogoPath ? (
+                          <img
+                            src={`/api/agencies/${c.agencyId}/logo`}
+                            alt=""
+                            width={20}
+                            height={20}
+                            style={{ width: 20, height: 20 }}
+                            className="rounded-full border border-zinc-700 bg-zinc-800 object-contain shrink-0"
+                          />
+                        ) : (
+                          <div
+                            className="flex items-center justify-center rounded-full bg-zinc-800
+                                       text-zinc-400 text-xs font-semibold shrink-0"
+                            style={{ width: 20, height: 20 }}
+                            aria-hidden="true"
+                          >
+                            {c.agencyName?.charAt(0).toUpperCase() ?? '?'}
+                          </div>
+                        )}
+                        {c.agencyName ?? '—'}
+                      </span>
                     ) : (
-                      <span className="text-zinc-500">{c.agencyName ?? '—'}</span>
+                      <span className="text-zinc-500">—</span>
                     )}
                   </td>
                   <td className="px-5 py-3 text-zinc-400 hidden lg:table-cell tabular-nums text-sm">

@@ -96,8 +96,10 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
               filePath: candidates.filePath,
               status: candidates.status,
               createdAt: candidates.createdAt,
+              agencyId: candidates.agencyId,
               agencyName: agencies.name,
               agencyIsInternal: agencies.isInternal,
+              agencyLogoPath: agencies.logoPath,
               candidateRate: candidates.candidateRate,
               customerRate: candidates.customerRate,
               rateCurrency: candidates.rateCurrency,
@@ -257,6 +259,8 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
                 ? c.createdAt.toISOString()
                 : String(c.createdAt),
               isInternalAgency: Boolean(c.agencyIsInternal),
+              agencyId: c.agencyId ?? null,
+              agencyLogoPath: c.agencyLogoPath ?? null,
             }))}
           />
 

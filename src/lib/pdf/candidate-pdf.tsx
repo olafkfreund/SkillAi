@@ -4,6 +4,7 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
 } from '@react-pdf/renderer'
 import { base, colors } from './styles'
@@ -63,6 +64,7 @@ type EnrichmentData = {
 type Props = {
   candidate: Candidate
   agencyName: string | null
+  agencyLogoBase64?: string
   // When 'customer', sensitive fields (candidateRate, redFlags, recommendedDecision,
   // notes section, low-score reasoning) are hidden. Sanitisation of the data
   // itself happens upstream in the API route; this prop gates rendering.
@@ -492,11 +494,13 @@ function BulletList({ items, color }: { items: string[]; color?: string }) {
 function HeaderSection({
   candidate,
   agencyName,
+  agencyLogoBase64,
   audience,
   generatedAt,
 }: {
   candidate: Candidate
   agencyName: string | null
+  agencyLogoBase64?: string
   audience: 'internal' | 'customer'
   generatedAt: Date
 }) {
@@ -528,7 +532,15 @@ function HeaderSection({
               <Text style={{ ...base.small, marginTop: 2 }}>{candidate.phone}</Text>
             )}
             {agencyName && !isCustomer && (
-              <Text style={{ ...base.small, marginTop: 2 }}>Agency: {agencyName}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 4 }}>
+                {agencyLogoBase64 && (
+                  <Image
+                    src={agencyLogoBase64}
+                    style={{ width: 32, height: 32, borderRadius: 16 }}
+                  />
+                )}
+                <Text style={base.small}>Agency: {agencyName}</Text>
+              </View>
             )}
             {candidate.linkedinUrl && (
               <Text style={{ ...base.small, marginTop: 2 }}>
@@ -972,6 +984,7 @@ function CvTextSection({ cvText, cvTextFormatted }: { cvText: string; cvTextForm
 export function CandidatePDF({
   candidate,
   agencyName,
+  agencyLogoBase64,
   audience = 'internal',
   activeScore,
   activeRole,
@@ -992,6 +1005,7 @@ export function CandidatePDF({
         <HeaderSection
           candidate={candidate}
           agencyName={agencyName}
+          agencyLogoBase64={agencyLogoBase64}
           audience={audience}
           generatedAt={generatedAt}
         />

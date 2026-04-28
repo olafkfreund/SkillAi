@@ -114,6 +114,9 @@ export default async function RoleDetailPage({ params }: Props) {
         candidateId: candidates.id,
         candidateRate: candidates.candidateRate,
         candidateCurrency: candidates.rateCurrency,
+        agencyId: candidates.agencyId,
+        agencyName: agencies.name,
+        agencyLogoPath: agencies.logoPath,
         agencyIsInternal: agencies.isInternal,
       })
       .from(scores)
@@ -377,6 +380,9 @@ export default async function RoleDetailPage({ params }: Props) {
                     candidateRate={c.candidateRate}
                     candidateCurrency={c.candidateCurrency}
                     isInternal={Boolean(c.agencyIsInternal)}
+                    agencyId={c.agencyId ?? undefined}
+                    agencyName={c.agencyName ?? null}
+                    agencyLogoPath={c.agencyLogoPath ?? null}
                     canEdit={canEdit}
                     audience={audience}
                     removeAction={removeCandidateFromRole}
