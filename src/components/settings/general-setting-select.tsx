@@ -25,14 +25,14 @@ export function GeneralSettingSelect({ settingKey, label, options, currentValue 
   )
 
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-5">
-      <h3 className="text-sm font-semibold text-zinc-100 mb-3">{label}</h3>
+    <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-5">
+      <h3 className="text-sm font-semibold text-[var(--color-fg)] mb-3">{label}</h3>
       <form action={formAction} className="space-y-3">
         <select
           name="value"
           defaultValue={currentValue}
           disabled={pending}
-          className="w-full text-sm rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100
+          className="w-full text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)]
                      px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
                      disabled:opacity-60"
         >

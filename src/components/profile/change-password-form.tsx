@@ -14,7 +14,7 @@ export function ChangePasswordForm() {
   return (
     <form action={formAction} className="space-y-4">
       <div>
-        <label htmlFor="currentPassword" className="block text-xs font-medium text-zinc-400 mb-1.5">
+        <label htmlFor="currentPassword" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1.5">
           Current password
         </label>
         <input
@@ -24,7 +24,7 @@ export function ChangePasswordForm() {
           disabled={pending}
           required
           autoComplete="current-password"
-          className="w-full text-sm rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100
+          className="w-full text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)]
                      px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
                      disabled:opacity-60"
         />
@@ -34,7 +34,7 @@ export function ChangePasswordForm() {
       </div>
 
       <div>
-        <label htmlFor="newPassword" className="block text-xs font-medium text-zinc-400 mb-1.5">
+        <label htmlFor="newPassword" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1.5">
           New password
         </label>
         <input
@@ -44,7 +44,7 @@ export function ChangePasswordForm() {
           disabled={pending}
           required
           autoComplete="new-password"
-          className="w-full text-sm rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100
+          className="w-full text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)]
                      px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
                      disabled:opacity-60"
         />
@@ -54,7 +54,7 @@ export function ChangePasswordForm() {
       </div>
 
       <div>
-        <label htmlFor="confirmPassword" className="block text-xs font-medium text-zinc-400 mb-1.5">
+        <label htmlFor="confirmPassword" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1.5">
           Confirm new password
         </label>
         <input
@@ -64,7 +64,7 @@ export function ChangePasswordForm() {
           disabled={pending}
           required
           autoComplete="new-password"
-          className="w-full text-sm rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100
+          className="w-full text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)]
                      px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
                      disabled:opacity-60"
         />

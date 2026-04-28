@@ -37,12 +37,12 @@ export function TrustedHostsForm({ initialHosts }: TrustedHostsFormProps) {
   }
 
   return (
-    <section className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-6">
+    <section className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6">
       <div className="flex items-center gap-2 mb-2">
-        <ShieldIcon className="h-4 w-4 text-zinc-400" aria-hidden="true" />
-        <h2 className="text-lg font-semibold text-zinc-100">Trusted hosts</h2>
+        <ShieldIcon className="h-4 w-4 text-[var(--color-fg-muted)]" aria-hidden="true" />
+        <h2 className="text-lg font-semibold text-[var(--color-fg)]">Trusted hosts</h2>
       </div>
-      <p className="text-xs text-zinc-500 mb-4">
+      <p className="text-xs text-[var(--color-fg-subtle)] mb-4">
         Hostnames the auth system trusts (e.g. for sessions over Tailscale or
         behind a reverse proxy). localhost and 127.0.0.1 are always trusted.
       </p>
@@ -65,7 +65,7 @@ export function TrustedHostsForm({ initialHosts }: TrustedHostsFormProps) {
         type="button"
         onClick={handleSave}
         disabled={pending}
-        className="mt-4 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 hover:bg-zinc-700 disabled:opacity-50"
+        className="mt-4 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] px-3 py-1.5 text-sm text-[var(--color-fg)] hover:bg-[var(--color-bg-input)] disabled:opacity-50"
       >
         {pending ? 'Saving…' : 'Save trusted hosts'}
       </button>

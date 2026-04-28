@@ -35,14 +35,14 @@ function ProviderCard({
   }
 
   return (
-    <div className="flex items-center justify-between rounded-xl bg-zinc-800 border border-zinc-700 px-5 py-4">
+    <div className="flex items-center justify-between rounded-xl bg-[var(--color-bg-input)] border border-[var(--color-border)] px-5 py-4">
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border)] flex items-center justify-center flex-shrink-0">
           {icon}
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-zinc-200">{name}</p>
+            <p className="text-sm font-medium text-[var(--color-fg)]">{name}</p>
             {connected ? (
               <span className="inline-flex items-center gap-1 text-[10px] font-medium
                                text-emerald-400 bg-emerald-950 border border-emerald-800
@@ -52,14 +52,14 @@ function ProviderCard({
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-[10px] font-medium
-                               text-zinc-500 bg-zinc-800 border border-zinc-700
+                               text-[var(--color-fg-subtle)] bg-[var(--color-bg-input)] border border-[var(--color-border)]
                                rounded-full px-2 py-0.5">
                 <CircleIcon className="h-2.5 w-2.5" />
                 Not connected
               </span>
             )}
           </div>
-          <p className="text-xs text-zinc-500 mt-0.5">{description}</p>
+          <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5">{description}</p>
         </div>
       </div>
 
@@ -69,7 +69,7 @@ function ProviderCard({
             onClick={handleDisconnect}
             disabled={isPending}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
-                       text-zinc-400 border border-zinc-600 rounded-lg
+                       text-[var(--color-fg-muted)] border border-[var(--color-border)] rounded-lg
                        hover:text-red-400 hover:border-red-800 hover:bg-red-950
                        transition-colors disabled:opacity-50"
           >

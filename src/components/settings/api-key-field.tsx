@@ -33,10 +33,10 @@ export function ApiKeyField({ settingKey, label, placeholder, isConfigured }: Pr
   const pending = savePending || removePending
 
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-5">
+    <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-5">
       <div className="flex items-center gap-2 mb-4">
-        <KeyIcon className="h-4 w-4 text-zinc-500" />
-        <h3 className="text-sm font-semibold text-zinc-100">{label}</h3>
+        <KeyIcon className="h-4 w-4 text-[var(--color-fg-subtle)]" />
+        <h3 className="text-sm font-semibold text-[var(--color-fg)]">{label}</h3>
         {isConfigured && (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-950 text-emerald-400 border border-emerald-700 ml-auto">
             <CheckCircleIcon className="h-3 w-3" />
@@ -59,15 +59,15 @@ export function ApiKeyField({ settingKey, label, placeholder, isConfigured }: Pr
             name="value"
             placeholder={isConfigured ? '••••••••••••••••' : placeholder}
             disabled={pending}
-            className="w-full text-sm rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 pr-10
-                       placeholder:text-zinc-500
+            className="w-full text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 pr-10
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
             autoComplete="off"
           />
           <button
             type="button"
             onClick={() => setShowKey((s) => !s)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]"
             tabIndex={-1}
           >
             {showKey ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
@@ -128,7 +128,7 @@ export function ApiKeyField({ settingKey, label, placeholder, isConfigured }: Pr
           <button
             type="button"
             onClick={() => setConfirming(false)}
-            className="text-xs text-zinc-500 hover:text-zinc-300"
+            className="text-xs text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]"
           >
             Cancel
           </button>

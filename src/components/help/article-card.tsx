@@ -22,8 +22,8 @@ export function ArticleCard({ article }: Props) {
   return (
     <Link
       href={`/dashboard/help/${article.slug}`}
-      className="group flex flex-col gap-3 rounded-xl border border-zinc-700 bg-zinc-900 p-5
-                 hover:border-violet-500/60 hover:bg-zinc-800/60 transition-colors"
+      className="group flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-5
+                 hover:border-violet-500/60 hover:bg-[var(--color-bg-input)] transition-colors"
     >
       {/* Category + date */}
       <div className="flex items-center justify-between gap-2 min-w-0">
@@ -32,14 +32,14 @@ export function ArticleCard({ article }: Props) {
         </span>
         <time
           dateTime={article.lastUpdated}
-          className="text-xs text-zinc-500 whitespace-nowrap flex-shrink-0"
+          className="text-xs text-[var(--color-fg-subtle)] whitespace-nowrap flex-shrink-0"
         >
           {updatedLabel}
         </time>
       </div>
 
       {/* Title */}
-      <h3 className="text-sm font-semibold text-zinc-100 group-hover:text-white transition-colors
+      <h3 className="text-sm font-semibold text-[var(--color-fg)] group-hover:text-[var(--color-fg)] transition-colors
                      leading-snug line-clamp-2">
         {article.title}
       </h3>
@@ -50,15 +50,15 @@ export function ArticleCard({ article }: Props) {
           {article.tags.slice(0, 4).map((tag) => (
             <span
               key={tag}
-              className="inline-block rounded-full bg-zinc-800 border border-zinc-700
-                         px-2 py-0.5 text-xs text-zinc-400"
+              className="inline-block rounded-full bg-[var(--color-bg-input)] border border-[var(--color-border)]
+                         px-2 py-0.5 text-xs text-[var(--color-fg-muted)]"
             >
               {tag}
             </span>
           ))}
           {article.tags.length > 4 && (
-            <span className="inline-block rounded-full bg-zinc-800 border border-zinc-700
-                             px-2 py-0.5 text-xs text-zinc-500">
+            <span className="inline-block rounded-full bg-[var(--color-bg-input)] border border-[var(--color-border)]
+                             px-2 py-0.5 text-xs text-[var(--color-fg-subtle)]">
               +{article.tags.length - 4}
             </span>
           )}
