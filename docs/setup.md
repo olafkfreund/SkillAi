@@ -149,10 +149,14 @@ All secrets must be injected via environment variables. Never commit `.env.local
 | `ENCRYPTION_KEY` | Yes | 32-byte hex key for encrypting stored API keys |
 | `UPLOAD_DIR` | No | Local upload directory (default: ./uploads) |
 | `BRAVE_SEARCH_API_KEY` | No | Brave Search API key for candidate web intelligence |
-| `GOOGLE_OAUTH_CLIENT_ID` | No | Google OAuth for calendar integration |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | No | Google OAuth for calendar integration |
-| `MICROSOFT_OAUTH_CLIENT_ID` | No | Microsoft OAuth for calendar integration |
-| `MICROSOFT_OAUTH_CLIENT_SECRET` | No | Microsoft OAuth for calendar integration |
+| `NEXT_PUBLIC_APP_URL` | No | Public base URL of the deployment; used to build the OAuth `redirect_uri`. Defaults to `http://localhost:3000` |
+| `GOOGLE_CLIENT_ID` | No | Google OAuth client ID for Google Calendar integration |
+| `GOOGLE_CLIENT_SECRET` | No | Google OAuth client secret |
+| `MICROSOFT_CLIENT_ID` | No | Microsoft OAuth client ID for Outlook Calendar integration |
+| `MICROSOFT_CLIENT_SECRET` | No | Microsoft OAuth client secret |
+| `MICROSOFT_TENANT_ID` | No | Microsoft directory (tenant) ID. Defaults to `common` (multi-tenant + personal accounts); set to a directory GUID for single-tenant apps |
+
+The OAuth redirect URI registered with Google or Microsoft must exactly match `${NEXT_PUBLIC_APP_URL}/api/auth/calendar/{google|microsoft}/callback`. For step-by-step setup of the Google and Microsoft OAuth apps — including the redirect-URI gotcha and a troubleshooting table — see the in-app help article **"Calendar OAuth credentials (Google + Microsoft)"** under Settings & Admin.
 
 ---
 
