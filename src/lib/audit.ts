@@ -18,6 +18,8 @@ export type AuditAction =
   | 'interview_pack.deleted' | 'interview_pack.retried'
   | 'interview_pack.generated_in_language'
   | 'interview_slot.created' | 'interview_slot.updated' | 'interview_slot.cancelled'
+  | 'interview_slot.rescheduled_external' | 'interview_slot.cancelled_external'
+  | 'calendar.sync_completed' | 'calendar.sync_failed'
   | 'note.created' | 'note.deleted'
   | 'user.invited' | 'user.role_changed' | 'user.deactivated'
   | 'user.created'
