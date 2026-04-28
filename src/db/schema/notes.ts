@@ -18,6 +18,7 @@ export const notes = pgTable(
       .notNull()
       .references(() => users.id),
     body: text('body').notNull(),
+    isShareable: boolean('is_shareable').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }),
     isEdited: boolean('is_edited').notNull().default(false),

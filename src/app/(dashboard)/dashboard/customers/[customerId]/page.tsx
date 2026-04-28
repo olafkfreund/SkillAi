@@ -60,7 +60,29 @@ export default async function CustomerDetailPage({ params }: Props) {
         <Link href="/dashboard/customers" className="text-sm text-zinc-500 hover:text-zinc-300">
           ← Back to customers
         </Link>
-        <h1 className="text-2xl font-bold text-zinc-100 mt-2">{customer.name}</h1>
+        <div className="flex items-center gap-4 mt-2">
+          {/* 64px logo or initials avatar */}
+          {customer.logoPath ? (
+            <img
+              src={`/api/customers/${customer.id}/logo`}
+              alt=""
+              width={64}
+              height={64}
+              className="rounded-xl border border-zinc-700 bg-zinc-800 object-contain shrink-0"
+              style={{ width: 64, height: 64 }}
+            />
+          ) : (
+            <div
+              className="flex items-center justify-center rounded-xl bg-zinc-800 text-zinc-400
+                         text-xl font-semibold shrink-0"
+              style={{ width: 64, height: 64 }}
+              aria-hidden="true"
+            >
+              {customer.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <h1 className="text-2xl font-bold text-zinc-100">{customer.name}</h1>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -159,7 +181,7 @@ export default async function CustomerDetailPage({ params }: Props) {
                   >
                     <span className="text-sm font-medium text-zinc-100">{role.title}</span>
                     <time className="text-xs text-zinc-500">
-                      {new Date(role.createdAt).toLocaleDateString()}
+                      {new Date(role.createdAt).toLocaleDateString('en-GB')}
                     </time>
                   </Link>
                 ))}

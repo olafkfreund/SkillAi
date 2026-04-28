@@ -23,6 +23,7 @@ export default async function AgenciesPage() {
             isActive: agencies.isActive,
             isInternal: agencies.isInternal,
             isSystem: agencies.isSystem,
+            logoPath: agencies.logoPath,
             createdAt: agencies.createdAt,
           })
           .from(agencies)
@@ -83,6 +84,27 @@ export default async function AgenciesPage() {
                               ? 'bg-blue-950/30 border-blue-800 hover:border-blue-600'
                               : 'bg-zinc-900 border-zinc-700 hover:border-blue-500'}`}
               >
+                <div className="flex items-start gap-3">
+                  {/* 32px logo or initials avatar */}
+                  {agency.logoPath ? (
+                    <img
+                      src={`/api/agencies/${agency.id}/logo`}
+                      alt=""
+                      width={32}
+                      height={32}
+                      className="rounded-full border border-zinc-700 bg-zinc-800 object-contain shrink-0 mt-0.5"
+                      style={{ width: 32, height: 32 }}
+                    />
+                  ) : (
+                    <div
+                      className="flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400
+                                 text-xs font-semibold shrink-0 mt-0.5"
+                      style={{ width: 32, height: 32 }}
+                      aria-hidden="true"
+                    >
+                      {agency.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                 <div>
                   <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
                     {isInternal && <HomeIcon className="h-4 w-4 text-blue-400" />}
@@ -110,8 +132,9 @@ export default async function AgenciesPage() {
                     <p className="text-sm text-zinc-500 mt-1 line-clamp-1">{agency.notes}</p>
                   )}
                 </div>
+                </div>
                 <time className="text-xs text-zinc-500 whitespace-nowrap ml-4 mt-0.5">
-                  {new Date(agency.createdAt).toLocaleDateString()}
+                  {new Date(agency.createdAt).toLocaleDateString('en-GB')}
                 </time>
               </Link>
             )

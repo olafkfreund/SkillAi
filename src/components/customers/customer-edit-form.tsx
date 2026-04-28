@@ -3,6 +3,7 @@
 import { useActionState } from 'react'
 import { updateCustomer, archiveCustomer } from '@/actions/customers'
 import type { Customer } from '@/db/schema/customers'
+import { CustomerLogoUpload } from './logo-upload'
 
 interface Props {
   customer: Customer
@@ -15,6 +16,9 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
 
   return (
     <div className="space-y-4">
+      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6">
+        <CustomerLogoUpload customerId={customer.id} currentLogoPath={customer.logoPath ?? null} />
+      </div>
       <form action={action} className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 space-y-4">
         <h3 className="font-semibold text-zinc-100">Customer details</h3>
 

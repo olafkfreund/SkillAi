@@ -247,7 +247,7 @@ export async function deactivateUser(userId: string): Promise<void> {
 const CreateUserDirectSchema = z.object({
   email: z.string().email('Invalid email address').max(255, 'Email must be 255 characters or fewer'),
   name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or fewer'),
-  role: z.enum(['admin', 'recruiter', 'viewer']),
+  role: z.enum(['admin', 'recruiter', 'hiring_manager', 'viewer']),
   tempPassword: z
     .string()
     .min(12, 'Temporary password must be at least 12 characters')

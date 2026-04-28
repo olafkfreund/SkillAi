@@ -281,7 +281,7 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
                 {enrichment.stackOverflowProfile.username}
               </a>
               <div className="mt-1 text-xs text-zinc-500">
-                Reputation: <span className="text-zinc-300">{enrichment.stackOverflowProfile.reputation.toLocaleString()}</span>
+                Reputation: <span className="text-zinc-300">{enrichment.stackOverflowProfile.reputation.toLocaleString('en-GB')}</span>
               </div>
               {enrichment.stackOverflowProfile.topTags?.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1">
@@ -372,7 +372,7 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
 
           {enrichment?.searchedAt && (
             <p className="text-xs text-zinc-500 mt-2" suppressHydrationWarning>
-              Last searched {new Date(enrichment.searchedAt).toLocaleString()}
+              Last searched {new Date(enrichment.searchedAt).toLocaleString('en-GB')}
             </p>
           )}
         </div>

@@ -13,6 +13,7 @@ export const metadata = { title: 'Team Management — SkillAI' }
 const ROLE_BADGE: Record<UserRole, string> = {
   admin: 'bg-violet-950 text-violet-400 border border-violet-700',
   recruiter: 'bg-blue-950 text-blue-400 border border-blue-700',
+  hiring_manager: 'bg-emerald-950 text-emerald-400 border border-emerald-700',
   viewer: 'bg-zinc-800 text-zinc-400 border border-zinc-700',
 }
 

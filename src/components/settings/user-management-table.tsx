@@ -8,12 +8,14 @@ import type { UserRole } from '@/lib/auth/types'
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: 'admin', label: 'Admin' },
   { value: 'recruiter', label: 'Recruiter' },
+  { value: 'hiring_manager', label: 'Hiring Manager' },
   { value: 'viewer', label: 'Viewer' },
 ]
 
 const ROLE_BADGE: Record<UserRole, string> = {
   admin: 'bg-blue-950 text-blue-300 border-blue-700',
   recruiter: 'bg-violet-950 text-violet-300 border-violet-700',
+  hiring_manager: 'bg-emerald-950 text-emerald-300 border-emerald-700',
   viewer: 'bg-zinc-800 text-zinc-400 border-zinc-600',
 }
 
