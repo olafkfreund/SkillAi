@@ -1,8 +1,8 @@
 # Product Roadmap
 
 > Last Updated: 2026-04-28
-> Version: 2.4.0
-> Status: Phases 1–4 shipped; Phase 5 partial (health endpoint now shipped); Hiring Manager persona shipped (Epic #73); in-app help, branding logos, candidate-list cleanup, and light/dark mode v1 shipped; REST API parity, API token system, per-tenant rate limiting, and MCP server (Epic #105) shipped; cross-platform `skillai-mcp` packaging (Epic #115) shipped; further integrations tracked on GitHub
+> Version: 2.5.0
+> Status: Phases 1–4 shipped; Phase 5 partial (health endpoint now shipped); Hiring Manager persona shipped (Epic #73); in-app help, branding logos, candidate-list cleanup, and light/dark mode v1 shipped; REST API parity, API token system, per-tenant rate limiting, and MCP server (Epic #105) shipped; cross-platform `skillai-mcp` packaging (Epic #115) shipped; GDPR right-to-erasure + DSAR export shipped (#75); daily-active recruiter dashboard shipped (#84); further integrations tracked on GitHub
 
 ## Phase 1: Foundation & Core MVP ✅ SHIPPED
 
@@ -201,6 +201,20 @@ Features delivered mid-flight, not in the original v1.0.0 plan.
 - [x] **Security hardening** — CSP headers, session guard, header source pattern fixes, upload permission fixes
 - [x] **Docker dev environment** — env file mapping, API key isolation, migration tooling
 - [x] **Cross-origin dev policy** — allowedDevOrigins for hostname/IP access
+
+### GDPR & Compliance (Epic #72, PR #130 — closes #75)
+
+- [x] **Right-to-erasure UI (Article 17)** — admin-only "Delete candidate (GDPR)" with typed-name confirmation modal, distinct from the existing soft-archive flow. Hard-deletes the candidate row and cascades manually (explicit transactional deletes, no DB cascade migration) across 13 child tables: `sent_emails`, `transcript_analyses`, `interview_transcripts`, `interview_questions`, `code_challenges`, `interview_packs`, `interview_slots`, `candidate_role_approvals`, `notes`, `cv_profiles`, `candidate_enrichments`, `scores`, `candidates`. Removes the CV file from disk via `deleteCvFile`. (DEC-011)
+- [x] **Audit log redaction (not deletion)** — existing audit_logs rows for the candidate are RETAINED but PII is redacted (`entityLabel = '[redacted-gdpr]'`, metadata replaced with `{redacted_gdpr: true, redacted_at}`) and a tombstone `candidate.deleted_gdpr` audit row is written. Preserves the action history (who did what, when) for accountability while honouring erasure of personal data.
+- [x] **DSAR export (Article 15)** — admin-only "Export all data (GDPR)" button generates a single ZIP via `archiver` containing 11 JSON exports (`candidate.json`, `scores.json`, `notes.json`, `cv-profile.json`, `enrichment.json`, `audit-log.json`, `sent-emails.json`, `interview-packs.json`, `interview-slots.json`, `interview-transcripts.json`, `approvals.json`), the original CV file, plus a `README.txt` cover letter explaining each file under GDPR Article 15. Streamed via `ReadableStream` — no staging to disk.
+- [x] **Two new audit actions** — `candidate.deleted_gdpr`, `candidate.dsar_exported`.
+
+### Dashboard & Personalisation (Epic #72, PR #131 — closes #84)
+
+- [x] **"For you" dashboard section** — new `<ForYouSection>` rendered above the existing dashboard panels, surfacing five personal action streams: pending interviews today + tomorrow, candidates awaiting score (last 7 days, status pending/processing), stale priorities (per-role count of outdated scores via `isScoreOutdatedAgainstPriorities`), expired roles (`cutoffDate < CURRENT_DATE` AND active), and manager approval requests (only renders for `hiring_manager` role).
+- [x] **Per-stream caps + parallel queries** — each widget capped at 5 items; all five sub-queries run in parallel inside a single `withTenant()` call. Zero schema changes.
+- [x] **All-empty collapse** — when every stream is empty, the section renders a single "Nothing on your plate today." panel rather than five empty boxes; per-widget empty states hide the widget entirely.
+- [x] **Personalisation model** — hiring-managers see only their `role_managers` rows; recruiters see tenant-wide items (no recruiter-ownership / role-assignment model exists today; introducing one is deferred to a future epic).
 
 ---
 
