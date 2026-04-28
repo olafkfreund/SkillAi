@@ -36,6 +36,9 @@ export type AuditAction =
   | 'api_token.created' | 'api_token.revoked' | 'api_token.used'
   | 'api.rate_limit_exceeded'
   | 'mcp.tool_called' | 'mcp.confirmed_action'
+  | 'candidate.email_sent'
+  | 'email_template.created' | 'email_template.updated' | 'email_template.deleted'
+  | 'settings.smtp_updated'
 
 type AuditEntry = {
   action: AuditAction
