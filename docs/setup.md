@@ -176,6 +176,68 @@ For development, `db:push` is the fastest way to apply schema changes. For produ
 
 ---
 
+## Data Export & Backup Policy
+
+SkillAI operates two complementary backup mechanisms. Operators are responsible for the first; admins manage the second.
+
+### Operator-level database backup (full backup)
+
+The authoritative backup for all tenant data is a full PostgreSQL dump taken from the database service.
+
+Recommended setup:
+
+```bash
+# Daily cron: dump the entire database and compress it
+pg_dump "$DATABASE_URL" | gzip > /backups/skillai-$(date +%Y%m%d).sql.gz
+```
+
+For Docker deployments, run this against the `db` container:
+
+```bash
+docker compose exec db pg_dump -U skillai skillai | gzip > /backups/skillai-$(date +%Y%m%d).sql.gz
+```
+
+To restore from a dump:
+
+```bash
+gunzip -c /backups/skillai-20260101.sql.gz | psql "$DATABASE_URL"
+```
+
+Recommended cadence: daily. Retain at least 30 rolling dumps. Store backups off-site in encrypted storage separate from the application host.
+
+Uploaded CV files and logos are stored in the `uploads` Docker volume (or an S3-compatible store in production). Back up the volume separately — it is not captured by `pg_dump`.
+
+### Admin-level per-tenant export (in-app)
+
+Admins can download a per-tenant JSON export from the Settings page ("Backups & Data Export" card). This produces a ZIP containing one JSON file per database table, scoped to the tenant, plus a `manifest.json`.
+
+This export is:
+- **Self-service** — no operator involvement needed
+- **Portable** — a single ZIP file readable outside the application
+- **GDPR-friendly** — can serve as a Subject Access Request response for your organisation's own data
+
+Recommended cadence: weekly manual export by an admin. Retain exports for at least **2 years** to satisfy common GDPR and employment records obligations (verify the exact requirement for your jurisdiction).
+
+Per-tenant exports are **downloaded to the admin's browser** and are not stored server-side. The operator has no visibility into how many times an admin has exported, except via the audit log (`tenant.exported` action).
+
+### What is NOT in the per-tenant export
+
+- Binary files (CV PDFs, logos) — paths are in the JSON; the binaries remain on disk
+- Other tenants' data — each export is scoped to a single tenant via RLS
+- The `tenants` table itself — contains only the tenant's own metadata row, not useful in this context
+- The `calendar_connections` table — per-user, not per-tenant
+
+For a full account of what is included, see the in-app help article **"Backups and data export"** under Settings & Admin.
+
+### Restore from export
+
+Restore-from-export (importing the ZIP back into the app) is **not yet available in-app**. A future PR will deliver this. For now:
+
+- For full restores, operators use `pg_restore` / `psql` against a `pg_dump` backup.
+- For partial recovery (e.g. deleted candidates), read the JSON directly to extract specific rows and re-insert via the UI or API.
+
+---
+
 ## Default Credentials
 
 The seed script creates the following users on first run:
