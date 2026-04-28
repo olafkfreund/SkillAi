@@ -82,8 +82,8 @@ export default async function ManagerPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-zinc-100">My Shortlists</h1>
-        <p className="text-zinc-500 mt-1">
+        <h1 className="text-2xl font-bold text-[var(--color-fg)]">My Shortlists</h1>
+        <p className="text-[var(--color-fg-subtle)] mt-1">
           {rows.length} role{rows.length !== 1 ? 's' : ''} assigned to you
         </p>
       </div>

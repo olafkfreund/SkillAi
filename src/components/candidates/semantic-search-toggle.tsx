@@ -14,7 +14,7 @@ interface SemanticResult {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  new: 'bg-zinc-700 text-zinc-300',
+  new: 'bg-[var(--color-bg-input)] text-[var(--color-fg-muted)]',
   shortlisted: 'bg-blue-900/50 text-blue-300',
   interviewing: 'bg-purple-900/50 text-purple-300',
   offered: 'bg-amber-900/50 text-amber-300',
@@ -90,8 +90,8 @@ export function SemanticSearchToggle() {
       {/* Toggle button */}
       <button
         onClick={handleToggle}
-        className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2
-                   text-sm text-zinc-300 hover:text-zinc-100 hover:bg-zinc-700
+        className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-input)] px-3 py-2
+                   text-sm text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-input)]
                    focus:outline-none focus:ring-2 focus:ring-blue-500
                    transition-colors"
         aria-expanded={open}
@@ -100,7 +100,7 @@ export function SemanticSearchToggle() {
         <BrainIcon className="h-4 w-4 text-purple-400" />
         AI Semantic Search
         <ChevronDownIcon
-          className={`h-3.5 w-3.5 text-zinc-500 transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`h-3.5 w-3.5 text-[var(--color-fg-subtle)] transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -108,20 +108,20 @@ export function SemanticSearchToggle() {
       {open && (
         <div
           id="semantic-search-panel"
-          className="mt-3 rounded-xl border border-zinc-700 bg-zinc-900 p-4"
+          className="mt-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4"
           role="search"
           aria-label="Semantic candidate search"
         >
           <div className="flex items-start justify-between mb-3">
             <div>
-              <p className="text-sm font-medium text-zinc-200">Semantic Candidate Search</p>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-sm font-medium text-[var(--color-fg)]">Semantic Candidate Search</p>
+              <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5">
                 Describe the ideal candidate in plain English — AI finds the closest matches.
               </p>
             </div>
             <button
               onClick={handleClose}
-              className="text-zinc-600 hover:text-zinc-400 transition-colors p-0.5"
+              className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-muted)] transition-colors p-0.5"
               aria-label="Close semantic search"
             >
               <XIcon className="h-4 w-4" />
@@ -137,8 +137,8 @@ export function SemanticSearchToggle() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="e.g. Senior TypeScript engineer with React and PostgreSQL experience"
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
-                         text-sm text-zinc-200 placeholder:text-zinc-500
+              className="flex-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-2
+                         text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)]
                          focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent
                          transition-colors"
               aria-label="Semantic search query"
@@ -173,33 +173,33 @@ export function SemanticSearchToggle() {
           {searched && !loading && !error && (
             <div className="mt-4">
               {results.length === 0 ? (
-                <p className="text-sm text-zinc-500 text-center py-4">
+                <p className="text-sm text-[var(--color-fg-subtle)] text-center py-4">
                   No candidates with embeddings found. Upload and score candidates to enable semantic search.
                 </p>
               ) : (
                 <div className="space-y-2">
-                  <p className="text-xs text-zinc-500 mb-3">
+                  <p className="text-xs text-[var(--color-fg-subtle)] mb-3">
                     {results.length} closest match{results.length !== 1 ? 'es' : ''}
                   </p>
                   {results.map((r) => (
                     <Link
                       key={r.id}
                       href={`/dashboard/candidates/${r.id}`}
-                      className="flex items-center justify-between rounded-lg bg-zinc-800 border border-zinc-700
-                                 px-4 py-3 hover:bg-zinc-750 hover:border-zinc-600 transition-colors group"
+                      className="flex items-center justify-between rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)]
+                                 px-4 py-3 hover:bg-[var(--color-bg-input)] hover:border-[var(--color-border)] transition-colors group"
                     >
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-zinc-200 group-hover:text-white truncate">
+                        <p className="text-sm font-medium text-[var(--color-fg)] group-hover:text-[var(--color-fg)] truncate">
                           {r.first_name} {r.last_name}
                         </p>
                         {r.email && (
-                          <p className="text-xs text-zinc-500 truncate mt-0.5">{r.email}</p>
+                          <p className="text-xs text-[var(--color-fg-subtle)] truncate mt-0.5">{r.email}</p>
                         )}
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 ml-3">
                         <span
                           className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize
-                                      ${STATUS_COLORS[r.status] ?? 'bg-zinc-700 text-zinc-300'}`}
+                                      ${STATUS_COLORS[r.status] ?? 'bg-[var(--color-bg-input)] text-[var(--color-fg-muted)]'}`}
                         >
                           {r.status}
                         </span>

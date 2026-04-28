@@ -41,11 +41,11 @@ export function RoleCardList({ roles }: Props) {
     return (
       <div
         className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed
-                    border-zinc-700 bg-zinc-950 px-6 py-16 text-center"
+                    border-[var(--color-border)] bg-[var(--color-bg-app)] px-6 py-16 text-center"
       >
-        <BriefcaseIcon className="h-10 w-10 text-zinc-600 mb-3" />
-        <p className="text-zinc-400 font-medium">No roles assigned to you yet</p>
-        <p className="text-zinc-500 text-sm mt-1">
+        <BriefcaseIcon className="h-10 w-10 text-[var(--color-fg-subtle)] mb-3" />
+        <p className="text-[var(--color-fg-muted)] font-medium">No roles assigned to you yet</p>
+        <p className="text-[var(--color-fg-subtle)] text-sm mt-1">
           Your recruiter will assign you when a shortlist is ready.
         </p>
       </div>
@@ -61,14 +61,14 @@ export function RoleCardList({ roles }: Props) {
           <Link
             key={role.roleId}
             href={`/dashboard/roles/${role.roleId}`}
-            className="rounded-xl bg-zinc-900 border border-zinc-700 px-6 py-5
+            className="rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] px-6 py-5
                        hover:border-blue-500 hover:shadow-sm transition-all block"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 {/* Title row */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="font-semibold text-zinc-100 truncate">{role.title}</h2>
+                  <h2 className="font-semibold text-[var(--color-fg)] truncate">{role.title}</h2>
 
                   {role.isPrimary && (
                     <span
@@ -103,11 +103,11 @@ export function RoleCardList({ roles }: Props) {
                 {/* Meta row */}
                 <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                   {role.customerName && (
-                    <span className="text-sm text-zinc-400">{role.customerName}</span>
+                    <span className="text-sm text-[var(--color-fg-muted)]">{role.customerName}</span>
                   )}
 
                   {role.targetFillDate && (
-                    <span className="text-xs text-zinc-500 tabular-nums">
+                    <span className="text-xs text-[var(--color-fg-subtle)] tabular-nums">
                       Fill by {formatDate(role.targetFillDate)}
                     </span>
                   )}
@@ -117,7 +117,7 @@ export function RoleCardList({ roles }: Props) {
               {/* Shortlist sent badge — right-aligned */}
               <div className="flex-shrink-0 text-right">
                 {sentDaysAgo !== null ? (
-                  <span className="text-xs text-zinc-400 whitespace-nowrap">
+                  <span className="text-xs text-[var(--color-fg-muted)] whitespace-nowrap">
                     Sent{' '}
                     {sentDaysAgo === 0
                       ? 'today'
@@ -126,7 +126,7 @@ export function RoleCardList({ roles }: Props) {
                         : `${sentDaysAgo} days ago`}
                   </span>
                 ) : (
-                  <span className="text-xs text-zinc-600 whitespace-nowrap">Not sent yet</span>
+                  <span className="text-xs text-[var(--color-fg-subtle)] whitespace-nowrap">Not sent yet</span>
                 )}
               </div>
             </div>

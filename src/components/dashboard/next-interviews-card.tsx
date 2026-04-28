@@ -71,27 +71,27 @@ function isImminent(date: Date): boolean {
 
 export function NextInterviewsCard({ interviews }: Props) {
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-5 mb-4">
+    <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-5 mb-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <CalendarIcon className="h-4 w-4 text-zinc-400" />
-          <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide">
+          <CalendarIcon className="h-4 w-4 text-[var(--color-fg-muted)]" />
+          <h2 className="text-sm font-semibold text-[var(--color-fg)] uppercase tracking-wide">
             Next Interviews
           </h2>
         </div>
         {interviews.length > 0 && (
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-[var(--color-fg-subtle)]">
             {interviews.length} upcoming
           </span>
         )}
       </div>
 
       {interviews.length === 0 ? (
-        <p className="text-sm text-zinc-500 py-4 text-center">
+        <p className="text-sm text-[var(--color-fg-subtle)] py-4 text-center">
           No upcoming interviews scheduled
         </p>
       ) : (
-        <ul className="divide-y divide-zinc-800">
+        <ul className="divide-y divide-[var(--color-border)]">
           {interviews.map((slot) => {
             const imminent = isImminent(slot.scheduledAt)
             return (
@@ -107,19 +107,19 @@ export function NextInterviewsCard({ interviews }: Props) {
                       href={`/dashboard/candidates/${slot.candidateId}`}
                       className="block"
                     >
-                      <p className="text-sm font-medium text-zinc-100 truncate hover:text-blue-400 transition-colors">
+                      <p className="text-sm font-medium text-[var(--color-fg)] truncate hover:text-blue-400 transition-colors">
                         {slot.candidateFirstName} {slot.candidateLastName}
                         {slot.roleTitle && (
-                          <span className="text-zinc-500 font-normal"> · {slot.roleTitle}</span>
+                          <span className="text-[var(--color-fg-subtle)] font-normal"> · {slot.roleTitle}</span>
                         )}
                       </p>
-                      <p className="text-xs text-zinc-500 mt-0.5 truncate">
+                      <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5 truncate">
                         {slot.title}
                         {slot.interviewerName && (
-                          <span className="text-zinc-600"> · with {slot.interviewerName}</span>
+                          <span className="text-[var(--color-fg-subtle)]"> · with {slot.interviewerName}</span>
                         )}
                         {slot.location && (
-                          <span className="text-zinc-600 inline-flex items-center gap-0.5 ml-2">
+                          <span className="text-[var(--color-fg-subtle)] inline-flex items-center gap-0.5 ml-2">
                             <MapPinIcon className="h-3 w-3" />
                             {slot.location}
                           </span>
@@ -132,12 +132,12 @@ export function NextInterviewsCard({ interviews }: Props) {
                   <div className="text-right flex-shrink-0 hidden sm:block">
                     <p
                       className={`text-sm font-medium tabular-nums ${
-                        imminent ? 'text-amber-400' : 'text-zinc-100'
+                        imminent ? 'text-amber-400' : 'text-[var(--color-fg)]'
                       }`}
                     >
                       {formatScheduledAt(slot.scheduledAt)}
                     </p>
-                    <p className="text-xs text-zinc-500 mt-0.5">
+                    <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5">
                       {slot.durationMinutes} min
                     </p>
                   </div>
@@ -157,7 +157,7 @@ export function NextInterviewsCard({ interviews }: Props) {
                     ) : (
                       <Link
                         href={`/dashboard/candidates/${slot.candidateId}`}
-                        className="inline-flex items-center gap-0.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+                        className="inline-flex items-center gap-0.5 text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors"
                       >
                         View
                         <ChevronRightIcon className="h-3.5 w-3.5" />
