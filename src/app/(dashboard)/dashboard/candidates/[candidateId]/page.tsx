@@ -4,7 +4,7 @@ import { eq, and, desc } from 'drizzle-orm'
 import { ArrowLeftIcon, ArchiveIcon } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { db, withTenant } from '@/db'
-import { candidates, scores, roles, notes, agencies, candidateEnrichments, cvProfiles, interviewSlots, calendarConnections } from '@/db/schema'
+import { candidates, scores, roles, notes, agencies, candidateEnrichments, cvProfiles, interviewSlots, calendarConnections, tenants } from '@/db/schema'
 import { ScoreChart } from '@/components/candidates/score-chart'
 import { ScorePolling } from '@/components/candidates/score-polling'
 import { RescoreButton } from '@/components/candidates/rescore-button'
@@ -34,6 +34,10 @@ import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
 import { ApprovalControls } from '@/components/manager/approval-controls'
 import { getMyAssignedRoles } from '@/actions/role-managers'
 import { getApprovalsForRole } from '@/actions/approvals'
+import { SendEmailButton } from '@/components/candidates/send-email-button'
+import { EmailHistory } from '@/components/candidates/email-history'
+import { listEmailTemplates } from '@/actions/email-templates'
+import { listSentEmailsForCandidate } from '@/actions/emails'
 
 type Props = { params: Promise<{ candidateId: string }>; searchParams: Promise<{ roleId?: string }> }
 
@@ -141,6 +145,20 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
     // Tenant-wide default pack language (3-tier fallback: candidate → tenant → 'en')
     getDefaultPackLanguage(tenantId),
   ])
+
+  // Email data — only fetched for recruiter+ sessions; managers skip this entirely
+  const [emailTemplates, sentEmailRows, tenantRow] = !isHiringManager
+    ? await Promise.all([
+        listEmailTemplates(),
+        listSentEmailsForCandidate(candidateId),
+        withTenant(tenantId, async (tx) =>
+          tx.select({ name: tenants.name }).from(tenants).where(eq(tenants.id, tenantId)).limit(1)
+        ).then((rows) => rows[0] ?? null),
+      ])
+    : [[], [], null]
+
+  const tenantName = tenantRow?.name ?? ''
+  const recruiterName = session.user.name ?? 'The Recruitment Team'
 
   // Manager-specific data: which roles am I assigned to, and what are my
   // approval decisions for those roles that also include this candidate?
@@ -294,6 +312,19 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
                   Archive
                 </button>
               </form>
+            )}
+            {/* Send email — hidden for hiring managers */}
+            {!isHiringManager && (
+              <SendEmailButton
+                candidateId={candidateId}
+                candidateFirstName={candidate.firstName}
+                candidateLastName={candidate.lastName}
+                candidateEmail={candidate.email ?? null}
+                roleTitle={activeScore?.role.title}
+                recruiterName={recruiterName}
+                tenantName={tenantName}
+                templates={emailTemplates}
+              />
             )}
           </div>
           {/* Original CV — download / attach / replace */}
@@ -593,6 +624,9 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
           isShareable: n.isShareable,
         }))}
       />
+
+      {/* Email history — hidden for hiring managers (EmailHistory handles null-guard internally) */}
+      <EmailHistory sentEmails={sentEmailRows} audience={audience} />
     </div>
   )
 }

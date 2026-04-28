@@ -9,9 +9,11 @@ import {
   getGeneralSettings,
   getTrustedHosts,
   getDefaultPackLanguage,
+  getSmtpSettings,
 } from '@/actions/settings'
 import { listTenantUsers } from '@/actions/users'
 import { listApiTokens } from '@/actions/api-tokens'
+import { listEmailTemplates } from '@/actions/email-templates'
 import { ApiKeyField } from '@/components/settings/api-key-field'
 import { GeneralSettingSelect } from '@/components/settings/general-setting-select'
 import { GeneralSettingNumber } from '@/components/settings/general-setting-number'
@@ -23,6 +25,8 @@ import { TrustedHostsForm } from '@/components/settings/trusted-hosts-form'
 import { DefaultLanguageForm } from '@/components/settings/default-language-form'
 import { AiUsagePanel } from '@/components/settings/ai-usage-panel'
 import { ApiTokensPanel } from '@/components/settings/api-tokens-panel'
+import { SmtpSettingsPanel } from '@/components/settings/smtp-settings-panel'
+import { EmailTemplatesPanel } from '@/components/settings/email-templates-panel'
 
 export default async function SettingsPage() {
   const session = await auth()
@@ -35,6 +39,8 @@ export default async function SettingsPage() {
   const tenantUsers = isAdmin ? await listTenantUsers() : []
   const trustedHosts = isAdmin ? await getTrustedHosts(tenantId) : []
   const defaultPackLanguage = isAdmin ? await getDefaultPackLanguage(tenantId) : 'en'
+  const smtpSettings = isAdmin ? await getSmtpSettings(tenantId) : null
+  const emailTemplates = isAdmin ? await listEmailTemplates() : []
 
   // API tokens — available to recruiter+ (not admin-only); fetch for all authenticated users
   const tokensResult = await listApiTokens()
@@ -180,6 +186,21 @@ export default async function SettingsPage() {
           {/* Trusted Hosts */}
           <div>
             <TrustedHostsForm initialHosts={trustedHosts} />
+          </div>
+
+          {/* SMTP credentials */}
+          {smtpSettings && (
+            <div>
+              <SmtpSettingsPanel initial={smtpSettings} />
+            </div>
+          )}
+
+          {/* Email templates */}
+          <div>
+            <EmailTemplatesPanel
+              initial={emailTemplates}
+              currentUserRole={session.user.role ?? 'recruiter'}
+            />
           </div>
 
           {/* User Management */}
