@@ -21,6 +21,7 @@ export default async function CustomersPage() {
             contactEmail: customers.contactEmail,
             website: customers.website,
             isActive: customers.isActive,
+            logoPath: customers.logoPath,
             createdAt: customers.createdAt,
           })
           .from(customers)
@@ -91,7 +92,31 @@ export default async function CustomersPage() {
             <tbody className="divide-y divide-zinc-800">
               {allCustomers.map((customer) => (
                 <tr key={customer.id} className="hover:bg-zinc-800/50 transition-colors">
-                  <td className="px-5 py-4 font-medium text-zinc-100">{customer.name}</td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      {/* 40px logo or initials avatar */}
+                      {customer.logoPath ? (
+                        <img
+                          src={`/api/customers/${customer.id}/logo`}
+                          alt=""
+                          width={40}
+                          height={40}
+                          className="rounded-lg border border-zinc-700 bg-zinc-800 object-contain shrink-0"
+                          style={{ width: 40, height: 40 }}
+                        />
+                      ) : (
+                        <div
+                          className="flex items-center justify-center rounded-lg bg-zinc-800 text-zinc-400
+                                     text-sm font-semibold shrink-0"
+                          style={{ width: 40, height: 40 }}
+                          aria-hidden="true"
+                        >
+                          {customer.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="font-medium text-zinc-100">{customer.name}</span>
+                    </div>
+                  </td>
                   <td className="px-5 py-4 text-zinc-400">
                     {customer.contactName ?? <span className="text-zinc-600">—</span>}
                   </td>
