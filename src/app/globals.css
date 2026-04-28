@@ -1,8 +1,36 @@
 @import "tailwindcss";
 
+/* ── Dark theme (default) ── */
 :root {
-  --background: #09090b;
-  --foreground: #f4f4f5;
+  --color-bg-app:      #09090b; /* zinc-950 */
+  --color-bg-elevated: #18181b; /* zinc-900 */
+  --color-bg-input:    #27272a; /* zinc-800 */
+  --color-fg:          #f4f4f5; /* zinc-100 */
+  --color-fg-muted:    #a1a1aa; /* zinc-400 */
+  --color-fg-subtle:   #71717a; /* zinc-500 */
+  --color-border:      #3f3f46; /* zinc-700 */
+  --color-accent:      #2563eb; /* blue-600 */
+  --color-accent-fg:   #ffffff;
+
+  /* Legacy aliases — kept for backward-compat with existing uses of --background/--foreground */
+  --background: var(--color-bg-app);
+  --foreground: var(--color-fg);
+}
+
+/* ── Light theme ── */
+.light {
+  --color-bg-app:      #ffffff;
+  --color-bg-elevated: #fafafa; /* zinc-50 */
+  --color-bg-input:    #ffffff;
+  --color-fg:          #18181b; /* zinc-900 */
+  --color-fg-muted:    #52525b; /* zinc-600 */
+  --color-fg-subtle:   #71717a; /* zinc-500 */
+  --color-border:      #e4e4e7; /* zinc-200 */
+  --color-accent:      #2563eb; /* blue-600 */
+  --color-accent-fg:   #ffffff;
+
+  --background: var(--color-bg-app);
+  --foreground: var(--color-fg);
 }
 
 @theme inline {

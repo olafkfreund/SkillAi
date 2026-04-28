@@ -15,6 +15,7 @@ import {
   HelpCircleIcon,
 } from 'lucide-react'
 import type { UserRole } from '@/lib/auth/types'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 
 type NavItem = {
   href: string
@@ -83,11 +84,11 @@ export function Sidebar({ role, userName }: Props) {
   )
 
   return (
-    <aside className="w-56 flex-shrink-0 bg-zinc-900 border-r border-zinc-700 flex flex-col">
+    <aside className="w-56 flex-shrink-0 bg-[var(--color-bg-elevated)] border-r border-[var(--color-border)] flex flex-col">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-zinc-700">
-        <span className="text-lg font-bold text-zinc-100">SkillAI</span>
-        <p className="text-xs text-zinc-500 mt-0.5">Recruiting portal</p>
+      <div className="px-5 py-5 border-b border-[var(--color-border)]">
+        <span className="text-lg font-bold text-[var(--color-fg)]">SkillAI</span>
+        <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5">Recruiting portal</p>
       </div>
 
       {/* Nav */}
@@ -106,7 +107,7 @@ export function Sidebar({ role, userName }: Props) {
                 ${
                   active
                     ? 'bg-blue-950 text-blue-300'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100'
+                    : 'text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-input)] hover:text-[var(--color-fg)]'
                 }`}
             >
               <Icon className="h-4 w-4 flex-shrink-0" />
@@ -117,20 +118,21 @@ export function Sidebar({ role, userName }: Props) {
       </nav>
 
       {/* User + sign out */}
-      <div className="px-3 py-4 border-t border-zinc-700">
+      <div className="px-3 py-4 border-t border-[var(--color-border)]">
         <div className="px-3 mb-2">
           <Link
             href="/dashboard/profile"
-            className="text-sm font-medium text-zinc-100 truncate hover:text-blue-300 transition-colors block"
+            className="text-sm font-medium text-[var(--color-fg)] truncate hover:text-blue-300 transition-colors block"
           >
             {userName}
           </Link>
-          <p className="text-xs text-zinc-500 capitalize">{role}</p>
+          <p className="text-xs text-[var(--color-fg-subtle)] capitalize">{role}</p>
         </div>
+        <ThemeToggle />
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-zinc-400
-                     hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-[var(--color-fg-muted)]
+                     hover:bg-[var(--color-bg-input)] hover:text-[var(--color-fg)] transition-colors"
         >
           <LogOutIcon className="h-4 w-4 flex-shrink-0" />
           Sign out
