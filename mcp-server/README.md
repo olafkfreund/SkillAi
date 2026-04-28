@@ -9,11 +9,19 @@ bearer token you generate in the SkillAi web UI.
 
 ## Install
 
-### npm (global, any platform with Node 22+)
+The recommended install paths — none require external package-manager repos:
 
-```bash
-npm install -g @skillai/mcp-bridge
-```
+| Method | OS / distro | Notes |
+|---|---|---|
+| **Standalone binary from GitHub Releases** | Linux / macOS / Windows | No runtime deps; works everywhere |
+| **`.deb` from GitHub Releases** | Debian / Ubuntu | Includes `/etc/skillai-mcp/env.example` |
+| **`.rpm` from GitHub Releases** | Fedora / RHEL / openSUSE | Same as above |
+| **Nix flake** | NixOS | `nix profile install github:olafkfreund/SkillAi?dir=mcp-server` |
+| **npm** *(optional — only if `NPM_TOKEN` is configured)* | Anywhere with Node 22+ | `npm install -g @skillai/mcp-bridge` |
+
+> **Note on npm:** the release pipeline can publish to npmjs.com, but only if the operator has set up an npm scope and added an `NPM_TOKEN` repo secret. If you see no `@skillai/mcp-bridge` package on npm, that step is intentionally inactive — use one of the binary or Nix paths instead.
+
+> **Note on Homebrew / AUR / Scoop:** packaging files for these are staged at `mcp-server/packaging/` for possible future deployment, but no external repos exist for them at this time. Install via the binary or Nix paths.
 
 ### Standalone binary (no Node required)
 
