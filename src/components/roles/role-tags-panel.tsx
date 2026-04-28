@@ -8,10 +8,12 @@ interface Props {
   keySkills: string[]
   topRequirements: string[]
   canEdit: boolean
+  audience?: 'recruiter' | 'customer' | 'manager'
   regenerateAction: () => Promise<{ success: boolean; error?: string }>
 }
 
-export function RoleTagsPanel({ keySkills, topRequirements, canEdit, regenerateAction }: Props) {
+export function RoleTagsPanel({ keySkills, topRequirements, canEdit, audience = 'recruiter', regenerateAction }: Props) {
+  const isManagerView = audience === 'manager'
   const [isPending, startTransition] = useTransition()
   const [triggered, setTriggered] = useState(false)
 
@@ -28,7 +30,7 @@ export function RoleTagsPanel({ keySkills, topRequirements, canEdit, regenerateA
     <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-semibold text-zinc-100">Skills &amp; Requirements</h2>
-        {canEdit && (
+        {canEdit && !isManagerView && (
           <button
             type="button"
             onClick={handleRegenerate}

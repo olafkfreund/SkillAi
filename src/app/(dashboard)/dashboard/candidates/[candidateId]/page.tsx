@@ -42,7 +42,9 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
   if (!tenantId) notFound()
 
   const userRole = (session?.user as { role?: string }).role as string | undefined
-  const canEdit = hasRole((userRole ?? 'viewer') as 'admin' | 'recruiter' | 'viewer', 'recruiter')
+  const canEdit = hasRole((userRole ?? 'viewer') as 'admin' | 'recruiter' | 'hiring_manager' | 'viewer', 'recruiter')
+  const isHiringManager = userRole === 'hiring_manager'
+  const audience = isHiringManager ? 'manager' : 'recruiter' as const
 
   const [candidate] = await withTenant(tenantId, async (tx) =>
     tx
@@ -84,7 +86,16 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
     ),
     withTenant(tenantId, async (tx) =>
       tx
-        .select()
+        .select({
+          id: notes.id,
+          candidateId: notes.candidateId,
+          authorId: notes.authorId,
+          body: notes.body,
+          isShareable: notes.isShareable,
+          isEdited: notes.isEdited,
+          createdAt: notes.createdAt,
+          updatedAt: notes.updatedAt,
+        })
         .from(notes)
         .where(eq(notes.candidateId, candidateId))
         .orderBy(desc(notes.createdAt))
@@ -216,7 +227,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
               label="Customer PDF"
             />
             <SynechronCvButton candidateId={candidateId} />
-            {canEdit && candidate.isActive && (
+            {canEdit && !isHiringManager && candidate.isActive && (
               <form action={archiveCandidate.bind(null, candidateId)}>
                 <button
                   type="submit"
@@ -247,7 +258,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
         )}
       </div>
 
-      {/* Edit candidate details (recruiter+ only) */}
+      {/* Edit candidate details (recruiter+ only; hidden for hiring_manager) */}
       {canEdit && (
         <EditDetailsForm
           candidate={{
@@ -268,6 +279,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
             availableFrom: candidate.availableFrom ?? null,
           }}
           agencies={allAgencies}
+          audience={audience}
         />
       )}
 
@@ -300,8 +312,8 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
         </div>
       )}
 
-      {/* Commercial Details */}
-      {(candidate.candidateRate || candidate.customerRate) && (
+      {/* Commercial Details — hidden for hiring managers */}
+      {!isHiringManager && (candidate.candidateRate || candidate.customerRate) && (
         <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
           <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">Commercial Details</h3>
           <div className="grid grid-cols-3 gap-4">
@@ -484,6 +496,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
         candidateId={candidateId}
         currentUserId={session?.user?.id ?? ''}
         canEdit={canEdit}
+        audience={audience}
         initialNotes={candidateNotes.map((n) => ({
           id: n.id,
           body: n.body,
@@ -491,6 +504,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
           createdAt: n.createdAt.toISOString(),
           updatedAt: n.updatedAt?.toISOString() ?? null,
           isEdited: n.isEdited,
+          isShareable: n.isShareable,
         }))}
       />
     </div>

@@ -32,7 +32,9 @@ export default async function RoleDetailPage({ params }: Props) {
   if (!tenantId) notFound()
 
   const userRole = (session?.user as { role?: string }).role as string | undefined
-  const canEdit = hasRole((userRole ?? 'viewer') as 'admin' | 'recruiter' | 'viewer', 'recruiter')
+  const canEdit = hasRole((userRole ?? 'viewer') as 'admin' | 'recruiter' | 'hiring_manager' | 'viewer', 'recruiter')
+  const isHiringManager = userRole === 'hiring_manager'
+  const audience = isHiringManager ? 'manager' : 'recruiter' as const
 
   const [role] = await withTenant(tenantId, async (tx) =>
     tx.select().from(roles).where(and(eq(roles.id, roleId), eq(roles.tenantId, tenantId))).limit(1)
@@ -128,7 +130,7 @@ export default async function RoleDetailPage({ params }: Props) {
             href={`/api/export/shortlist/${roleId}`}
             label="Export shortlist PDF"
           />
-          <DownloadCvsButton roleId={roleId} />
+          {!isHiringManager && <DownloadCvsButton roleId={roleId} />}
           {canEdit && (
             <Link
               href={`/dashboard/roles/${roleId}/edit`}
@@ -139,22 +141,26 @@ export default async function RoleDetailPage({ params }: Props) {
               Edit role
             </Link>
           )}
-          <Link
-            href={`/dashboard/roles/${roleId}/bulk-upload`}
-            className="flex items-center gap-2 rounded-md bg-zinc-700 text-zinc-100 text-sm
-                       font-medium px-4 py-2 hover:bg-zinc-600 transition-colors"
-          >
-            <UploadCloudIcon className="h-4 w-4" />
-            Bulk Upload
-          </Link>
-          <Link
-            href={`/dashboard/roles/${roleId}/upload`}
-            className="flex items-center gap-2 rounded-md bg-blue-600 text-white text-sm
-                       font-medium px-4 py-2 hover:bg-blue-700 transition-colors"
-          >
-            <UsersIcon className="h-4 w-4" />
-            Upload CV
-          </Link>
+          {!isHiringManager && (
+            <Link
+              href={`/dashboard/roles/${roleId}/bulk-upload`}
+              className="flex items-center gap-2 rounded-md bg-zinc-700 text-zinc-100 text-sm
+                         font-medium px-4 py-2 hover:bg-zinc-600 transition-colors"
+            >
+              <UploadCloudIcon className="h-4 w-4" />
+              Bulk Upload
+            </Link>
+          )}
+          {!isHiringManager && (
+            <Link
+              href={`/dashboard/roles/${roleId}/upload`}
+              className="flex items-center gap-2 rounded-md bg-blue-600 text-white text-sm
+                         font-medium px-4 py-2 hover:bg-blue-700 transition-colors"
+            >
+              <UsersIcon className="h-4 w-4" />
+              Upload CV
+            </Link>
+          )}
           {canEdit && role.isActive && (
             <form action={archiveRole.bind(null, roleId)}>
               <button
@@ -219,6 +225,7 @@ export default async function RoleDetailPage({ params }: Props) {
       <PriorityKeywordsPanel
         keywords={role.priorityKeywords}
         canEdit={canEdit}
+        audience={audience}
         roleEditHref={`/dashboard/roles/${roleId}/edit`}
       />
 
@@ -228,6 +235,7 @@ export default async function RoleDetailPage({ params }: Props) {
         keySkills={role.keySkills ?? []}
         topRequirements={role.topRequirements ?? []}
         canEdit={canEdit}
+        audience={audience}
         regenerateAction={regenerateRoleTags.bind(null, roleId)}
       />
 
@@ -292,6 +300,7 @@ export default async function RoleDetailPage({ params }: Props) {
                     candidateCurrency={c.candidateCurrency}
                     isInternal={Boolean(c.agencyIsInternal)}
                     canEdit={canEdit}
+                    audience={audience}
                     removeAction={removeCandidateFromRole}
                   />
                   {isStale && canEdit && (
