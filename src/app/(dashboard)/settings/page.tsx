@@ -27,6 +27,7 @@ import { AiUsagePanel } from '@/components/settings/ai-usage-panel'
 import { ApiTokensPanel } from '@/components/settings/api-tokens-panel'
 import { SmtpSettingsPanel } from '@/components/settings/smtp-settings-panel'
 import { EmailTemplatesPanel } from '@/components/settings/email-templates-panel'
+import { OAuthCredentialsForm } from '@/components/settings/oauth-credentials-form'
 
 export default async function SettingsPage() {
   const session = await auth()
@@ -176,6 +177,18 @@ export default async function SettingsPage() {
                 unit="MB"
               />
             </div>
+          </div>
+
+          {/* Calendar OAuth Credentials */}
+          <div>
+            <h2 className="text-sm font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide mb-3">
+              Calendar OAuth Credentials
+            </h2>
+            <p className="text-xs text-[var(--color-fg-subtle)] mb-4">
+              Per-tenant Google and Microsoft OAuth app credentials for the calendar integration.
+              Credentials are encrypted at rest and take precedence over deployment env vars.
+            </p>
+            <OAuthCredentialsForm configuredKeys={configuredKeys} />
           </div>
 
           {/* Default pack language */}
