@@ -1,8 +1,8 @@
 # Product Roadmap
 
 > Last Updated: 2026-04-28
-> Version: 2.5.0
-> Status: Phases 1–4 shipped; Phase 5 partial (health endpoint now shipped); Hiring Manager persona shipped (Epic #73); in-app help, branding logos, candidate-list cleanup, and light/dark mode v1 shipped; REST API parity, API token system, per-tenant rate limiting, and MCP server (Epic #105) shipped; cross-platform `skillai-mcp` packaging (Epic #115) shipped; GDPR right-to-erasure + DSAR export shipped (#75); daily-active recruiter dashboard shipped (#84); further integrations tracked on GitHub
+> Version: 2.6.0
+> Status: Phases 1–4 shipped; Phase 5 substantially advanced (Epic #72 children #75/#84/#76/#79/#81/#82 all shipped); Hiring Manager persona shipped (Epic #73); in-app help, branding logos, candidate-list cleanup, and light/dark mode v1 shipped; REST API parity, API token system, per-tenant rate limiting, and MCP server (Epic #105) shipped; cross-platform `skillai-mcp` packaging (Epic #115) shipped; GDPR right-to-erasure + DSAR export shipped (#75); daily-active recruiter dashboard shipped (#84); leadership reporting dashboard shipped (#76); calendar 2-way pull-sync shipped (#79); per-tenant Calendar OAuth credentials UI shipped; admin tenant data export (JSON ZIP, optional binaries, per-entity CSVs) shipped (#81 + #82); further integrations tracked on GitHub
 
 ## Phase 1: Foundation & Core MVP ✅ SHIPPED
 
@@ -215,6 +215,46 @@ Features delivered mid-flight, not in the original v1.0.0 plan.
 - [x] **Per-stream caps + parallel queries** — each widget capped at 5 items; all five sub-queries run in parallel inside a single `withTenant()` call. Zero schema changes.
 - [x] **All-empty collapse** — when every stream is empty, the section renders a single "Nothing on your plate today." panel rather than five empty boxes; per-widget empty states hide the widget entirely.
 - [x] **Personalisation model** — hiring-managers see only their `role_managers` rows; recruiters see tenant-wide items (no recruiter-ownership / role-assignment model exists today; introducing one is deferred to a future epic).
+
+### Leadership Reporting Dashboard (Epic #72, PR #132 — closes #76)
+
+- [x] **`/dashboard/reports` admin-only page** — five chart areas + KPI cards. Chart areas: time-to-fill (per customer), agency hit-rate (Submission→Hire and Shortlist→Hire side-by-side), AI cost trend (LineChart with month-over-month delta), cycle health (roles >30d / expired / stuck-in-interviewing), top performers (fastest-filled roles + agencies by hit-rate).
+- [x] **Date-range presets** — `?range=7d|30d|90d|12mo` URL search-param drives state; default 30d; preset button row in the page header.
+- [x] **Per-chart CSV export** — every card has an "Export CSV" button → streams via `/api/reports/{metric}/csv` using a new RFC 4180 helper at `src/lib/reports/to-csv.ts`. Five metrics: time-to-fill, agency-hit-rate, ai-cost-trend, cycle-health, top-performers (the latter ships two labelled sections in one CSV).
+- [x] **Real-time aggregation** — five sub-queries run in parallel inside a single `withTenant()` call; no snapshot/cron infrastructure (deferred). Time-to-fill derived via audit-log + scores join (limited-historical-data footnote when matched events are sparse).
+- [x] **Three-layer admin gate** — sidebar nav `minRole: admin`, page server-component check, server action `requireRole(_, 'admin')`.
+
+### Calendar 2-Way Sync (Epic #72, PR #133 — closes #79)
+
+- [x] **Pull-side sync loop** — `/api/cron/calendar-sync` (Bearer-secret gated via `CRON_SECRET`) polls each connected calendar, compares events to `interview_slots`, applies the diff. Detects reschedules → updates `slot.scheduledAt` + audit `interview_slot.rescheduled_external`; detects cancellations → marks slot cancelled + audit `interview_slot.cancelled_external`. Read-only on calendar side — never modifies / deletes calendar events.
+- [x] **`listGoogleEvents` + `listMicrosoftEvents`** — new helpers mirror the existing auto-refresh-on-401 pattern from outbound event creation. Refreshed accessToken is re-encrypted and persisted back to `calendar_connections`.
+- [x] **Conflict resolution** — if `slot.updatedAt > event.updated`, SkillAi-side edit wins (sync skips that slot for this run). Avoids overwriting recruiter edits made just before sync fires.
+- [x] **Per-connection isolation** — try/catch per connection; one expired refresh token doesn't break the run for other users. Failures captured in the response and audited as `calendar.sync_failed`.
+- [x] **Time window** — `[now − 1d, now + 30d]`. Past events outside window skipped.
+- [x] **External scheduler** — host crontab / GitHub Actions / k8s CronJob calls the endpoint every 15 min; SkillAi has no in-process scheduler.
+
+### Per-Tenant Calendar OAuth Credentials (PR #134 + #135)
+
+- [x] **Documentation** — new help article `settings-oauth-credentials.md` walks tenant admins through Google Cloud Console + Azure Portal app setup with the redirect-URI gotcha called out hard. `docs/setup.md` env-var reference table corrected.
+- [x] **Per-tenant credentials in `tenant_settings`** — five new keys (`google_oauth_client_id`, `google_oauth_client_secret`, `microsoft_oauth_client_id`, `microsoft_oauth_client_secret`, `microsoft_oauth_tenant_id`), all encrypted via AES-256-GCM. Resolution order: tenant_settings → env var → 503. Existing self-hosted single-tenant deployments continue to work via env vars.
+- [x] **Admin-only UI** — new "Calendar OAuth Credentials" card on `/settings`, between "General Settings" and "Default Pack Language". Mirrors the masking + show/hide / Replace pattern of `ApiKeyField`.
+- [x] **Two new audit actions** — `settings.oauth_credentials_updated`, `settings.oauth_credentials_removed`. Audit metadata records `{ provider, field }` only — never the secret value.
+
+### Admin Backups & Data Export (Epic #72, PRs #136 + #137 — closes #81)
+
+- [x] **`/settings` "Backups & Data Export" admin card** — shows last manual export timestamp pulled from audit_logs (action `tenant.exported`); "Download tenant export now" button streams a ZIP with one JSON file per tenant-scoped table (25 tables) + manifest.json. Three-layer admin gate.
+- [x] **60-second rate limit per tenant** — enforced via `MAX(createdAt)` audit-log query; 429 with `Retry-After` header when exceeded.
+- [x] **Optional binary file inclusion (PR #137)** — opt-in checkbox toggles `?files=1`; when set, the ZIP gains a `files/` directory with original CV PDFs, agency / customer logos, and role attachments. Filename gets a `-with-files` suffix. Default off (preserves the JSON-only behaviour for users who don't want a 100MB+ download).
+- [x] **Defence-in-depth path-traversal guard** — every absolute path is checked against `${tenantUploadRoot}/` before any filesystem access; cross-tenant paths skipped + recorded in `manifest.skippedFiles[]` with reason `path-outside-tenant`. Unit test asserts `fs.stat` is NOT invoked for blocked paths.
+- [x] **Missing-file handling** — ENOENT / EACCES → skipped + recorded in `manifest.skippedFiles[]`; export does NOT fail on individual file errors.
+
+### Per-Entity CSV Exports (Epic #72, PR #138 — closes #82)
+
+- [x] **`/settings` "Per-Entity CSV Exports" admin card** — four download buttons: Candidates, Roles, AI Scores, Agencies. Each emits an RFC 4180 CSV scoped to the current tenant via `/api/export/tenant/csv/[entity]`.
+- [x] **Single dynamic route** — typed allow-list `['candidates', 'roles', 'scores', 'agencies']`; unknown entity → 404; non-admin → 403.
+- [x] **Heavy columns excluded** — `cvText` / `cvTextFormatted` / `embedding` / `synechronCvData` from candidates; `description` / `requirements` from roles; reasoning text fields from scores. Full data remains in the JSON tenant export above; CSVs are spreadsheet-friendly.
+- [x] **New audit action** — `tenant.csv_exported` with metadata `{ entity, rowCount }`.
+- [x] **Greenhouse / Lever / Workday formats deferred** — separate issue when there's customer demand.
 
 ---
 
