@@ -1,0 +1,29 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Scoop
+        # Bootstrap Scoop in the runner's user profile; installs to %USERPROFILE%\scoop
+        run: |
+          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+          iwr -useb get.scoop.sh | iex
+        shell: powershell
+
+      - name: Validate manifests
+        # Test-Bucket.ps1 is the official linter shipped with Scoop itself.
+        # After bootstrapping, Scoop lives at $env:USERPROFILE\scoop\apps\scoop\current.
+        # The script accepts a -Dir parameter pointing at the bucket root.
+        run: |
+          $scoopHome = "$env:USERPROFILE\scoop\apps\scoop\current"
+          $testScript = "$scoopHome\test\Test-Bucket.ps1"
+          if (-not (Test-Path $testScript)) {
+            Write-Error "Test-Bucket.ps1 not found at $testScript — check Scoop installation"
+            exit 1
+          }
+          & $testScript -Dir .\bucket
+        shell: powershell

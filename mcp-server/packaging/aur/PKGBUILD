@@ -1,0 +1,31 @@
+# Maintainer: Olaf Freund <olaf@freundcloud.com>
+
+pkgname=skillai-mcp-bin
+_pkgname=skillai-mcp
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Stdio MCP bridge for SkillAI — prebuilt Bun binary"
+arch=('x86_64' 'aarch64')
+url="https://github.com/olafkfreund/SkillAi"
+license=('MIT')
+depends=()
+provides=("skillai-mcp")
+conflicts=("skillai-mcp")
+# Bun-compiled binaries are already stripped; running strip breaks them.
+options=('!strip')
+
+source_x86_64=(
+  "skillai-mcp-$pkgver-x86_64::https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v$pkgver/skillai-mcp-linux-x64"
+)
+source_aarch64=(
+  "skillai-mcp-$pkgver-aarch64::https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v$pkgver/skillai-mcp-linux-arm64"
+)
+
+# Replace SKIP with real sum from the GitHub Release page after first release.
+sha256sums_x86_64=('SKIP')
+# Replace SKIP with real sum from the GitHub Release page after first release.
+sha256sums_aarch64=('SKIP')
+
+package() {
+  install -Dm755 "$srcdir/skillai-mcp-$pkgver-$CARCH" "$pkgdir/usr/bin/skillai-mcp"
+}
