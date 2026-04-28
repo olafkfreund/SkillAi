@@ -9,6 +9,7 @@ import {
   timestamp,
   index,
   unique,
+  varchar,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
@@ -59,6 +60,12 @@ export const transcriptAnalyses = pgTable(
 
     // Per-question breakdown (populated when transcript is linked to a pack)
     questionResponses: jsonb('question_responses').$type<QuestionResponse[]>(),
+
+    // BCP 47 short code of the language the transcript was analysed in.
+    // Detected via a quick Claude Haiku probe on the raw transcript text;
+    // the analysis (summary + reasoning) is then generated in the same
+    // language. Defaults to 'en' for backward compatibility.
+    detectedLanguage: varchar('detected_language', { length: 10 }).notNull().default('en'),
 
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

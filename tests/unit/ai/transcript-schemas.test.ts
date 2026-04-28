@@ -130,6 +130,16 @@ vi.mock('@anthropic-ai/sdk', () => ({
 describe('analyzeTranscriptWithClaude()', () => {
   let analyzeTranscriptWithClaude: typeof import('@/lib/ai/transcript-analysis').analyzeTranscriptWithClaude
 
+  // The implementation now makes TWO Anthropic calls per analysis:
+  //   1. A cheap Haiku call to detect transcript language
+  //   2. The main Sonnet analysis call
+  // Tests must mock the detection call first. We default detection to 'en'
+  // (a text block with the BCP 47 code) so the language directive is empty
+  // and the analysis prompt remains byte-identical to the pre-feature path.
+  const mockDetectionResponse = (lang = 'en') => ({
+    content: [{ type: 'text', text: lang }],
+  })
+
   beforeEach(async () => {
     mockCreate.mockReset()
     const mod = await import('@/lib/ai/transcript-analysis')
@@ -137,15 +147,17 @@ describe('analyzeTranscriptWithClaude()', () => {
   })
 
   it('returns parsed TranscriptAnalysis on valid tool_use response', async () => {
-    mockCreate.mockResolvedValueOnce({
-      content: [
-        {
-          type: 'tool_use',
-          name: 'submit_transcript_analysis',
-          input: VALID_ANALYSIS,
-        },
-      ],
-    })
+    mockCreate
+      .mockResolvedValueOnce(mockDetectionResponse('en'))
+      .mockResolvedValueOnce({
+        content: [
+          {
+            type: 'tool_use',
+            name: 'submit_transcript_analysis',
+            input: VALID_ANALYSIS,
+          },
+        ],
+      })
 
     const result = await analyzeTranscriptWithClaude({
       transcriptText: '[Alice]: I have used TypeScript for three years.',
@@ -154,15 +166,41 @@ describe('analyzeTranscriptWithClaude()', () => {
       roleRequirements: 'TypeScript, Node.js',
     })
 
-    expect(result.overall_score).toBe(78)
-    expect(result.recommended_decision).toBe('proceed')
-    expect(result.dimensions.communication.score).toBe(82)
+    expect(result.analysis.overall_score).toBe(78)
+    expect(result.analysis.recommended_decision).toBe('proceed')
+    expect(result.analysis.dimensions.communication.score).toBe(82)
+    expect(result.detectedLanguage).toBe('en')
+  })
+
+  it('returns the detected language for non-English transcripts', async () => {
+    mockCreate
+      .mockResolvedValueOnce(mockDetectionResponse('pl'))
+      .mockResolvedValueOnce({
+        content: [
+          {
+            type: 'tool_use',
+            name: 'submit_transcript_analysis',
+            input: VALID_ANALYSIS,
+          },
+        ],
+      })
+
+    const result = await analyzeTranscriptWithClaude({
+      transcriptText: 'Dzień dobry, opowiem o swoim doświadczeniu z TypeScriptem.',
+      roleTitle: 'Senior Engineer',
+      roleDescription: 'Build scalable systems.',
+      roleRequirements: 'TypeScript',
+    })
+
+    expect(result.detectedLanguage).toBe('pl')
   })
 
   it('throws when Claude returns no tool_use block', async () => {
-    mockCreate.mockResolvedValueOnce({
-      content: [{ type: 'text', text: 'Here is my analysis...' }],
-    })
+    mockCreate
+      .mockResolvedValueOnce(mockDetectionResponse('en'))
+      .mockResolvedValueOnce({
+        content: [{ type: 'text', text: 'Here is my analysis...' }],
+      })
 
     await expect(
       analyzeTranscriptWithClaude({
@@ -175,15 +213,17 @@ describe('analyzeTranscriptWithClaude()', () => {
   })
 
   it('throws when tool_use input fails schema validation', async () => {
-    mockCreate.mockResolvedValueOnce({
-      content: [
-        {
-          type: 'tool_use',
-          name: 'submit_transcript_analysis',
-          input: { overall_score: 999, dimensions: {} },
-        },
-      ],
-    })
+    mockCreate
+      .mockResolvedValueOnce(mockDetectionResponse('en'))
+      .mockResolvedValueOnce({
+        content: [
+          {
+            type: 'tool_use',
+            name: 'submit_transcript_analysis',
+            input: { overall_score: 999, dimensions: {} },
+          },
+        ],
+      })
 
     await expect(
       analyzeTranscriptWithClaude({
@@ -196,9 +236,11 @@ describe('analyzeTranscriptWithClaude()', () => {
   })
 
   it('includes optional pack questions in the prompt when provided', async () => {
-    mockCreate.mockResolvedValueOnce({
-      content: [{ type: 'tool_use', name: 'submit_transcript_analysis', input: VALID_ANALYSIS }],
-    })
+    mockCreate
+      .mockResolvedValueOnce(mockDetectionResponse('en'))
+      .mockResolvedValueOnce({
+        content: [{ type: 'tool_use', name: 'submit_transcript_analysis', input: VALID_ANALYSIS }],
+      })
 
     await analyzeTranscriptWithClaude({
       transcriptText: '[Alice]: TypeScript is great.',
@@ -213,7 +255,8 @@ describe('analyzeTranscriptWithClaude()', () => {
       ],
     })
 
-    const callArg = mockCreate.mock.calls[0][0]
+    // The second call is the main analysis call; detection is the first.
+    const callArg = mockCreate.mock.calls[1][0]
     const userText = JSON.stringify(callArg.messages[0].content)
     expect(userText).toContain('Tell me about TypeScript.')
     expect(userText).toContain('Concrete examples')
