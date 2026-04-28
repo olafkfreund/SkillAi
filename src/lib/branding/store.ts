@@ -90,17 +90,18 @@ export async function persistLogo(
   tenantId: string,
   ext: string
 ): Promise<string> {
-  const uploadBase = join(process.cwd(), process.env.UPLOAD_DIR ?? 'uploads')
-  const logoDir = join(uploadBase, tenantId, 'logos')
-  await mkdir(logoDir, { recursive: true })
-
+  // Compute the DB-stored path FIRST, then derive the absolute path from it.
+  // This guarantees write-side and read-side use the same resolution rule
+  // (getLogoAbsolutePath strips the leading slash and joins with cwd).
   const normExt = ext.toLowerCase().startsWith('.') ? ext.toLowerCase() : `.${ext.toLowerCase()}`
   const fileName = `${randomUUID()}${normExt}`
-  const absolutePath = join(logoDir, fileName)
+  const dbPath = `/uploads/${tenantId}/logos/${fileName}`
+
+  const absolutePath = getLogoAbsolutePath(dbPath)
+  await mkdir(join(absolutePath, '..'), { recursive: true })
   await writeFile(absolutePath, buf)
 
-  // DB-stored path uses a leading slash to match existing conventions.
-  return `/uploads/${tenantId}/logos/${fileName}`
+  return dbPath
 }
 
 // ---------------------------------------------------------------------------
@@ -115,9 +116,7 @@ export async function persistLogo(
  */
 export async function deleteLogo(path: string): Promise<void> {
   try {
-    const relative = path.startsWith('/') ? path.slice(1) : path
-    const absolutePath = join(process.cwd(), relative)
-    await unlink(absolutePath)
+    await unlink(getLogoAbsolutePath(path))
   } catch {
     // Best-effort: silently swallow all errors including ENOENT.
   }
