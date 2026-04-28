@@ -2,7 +2,7 @@
 #
 # OPERATOR NOTES
 # --------------
-# 1. After cutting a release tag (mcp-bridge-vX.Y.Z), download each artefact from the
+# 1. After cutting a release tag (skillai-mcp-vX.Y.Z), download each artefact from the
 #    GitHub Releases page and compute SHA256 sums:
 #
 #      shasum -a 256 skillai-mcp-darwin-arm64
@@ -16,7 +16,7 @@
 # 3. Bump the `version` field to match the new tag.
 #
 # Alternatively, use:
-#   brew bump-formula-pr --tag=mcp-bridge-vX.Y.Z --revision=<commit-sha> Formula/skillai-mcp.rb
+#   brew bump-formula-pr --tag=skillai-mcp-vX.Y.Z --revision=<commit-sha> Formula/skillai-mcp.rb
 
 class SkillaiMcp < Formula
   desc "Stdio MCP bridge between claude-desktop and SkillAi /api/mcp"
@@ -25,7 +25,7 @@ class SkillaiMcp < Formula
   version "0.1.0"
 
   # GitHub Release artefact base URL — updated automatically by bump-formula-pr
-  BASE_URL = "https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v#{version}"
+  BASE_URL = "https://github.com/olafkfreund/SkillAi/releases/download/skillai-mcp-v#{version}"
 
   on_macos do
     if Hardware::CPU.arm?

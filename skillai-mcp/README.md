@@ -16,17 +16,17 @@ The recommended install paths — none require external package-manager repos:
 | **Standalone binary from GitHub Releases** | Linux / macOS / Windows | No runtime deps; works everywhere |
 | **`.deb` from GitHub Releases** | Debian / Ubuntu | Includes `/etc/skillai-mcp/env.example` |
 | **`.rpm` from GitHub Releases** | Fedora / RHEL / openSUSE | Same as above |
-| **Nix flake** | NixOS | `nix profile install github:olafkfreund/SkillAi?dir=mcp-server` |
-| **npm** *(optional — only if `NPM_TOKEN` is configured)* | Anywhere with Node 22+ | `npm install -g @skillai/mcp-bridge` |
+| **Nix flake** | NixOS | `nix profile install github:olafkfreund/SkillAi?dir=skillai-mcp` |
+| **npm** *(optional — only if `NPM_TOKEN` is configured)* | Anywhere with Node 22+ | `npm install -g skillai-mcp` |
 
-> **Note on npm:** the release pipeline can publish to npmjs.com, but only if the operator has set up an npm scope and added an `NPM_TOKEN` repo secret. If you see no `@skillai/mcp-bridge` package on npm, that step is intentionally inactive — use one of the binary or Nix paths instead.
+> **Note on npm:** the release pipeline can publish to npmjs.com, but only if the operator has set up an npm scope and added an `NPM_TOKEN` repo secret. If you see no `skillai-mcp` package on npm, that step is intentionally inactive — use one of the binary or Nix paths instead.
 
-> **Note on Homebrew / AUR / Scoop:** packaging files for these are staged at `mcp-server/packaging/` for possible future deployment, but no external repos exist for them at this time. Install via the binary or Nix paths.
+> **Note on Homebrew / AUR / Scoop:** packaging files for these are staged at `skillai-mcp/packaging/` for possible future deployment, but no external repos exist for them at this time. Install via the binary or Nix paths.
 
 ### Standalone binary (no Node required)
 
 Download the binary for your platform from the
-[latest GitHub Release](https://github.com/olafkfreund/SkillAi/releases?q=mcp-bridge-v&expanded=true),
+[latest GitHub Release](https://github.com/olafkfreund/SkillAi/releases?q=skillai-mcp-v&expanded=true),
 then make it executable:
 
 **Linux x64**
@@ -70,14 +70,14 @@ Each binary ships with a `.sha256` sidecar file for integrity verification.
 ```bash
 # Replace VERSION with the release version, e.g. 1.0.0
 VERSION=1.0.0
-wget https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v${VERSION}/skillai-mcp_${VERSION}_amd64.deb
+wget https://github.com/olafkfreund/SkillAi/releases/download/skillai-mcp-v${VERSION}/skillai-mcp_${VERSION}_amd64.deb
 sudo dpkg -i skillai-mcp_${VERSION}_amd64.deb
 # or: sudo apt install ./skillai-mcp_${VERSION}_amd64.deb
 ```
 
 arm64:
 ```bash
-wget https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v${VERSION}/skillai-mcp_${VERSION}_arm64.deb
+wget https://github.com/olafkfreund/SkillAi/releases/download/skillai-mcp-v${VERSION}/skillai-mcp_${VERSION}_arm64.deb
 sudo dpkg -i skillai-mcp_${VERSION}_arm64.deb
 ```
 
@@ -85,9 +85,9 @@ sudo dpkg -i skillai-mcp_${VERSION}_arm64.deb
 
 ```bash
 VERSION=1.0.0
-sudo rpm -i https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v${VERSION}/skillai-mcp_${VERSION}_amd64.rpm
+sudo rpm -i https://github.com/olafkfreund/SkillAi/releases/download/skillai-mcp-v${VERSION}/skillai-mcp_${VERSION}_amd64.rpm
 # or with dnf:
-sudo dnf install https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v${VERSION}/skillai-mcp_${VERSION}_amd64.rpm
+sudo dnf install https://github.com/olafkfreund/SkillAi/releases/download/skillai-mcp-v${VERSION}/skillai-mcp_${VERSION}_amd64.rpm
 ```
 
 ### NixOS
@@ -98,16 +98,16 @@ See the [NixOS install section](#install-on-nixos) below.
 
 ## Releases
 
-Releases are tagged `mcp-bridge-vX.Y.Z` and published automatically by the
-`.github/workflows/mcp-bridge-release.yml` workflow when that tag is pushed.
+Releases are tagged `skillai-mcp-vX.Y.Z` and published automatically by the
+`.github/workflows/skillai-mcp-release.yml` workflow when that tag is pushed.
 
 Each release includes:
 - 5 standalone binaries (linux-x64, linux-arm64, darwin-x64, darwin-arm64, windows-x64)
 - SHA256 checksums for each binary
 - .deb and .rpm packages for linux-x64 and linux-arm64
-- The `@skillai/mcp-bridge` npm package is published with provenance attestation
+- The `skillai-mcp` npm package is published with provenance attestation
 
-To view all releases: <https://github.com/olafkfreund/SkillAi/releases?q=mcp-bridge-v&expanded=true>
+To view all releases: <https://github.com/olafkfreund/SkillAi/releases?q=skillai-mcp-v&expanded=true>
 
 ---
 
@@ -135,7 +135,7 @@ Logs go to **stderr** only — stdout is reserved for the MCP protocol.
 ### Option A — nix profile (per-user, no module)
 
 ```bash
-nix profile install github:olafkfreund/SkillAi?dir=mcp-server
+nix profile install github:olafkfreund/SkillAi?dir=skillai-mcp
 ```
 
 Then configure claude-desktop (see below).
@@ -145,7 +145,7 @@ Then configure claude-desktop (see below).
 Add to your flake inputs:
 
 ```nix
-inputs.skillai-mcp.url = "github:olafkfreund/SkillAi?dir=mcp-server";
+inputs.skillai-mcp.url = "github:olafkfreund/SkillAi?dir=skillai-mcp";
 ```
 
 In your system configuration:
@@ -218,7 +218,7 @@ You can still set `SKILLAI_URL` here to override the module default.
 ## Development
 
 ```bash
-cd mcp-server
+cd skillai-mcp
 npm install
 npm run dev          # tsx watch — recompiles on change
 npm run build        # compile to dist/
@@ -228,7 +228,7 @@ npm start            # run compiled bridge
 Or enter the Nix dev shell:
 
 ```bash
-nix develop ./mcp-server
+nix develop ./skillai-mcp
 npm install
 npm run dev
 ```
@@ -239,7 +239,7 @@ npm run dev
 with no Node or Bun runtime required on the target machine:
 
 ```bash
-cd mcp-server
+cd skillai-mcp
 bun install --frozen-lockfile
 
 # Linux x64 (run on any linux-x64 machine):
@@ -285,7 +285,7 @@ After cloning or after any `package-lock.json` change, if the Nix build fails wi
 hash mismatch, run:
 
 ```bash
-nix build ./mcp-server 2>&1 | grep 'got:'
+nix build ./skillai-mcp 2>&1 | grep 'got:'
 ```
 
 Copy the printed hash and replace `pkgs.lib.fakeHash` in `flake.nix`:
@@ -299,7 +299,7 @@ npmDepsHash = "sha256-AAAA...";
 ## Smoke test
 
 ```bash
-SKILLAI_TOKEN=skl_... bash mcp-server/scripts/smoke.sh
+SKILLAI_TOKEN=skl_... bash skillai-mcp/scripts/smoke.sh
 ```
 
 Prints `PASS: received N tool(s)` or `FAIL` with details.

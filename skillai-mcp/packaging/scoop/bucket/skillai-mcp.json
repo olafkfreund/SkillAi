@@ -5,7 +5,7 @@
   "license": "MIT",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v0.1.0/skillai-mcp-windows-x64.exe",
+      "url": "https://github.com/olafkfreund/SkillAi/releases/download/skillai-mcp-v0.1.0/skillai-mcp-windows-x64.exe",
       "hash": "REPLACE_WITH_SHA256_AFTER_FIRST_RELEASE"
     }
   },
@@ -14,12 +14,12 @@
   ],
   "checkver": {
     "github": "https://github.com/olafkfreund/SkillAi",
-    "regex": "mcp-bridge-v([\\d.]+)"
+    "regex": "skillai-mcp-v([\\d.]+)"
   },
   "autoupdate": {
     "architecture": {
       "64bit": {
-        "url": "https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v$version/skillai-mcp-windows-x64.exe"
+        "url": "https://github.com/olafkfreund/SkillAi/releases/download/skillai-mcp-v$version/skillai-mcp-windows-x64.exe"
       }
     },
     "hash": {

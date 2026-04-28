@@ -26,7 +26,7 @@ Or pass them via claude-desktop's mcp.config.json (see the formula's caveats out
 
 ## Updating
 
-When a new `mcp-bridge-vX.Y.Z` tag is released:
+When a new `skillai-mcp-vX.Y.Z` tag is released:
 
 1. Get the SHA256 sums from the GitHub Release page
-2. Run `brew bump-formula-pr --tag=mcp-bridge-vX.Y.Z --revision=<commit-sha> Formula/skillai-mcp.rb` (or hand-edit + PR)
+2. Run `brew bump-formula-pr --tag=skillai-mcp-vX.Y.Z --revision=<commit-sha> Formula/skillai-mcp.rb` (or hand-edit + PR)

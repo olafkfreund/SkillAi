@@ -15,10 +15,10 @@ conflicts=("skillai-mcp")
 options=('!strip')
 
 source_x86_64=(
-  "skillai-mcp-$pkgver-x86_64::https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v$pkgver/skillai-mcp-linux-x64"
+  "skillai-mcp-$pkgver-x86_64::https://github.com/olafkfreund/SkillAi/releases/download/skillai-mcp-v$pkgver/skillai-mcp-linux-x64"
 )
 source_aarch64=(
-  "skillai-mcp-$pkgver-aarch64::https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v$pkgver/skillai-mcp-linux-arm64"
+  "skillai-mcp-$pkgver-aarch64::https://github.com/olafkfreund/SkillAi/releases/download/skillai-mcp-v$pkgver/skillai-mcp-linux-arm64"
 )
 
 # Replace SKIP with real sum from the GitHub Release page after first release.

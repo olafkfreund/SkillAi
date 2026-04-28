@@ -1,6 +1,6 @@
 {
-  "name": "@skillai/mcp-bridge",
-  "version": "1.0.0",
+  "name": "skillai-mcp",
+  "version": "0.1.0",
   "description": "Stdio MCP bridge for SkillAi — connects claude-desktop to SkillAi /api/mcp over HTTPS",
   "private": true,
   "type": "module",

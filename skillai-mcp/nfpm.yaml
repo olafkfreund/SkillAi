@@ -1,6 +1,6 @@
 # nfpm.yaml — package configuration for skillai-mcp .deb and .rpm builds.
 #
-# Used by the mcp-bridge-release GitHub Actions workflow.
+# Used by the skillai-mcp-release GitHub Actions workflow.
 #
 # nfpm arch templating judgment call:
 #   nfpm's ${ARCH} variable controls package *metadata* (deb Architecture /

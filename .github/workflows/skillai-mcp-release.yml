@@ -1,12 +1,12 @@
-# mcp-bridge-release.yml
+# skillai-mcp-release.yml
 #
-# Release pipeline for @skillai/mcp-bridge.
+# Release pipeline for @skillai/skillai-mcp.
 #
-# Trigger: push a tag matching  mcp-bridge-vX.Y.Z
-# Example: git tag mcp-bridge-v1.0.1 && git push origin mcp-bridge-v1.0.1
+# Trigger: push a tag matching  skillai-mcp-vX.Y.Z
+# Example: git tag skillai-mcp-v1.0.1 && git push origin skillai-mcp-v1.0.1
 #
 # Required repository secrets:
-#   NPM_TOKEN — npm automation token with publish access to @skillai/mcp-bridge.
+#   NPM_TOKEN — npm automation token with publish access to @skillai/skillai-mcp.
 #               Create at npmjs.com → Access Tokens → Automation (granular preferred).
 #
 # Produces (attached to the GitHub Release):
@@ -20,12 +20,12 @@
 #   skillai-mcp_<ver>_amd64.rpm
 #   skillai-mcp_<ver>_arm64.rpm
 
-name: mcp-bridge release
+name: skillai-mcp release
 
 on:
   push:
     tags:
-      - 'mcp-bridge-v*'
+      - 'skillai-mcp-v*'
 
 permissions:
   contents: write   # create GitHub Release + upload artefacts
@@ -48,18 +48,18 @@ jobs:
       - name: Extract version from tag
         id: extract
         run: |
-          VERSION="${GITHUB_REF#refs/tags/mcp-bridge-v}"
+          VERSION="${GITHUB_REF#refs/tags/skillai-mcp-v}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Tag version: ${VERSION}"
 
       - name: Verify package.json version matches tag
         run: |
-          PKG_VERSION=$(node -p "require('./mcp-server/package.json').version")
+          PKG_VERSION=$(node -p "require('./skillai-mcp/package.json').version")
           TAG_VERSION="${{ steps.extract.outputs.version }}"
           echo "package.json: ${PKG_VERSION}  |  tag: ${TAG_VERSION}"
           if [ "${PKG_VERSION}" != "${TAG_VERSION}" ]; then
-            echo "::error::Version mismatch — package.json has ${PKG_VERSION} but tag is mcp-bridge-v${TAG_VERSION}"
-            echo "::error::Update mcp-server/package.json version before pushing the tag."
+            echo "::error::Version mismatch — package.json has ${PKG_VERSION} but tag is skillai-mcp-v${TAG_VERSION}"
+            echo "::error::Update skillai-mcp/package.json version before pushing the tag."
             exit 1
           fi
 
@@ -67,7 +67,7 @@ jobs:
         # npm ci with --dry-run verifies the lockfile satisfies package.json
         # without installing anything.
         run: |
-          cd mcp-server
+          cd skillai-mcp
           npm ci --dry-run
 
   # ---------------------------------------------------------------------------
@@ -112,11 +112,11 @@ jobs:
           bun-version: '1.2.13'  # pinned for reproducibility; bump deliberately
 
       - name: Install dependencies
-        working-directory: mcp-server
+        working-directory: skillai-mcp
         run: bun install --frozen-lockfile
 
       - name: Compile standalone binary
-        working-directory: mcp-server
+        working-directory: skillai-mcp
         run: |
           bun build src/index.ts \
             --compile \
@@ -124,7 +124,7 @@ jobs:
             --outfile=${{ matrix.outfile }}
 
       - name: Compute SHA256
-        working-directory: mcp-server
+        working-directory: skillai-mcp
         run: |
           OUTFILE="${{ matrix.outfile }}"
           # Single lowercase hex line — format Scoop autoupdate expects
@@ -136,8 +136,8 @@ jobs:
         with:
           name: binary-${{ matrix.artefact }}
           path: |
-            mcp-server/${{ matrix.outfile }}
-            mcp-server/${{ matrix.outfile }}.sha256
+            skillai-mcp/${{ matrix.outfile }}
+            skillai-mcp/${{ matrix.outfile }}.sha256
           if-no-files-found: error
           retention-days: 1
 
@@ -148,14 +148,14 @@ jobs:
   # install via:
   #   - Direct binary download from the GitHub Release
   #   - .deb / .rpm files from the GitHub Release
-  #   - Nix flake (github:olafkfreund/SkillAi?dir=mcp-server)
+  #   - Nix flake (github:olafkfreund/SkillAi?dir=skillai-mcp)
   #
   # To enable npm publishing later:
   #   1. Register an npm scope (e.g. @olafkfreund) — npmjs.com → New Org
-  #      OR rename the package in mcp-server/package.json to an unscoped name
+  #      OR rename the package in skillai-mcp/package.json to an unscoped name
   #   2. Mint a Granular Access Token with publish rights to that scope
   #   3. Add it as the NPM_TOKEN repo secret
-  #   4. Re-tag (e.g. mcp-bridge-v0.1.1) — this job will activate
+  #   4. Re-tag (e.g. skillai-mcp-v0.1.1) — this job will activate
   # ---------------------------------------------------------------------------
   npm-publish:
     name: Publish to npm (optional)
@@ -188,7 +188,7 @@ jobs:
 
       - name: Install and build
         if: steps.check.outputs.has_token == 'true'
-        working-directory: mcp-server
+        working-directory: skillai-mcp
         run: |
           npm ci
           npm run build
@@ -197,7 +197,7 @@ jobs:
         # The package.json has "private": true for repo-level hygiene.
         # We remove that flag only for the publish step so npm doesn't refuse.
         if: steps.check.outputs.has_token == 'true'
-        working-directory: mcp-server
+        working-directory: skillai-mcp
         run: |
           node -e "
             const fs = require('fs');
@@ -208,7 +208,7 @@ jobs:
 
       - name: Publish to npm
         if: steps.check.outputs.has_token == 'true'
-        working-directory: mcp-server
+        working-directory: skillai-mcp
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public --provenance
@@ -229,16 +229,16 @@ jobs:
         uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
         with:
           name: binary-linux-x64
-          path: mcp-server/dist/
+          path: skillai-mcp/dist/
 
       - name: Download linux-arm64 binary
         uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e  # v4.2.1
         with:
           name: binary-linux-arm64
-          path: mcp-server/dist/
+          path: skillai-mcp/dist/
 
       - name: Restore binary execute permissions
-        working-directory: mcp-server/dist
+        working-directory: skillai-mcp/dist
         run: chmod +x skillai-mcp-linux-x64 skillai-mcp-linux-arm64
 
       - name: Install nfpm (pinned release)
@@ -263,7 +263,7 @@ jobs:
         # the platform-specific binary suffix (x64 → x86_64, arm64 → aarch64) and let
         # the YAML ${BIN_ARCH} expansion pick the right binary on each pass.
         # We also export ARCH so nfpm sets correct package metadata (amd64/arm64).
-        working-directory: mcp-server
+        working-directory: skillai-mcp
         env:
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
@@ -289,7 +289,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: packages-deb-rpm
-          path: mcp-server/skillai-mcp_*.{deb,rpm}
+          path: skillai-mcp/skillai-mcp_*.{deb,rpm}
           if-no-files-found: error
           retention-days: 1
 
@@ -335,19 +335,19 @@ jobs:
         run: |
           # Use the GitHub generate-notes API for auto-changelog from PRs/commits.
           NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes \
-            -F tag_name="mcp-bridge-v${VERSION}" \
+            -F tag_name="skillai-mcp-v${VERSION}" \
             --jq '.body')
           # Prepend install instructions header to the generated notes.
-          HEADER="## Install \`@skillai/mcp-bridge\` v${VERSION}
+          HEADER="## Install \`@skillai/skillai-mcp\` v${VERSION}
 
           **npm (global):**
           \`\`\`
-          npm install -g @skillai/mcp-bridge@${VERSION}
+          npm install -g @skillai/skillai-mcp@${VERSION}
           \`\`\`
 
           **Standalone binary (Linux x64):**
           \`\`\`
-          curl -fsSL https://github.com/${{ github.repository }}/releases/download/mcp-bridge-v${VERSION}/skillai-mcp-linux-x64 \\
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/skillai-mcp-v${VERSION}/skillai-mcp-linux-x64 \\
                -o ~/.local/bin/skillai-mcp && chmod +x ~/.local/bin/skillai-mcp
           \`\`\`
 
@@ -365,12 +365,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
-          TAG="mcp-bridge-v${VERSION}"
+          TAG="skillai-mcp-v${VERSION}"
 
           # Delete existing release if re-running on the same tag (idempotency).
           gh release delete "${TAG}" --yes 2>/dev/null || true
 
           gh release create "${TAG}" \
-            --title "@skillai/mcp-bridge v${VERSION}" \
+            --title "@skillai/skillai-mcp v${VERSION}" \
             --notes-file /tmp/release-notes.md \
             release-assets/*

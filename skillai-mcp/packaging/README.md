@@ -4,15 +4,15 @@ This directory holds the source-of-truth packaging files for `skillai-mcp` distr
 
 ## In active use (consumed by the release pipeline)
 
-- **`etc/` and `usr/`** — files bundled into `.deb` / `.rpm` packages built by the release pipeline (`.github/workflows/mcp-bridge-release.yml`) via `nfpm.yaml`. Users download the resulting `.deb`/`.rpm` directly from the GitHub Release page — no external repos involved.
+- **`etc/` and `usr/`** — files bundled into `.deb` / `.rpm` packages built by the release pipeline (`.github/workflows/skillai-mcp-release.yml`) via `nfpm.yaml`. Users download the resulting `.deb`/`.rpm` directly from the GitHub Release page — no external repos involved.
 
 ## In active use (consumed in-place)
 
-- **`mcp-server/flake.nix`** (one level up) — Nix flake consumed via `github:olafkfreund/SkillAi?dir=mcp-server`. No external repo involved.
+- **`skillai-mcp/flake.nix`** (one level up) — Nix flake consumed via `github:olafkfreund/SkillAi?dir=skillai-mcp`. No external repo involved.
 
 ## Deferred — staged for possible future deployment
 
-The three subdirectories below contain ready-to-deploy packaging files for external package managers (Homebrew, AUR, Scoop). **They are NOT currently maintained.** The operator decided not to create the external repos these formats require, so users on those platforms install via the alternatives listed in `mcp-server/README.md` (npm, Nix flake, direct binary download from GitHub Releases, or the `.deb`/`.rpm` files).
+The three subdirectories below contain ready-to-deploy packaging files for external package managers (Homebrew, AUR, Scoop). **They are NOT currently maintained.** The operator decided not to create the external repos these formats require, so users on those platforms install via the alternatives listed in `skillai-mcp/README.md` (npm, Nix flake, direct binary download from GitHub Releases, or the `.deb`/`.rpm` files).
 
 If you (or a future maintainer) decide to enable any of these, the staged files are a head-start — but expect placeholder SHA256 sums to need replacing and external-repo creation as documented at the bottom of this file.
 
@@ -43,8 +43,8 @@ git clone git@github.com:olafkfreund/homebrew-tap.git
 cd homebrew-tap
 
 # Copy staged files
-cp -r ~/Source/GitHub/SkillAi/mcp-server/packaging/homebrew-tap/* .
-cp -r ~/Source/GitHub/SkillAi/mcp-server/packaging/homebrew-tap/.github .
+cp -r ~/Source/GitHub/SkillAi/skillai-mcp/packaging/homebrew-tap/* .
+cp -r ~/Source/GitHub/SkillAi/skillai-mcp/packaging/homebrew-tap/.github .
 
 # Replace the four placeholder SHA256 sums in Formula/skillai-mcp.rb with real
 # values from the GitHub Release page. The release attaches .sha256 sidecars:
@@ -74,11 +74,11 @@ git clone ssh://aur@aur.archlinux.org/skillai-mcp-bin.git
 cd skillai-mcp-bin
 
 # Copy staged files (the AUR repo wants files at the repo root, not in subdirs)
-cp ~/Source/GitHub/SkillAi/mcp-server/packaging/aur/PKGBUILD .
-cp ~/Source/GitHub/SkillAi/mcp-server/packaging/aur/.SRCINFO .
+cp ~/Source/GitHub/SkillAi/skillai-mcp/packaging/aur/PKGBUILD .
+cp ~/Source/GitHub/SkillAi/skillai-mcp/packaging/aur/.SRCINFO .
 
 # On an Arch box (or in an arch-linux Docker image), regenerate sums:
-~/Source/GitHub/SkillAi/mcp-server/packaging/aur/scripts/bump.sh 0.1.0
+~/Source/GitHub/SkillAi/skillai-mcp/packaging/aur/scripts/bump.sh 0.1.0
 
 # Verify with namcap (optional)
 namcap PKGBUILD
@@ -101,8 +101,8 @@ git clone git@github.com:olafkfreund/scoop-bucket.git
 cd scoop-bucket
 
 # Copy staged files
-cp -r ~/Source/GitHub/SkillAi/mcp-server/packaging/scoop/* .
-cp -r ~/Source/GitHub/SkillAi/mcp-server/packaging/scoop/.github .
+cp -r ~/Source/GitHub/SkillAi/skillai-mcp/packaging/scoop/* .
+cp -r ~/Source/GitHub/SkillAi/skillai-mcp/packaging/scoop/.github .
 
 # Replace the placeholder hash in bucket/skillai-mcp.json with the real value
 # from skillai-mcp-windows-x64.sha256 in the GitHub Release.
@@ -120,11 +120,11 @@ scoop install skillai/skillai-mcp
 
 ## Deployment — subsequent releases
 
-For each new `mcp-bridge-vX.Y.Z` tag:
+For each new `skillai-mcp-vX.Y.Z` tag:
 
 | Format | Update mechanism |
 |---|---|
-| **Homebrew tap** | `brew bump-formula-pr --tag=mcp-bridge-vX.Y.Z Formula/skillai-mcp.rb` (auto-fills SHA256 sums + opens a PR) |
+| **Homebrew tap** | `brew bump-formula-pr --tag=skillai-mcp-vX.Y.Z Formula/skillai-mcp.rb` (auto-fills SHA256 sums + opens a PR) |
 | **AUR** | `./scripts/bump.sh X.Y.Z` then `git commit && git push` (requires Arch box) |
 | **Scoop** | `scoop checkver -u skillai-mcp` then `git commit && git push` (Scoop's auto-bumper handles version + hash) |
 
