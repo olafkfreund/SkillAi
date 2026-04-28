@@ -35,6 +35,7 @@ export type AuditAction =
   | 'role.manager_assigned'
   | 'api_token.created' | 'api_token.revoked' | 'api_token.used'
   | 'api.rate_limit_exceeded'
+  | 'mcp.tool_called' | 'mcp.confirmed_action'
 
 type AuditEntry = {
   action: AuditAction
