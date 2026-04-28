@@ -1,8 +1,26 @@
 # Packaging staging area
 
-This directory holds the source-of-truth packaging files for **non-Nix** distributions of `skillai-mcp`. Files here are **not consumed in-place** — they need to be deployed to **external repos** that the package managers actually read.
+This directory holds the source-of-truth packaging files for `skillai-mcp` distributions.
 
-The Nix flake (`mcp-server/flake.nix`) is the exception — it's consumed in-place via `github:olafkfreund/SkillAi?dir=mcp-server`.
+## In active use (consumed by the release pipeline)
+
+- **`etc/` and `usr/`** — files bundled into `.deb` / `.rpm` packages built by the release pipeline (`.github/workflows/mcp-bridge-release.yml`) via `nfpm.yaml`. Users download the resulting `.deb`/`.rpm` directly from the GitHub Release page — no external repos involved.
+
+## In active use (consumed in-place)
+
+- **`mcp-server/flake.nix`** (one level up) — Nix flake consumed via `github:olafkfreund/SkillAi?dir=mcp-server`. No external repo involved.
+
+## Deferred — staged for possible future deployment
+
+The three subdirectories below contain ready-to-deploy packaging files for external package managers (Homebrew, AUR, Scoop). **They are NOT currently maintained.** The operator decided not to create the external repos these formats require, so users on those platforms install via the alternatives listed in `mcp-server/README.md` (npm, Nix flake, direct binary download from GitHub Releases, or the `.deb`/`.rpm` files).
+
+If you (or a future maintainer) decide to enable any of these, the staged files are a head-start — but expect placeholder SHA256 sums to need replacing and external-repo creation as documented at the bottom of this file.
+
+| Subdir | Format | External target if enabled |
+|---|---|---|
+| `homebrew-tap/` | Homebrew formula | `github.com/<owner>/homebrew-tap` |
+| `aur/` | Arch User Repository PKGBUILD | `ssh://aur@aur.archlinux.org/skillai-mcp-bin.git` |
+| `scoop/` | Scoop bucket manifest | `github.com/<owner>/scoop-bucket` |
 
 ## Subdirectories
 
@@ -13,9 +31,9 @@ The Nix flake (`mcp-server/flake.nix`) is the exception — it's consumed in-pla
 | `scoop/` | Scoop bucket manifest | `github.com/olafkfreund/scoop-bucket` |
 | `etc/`, `usr/` | Files baked into `.deb` / `.rpm` packages | Consumed by `nfpm.yaml` in this repo |
 
-## Deployment — first time (per format)
+## If you decide to enable an external-repo packager later
 
-Do this once after the first GitHub Release (`mcp-bridge-v0.1.0`) is published by the release pipeline (`.github/workflows/mcp-bridge-release.yml`).
+The deployment recipes below are reference material — they don't run automatically. Expect to redo them per format.
 
 ### Homebrew tap
 
