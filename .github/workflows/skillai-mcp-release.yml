@@ -219,7 +219,9 @@ jobs:
   package-deb-rpm:
     name: Build deb + rpm packages
     runs-on: ubuntu-latest
-    needs: build-binaries
+    needs:
+      - validate       # for VERSION output
+      - build-binaries # for the linux artefacts
 
     steps:
       - name: Checkout
@@ -256,34 +258,44 @@ jobs:
           nfpm --version
 
       - name: Build packages (two-pass per arch)
-        # Judgment call on nfpm arch handling:
-        # nfpm's ${ARCH} variable controls the *package metadata* arch but NOT which src
-        # file to pick up — src paths in nfpm.yaml are evaluated once per run, not per
-        # matrix entry. The cleanest approach is a two-pass build: we set BIN_ARCH to
-        # the platform-specific binary suffix (x64 → x86_64, arm64 → aarch64) and let
-        # the YAML ${BIN_ARCH} expansion pick the right binary on each pass.
-        # We also export ARCH so nfpm sets correct package metadata (amd64/arm64).
+        # nfpm doesn't shell-expand env vars in `src:` paths inside the YAML's
+        # `contents` array (only top-level fields like `version`/`arch`). The
+        # robust fix is to render the YAML with `envsubst` per arch into a
+        # temporary file, then invoke `nfpm pkg --config nfpm.rendered.yaml`.
+        # ARCH and BIN_ARCH determine package metadata (amd64/arm64) and which
+        # linux binary the contents reference (x64/arm64 in the binary name).
         working-directory: skillai-mcp
         env:
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
+          if [ -z "${VERSION}" ]; then
+            echo "::error::VERSION is empty — validate.outputs.version was not propagated"
+            exit 1
+          fi
+
           for COMBO in "amd64:x64" "arm64:arm64"; do
             PKG_ARCH="${COMBO%%:*}"
             BIN_ARCH="${COMBO##*:}"
 
             export ARCH="${PKG_ARCH}"
-            export BIN_ARCH="${BIN_ARCH}"
-            export VERSION="${VERSION}"
+            export BIN_ARCH
+            export VERSION
+
+            # Render nfpm.yaml with env-var expansion (envsubst is in coreutils
+            # on ubuntu-latest, no extra install needed).
+            envsubst '${ARCH} ${BIN_ARCH} ${VERSION}' < nfpm.yaml > nfpm.rendered.yaml
 
             for PKG_TYPE in deb rpm; do
-              EXT="${PKG_TYPE}"
               nfpm pkg \
                 --packager="${PKG_TYPE}" \
-                --config=nfpm.yaml \
-                --target="skillai-mcp_${VERSION}_${PKG_ARCH}.${EXT}"
-              echo "Built: skillai-mcp_${VERSION}_${PKG_ARCH}.${EXT}"
+                --config=nfpm.rendered.yaml \
+                --target="skillai-mcp_${VERSION}_${PKG_ARCH}.${PKG_TYPE}"
+              echo "Built: skillai-mcp_${VERSION}_${PKG_ARCH}.${PKG_TYPE}"
             done
           done
+
+          # Tidy up the rendered scratch file
+          rm -f nfpm.rendered.yaml
 
       - name: Upload package artefacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
