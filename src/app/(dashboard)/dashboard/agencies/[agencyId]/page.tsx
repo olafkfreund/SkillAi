@@ -128,20 +128,42 @@ export default async function AgencyDetailPage({ params }: Props) {
         <Link href="/dashboard/agencies" className="text-sm text-zinc-500 hover:text-zinc-300">
           ← Back to agencies
         </Link>
-        <h1 className="text-2xl font-bold text-zinc-100 mt-2 flex items-center gap-2">
-          {agency.isInternal && <HomeIcon className="h-5 w-5 text-blue-400" />}
-          {agency.name}
-          {agency.isSystem && (
-            <span
-              className="inline-flex items-center gap-1 rounded-full border border-zinc-600 bg-zinc-800
-                         text-zinc-300 text-xs font-medium px-2 py-0.5"
-              title="System agency — managed by SkillAI, cannot be archived"
+        <div className="flex items-center gap-4 mt-2">
+          {/* 64px logo or initials avatar */}
+          {agency.logoPath ? (
+            <img
+              src={`/api/agencies/${agency.id}/logo`}
+              alt=""
+              width={64}
+              height={64}
+              className="rounded-xl border border-zinc-700 bg-zinc-800 object-contain shrink-0"
+              style={{ width: 64, height: 64 }}
+            />
+          ) : (
+            <div
+              className="flex items-center justify-center rounded-xl bg-zinc-800 text-zinc-400
+                         text-xl font-semibold shrink-0"
+              style={{ width: 64, height: 64 }}
+              aria-hidden="true"
             >
-              <LockIcon className="h-3 w-3" />
-              System agency
-            </span>
+              {agency.name.charAt(0).toUpperCase()}
+            </div>
           )}
-        </h1>
+          <h1 className="text-2xl font-bold text-zinc-100 flex items-center gap-2">
+            {agency.isInternal && <HomeIcon className="h-5 w-5 text-blue-400" />}
+            {agency.name}
+            {agency.isSystem && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full border border-zinc-600 bg-zinc-800
+                           text-zinc-300 text-xs font-medium px-2 py-0.5"
+                title="System agency — managed by SkillAI, cannot be archived"
+              >
+                <LockIcon className="h-3 w-3" />
+                System agency
+              </span>
+            )}
+          </h1>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -4,6 +4,7 @@ import { useActionState } from 'react'
 import { LockIcon } from 'lucide-react'
 import { updateAgency, archiveAgency } from '@/actions/agencies'
 import type { Agency } from '@/db/schema/agencies'
+import { AgencyLogoUpload } from './logo-upload'
 
 interface Props {
   agency: Agency
@@ -15,6 +16,9 @@ export function AgencyEditForm({ agency }: Props) {
 
   return (
     <div className="space-y-4">
+      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6">
+        <AgencyLogoUpload agencyId={agency.id} currentLogoPath={agency.logoPath ?? null} />
+      </div>
       <form action={action} className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 space-y-4">
         <h3 className="font-semibold text-zinc-100">Agency details</h3>
 
@@ -95,7 +99,7 @@ export function AgencyEditForm({ agency }: Props) {
         </button>
       </form>
 
-      <ArchiveButton agencyId={agency.id} isSystem={agency.isSystem} />
+      <ArchiveButton agencyId={agency.id} isSystem={agency.isSystem ?? false} />
     </div>
   )
 }

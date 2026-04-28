@@ -13,6 +13,7 @@ export const agencies = pgTable(
     contactEmail: varchar('contact_email', { length: 255 }),
     contactPhone: varchar('contact_phone', { length: 50 }),
     notes: text('notes'),
+    logoPath: varchar('logo_path', { length: 500 }),
     isActive: boolean('is_active').notNull().default(true),
     isInternal: boolean('is_internal').notNull().default(false),
     isSystem: boolean('is_system').notNull().default(false),
