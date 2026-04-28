@@ -33,6 +33,8 @@ export type AuditAction =
   | 'candidate.approved_by_manager'
   | 'candidate.rejected_by_manager'
   | 'role.manager_assigned'
+  | 'api_token.created' | 'api_token.revoked' | 'api_token.used'
+  | 'api.rate_limit_exceeded'
 
 type AuditEntry = {
   action: AuditAction
