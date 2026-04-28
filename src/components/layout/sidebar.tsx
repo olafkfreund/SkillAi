@@ -13,6 +13,7 @@ import {
   ShieldCheckIcon,
   ListChecksIcon,
   HelpCircleIcon,
+  BarChart3Icon,
 } from 'lucide-react'
 import type { UserRole } from '@/lib/auth/types'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
@@ -58,6 +59,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard/agencies', label: 'Agencies', icon: BuildingIcon, minRole: 'recruiter' },
   { href: '/dashboard/users', label: 'Users', icon: UserCogIcon, minRole: 'admin' },
   { href: '/dashboard/audit', label: 'Audit Log', icon: ShieldCheckIcon, minRole: 'admin' },
+  { href: '/dashboard/reports', label: 'Reports', icon: BarChart3Icon, minRole: 'admin' },
   { href: '/settings', label: 'Settings', icon: SettingsIcon, minRole: 'admin' },
   { href: '/dashboard/help', label: 'Help', icon: HelpCircleIcon, minRole: 'viewer' },
 ]
