@@ -27,6 +27,8 @@ export type AuditAction =
   | 'settings.default_pack_language_updated'
   | 'auth.untrusted_host_blocked'
   | 'agency.created' | 'agency.archived'
+  | 'agency.logo_uploaded' | 'agency.logo_removed'
+  | 'customer.logo_uploaded' | 'customer.logo_removed'
 
 type AuditEntry = {
   action: AuditAction

@@ -15,6 +15,7 @@ export const customers = pgTable(
     contactPhone: varchar('contact_phone', { length: 50 }),
     website: varchar('website', { length: 500 }),
     portalBaseUrl: varchar('portal_base_url', { length: 500 }),
+    logoPath: varchar('logo_path', { length: 500 }),
     notes: text('notes'),
     isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
