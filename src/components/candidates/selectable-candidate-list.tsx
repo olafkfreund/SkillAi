@@ -102,8 +102,6 @@ export function SelectableCandidateList({ candidates }: Props) {
                   title={allSelected ? 'Deselect all' : 'Select all'}
                 />
               </th>
-              {/* Compare checkbox column header — empty, column kept for alignment */}
-              <th className="w-10 px-4 py-3" aria-label="Compare" />
               <th className="text-left px-5 py-3 font-medium text-zinc-400">Name</th>
               <th className="text-left px-5 py-3 font-medium text-zinc-400">Email</th>
               <th className="text-left px-5 py-3 font-medium text-zinc-400 hidden sm:table-cell">
@@ -140,13 +138,6 @@ export function SelectableCandidateList({ candidates }: Props) {
                                  focus:ring-blue-500 focus:ring-offset-zinc-900"
                       aria-label={`Select ${c.firstName} ${c.lastName}`}
                       title={isSelected ? 'Deselect candidate' : 'Select candidate'}
-                    />
-                  </td>
-                  {/* Comparison checkbox */}
-                  <td className="px-4 py-3">
-                    <ComparisonCheckbox
-                      candidateId={c.id}
-                      candidateName={`${c.firstName} ${c.lastName}`}
                     />
                   </td>
                   <td className="px-5 py-3">
@@ -211,17 +202,23 @@ export function SelectableCandidateList({ candidates }: Props) {
                     {new Date(c.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
-                    {c.filePath && (
-                      <a
-                        href={`/api/candidates/${c.id}/cv`}
-                        download
-                        title="Download original CV"
-                        className="rounded p-1 text-zinc-600 hover:text-blue-400 hover:bg-blue-950
-                                   transition-colors inline-flex"
-                      >
-                        <Download className="h-4 w-4" />
-                      </a>
-                    )}
+                    <div className="flex items-center gap-1 justify-end">
+                      <ComparisonCheckbox
+                        candidateId={c.id}
+                        candidateName={`${c.firstName} ${c.lastName}`}
+                      />
+                      {c.filePath && (
+                        <a
+                          href={`/api/candidates/${c.id}/cv`}
+                          download
+                          title="Download original CV"
+                          className="rounded p-1 text-zinc-600 hover:text-blue-400 hover:bg-blue-950
+                                     transition-colors inline-flex"
+                        >
+                          <Download className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )
