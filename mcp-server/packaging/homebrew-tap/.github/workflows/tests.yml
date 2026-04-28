@@ -1,0 +1,61 @@
+# Homebrew tap CI — runs on every push and PR.
+#
+# Uses the official Homebrew test-bot action to:
+#   - Validate formula Ruby syntax  (--only-tap-syntax)
+#   - Run `brew audit --strict`     (included in tap-syntax step)
+#   - Run `brew test`               (--only-formulae)
+#
+# NOTE: Homebrew/actions/setup-homebrew@master is used here for simplicity.
+# In production, pin to a specific commit SHA for supply-chain safety, e.g.:
+#   uses: Homebrew/actions/setup-homebrew@<SHA>
+
+name: brew test-bot
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out tap repository
+        uses: actions/checkout@v4
+
+      # Sets up Homebrew and all required Ruby/path environment for test-bot
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master  # pin to SHA in production
+
+      # Remove any leftover artefacts from previous test-bot runs
+      - name: test-bot cleanup (before)
+        run: brew test-bot --only-cleanup-before
+
+      # Install test-bot dependencies and prepare the environment
+      - name: test-bot setup
+        run: brew test-bot --only-setup
+
+      # Validates Ruby syntax and runs `brew audit --strict` on all formulas in the tap
+      - name: test-bot tap syntax + audit
+        run: brew test-bot --only-tap-syntax
+
+      # Installs the formula from source and runs the `test do` block.
+      # --root-url points test-bot at THIS tap so it resolves the formula correctly.
+      # Note: the formula uses placeholder SHA256 values before the first release;
+      # this step will be skipped (formula install will fail gracefully) until real
+      # artefacts exist. The tap-syntax step above still validates Ruby correctness.
+      - name: test-bot formulae (install + test)
+        run: |
+          brew test-bot \
+            --only-formulae \
+            --root-url="https://github.com/olafkfreund/SkillAi/releases" \
+            Formula/skillai-mcp.rb
+        # Allow this step to fail while placeholder hashes are in place.
+        # Remove `continue-on-error` once the first real release artefacts exist.
+        continue-on-error: true

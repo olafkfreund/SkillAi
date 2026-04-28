@@ -1,0 +1,31 @@
+{
+  "version": "0.1.0",
+  "description": "Stdio MCP bridge between claude-desktop and SkillAi /api/mcp",
+  "homepage": "https://github.com/olafkfreund/SkillAi",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v0.1.0/skillai-mcp-windows-x64.exe",
+      "hash": "REPLACE_WITH_SHA256_AFTER_FIRST_RELEASE"
+    }
+  },
+  "bin": [
+    ["skillai-mcp-windows-x64.exe", "skillai-mcp"]
+  ],
+  "checkver": {
+    "github": "https://github.com/olafkfreund/SkillAi",
+    "regex": "mcp-bridge-v([\\d.]+)"
+  },
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/olafkfreund/SkillAi/releases/download/mcp-bridge-v$version/skillai-mcp-windows-x64.exe"
+      }
+    },
+    "hash": {
+      "url": "$url.sha256"
+    }
+  },
+  "persist": [],
+  "shortcuts": []
+}
