@@ -108,7 +108,8 @@ const SYNECHRON_TOOL_INPUT_SCHEMA = {
     },
     employmentHistory: {
       type: 'array',
-      description: 'Job history, most recent first. Skip jobs whose dates or company are unclear.',
+      description:
+        'Job history (POSITIONS HELD), most recent first. Each entry is one role at one company. Skip jobs whose dates or company are unclear. Do NOT use this array for individual client deliverables — those go in `projects`.',
       items: {
         type: 'object',
         properties: {
@@ -118,10 +119,52 @@ const SYNECHRON_TOOL_INPUT_SCHEMA = {
           teamSize: { type: 'string' },
           client: { type: 'string' },
           duration: { type: 'string' },
+          location: {
+            type: 'string',
+            description:
+              'Location of the job if explicitly stated, e.g. "Sheffield, UK" or "Bangalore, India". Leave undefined otherwise.',
+          },
           description: { type: 'string' },
           responsibilities: { type: 'array', items: { type: 'string' } },
           skills: { type: 'array', items: { type: 'string' } },
+          keyAchievement: {
+            type: 'string',
+            description:
+              'A single short paragraph capturing the headline impact for this job, often labelled "Key Achievement:" or appearing as a bold lead-in/summary at the end of the entry. One string, not a list. Leave undefined if no clear key achievement is stated.',
+          },
         },
+      },
+    },
+    projects: {
+      type: 'array',
+      description:
+        'Discrete client-engagement DELIVERABLES, separate from employmentHistory. Use ONLY when the source CV has its own Projects section listing distinct named engagements (consultancy CVs commonly have 4-8 projects under a single role). If projects are merely blended into a job description, leave this array empty/undefined and keep details inside employmentHistory[].description or responsibilities. Never duplicate the same engagement here and in employmentHistory.',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Project name as printed on the CV' },
+          client: { type: 'string', description: 'Client / end customer for the project' },
+          duration: {
+            type: 'string',
+            description: 'Project duration, e.g. "Mar 2023 – Aug 2023" or "6 months"',
+          },
+          role: {
+            type: 'string',
+            description: 'Role the candidate played on this specific project',
+          },
+          teamSize: { type: 'string' },
+          environment: {
+            description:
+              'Tech / tooling environment for the project. May be a single string or an array of technologies.',
+            oneOf: [
+              { type: 'string' },
+              { type: 'array', items: { type: 'string' } },
+            ],
+          },
+          description: { type: 'string' },
+          responsibilities: { type: 'array', items: { type: 'string' } },
+        },
+        required: ['name'],
       },
     },
   },
@@ -139,10 +182,38 @@ const SYSTEM_PROMPT = `You convert a candidate's CV into the Synechron corporate
 Strict rules:
 - Leave fields BLANK rather than guess. The wrong information is worse than no information.
 - Do NOT invent team sizes, client names, or domains that aren't directly evidenced in the CV text.
-- For employment_history: include every job clearly described in the CV. Skip jobs whose dates or company names are unclear rather than guess.
+- For employmentHistory: include every job clearly described in the CV. Skip jobs whose dates or company names are unclear rather than guess.
 - For skills: only include skills the candidate's CV explicitly mentions, never infer.
 - responsibilities arrays: copy/paraphrase from the CV — do not embellish.
 - For ambiguous information: prefer omission over a fabricated answer.
+
+employmentHistory vs projects — this distinction matters:
+- employmentHistory[] = the JOB / POSITION itself (a role the candidate held at a company, with start/end dates, ongoing responsibilities, achievements).
+- projects[] = discrete client-engagement DELIVERABLES — named pieces of work tied to a client. A single role at a consultancy will often span 4-8 named projects, each with its own client / duration / role-on-project / team-size / environment.
+- If the source CV has a clear "Projects" section separate from work history → populate projects[].
+- If the source CV blends projects into job descriptions (no separate Projects section) → leave projects empty/undefined; details stay in employmentHistory[].description or responsibilities.
+- NEVER double-count: a project should not also appear as an employmentHistory entry.
+
+Example projects[] entry (only when the CV has a separate Projects section):
+{
+  "name": "Core Banking Migration",
+  "client": "HSBC",
+  "duration": "Mar 2023 – Aug 2023",
+  "role": "Lead Business Analyst",
+  "teamSize": "12",
+  "environment": ["Jira", "Confluence", "BPMN", "SQL"],
+  "description": "Replatformed legacy retail banking flows onto a microservices core.",
+  "responsibilities": ["Authored 40+ user stories", "Ran daily refinement"]
+}
+
+keyAchievement (per employmentHistory entry):
+- Many CVs (especially BA / PM / consulting CVs) end each job with a "Key Achievement:" paragraph or bold lead-in summarising the most impactful result.
+- Extract that as a single string into keyAchievement. If no clear key achievement is stated, leave it undefined.
+- Example: "Key Achievement: Cut onboarding time from 12 days to 3 days, saving £1.4M annually."
+
+location (per employmentHistory entry):
+- If a job entry has an explicit location annotation like "Sheffield, UK" or "Bangalore, India", extract it into location.
+- Leave undefined if location is not stated for that job.
 
 Output via the synechron_cv_data tool.`
 

@@ -20,11 +20,15 @@ export const colors = {
 }
 
 // Synechron brand palette — used by the Synechron-format CV PDF renderer.
+// Note: `yellow` is retained for the legacy renderer in synechron-cv-pdf.tsx
+// pending Wave 3 rewrite (Issue #142). New rendering should use `text` + `sidebarBg`.
 export const synechron = {
-  yellow: '#F9E800',     // brand yellow
+  yellow: '#F9E800',     // brand yellow (legacy — drop in Wave 3)
   darkGrey: '#4C4948',   // brand dark grey (logo letters)
-  lightGrey: '#F5F5F5',  // sidebar background tint
+  lightGrey: '#F5F5F5',  // sidebar background tint (legacy)
   black: '#000000',
+  text: '#2C2C2C',       // near-black for body + headings
+  sidebarBg: '#F2F2F2',  // light grey base under the texture overlay
 }
 
 export const base = StyleSheet.create({
