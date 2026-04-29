@@ -26,9 +26,13 @@ export default async function RoleEditPage({ params }: Props) {
 
   const activeCustomers = await withTenant(tenantId, async (tx) =>
     tx
-      .select({ id: customers.id, name: customers.name })
+      .select({ id: customers.id, name: customers.name, roleIdLabel: customers.roleIdLabel })
       .from(customers)
       .where(and(eq(customers.tenantId, tenantId), eq(customers.isActive, true)))
+  )
+
+  const customerRoleIdLabels: Record<string, string> = Object.fromEntries(
+    activeCustomers.map((c) => [c.id, c.roleIdLabel ?? 'Customer Role ID'])
   )
 
   // Fetch frameworks for customers that have them
@@ -59,6 +63,7 @@ export default async function RoleEditPage({ params }: Props) {
           description: role.description,
           requirements: role.requirements,
           customerId: role.customerId,
+          customerRoleId: role.customerRoleId,
           frameworkLevelId: role.frameworkLevelId,
           frameworkLevelLabel: role.frameworkLevelLabel,
           country: role.country,
@@ -71,8 +76,9 @@ export default async function RoleEditPage({ params }: Props) {
           customerDayRate: role.customerDayRate,
           rateCurrency: role.rateCurrency,
         }}
-        customers={activeCustomers}
+        customers={activeCustomers.map(({ id, name }) => ({ id, name }))}
         frameworks={frameworks}
+        customerRoleIdLabels={customerRoleIdLabels}
       />
     </div>
   )

@@ -1,20 +1,36 @@
 import { headers } from 'next/headers'
-import { desc, eq } from 'drizzle-orm'
+import { and, desc, eq, ilike, or } from 'drizzle-orm'
 import Link from 'next/link'
-import { PlusIcon, BriefcaseIcon } from 'lucide-react'
+import { PlusIcon, BriefcaseIcon, SearchIcon } from 'lucide-react'
 import { withTenant } from '@/db'
-import { roles } from '@/db/schema'
+import { roles, customers } from '@/db/schema'
 import { auth } from '@/lib/auth'
 
 export const metadata = { title: 'Roles — SkillAI' }
 
-export default async function RolesPage() {
+interface PageProps {
+  searchParams: Promise<{ q?: string }>
+}
+
+export default async function RolesPage({ searchParams }: PageProps) {
   const session = await auth()
   const tenantId = session?.user.tenantId
 
+  const { q } = await searchParams
+  const trimmedQ = q?.trim() ?? ''
+
   const allRoles = tenantId
-    ? await withTenant(tenantId, async (tx) =>
-        tx
+    ? await withTenant(tenantId, async (tx) => {
+        const conditions = [eq(roles.isActive, true)]
+        if (trimmedQ) {
+          conditions.push(
+            or(
+              ilike(roles.title, `%${trimmedQ}%`),
+              ilike(roles.customerRoleId, `%${trimmedQ}%`)
+            )!
+          )
+        }
+        return tx
           .select({
             id: roles.id,
             title: roles.title,
@@ -25,11 +41,14 @@ export default async function RolesPage() {
             cutoffDate: roles.cutoffDate,
             customerDayRate: roles.customerDayRate,
             rateCurrency: roles.rateCurrency,
+            customerRoleId: roles.customerRoleId,
+            customerRoleIdLabel: customers.roleIdLabel,
           })
           .from(roles)
-          .where(eq(roles.isActive, true))
+          .leftJoin(customers, eq(roles.customerId, customers.id))
+          .where(and(...conditions))
           .orderBy(desc(roles.createdAt))
-      )
+      })
     : []
 
   const canCreate = session?.user.role !== 'viewer'
@@ -52,6 +71,26 @@ export default async function RolesPage() {
           </Link>
         )}
       </div>
+
+      <form method="get" className="mb-4">
+        <div className="relative">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-fg-subtle)]" />
+          <input
+            type="text"
+            name="q"
+            defaultValue={trimmedQ}
+            placeholder="Search by role title or customer role ID…"
+            className="w-full rounded-md bg-[var(--color-bg-input)] border border-[var(--color-border)]
+                       text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)]
+                       pl-9 pr-3 py-2 focus:outline-none focus:border-blue-500"
+          />
+        </div>
+      </form>
+      {trimmedQ && (
+        <p className="text-xs text-[var(--color-fg-subtle)] mb-3">
+          Showing {allRoles.length} result{allRoles.length !== 1 ? 's' : ''} for &ldquo;{trimmedQ}&rdquo;
+        </p>
+      )}
 
       {allRoles.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed
@@ -105,6 +144,15 @@ export default async function RolesPage() {
                   {role.customerDayRate && (
                     <span className="inline-flex items-center rounded-full bg-emerald-950 border border-emerald-800 text-emerald-300 text-xs font-medium px-2 py-0.5">
                       {role.rateCurrency ?? ''} {Number(role.customerDayRate).toFixed(0)}/day
+                    </span>
+                  )}
+                  {role.customerRoleId && (
+                    <span
+                      className="inline-flex items-center rounded-full bg-slate-800 border border-slate-700
+                                 text-slate-300 text-xs font-medium px-2 py-0.5"
+                      title={`${role.customerRoleIdLabel ?? 'Customer Role ID'}: ${role.customerRoleId}`}
+                    >
+                      {role.customerRoleIdLabel ?? 'Customer Role ID'}: {role.customerRoleId}
                     </span>
                   )}
                 </div>

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { MapPinIcon, GlobeIcon, BuildingIcon, LayersIcon, MonitorIcon, HomeIcon, UsersIcon, CalendarIcon, ClockIcon, ExternalLinkIcon, BanknoteIcon } from 'lucide-react'
+import { MapPinIcon, GlobeIcon, BuildingIcon, LayersIcon, MonitorIcon, HomeIcon, UsersIcon, CalendarIcon, ClockIcon, ExternalLinkIcon, BanknoteIcon, HashIcon } from 'lucide-react'
 
 type RoleMeta = {
   workMode: string | null
@@ -23,6 +23,10 @@ type Props = {
   customer?: Customer
   /** Full assembled portal URL ({customer.portalBaseUrl} + {role.customerPortalPath}) or null */
   portalUrl?: string | null
+  /** Customer-side role identifier (e.g. ATS / requisition ID). Visible to all audiences. */
+  customerRoleId?: string | null
+  /** Per-customer label override; falls back to "Customer Role ID" when absent. */
+  customerRoleIdLabel?: string | null
 }
 
 function fmtDate(iso: string): string {
@@ -62,10 +66,14 @@ const WORK_MODE_STYLES: Record<string, { bg: string; text: string; border: strin
   },
 }
 
-export function RoleMetaBar({ role, customer, portalUrl }: Props) {
+export function RoleMetaBar({ role, customer, portalUrl, customerRoleId, customerRoleIdLabel }: Props) {
   const location = [role.city, role.country].filter(Boolean).join(', ')
   const hasLanguages = role.languageRequirements && role.languageRequirements.length > 0
   const workMode = role.workMode ? WORK_MODE_STYLES[role.workMode] : null
+  const hasCustomerRoleId = typeof customerRoleId === 'string' && customerRoleId.trim().length > 0
+  const resolvedRoleIdLabel = (customerRoleIdLabel && customerRoleIdLabel.trim().length > 0)
+    ? customerRoleIdLabel
+    : 'Customer Role ID'
 
   // Cut-off colour by urgency
   const cutoffDays = role.cutoffDate ? daysFromNow(role.cutoffDate) : null
@@ -79,7 +87,8 @@ export function RoleMetaBar({ role, customer, portalUrl }: Props) {
 
   // No metadata at all — render nothing
   if (!workMode && !location && !hasLanguages && !customer && !role.frameworkLevelLabel
-      && !role.targetFillDate && !role.cutoffDate && !portalUrl && !role.customerDayRate) {
+      && !role.targetFillDate && !role.cutoffDate && !portalUrl && !role.customerDayRate
+      && !hasCustomerRoleId) {
     return null
   }
 
@@ -117,6 +126,13 @@ export function RoleMetaBar({ role, customer, portalUrl }: Props) {
           <UsersIcon className="h-3 w-3 text-zinc-500" />
           {customer.name}
         </Link>
+      )}
+
+      {hasCustomerRoleId && (
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800 text-slate-300 text-xs font-medium px-2.5 py-1">
+          <HashIcon className="h-3 w-3 text-slate-500" />
+          {resolvedRoleIdLabel}: {customerRoleId}
+        </span>
       )}
 
       {role.frameworkLevelLabel && (

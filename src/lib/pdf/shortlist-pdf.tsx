@@ -122,6 +122,8 @@ type Props = {
   roleTitle: string
   role?: Role | null
   customerName?: string | null
+  customerRoleId?: string | null
+  customerRoleIdLabel?: string | null
 }
 
 type DimEntry = { label: string; getValue: (s: Score) => number | null }
@@ -132,7 +134,18 @@ const DIMENSIONS: DimEntry[] = [
   { label: 'Communication', getValue: (s) => s.communicationScore },
 ]
 
-function RoleContextBlock({ role, customerName }: { role: Role; customerName?: string | null }) {
+function RoleContextBlock({
+  role,
+  customerName,
+  customerRoleId,
+  customerRoleIdLabel,
+}: {
+  role: Role
+  customerName?: string | null
+  customerRoleId?: string | null
+  customerRoleIdLabel?: string | null
+}) {
+  const roleIdLabel = customerRoleIdLabel ?? 'Customer Role ID'
   const workMode = role.workMode ? WORK_MODE_VARIANT[role.workMode] : null
   const location = [role.city, role.country].filter(Boolean).join(', ')
   const hasMeta = workMode || location || (role.languageRequirements?.length ?? 0) > 0
@@ -147,6 +160,11 @@ function RoleContextBlock({ role, customerName }: { role: Role; customerName?: s
       <Text style={{ fontSize: 12, fontFamily: 'Helvetica-Bold', color: colors.slate900 }}>
         {role.title}
       </Text>
+      {customerRoleId && (
+        <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: colors.slate500, marginTop: 1 }}>
+          {roleIdLabel}: {customerRoleId}
+        </Text>
+      )}
       {customerName && (
         <Text style={{ fontSize: 9, color: colors.slate500, marginTop: 1 }}>
           for {customerName}
@@ -201,7 +219,7 @@ function RoleContextBlock({ role, customerName }: { role: Role; customerName?: s
   )
 }
 
-export function ShortlistPDF({ entries, roleTitle, role, customerName }: Props) {
+export function ShortlistPDF({ entries, roleTitle, role, customerName, customerRoleId, customerRoleIdLabel }: Props) {
   return (
     <Document title={`Shortlist — ${roleTitle}`}>
       <Page size="A4" style={base.page}>
@@ -211,7 +229,14 @@ export function ShortlistPDF({ entries, roleTitle, role, customerName }: Props) 
         </Text>
 
         {/* Role context — title, meta, skills, requirements, description */}
-        {role && <RoleContextBlock role={role} customerName={customerName} />}
+        {role && (
+          <RoleContextBlock
+            role={role}
+            customerName={customerName}
+            customerRoleId={customerRoleId}
+            customerRoleIdLabel={customerRoleIdLabel}
+          />
+        )}
 
         <View style={base.divider} />
 

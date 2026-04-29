@@ -316,4 +316,53 @@ describe('csv-builders', () => {
     // The value with a CRLF must be wrapped in double-quotes
     expect(csv).toContain('"Line\r\nBreak"')
   })
+
+  // ── customerRoleId in Roles CSV (issue #140) ──────────────────────────────
+
+  // 9. Roles CSV header includes the "Customer Role ID" column
+  it('buildRolesCsv — header row includes the "Customer Role ID" column', async () => {
+    mockSelect.mockReturnValueOnce(chainableMock([makeRoleRow()]))
+
+    const { buildRolesCsv } = await import('@/lib/export/csv-builders')
+    const { csv } = await buildRolesCsv(TENANT_ID)
+
+    const headerLine = csv.split('\r\n')[0]
+    expect(headerLine).toContain('Customer Role ID')
+  })
+
+  // 10. Roles CSV row contains the customerRoleId value when set
+  it('buildRolesCsv — row contains the customerRoleId value when present', async () => {
+    mockSelect.mockReturnValueOnce(
+      chainableMock([makeRoleRow({ customerRoleId: 'EXT-1234' })])
+    )
+
+    const { buildRolesCsv } = await import('@/lib/export/csv-builders')
+    const { csv } = await buildRolesCsv(TENANT_ID)
+
+    // The data row (index 1 after split on CRLF) must contain the value
+    const lines = csv.split('\r\n')
+    expect(lines[1]).toContain('EXT-1234')
+  })
+
+  // 11. Roles CSV row is empty string for the Customer Role ID column when null
+  it('buildRolesCsv — Customer Role ID cell is empty when customerRoleId is null', async () => {
+    mockSelect.mockReturnValueOnce(
+      chainableMock([makeRoleRow({ customerRoleId: null })])
+    )
+
+    const { buildRolesCsv } = await import('@/lib/export/csv-builders')
+    const { csv } = await buildRolesCsv(TENANT_ID)
+
+    const headerLine = csv.split('\r\n')[0]
+    const dataLine   = csv.split('\r\n')[1]
+
+    // Find the column index of "Customer Role ID" in the header
+    const headers = headerLine.split(',').map((h) => h.trim())
+    const colIdx  = headers.indexOf('Customer Role ID')
+    expect(colIdx).toBeGreaterThanOrEqual(0)
+
+    // The corresponding cell in the data row must be an empty string
+    const cells = dataLine.split(',')
+    expect(cells[colIdx]).toBe('')
+  })
 })

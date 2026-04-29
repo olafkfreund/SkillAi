@@ -35,6 +35,7 @@ const CreateRoleSchema = z.object({
   description: z.string().min(10, 'Description must be at least 10 characters'),
   requirements: z.string().min(10, 'Requirements must be at least 10 characters'),
   customerId: z.string().uuid().optional().or(z.literal('')),
+  customerRoleId: z.string().max(100).trim().optional().or(z.literal('')),
   frameworkLevelId: z.string().max(50).optional().or(z.literal('')),
   frameworkLevelLabel: z.string().max(200).optional().or(z.literal('')),
   country: z.string().max(100).optional().or(z.literal('')),
@@ -79,6 +80,7 @@ export async function createRole(
     description: formData.get('description'),
     requirements: formData.get('requirements'),
     customerId: formData.get('customerId') || undefined,
+    customerRoleId: formData.get('customerRoleId') || undefined,
     frameworkLevelId: formData.get('frameworkLevelId') || undefined,
     frameworkLevelLabel: formData.get('frameworkLevelLabel') || undefined,
     country: formData.get('country') || undefined,
@@ -111,6 +113,7 @@ export async function createRole(
         requirements: parsed.data.requirements,
         createdBy: userId,
         customerId: parsed.data.customerId || null,
+        customerRoleId: parsed.data.customerRoleId || null,
         frameworkLevelId: parsed.data.frameworkLevelId || null,
         frameworkLevelLabel: parsed.data.frameworkLevelLabel || null,
         country: parsed.data.country || null,
@@ -156,6 +159,7 @@ const UpdateRoleSchema = z.object({
   description: z.string().min(10, 'Description must be at least 10 characters'),
   requirements: z.string().min(10, 'Requirements must be at least 10 characters'),
   customerId: z.string().uuid().optional().or(z.literal('')),
+  customerRoleId: z.string().max(100).trim().optional().or(z.literal('')),
   frameworkLevelId: z.string().max(50).optional().or(z.literal('')),
   frameworkLevelLabel: z.string().max(200).optional().or(z.literal('')),
   country: z.string().max(100).optional().or(z.literal('')),
@@ -203,6 +207,7 @@ export async function updateRole(
     description: formData.get('description'),
     requirements: formData.get('requirements'),
     customerId: formData.get('customerId') || undefined,
+    customerRoleId: formData.get('customerRoleId') || undefined,
     frameworkLevelId: formData.get('frameworkLevelId') || undefined,
     frameworkLevelLabel: formData.get('frameworkLevelLabel') || undefined,
     country: formData.get('country') || undefined,
@@ -226,12 +231,14 @@ export async function updateRole(
   }
 
   // Load existing role so we can diff priorityKeywords and only bump
-  // priorityKeywordsUpdatedAt when the set actually changes.
+  // priorityKeywordsUpdatedAt when the set actually changes. Also used to
+  // diff customerRoleId for audit emission.
   const [existingRole] = await withTenant(tenantId, async (tx) =>
     tx
       .select({
         title: roles.title,
         priorityKeywords: roles.priorityKeywords,
+        customerRoleId: roles.customerRoleId,
       })
       .from(roles)
       .where(and(eq(roles.id, roleId), eq(roles.tenantId, tenantId)))
@@ -249,6 +256,12 @@ export async function updateRole(
   const removed = oldKeywords.filter((k) => !newSet.has(k))
   const keywordsChanged = added.length > 0 || removed.length > 0
 
+  // Diff customerRoleId — empty string normalises to null for comparison so
+  // '' → null transitions don't register as changes.
+  const oldCustomerRoleId = existingRole.customerRoleId ?? null
+  const newCustomerRoleId = parsed.data.customerRoleId || null
+  const customerRoleIdChanged = oldCustomerRoleId !== newCustomerRoleId
+
   await withTenant(tenantId, async (tx) => {
     await tx
       .update(roles)
@@ -257,6 +270,7 @@ export async function updateRole(
         description: parsed.data.description,
         requirements: parsed.data.requirements,
         customerId: parsed.data.customerId || null,
+        customerRoleId: newCustomerRoleId,
         frameworkLevelId: parsed.data.frameworkLevelId || null,
         frameworkLevelLabel: parsed.data.frameworkLevelLabel || null,
         country: parsed.data.country || null,
@@ -286,6 +300,18 @@ export async function updateRole(
       entityId: roleId,
       entityLabel: parsed.data.title,
       metadata: { field: 'priorityKeywords', added, removed },
+    })
+  }
+
+  // Audit: emit when customerRoleId changes (set / cleared / replaced).
+  // Reuses the existing 'role.updated' action — one row per changed field.
+  if (customerRoleIdChanged) {
+    await writeAuditLog(tenantId, {
+      action: 'role.updated',
+      entityType: 'role',
+      entityId: roleId,
+      entityLabel: parsed.data.title,
+      metadata: { field: 'customerRoleId', from: oldCustomerRoleId, to: newCustomerRoleId },
     })
   }
 
