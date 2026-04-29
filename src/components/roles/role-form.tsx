@@ -13,6 +13,7 @@ interface RoleFields {
   description: string
   requirements: string
   customerId: string
+  customerRoleId: string
   frameworkLevelId: string
   frameworkLevelLabel: string
   country: string
@@ -38,9 +39,10 @@ type FrameworkLevelOption = {
 interface RoleFormProps {
   customers?: Array<{ id: string; name: string }>
   frameworks?: Record<string, FrameworkLevelOption[]>
+  customerRoleIdLabels?: Record<string, string>
 }
 
-export function RoleForm({ customers = [], frameworks = {} }: RoleFormProps) {
+export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels = {} }: RoleFormProps) {
   const router = useRouter()
   const [state, action, pending] = useActionState<CreateRoleState | null, FormData>(
     createRole,
@@ -52,6 +54,7 @@ export function RoleForm({ customers = [], frameworks = {} }: RoleFormProps) {
     description: '',
     requirements: '',
     customerId: '',
+    customerRoleId: '',
     frameworkLevelId: '',
     frameworkLevelLabel: '',
     country: '',
@@ -203,6 +206,7 @@ export function RoleForm({ customers = [], frameworks = {} }: RoleFormProps) {
         fd.set('description', fields.description)
         fd.set('requirements', fields.requirements)
         fd.set('customerId', fields.customerId)
+        fd.set('customerRoleId', fields.customerRoleId)
         fd.set('frameworkLevelId', fields.frameworkLevelId)
         fd.set('frameworkLevelLabel', fields.frameworkLevelLabel)
         fd.set('priorityKeywords', JSON.stringify(fields.priorityKeywords))
@@ -232,6 +236,8 @@ export function RoleForm({ customers = [], frameworks = {} }: RoleFormProps) {
                   // Reset framework selection when customer changes
                   frameworkLevelId: '',
                   frameworkLevelLabel: '',
+                  // Reset customer-scoped role ID when customer changes
+                  customerRoleId: '',
                 }))
               }}
               className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
@@ -245,6 +251,35 @@ export function RoleForm({ customers = [], frameworks = {} }: RoleFormProps) {
                 </option>
               ))}
             </select>
+          </div>
+        )}
+
+        {fields.customerId && (
+          <div>
+            <label htmlFor="customerRoleId" className="block text-sm font-medium text-zinc-300 mb-1">
+              {customerRoleIdLabels[fields.customerId] ?? 'Customer Role ID'}{' '}
+              <span className="text-zinc-500 font-normal">(optional)</span>
+            </label>
+            <input
+              id="customerRoleId"
+              name="customerRoleId"
+              type="text"
+              maxLength={100}
+              disabled={pending || importing}
+              value={fields.customerRoleId}
+              onChange={(e) => setFields((f) => ({ ...f, customerRoleId: e.target.value }))}
+              placeholder="e.g. JOB-12345"
+              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                         placeholder:text-zinc-500
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                         disabled:opacity-50"
+            />
+            <p className="mt-1 text-xs text-zinc-500">
+              The customer&apos;s identifier for this role.
+            </p>
+            {fieldErrors?.customerRoleId && (
+              <p className="mt-1 text-xs text-red-400">{fieldErrors.customerRoleId[0]}</p>
+            )}
           </div>
         )}
 

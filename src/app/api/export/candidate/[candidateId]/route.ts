@@ -14,6 +14,7 @@ import {
   interviewTranscripts,
   transcriptAnalyses,
   candidateEnrichments,
+  customers,
 } from '@/db/schema'
 import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
 import { CandidatePDF } from '@/lib/pdf'
@@ -161,6 +162,20 @@ export async function GET(
     }
   }
 
+  // Fetch the per-customer "role ID" label for the active role's customer, so
+  // the PDF can render e.g. "Requisition #" instead of the generic fallback.
+  let activeRoleCustomerRoleIdLabel: string | null = null
+  if (activeRole?.customerId) {
+    const [customer] = await withTenant(tenantId, async (tx) =>
+      tx
+        .select({ roleIdLabel: customers.roleIdLabel })
+        .from(customers)
+        .where(eq(customers.id, activeRole!.customerId!))
+        .limit(1)
+    )
+    activeRoleCustomerRoleIdLabel = customer?.roleIdLabel ?? null
+  }
+
   const rawAnalyses: TranscriptAnalysisEntry[] = analyses.map((a) => ({
     overallScore: a.transcript_analyses.overallScore,
     communicationScore: a.transcript_analyses.communicationScore,
@@ -212,6 +227,7 @@ export async function GET(
       audience,
       activeScore,
       activeRole,
+      activeRoleCustomerRoleIdLabel,
       roleHistory: allScores
         .filter((s) => s.score.scoreStatus === 'complete')
         .map((s) => ({

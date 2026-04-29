@@ -21,6 +21,7 @@ export const roles = pgTable(
       .notNull()
       .references(() => users.id),
     customerId: uuid('customer_id').references(() => customers.id, { onDelete: 'set null' }),
+    customerRoleId: varchar('customer_role_id', { length: 100 }),
     isActive: boolean('is_active').notNull().default(true),
     frameworkLevelId: varchar('framework_level_id', { length: 50 }),
     frameworkLevelLabel: varchar('framework_level_label', { length: 200 }),

@@ -80,12 +80,14 @@ export default async function RoleDetailPage({ params }: Props) {
   const [customer] = role.customerId
     ? await withTenant(tenantId, async (tx) =>
         tx
-          .select({ id: customers.id, name: customers.name, portalBaseUrl: customers.portalBaseUrl })
+          .select({ id: customers.id, name: customers.name, portalBaseUrl: customers.portalBaseUrl, roleIdLabel: customers.roleIdLabel })
           .from(customers)
           .where(eq(customers.id, role.customerId!))
           .limit(1)
       )
     : [null]
+
+  const customerRoleIdLabel = customer?.roleIdLabel ?? 'Customer Role ID'
 
   // Assemble customer portal URL
   const portalUrl = customer?.portalBaseUrl && role.customerPortalPath
@@ -276,7 +278,13 @@ export default async function RoleDetailPage({ params }: Props) {
         </div>
       )}
 
-      <RoleMetaBar role={role} customer={customer} portalUrl={portalUrl} />
+      <RoleMetaBar
+        role={role}
+        customer={customer}
+        portalUrl={portalUrl}
+        customerRoleId={role.customerRoleId}
+        customerRoleIdLabel={customerRoleIdLabel}
+      />
 
       {/* Manager priority keywords — soft signal surfaced in AI scoring */}
       <PriorityKeywordsPanel

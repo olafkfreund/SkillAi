@@ -14,6 +14,7 @@ interface RoleData {
   description: string
   requirements: string
   customerId: string | null
+  customerRoleId?: string | null
   frameworkLevelId?: string | null
   frameworkLevelLabel?: string | null
   country?: string | null
@@ -40,9 +41,10 @@ interface RoleEditFormProps {
   role: RoleData
   customers?: Array<{ id: string; name: string }>
   frameworks?: Record<string, FrameworkLevelOption[]>
+  customerRoleIdLabels?: Record<string, string>
 }
 
-export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEditFormProps) {
+export function RoleEditForm({ role, customers = [], frameworks = {}, customerRoleIdLabels = {} }: RoleEditFormProps) {
   const router = useRouter()
 
   const boundAction = updateRole.bind(null, role.id)
@@ -56,6 +58,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
     description: string
     requirements: string
     customerId: string
+    customerRoleId: string
     frameworkLevelId: string
     frameworkLevelLabel: string
     country: string
@@ -73,6 +76,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
     description: role.description,
     requirements: role.requirements,
     customerId: role.customerId ?? '',
+    customerRoleId: role.customerRoleId ?? '',
     frameworkLevelId: role.frameworkLevelId ?? '',
     frameworkLevelLabel: role.frameworkLevelLabel ?? '',
     country: role.country ?? '',
@@ -102,6 +106,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
         fd.set('description', fields.description)
         fd.set('requirements', fields.requirements)
         fd.set('customerId', fields.customerId)
+        fd.set('customerRoleId', fields.customerRoleId)
         fd.set('frameworkLevelId', fields.frameworkLevelId)
         fd.set('frameworkLevelLabel', fields.frameworkLevelLabel)
         fd.set('country', fields.country)
@@ -145,6 +150,8 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
                 // Reset framework selection when customer changes
                 frameworkLevelId: '',
                 frameworkLevelLabel: '',
+                // Reset customer-scoped role ID when customer changes
+                customerRoleId: '',
               }))
             }}
             className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
@@ -158,6 +165,35 @@ export function RoleEditForm({ role, customers = [], frameworks = {} }: RoleEdit
               </option>
             ))}
           </select>
+        </div>
+      )}
+
+      {fields.customerId && (
+        <div>
+          <label htmlFor="customerRoleId" className="block text-sm font-medium text-zinc-300 mb-1">
+            {customerRoleIdLabels[fields.customerId] ?? 'Customer Role ID'}{' '}
+            <span className="text-zinc-500 font-normal">(optional)</span>
+          </label>
+          <input
+            id="customerRoleId"
+            name="customerRoleId"
+            type="text"
+            maxLength={100}
+            disabled={pending}
+            value={fields.customerRoleId}
+            onChange={(e) => setFields((f) => ({ ...f, customerRoleId: e.target.value }))}
+            placeholder="e.g. JOB-12345"
+            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                       placeholder:text-zinc-500
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                       disabled:opacity-50"
+          />
+          <p className="mt-1 text-xs text-zinc-500">
+            The customer&apos;s identifier for this role.
+          </p>
+          {fieldErrors?.customerRoleId && (
+            <p className="mt-1 text-xs text-red-400">{fieldErrors.customerRoleId[0]}</p>
+          )}
         </div>
       )}
 

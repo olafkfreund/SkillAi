@@ -71,6 +71,8 @@ type Props = {
   audience?: 'internal' | 'customer'
   activeScore: Score | null
   activeRole: Role | null
+  /** Per-customer label for the active role's customerRoleId (UI fallback "Customer Role ID"). */
+  activeRoleCustomerRoleIdLabel?: string | null
   roleHistory: RoleHistoryEntry[]
   transcriptAnalyses: TranscriptAnalysisEntry[]
   notes: NoteEntry[]
@@ -586,11 +588,13 @@ function ActiveScoreSection({
   role,
   candidate,
   audience,
+  customerRoleIdLabel,
 }: {
   score: Score | null
   role: Role | null
   candidate: Candidate
   audience: 'internal' | 'customer'
+  customerRoleIdLabel?: string | null
 }) {
   if (!score || !role) return null
 
@@ -602,6 +606,7 @@ function ActiveScoreSection({
     ? Number(role.customerDayRate) - Number(candidate.candidateRate)
     : null
   const marginCurrency = role.rateCurrency ?? candidate.rateCurrency ?? ''
+  const roleIdLabel = customerRoleIdLabel ?? 'Customer Role ID'
 
   return (
     <View break={false}>
@@ -616,6 +621,11 @@ function ActiveScoreSection({
           </View>
         )}
       </View>
+      {role.customerRoleId && (
+        <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: colors.slate500, marginTop: 2, marginBottom: 6 }}>
+          {roleIdLabel}: {role.customerRoleId}
+        </Text>
+      )}
 
       {/* Dimension bars */}
       <DimBar
@@ -988,6 +998,7 @@ export function CandidatePDF({
   audience = 'internal',
   activeScore,
   activeRole,
+  activeRoleCustomerRoleIdLabel,
   roleHistory,
   transcriptAnalyses,
   notes,
@@ -1018,6 +1029,7 @@ export function CandidatePDF({
           role={activeRole}
           candidate={candidate}
           audience={audience}
+          customerRoleIdLabel={activeRoleCustomerRoleIdLabel}
         />
 
         {(activeScore || activeRole) && <View style={base.divider} />}

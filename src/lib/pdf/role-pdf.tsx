@@ -14,6 +14,8 @@ type Role = typeof roles.$inferSelect
 type Props = {
   role: Role
   customerName?: string | null
+  customerRoleId?: string | null
+  customerRoleIdLabel?: string | null
 }
 
 // ── Pill / chip colour palette for the PDF ──────────────────────────────
@@ -95,18 +97,24 @@ const WORK_MODE_VARIANT: Record<string, { variant: keyof typeof pillColors; labe
   onsite:  { variant: 'amber', label: 'Onsite' },
 }
 
-export function RolePDF({ role, customerName }: Props) {
+export function RolePDF({ role, customerName, customerRoleId, customerRoleIdLabel }: Props) {
   const workMode = role.workMode ? WORK_MODE_VARIANT[role.workMode] : null
   const location = [role.city, role.country].filter(Boolean).join(', ')
   const hasMeta = workMode || location || (role.languageRequirements?.length ?? 0) > 0 || customerName || role.frameworkLevelLabel
   const hasSkills = (role.keySkills?.length ?? 0) > 0
   const hasReqs = (role.topRequirements?.length ?? 0) > 0
+  const roleIdLabel = customerRoleIdLabel ?? 'Customer Role ID'
 
   return (
     <Document title={`Role — ${role.title}`}>
       <Page size="A4" style={base.page}>
         {/* Header */}
         <Text style={base.h1}>{role.title}</Text>
+        {customerRoleId && (
+          <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', color: colors.slate500, marginTop: 2 }}>
+            {roleIdLabel}: {customerRoleId}
+          </Text>
+        )}
         <Text style={base.small}>
           {customerName && <>{customerName} · </>}
           Created {new Date(role.createdAt).toLocaleDateString('en-GB')}

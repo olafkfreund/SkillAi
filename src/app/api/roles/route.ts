@@ -26,6 +26,7 @@ export async function GET() {
         title: roles.title,
         description: roles.description,
         requirements: roles.requirements,
+        customerRoleId: roles.customerRoleId,
         isActive: roles.isActive,
         createdAt: roles.createdAt,
         createdByName: users.name,
@@ -48,6 +49,7 @@ export const CreateRoleBodySchema = z.object({
   description: z.string().min(10),
   requirements: z.string().min(10),
   customerId: z.string().uuid().optional(),
+  customerRoleId: z.string().max(100).trim().optional(),
   frameworkLevelId: z.string().max(50).optional(),
   frameworkLevelLabel: z.string().max(200).optional(),
   country: z.string().max(100).optional(),
@@ -84,6 +86,7 @@ export const POST = withApiAuth(
     formData.set('description', data.description)
     formData.set('requirements', data.requirements)
     if (data.customerId) formData.set('customerId', data.customerId)
+    if (data.customerRoleId !== undefined) formData.set('customerRoleId', data.customerRoleId)
     if (data.frameworkLevelId) formData.set('frameworkLevelId', data.frameworkLevelId)
     if (data.frameworkLevelLabel) formData.set('frameworkLevelLabel', data.frameworkLevelLabel)
     if (data.country) formData.set('country', data.country)
