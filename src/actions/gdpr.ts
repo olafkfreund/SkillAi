@@ -16,6 +16,7 @@ import {
   candidates,
   scores,
   notes,
+  roleSubmissions,
   candidateEnrichments,
   cvProfiles,
   auditLogs,
@@ -198,6 +199,11 @@ export async function deleteCandidateForGdpr(
     await tx
       .delete(notes)
       .where(eq(notes.candidateId, candidateId))
+
+    // role_submissions
+    await tx
+      .delete(roleSubmissions)
+      .where(eq(roleSubmissions.candidateId, candidateId))
 
     // cv_profiles
     await tx

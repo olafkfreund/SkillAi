@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, XIcon, CheckIcon, HomeIcon } from 'lucide-react'
 import { bulkUpdateCandidateStatus, bulkAssignToInternalAgency } from '@/actions/candidates'
+import { SubmitToCustomerButton } from '@/components/roles/submit-to-customer-button'
 import type { CandidateStatus } from '@/db/schema/candidates'
 
 const STATUS_OPTIONS: Array<{ value: CandidateStatus; label: string }> = [
@@ -18,9 +19,11 @@ const STATUS_OPTIONS: Array<{ value: CandidateStatus; label: string }> = [
 type Props = {
   selectedIds: string[]
   onClear: () => void
+  /** When provided (role detail page only), shows the "Submit to customer" action. */
+  roleId?: string
 }
 
-export function BulkStatusBar({ selectedIds, onClear }: Props) {
+export function BulkStatusBar({ selectedIds, onClear, roleId }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [selectedStatus, setSelectedStatus] = useState<CandidateStatus>('shortlisted')
@@ -128,6 +131,18 @@ export function BulkStatusBar({ selectedIds, onClear }: Props) {
           <HomeIcon className="h-4 w-4" />
           Mark as Internal
         </button>
+
+        {/* Submit to customer — only visible on the role detail page */}
+        {roleId && (
+          <SubmitToCustomerButton
+            roleId={roleId}
+            selectedCandidateIds={selectedIds}
+            onSuccess={() => {
+              onClear()
+              router.refresh()
+            }}
+          />
+        )}
 
         {/* Error / success message */}
         {error && (

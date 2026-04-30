@@ -60,6 +60,7 @@ type Props = {
   candidateRate: string | null
   candidateCurrency: string | null
   isInternal?: boolean
+  isSubmitted?: boolean
   agencyId?: string
   agencyName?: string | null
   agencyLogoPath?: string | null
@@ -87,6 +88,7 @@ export function RoleCandidateCard({
   candidateRate,
   candidateCurrency,
   isInternal,
+  isSubmitted,
   agencyId,
   agencyName,
   agencyLogoPath,
@@ -137,6 +139,12 @@ export function RoleCandidateCard({
                              text-blue-300 text-xs font-semibold px-2 py-0.5">
               <HomeIcon className="h-3 w-3" />
               INTERNAL
+            </span>
+          )}
+          {isSubmitted && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                             bg-emerald-950 text-emerald-300 border border-emerald-800">
+              Submitted
             </span>
           )}
           {email && <span className="font-normal text-zinc-500 text-sm ml-1">{email}</span>}
