@@ -72,21 +72,18 @@ const s = StyleSheet.create({
     marginBottom: 6,
   },
   starRow: {
-    flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  starLetter: {
+  starHeading: {
     fontFamily: 'Inter',
     fontWeight: 700,
     fontSize: 10,
     color: colors.violet700,
-    width: 20,
-    flexShrink: 0,
+    marginBottom: 2,
   },
   starBody: {
     ...base.text,
     fontFamily: 'Inter',
-    flex: 1,
     color: colors.slate700,
   },
   // Worked example sub-block: slate tint
@@ -249,43 +246,23 @@ export function WelcomeLetterPDF({
           <Text style={{ ...t.text, marginBottom: 8 }}>{letter.starFormat.description}</Text>
         </View>
 
-        {/* STAR rows callout */}
+        {/* STAR rows callout — each row is a vertical stack of bold heading + body */}
         <View style={s.starCallout} wrap={false}>
           <View style={s.starRow}>
-            <Text style={s.starLetter}>S —</Text>
-            <View style={s.starBody}>
-              <Text style={{ fontFamily: 'Inter', fontWeight: 700, fontSize: 10, color: colors.violet700, marginBottom: 1 }}>
-                Situation
-              </Text>
-              <Text style={s.starBody}>{letter.starFormat.situation}</Text>
-            </View>
+            <Text style={s.starHeading}>S — Situation</Text>
+            <Text style={s.starBody}>{letter.starFormat.situation}</Text>
           </View>
           <View style={s.starRow}>
-            <Text style={s.starLetter}>T —</Text>
-            <View style={s.starBody}>
-              <Text style={{ fontFamily: 'Inter', fontWeight: 700, fontSize: 10, color: colors.violet700, marginBottom: 1 }}>
-                Task
-              </Text>
-              <Text style={s.starBody}>{letter.starFormat.task}</Text>
-            </View>
+            <Text style={s.starHeading}>T — Task</Text>
+            <Text style={s.starBody}>{letter.starFormat.task}</Text>
           </View>
           <View style={s.starRow}>
-            <Text style={s.starLetter}>A —</Text>
-            <View style={s.starBody}>
-              <Text style={{ fontFamily: 'Inter', fontWeight: 700, fontSize: 10, color: colors.violet700, marginBottom: 1 }}>
-                Action
-              </Text>
-              <Text style={s.starBody}>{letter.starFormat.action}</Text>
-            </View>
+            <Text style={s.starHeading}>A — Action</Text>
+            <Text style={s.starBody}>{letter.starFormat.action}</Text>
           </View>
           <View style={{ ...s.starRow, marginBottom: 0 }}>
-            <Text style={s.starLetter}>R —</Text>
-            <View style={s.starBody}>
-              <Text style={{ fontFamily: 'Inter', fontWeight: 700, fontSize: 10, color: colors.violet700, marginBottom: 1 }}>
-                Result
-              </Text>
-              <Text style={s.starBody}>{letter.starFormat.result}</Text>
-            </View>
+            <Text style={s.starHeading}>R — Result</Text>
+            <Text style={s.starBody}>{letter.starFormat.result}</Text>
           </View>
         </View>
 
