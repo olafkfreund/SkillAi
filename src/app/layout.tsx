@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -16,6 +16,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SkillAI — Recruiting Portal",
   description: "AI-powered candidate ranking and interview management",
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  minimumScale: 1,
+  themeColor: '#09090b', // zinc-950 — matches the dark default surface token
 };
 
 // SkillAI is a session-gated internal tool. There are no public-facing pages
