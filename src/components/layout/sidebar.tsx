@@ -19,7 +19,7 @@ import {
 import type { UserRole } from '@/lib/auth/types'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 
-type NavItem = {
+export type NavItem = {
   href: string
   label: string
   icon: React.ComponentType<{ className?: string }>
@@ -31,7 +31,7 @@ type NavItem = {
   hideForRoles?: UserRole[]
 }
 
-const NAV_ITEMS: NavItem[] = [
+export const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: BriefcaseIcon, minRole: 'viewer' },
   {
     href: '/dashboard/roles',
@@ -72,7 +72,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard/help', label: 'Help', icon: HelpCircleIcon, minRole: 'viewer' },
 ]
 
-const ROLE_RANK: Record<UserRole, number> = {
+export const ROLE_RANK: Record<UserRole, number> = {
   viewer: 0,
   hiring_manager: 0.5,
   recruiter: 1,
@@ -94,7 +94,7 @@ export function Sidebar({ role, userName }: Props) {
   )
 
   return (
-    <aside className="w-56 flex-shrink-0 bg-[var(--color-bg-elevated)] border-r border-[var(--color-border)] flex flex-col">
+    <aside className="hidden lg:flex w-56 flex-shrink-0 bg-[var(--color-bg-elevated)] border-r border-[var(--color-border)] flex-col">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-[var(--color-border)]">
         <span className="text-lg font-bold text-[var(--color-fg)]">SkillAI</span>

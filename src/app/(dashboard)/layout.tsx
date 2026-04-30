@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
+import { DashboardMobileShell } from '@/components/layout/dashboard-mobile-shell'
 import { Providers } from '@/components/providers'
 
 // Dashboard pages all depend on the authenticated session, so they cannot be
@@ -21,9 +22,15 @@ export default async function DashboardLayout({
     <Providers>
       <div className="flex h-screen bg-[var(--color-bg-app)]">
         <Sidebar role={session.user.role} userName={session.user.name ?? ''} />
-        <main className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto px-6 py-8">{children}</div>
-        </main>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <DashboardMobileShell
+            userRole={session.user.role}
+            userName={session.user.name ?? undefined}
+          />
+          <main className="flex-1 overflow-auto">
+            <div className="max-w-7xl mx-auto px-4 py-6 lg:px-6 lg:py-8">{children}</div>
+          </main>
+        </div>
       </div>
     </Providers>
   )
