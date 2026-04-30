@@ -27,97 +27,111 @@ const anthropic = new Anthropic({
 
 const KARAT_LINK = 'https://karat.com/candidate-experience/'
 
-const WELCOME_LETTER_TOOL: Anthropic.Tool = {
-  name: 'submit_welcome_letter',
-  description: `Submit a personalised candidate welcome letter. ${TOOL_LANGUAGE_REINFORCEMENT}`,
-  input_schema: {
-    type: 'object' as const,
-    properties: {
-      greeting: { type: 'string' },
-      intro: { type: 'string' },
-      interviewProcess: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-          sections: {
-            type: 'array',
-            minItems: 2,
-            maxItems: 4,
-            items: {
-              type: 'object',
-              properties: {
-                heading: { type: 'string' },
-                body: { type: 'string' },
-              },
-              required: ['heading', 'body'],
+// Tool schema is built per call so karatSection can be either REQUIRED-as-object
+// (when Karat is in scope) or absent from properties entirely (standard-only).
+// Static "optional with description" form was permitting the model to fumble the
+// field as a string — this eliminates that ambiguity at the schema level.
+function buildWelcomeLetterTool(includeKarat: boolean): Anthropic.Tool {
+  const properties: Record<string, unknown> = {
+    greeting: { type: 'string' },
+    intro: { type: 'string' },
+    interviewProcess: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        sections: {
+          type: 'array',
+          minItems: 2,
+          maxItems: 4,
+          items: {
+            type: 'object',
+            properties: {
+              heading: { type: 'string' },
+              body: { type: 'string' },
             },
+            required: ['heading', 'body'],
           },
         },
-        required: ['title', 'sections'],
       },
-      karatSection: {
-        type: 'object',
-        description: 'Karat assessment teaching block. Omit this key entirely (or set to null) when the interview type is standard-only.',
-        properties: {
-          title: { type: 'string' },
-          whatItIs: { type: 'string' },
-          whatToExpect: { type: 'string' },
-          link: { type: 'string' },
-        },
-        required: ['title', 'whatItIs', 'whatToExpect', 'link'],
-      },
-      starFormat: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-          description: { type: 'string' },
-          situation: { type: 'string' },
-          task: { type: 'string' },
-          action: { type: 'string' },
-          result: { type: 'string' },
-          workedExample: { type: 'string' },
-        },
-        required: ['title', 'description', 'situation', 'task', 'action', 'result', 'workedExample'],
-      },
-      tipsAndTricks: {
-        type: 'array',
-        minItems: 4,
-        maxItems: 6,
-        items: {
-          type: 'object',
-          properties: {
-            heading: { type: 'string' },
-            body: { type: 'string' },
-          },
-          required: ['heading', 'body'],
-        },
-      },
-      gapsToBridge: {
-        type: 'array',
-        maxItems: 5,
-        items: {
-          type: 'object',
-          properties: {
-            area: { type: 'string' },
-            suggestion: { type: 'string' },
-          },
-          required: ['area', 'suggestion'],
-        },
-      },
-      motivation: { type: 'string' },
-      signoff: { type: 'string' },
+      required: ['title', 'sections'],
     },
-    required: [
-      'greeting',
-      'intro',
-      'interviewProcess',
-      'starFormat',
-      'tipsAndTricks',
-      'gapsToBridge',
-      'motivation',
-      'signoff',
-    ],
-  },
+    starFormat: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        description: { type: 'string' },
+        situation: { type: 'string' },
+        task: { type: 'string' },
+        action: { type: 'string' },
+        result: { type: 'string' },
+        workedExample: { type: 'string' },
+      },
+      required: ['title', 'description', 'situation', 'task', 'action', 'result', 'workedExample'],
+    },
+    tipsAndTricks: {
+      type: 'array',
+      minItems: 4,
+      maxItems: 6,
+      items: {
+        type: 'object',
+        properties: {
+          heading: { type: 'string' },
+          body: { type: 'string' },
+        },
+        required: ['heading', 'body'],
+      },
+    },
+    gapsToBridge: {
+      type: 'array',
+      maxItems: 5,
+      items: {
+        type: 'object',
+        properties: {
+          area: { type: 'string' },
+          suggestion: { type: 'string' },
+        },
+        required: ['area', 'suggestion'],
+      },
+    },
+    motivation: { type: 'string' },
+    signoff: { type: 'string' },
+  }
+
+  const required = [
+    'greeting',
+    'intro',
+    'interviewProcess',
+    'starFormat',
+    'tipsAndTricks',
+    'gapsToBridge',
+    'motivation',
+    'signoff',
+  ]
+
+  if (includeKarat) {
+    properties.karatSection = {
+      type: 'object',
+      description: 'Karat assessment teaching block. MUST be a JSON object with the four required string fields below — never a paragraph string.',
+      properties: {
+        title: { type: 'string' },
+        whatItIs: { type: 'string' },
+        whatToExpect: { type: 'string' },
+        link: { type: 'string' },
+      },
+      required: ['title', 'whatItIs', 'whatToExpect', 'link'],
+    }
+    required.push('karatSection')
+  }
+
+  return {
+    name: 'submit_welcome_letter',
+    description: `Submit a personalised candidate welcome letter. ${TOOL_LANGUAGE_REINFORCEMENT}`,
+    input_schema: {
+      type: 'object' as const,
+      properties: properties as Anthropic.Tool['input_schema']['properties'],
+      required,
+    },
+  }
 }
 
 const SYSTEM_PROMPT = `You are a senior recruiter writing a warm, encouraging prep letter to a candidate ahead of their interview. Tone: professional, supportive, motivating — never patronising. Concrete and useful, not fluffy. The letter is candidate-facing, never customer-facing.
@@ -214,13 +228,14 @@ ${role.description ? `DESCRIPTION:\n${role.description}\n` : ''}${role.requireme
 
   const interviewTypeInstruction = (() => {
     if (interviewType === 'standard') {
-      return 'INTERVIEW TYPE: Standard interview only. Set karatSection to null. Do not mention Karat anywhere in the letter.'
+      return 'INTERVIEW TYPE: Standard interview only. The karatSection field is not part of the schema for this call — do not produce it. Do not mention Karat anywhere in the letter.'
     }
+    const karatStructureReminder = 'karatSection MUST be a JSON object with exactly four string fields: title, whatItIs, whatToExpect, link. Never a paragraph string. Never markdown.'
     if (interviewType === 'karat') {
-      return 'INTERVIEW TYPE: Karat technical assessment only. Populate karatSection using ONLY the Karat facts in the system message. The interviewProcess block should focus on overall preparation; the Karat-specific format details belong in karatSection.'
+      return `INTERVIEW TYPE: Karat technical assessment only. Populate karatSection using ONLY the Karat facts in the system message. The interviewProcess block should focus on overall preparation; the Karat-specific format details belong in karatSection. ${karatStructureReminder}`
     }
     // 'both'
-    return 'INTERVIEW TYPE: Both a standard interview AND a Karat technical assessment. Populate karatSection using ONLY the Karat facts in the system message. The interviewProcess block should describe the standard portion; karatSection covers the technical assessment.'
+    return `INTERVIEW TYPE: Both a standard interview AND a Karat technical assessment. Populate karatSection using ONLY the Karat facts in the system message. The interviewProcess block should describe the standard portion; karatSection covers the technical assessment. ${karatStructureReminder}`
   })()
 
   // Per-candidate user block — uncached. Language directive lives here, NOT
@@ -247,7 +262,7 @@ Write the welcome letter now. Submit via the submit_welcome_letter tool.${format
         cache_control: { type: 'ephemeral' },
       },
     ],
-    tools: [WELCOME_LETTER_TOOL],
+    tools: [buildWelcomeLetterTool(includeKarat)],
     tool_choice: { type: 'tool', name: 'submit_welcome_letter' },
     messages: [
       {
@@ -297,11 +312,27 @@ Write the welcome letter now. Submit via the submit_welcome_letter tool.${format
     )
   }
 
-  // Normalise: tool schema doesn't list karatSection in required (so the model
-  // can legitimately omit it for standard interviews), but the Zod contract
-  // demands the key be present as object-or-null. Default missing to null.
+  // Normalise karatSection to satisfy the Zod contract (object | null):
+  // - Missing key → null (always — the Zod schema requires the key to exist)
+  // - String / number / array / non-object → null + warn (model fumbled the
+  //   structured field; tighter dynamic schema should prevent this, but we
+  //   keep the seatbelt to avoid 500s on rare model variance)
+  // - Valid object → pass through
   const rawInput = toolBlock.input as Record<string, unknown>
-  const normalised = 'karatSection' in rawInput ? rawInput : { ...rawInput, karatSection: null }
+  const ks = rawInput.karatSection
+  const isPlainObject = ks !== null && typeof ks === 'object' && !Array.isArray(ks)
+  let normalisedKaratSection: unknown = null
+  if (ks === null || ks === undefined) {
+    normalisedKaratSection = null
+  } else if (isPlainObject) {
+    normalisedKaratSection = ks
+  } else {
+    console.warn(
+      `Welcome letter: model emitted karatSection as ${typeof ks} (expected object | null). Falling back to null.`
+    )
+    normalisedKaratSection = null
+  }
+  const normalised = { ...rawInput, karatSection: normalisedKaratSection }
 
   const parsed = WelcomeLetterSchema.safeParse(normalised)
   if (!parsed.success) {
