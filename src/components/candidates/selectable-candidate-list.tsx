@@ -272,7 +272,7 @@ export function SelectableCandidateList({ candidates }: Props) {
                           href={`/api/candidates/${c.id}/cv`}
                           download
                           title="Download original CV"
-                          className="rounded p-1 text-[var(--color-fg-subtle)] hover:text-blue-400 hover:bg-blue-950
+                          className="rounded p-2 md:p-1 text-[var(--color-fg-subtle)] hover:text-blue-400 hover:bg-blue-950
                                      transition-colors inline-flex"
                         >
                           <Download className="h-4 w-4" />

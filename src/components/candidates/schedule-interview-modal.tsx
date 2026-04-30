@@ -126,7 +126,7 @@ export function ScheduleInterviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-xl w-full max-w-lg shadow-2xl">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-xl w-[calc(100vw-2rem)] max-w-lg shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-700">
           <div className="flex items-center gap-2">
@@ -184,7 +184,7 @@ export function ScheduleInterviewModal({
           )}
 
           {/* Date + Time */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-zinc-400 mb-1">Date</label>
               <input

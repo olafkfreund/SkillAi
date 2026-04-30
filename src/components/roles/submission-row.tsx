@@ -382,7 +382,7 @@ export function SubmissionRow({ submission }: Props) {
             disabled={isPending}
             title="Remove from submitted"
             aria-label={`Remove ${candidate.firstName} ${candidate.lastName} from submitted`}
-            className="p-1 rounded-md text-zinc-600 hover:text-red-400 hover:bg-red-950/40
+            className="p-2 md:p-1 rounded-md text-zinc-600 hover:text-red-400 hover:bg-red-950/40
                        border border-transparent hover:border-red-800 transition-colors"
           >
             <Trash2Icon className="h-3.5 w-3.5" />

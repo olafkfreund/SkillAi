@@ -254,7 +254,7 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
         {levels.map((level, index) => (
           <div
             key={index}
-            className="grid grid-cols-[1fr_1fr_2fr_4rem_2rem] gap-2 items-start
+            className="grid grid-cols-1 md:grid-cols-[1fr_1fr_2fr_4rem_2rem] gap-2 items-start
                        bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-3"
           >
             <div>

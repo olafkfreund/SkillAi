@@ -123,7 +123,7 @@ export function GdprActionsPanel({ candidateId, candidateName }: Props) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="gdpr-delete-title"
-            className="relative z-10 w-full max-w-md bg-zinc-900 border border-red-900
+            className="relative z-10 w-[calc(100vw-2rem)] max-w-md bg-zinc-900 border border-red-900
                        rounded-xl shadow-2xl p-6"
           >
             {/* Header */}
@@ -138,7 +138,7 @@ export function GdprActionsPanel({ candidateId, candidateName }: Props) {
                 type="button"
                 onClick={closeModal}
                 disabled={isPending}
-                className="text-zinc-500 hover:text-zinc-300 ml-4 shrink-0 disabled:opacity-50"
+                className="p-2 md:p-1 rounded text-zinc-500 hover:text-zinc-300 ml-4 shrink-0 disabled:opacity-50"
                 aria-label="Close dialog"
               >
                 <XIcon className="h-4 w-4" />

@@ -164,7 +164,7 @@ function WelcomeLetterButtonInner({
         >
           <div
             className="relative bg-zinc-950 border border-zinc-700 rounded-xl p-6
-                        max-w-md w-full shadow-xl"
+                        max-w-md w-[calc(100vw-2rem)] shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -179,7 +179,7 @@ function WelcomeLetterButtonInner({
                 type="button"
                 onClick={handleClose}
                 disabled={generating}
-                className="text-zinc-500 hover:text-zinc-300 disabled:opacity-40 transition-colors"
+                className="p-2 md:p-1 rounded text-zinc-500 hover:text-zinc-300 disabled:opacity-40 transition-colors"
                 aria-label="Close"
               >
                 <XIcon className="h-4 w-4" />

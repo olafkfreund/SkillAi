@@ -124,7 +124,7 @@ export function PackGenerator({ candidateId, roleId, roleName, candidateLanguage
           onClick={(e) => { if (e.target === e.currentTarget && !pending) setOpen(false) }}
           onKeyDown={(e) => { if (e.key === 'Escape' && !pending) setOpen(false) }}
         >
-          <div className="bg-zinc-900 rounded-xl shadow-xl border border-zinc-700 w-full max-w-md p-6">
+          <div className="bg-zinc-900 rounded-xl shadow-xl border border-zinc-700 w-[calc(100vw-2rem)] max-w-md p-6">
             <h2 id="pack-gen-title" className="text-lg font-semibold text-zinc-100 mb-1">Generate interview pack</h2>
             <p className="text-sm text-zinc-500 mb-5">
               Role: <span className="font-medium text-zinc-300">{roleName}</span>

@@ -306,7 +306,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
       {/* Location & Language */}
       <div className="border-t border-zinc-800 pt-4 mt-2">
         <p className="text-sm font-medium text-zinc-400 mb-3">Location & Language</p>
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
           <div>
             <label htmlFor="country" className="block text-xs font-medium text-zinc-400 mb-1">Country</label>
             <input
@@ -336,7 +336,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label htmlFor="workMode" className="block text-xs font-medium text-zinc-400 mb-1">Work Mode</label>
             <select
@@ -376,7 +376,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
       {/* Budget */}
       <div className="border-t border-zinc-800 pt-4 mt-2">
         <p className="text-sm font-medium text-zinc-400 mb-3">Budget</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label htmlFor="customerDayRate" className="block text-sm font-medium text-zinc-300 mb-1">
               Customer Day Rate
@@ -422,7 +422,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
       {/* Deadlines & Customer Portal */}
       <div className="border-t border-zinc-800 pt-4 mt-2">
         <p className="text-sm font-medium text-zinc-300 mb-3">Deadlines & Customer Portal</p>
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
           <div>
             <label htmlFor="targetFillDate" className="block text-xs font-medium text-zinc-400 mb-1">
               Target Fill Date <span className="text-zinc-600">(optional)</span>
