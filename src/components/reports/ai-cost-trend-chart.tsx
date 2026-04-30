@@ -46,6 +46,12 @@ export function AiCostTrendChart({ data, rangeDays }: Props) {
             Total ${data.totalUsd.toFixed(2)}
           </span>
           <a
+            href={`/dashboard/reports/ai-spend?range=${rangeParam}`}
+            className="text-xs px-2 py-1 rounded border border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-input)]"
+          >
+            View breakdown →
+          </a>
+          <a
             href={`/api/reports/ai-cost-trend/csv?range=${rangeParam}`}
             className="text-xs px-2 py-1 rounded border border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-bg-input)]"
           >
