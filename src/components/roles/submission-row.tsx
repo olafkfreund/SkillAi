@@ -3,9 +3,9 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Trash2Icon } from 'lucide-react'
+import { Trash2Icon, LinkIcon, CopyIcon, CheckIcon, Loader2Icon } from 'lucide-react'
 import { SubmissionStatusPill } from './submission-status-pill'
-import { updateSubmissionStatus, removeSubmission } from '@/actions/role-submissions'
+import { updateSubmissionStatus, removeSubmission, generateShareToken, revokeShareToken } from '@/actions/role-submissions'
 import type { SubmissionStatus } from '@/db/schema/role-submissions'
 import type { SubmissionWithDetails } from '@/actions/role-submissions'
 
@@ -46,6 +46,19 @@ export function SubmissionRow({ submission }: Props) {
   const [removeConfirming, setRemoveConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Share-token state
+  const [shareToken, setShareToken] = useState<string | null>(submission.shareToken ?? null)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [revokeConfirming, setRevokeConfirming] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  function buildShareUrl(token: string): string {
+    if (typeof window !== 'undefined') {
+      return `${window.location.origin}/share/submission/${token}`
+    }
+    return `/share/submission/${token}`
+  }
+
   const { candidate, sentAt, statusUpdatedAt } = submission
 
   function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -85,6 +98,40 @@ export function SubmissionRow({ submission }: Props) {
         return
       }
       router.refresh()
+    })
+  }
+
+  async function handleGenerateShareToken() {
+    setIsGenerating(true)
+    setError(null)
+    const result = await generateShareToken(submission.id)
+    setIsGenerating(false)
+    if (!result.success) {
+      setError(result.error)
+      return
+    }
+    setShareToken(result.data.token)
+  }
+
+  async function handleRevokeConfirm() {
+    setError(null)
+    const result = await revokeShareToken(submission.id)
+    if (!result.success) {
+      setError(result.error)
+      setRevokeConfirming(false)
+      return
+    }
+    setShareToken(null)
+    setRevokeConfirming(false)
+    router.refresh()
+  }
+
+  function handleCopyLink() {
+    if (!shareToken) return
+    const url = buildShareUrl(shareToken)
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 3000)
     })
   }
 
@@ -221,6 +268,91 @@ export function SubmissionRow({ submission }: Props) {
         >
           {submission.notes ? 'Notes ✎' : 'Notes'}
         </button>
+
+        {/* Share link — two states: no token vs token exists */}
+        {shareToken ? (
+          <div className="flex items-center gap-1.5">
+            {/* Copy link button */}
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              title="Copy customer share link"
+              aria-label="Copy share link to clipboard"
+              className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200
+                         px-1.5 py-1 rounded border border-transparent hover:border-zinc-600
+                         transition-colors"
+            >
+              {copied ? (
+                <>
+                  <CheckIcon className="h-3 w-3 text-emerald-400" />
+                  <span className="text-emerald-400">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <CopyIcon className="h-3 w-3" />
+                  <span>Copy link</span>
+                </>
+              )}
+            </button>
+
+            {/* Revoke — two-step inline confirm */}
+            {revokeConfirming ? (
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-amber-400">Revoke?</span>
+                <button
+                  type="button"
+                  onClick={handleRevokeConfirm}
+                  disabled={isPending}
+                  className="text-xs text-amber-400 hover:text-amber-300 font-medium transition-colors"
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRevokeConfirming(false)}
+                  disabled={isPending}
+                  className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setRevokeConfirming(true)}
+                disabled={isPending}
+                className="text-xs text-zinc-600 hover:text-amber-400 transition-colors"
+                title="Revoke share link"
+              >
+                Revoke
+              </button>
+            )}
+          </div>
+        ) : (
+          /* No token yet — show "Share with customer" */
+          <button
+            type="button"
+            onClick={handleGenerateShareToken}
+            disabled={isGenerating || isPending}
+            title="Generate a share link for this submission"
+            aria-label={`Share ${candidate.firstName} ${candidate.lastName}'s submission with customer`}
+            className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200
+                       px-1.5 py-1 rounded border border-transparent hover:border-zinc-600
+                       transition-colors disabled:opacity-50"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2Icon className="h-3 w-3 animate-spin" />
+                <span>Sharing…</span>
+              </>
+            ) : (
+              <>
+                <LinkIcon className="h-3 w-3" />
+                <span>Share</span>
+              </>
+            )}
+          </button>
+        )}
 
         {/* Remove — two-step inline confirm */}
         {removeConfirming ? (

@@ -1,4 +1,4 @@
-import { pgTable, pgPolicy, pgEnum, uuid, text, timestamp, unique, index } from 'drizzle-orm/pg-core'
+import { pgTable, pgPolicy, pgEnum, uuid, varchar, text, timestamp, unique, index, uniqueIndex } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 import { roles } from './roles'
@@ -33,6 +33,8 @@ export const roleSubmissions = pgTable(
     status: submissionStatusEnum('status').notNull().default('submitted'),
     statusUpdatedAt: timestamp('status_updated_at').notNull().defaultNow(),
     notes: text('notes'),
+    shareToken: varchar('share_token', { length: 64 }),
+    shareTokenCreatedAt: timestamp('share_token_created_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -40,6 +42,9 @@ export const roleSubmissions = pgTable(
     unique('uniq_role_submissions_tenant_role_candidate').on(t.tenantId, t.roleId, t.candidateId),
     index('idx_role_submissions_role').on(t.roleId),
     index('idx_role_submissions_status').on(t.status, t.statusUpdatedAt),
+    uniqueIndex('uniq_role_submissions_share_token')
+      .on(t.shareToken)
+      .where(sql`${t.shareToken} IS NOT NULL`),
     pgPolicy('role_submissions_tenant_isolation', {
       as: 'permissive',
       for: 'all',
