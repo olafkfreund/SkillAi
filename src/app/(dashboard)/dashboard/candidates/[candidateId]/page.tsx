@@ -40,6 +40,8 @@ import { listEmailTemplates } from '@/actions/email-templates'
 import { listSentEmailsForCandidate } from '@/actions/emails'
 import { GdprActionsPanel } from '@/components/candidates/gdpr-actions-panel'
 import { WelcomeLetterButton } from '@/components/candidates/welcome-letter-button'
+import { ManagerMobileActions } from '@/components/candidates/manager-mobile-actions'
+import { MobilePanel } from '@/components/candidates/mobile-panel'
 
 type Props = { params: Promise<{ candidateId: string }>; searchParams: Promise<{ roleId?: string }> }
 
@@ -249,11 +251,19 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
         {roleId ? 'Back to role' : 'All candidates'}
       </Link>
 
+      {/* Quick approve/reject for hiring managers on mobile — full ApprovalControls remains further down */}
+      <ManagerMobileActions
+        audience={audience}
+        roleId={roleId ?? null}
+        candidateId={candidateId}
+        currentDecision={roleId ? (myApprovalByRole.get(roleId)?.decision ?? null) : null}
+      />
+
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between mb-6">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-zinc-100">
+            <h1 className="text-2xl font-bold text-zinc-100 break-words min-w-0">
               {candidate.firstName} {candidate.lastName}
             </h1>
             {canEdit && (
@@ -352,7 +362,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
           </div>
         </div>
         {activeScore?.score.scoreStatus === 'complete' && activeScore.score.overallScore !== null && (
-          <div className="text-center bg-blue-950 border border-blue-700 rounded-xl px-6 py-3">
+          <div className="text-center bg-blue-950 border border-blue-700 rounded-xl px-6 py-3 flex-shrink-0 self-start">
             <p className="text-3xl font-bold text-blue-300">{activeScore.score.overallScore}</p>
             <p className="text-xs text-blue-400 mt-0.5">Overall score</p>
           </div>
@@ -386,9 +396,9 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
 
       {/* Location & Language */}
       {(candidate.country || candidate.city || (candidate.languagesSpoken && candidate.languagesSpoken.length > 0)) && (
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
           <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">Location & Language</h3>
-          <div className="flex flex-wrap gap-x-8 gap-y-2">
+          <div className="flex flex-wrap gap-x-3 gap-y-2 md:gap-x-8">
             {(candidate.country || candidate.city) && (
               <div>
                 <p className="text-xs text-zinc-500">Location</p>
@@ -415,9 +425,9 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
 
       {/* Commercial Details — hidden for hiring managers */}
       {!isHiringManager && (candidate.candidateRate || candidate.customerRate) && (
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
           <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">Commercial Details</h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-4">
             {candidate.candidateRate && (
               <div>
                 <p className="text-xs text-zinc-500">Candidate Rate/day</p>
@@ -457,7 +467,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
           currentStatus={activeScore.score.scoreStatus}
         />
       ) : activeScore?.score.scoreStatus === 'complete' ? (
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3 flex-wrap">
               <h2 className="font-semibold text-zinc-100">Score for: {activeScore.role.title}</h2>
@@ -507,7 +517,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
       {/* Manager approval controls — shown when the manager is assigned to one or
           more roles that this candidate has been scored on */}
       {isHiringManager && rolesWithThisCandidate.length > 0 && (
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
           <h2 className="font-semibold text-zinc-100 mb-1">Your Approval</h2>
           <p className="text-xs text-zinc-500 mb-4">
             Record your approval decision for each role this candidate has been shortlisted on.
@@ -536,45 +546,49 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
       )}
 
       {/* Web intelligence */}
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="font-semibold text-zinc-100">Web Intelligence</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              Search LinkedIn, GitHub, Reddit and more to build a fuller picture
-            </p>
+      <MobilePanel title="Web Intelligence">
+        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-semibold text-zinc-100">Web Intelligence</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Search LinkedIn, GitHub, Reddit and more to build a fuller picture
+              </p>
+            </div>
           </div>
+          <EnrichmentPanel
+            candidateId={candidateId}
+            initialLinkedinUrl={candidate.linkedinUrl ?? null}
+            initialGithubUsername={candidate.githubUsername ?? null}
+            initialEnrichment={initialEnrichment}
+            canEdit={canEdit}
+          />
         </div>
-        <EnrichmentPanel
-          candidateId={candidateId}
-          initialLinkedinUrl={candidate.linkedinUrl ?? null}
-          initialGithubUsername={candidate.githubUsername ?? null}
-          initialEnrichment={initialEnrichment}
-          canEdit={canEdit}
-        />
-      </div>
+      </MobilePanel>
 
       {/* Interview packs */}
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-zinc-100">Interview Packs</h2>
-          {allRoles.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {allRoles.map((role) => (
-                <PackGenerator
-                  key={role.id}
-                  candidateId={candidateId}
-                  roleId={role.id}
-                  roleName={role.title}
-                  candidateLanguages={candidate.languagesSpoken ?? []}
-                  tenantDefaultLanguage={tenantDefaultLanguage}
-                />
-              ))}
-            </div>
-          )}
+      <MobilePanel title="Interview Packs">
+        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-zinc-100">Interview Packs</h2>
+            {allRoles.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {allRoles.map((role) => (
+                  <PackGenerator
+                    key={role.id}
+                    candidateId={candidateId}
+                    roleId={role.id}
+                    roleName={role.title}
+                    candidateLanguages={candidate.languagesSpoken ?? []}
+                    tenantDefaultLanguage={tenantDefaultLanguage}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          <PackList candidateId={candidateId} />
         </div>
-        <PackList candidateId={candidateId} />
-      </div>
+      </MobilePanel>
 
       {/* Interview Transcripts */}
       <TranscriptSection
@@ -583,45 +597,49 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
       />
 
       {/* Interview Schedule */}
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
-        <h2 className="font-semibold text-zinc-100 mb-4">Interview Schedule</h2>
-        {canEdit && (
-          <div className="mb-4">
-            <IcsImportButton candidateId={candidateId} roleId={roleId ?? null} />
-          </div>
-        )}
-        <InterviewCalendar
-          candidateId={candidateId}
-          candidateName={`${candidate.firstName} ${candidate.lastName}`}
-          roleId={roleId}
-          initialSlots={initialSlots}
-          canSchedule={canEdit}
-          allRoles={allRoles}
-          hasGoogleCalendar={hasGoogleCalendar}
-          hasMicrosoftCalendar={hasMicrosoftCalendar}
-        />
-      </div>
+      <MobilePanel title="Interview Schedule">
+        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
+          <h2 className="font-semibold text-zinc-100 mb-4">Interview Schedule</h2>
+          {canEdit && (
+            <div className="mb-4">
+              <IcsImportButton candidateId={candidateId} roleId={roleId ?? null} />
+            </div>
+          )}
+          <InterviewCalendar
+            candidateId={candidateId}
+            candidateName={`${candidate.firstName} ${candidate.lastName}`}
+            roleId={roleId}
+            initialSlots={initialSlots}
+            canSchedule={canEdit}
+            allRoles={allRoles}
+            hasGoogleCalendar={hasGoogleCalendar}
+            hasMicrosoftCalendar={hasMicrosoftCalendar}
+          />
+        </div>
+      </MobilePanel>
 
       {/* CV Profile */}
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
-        <h2 className="font-semibold text-zinc-100 mb-4">CV Profile</h2>
-        <CandidateCvProfile
-          candidateId={candidateId}
-          cvText={candidate.cvText}
-          cvTextFormatted={candidate.cvTextFormatted}
-          profile={cvProfileRow ? {
-            experienceLevel: cvProfileRow.experienceLevel,
-            summary: cvProfileRow.summary,
-            technicalSkills: cvProfileRow.technicalSkills ?? [],
-            companies: cvProfileRow.companies ?? [],
-            personalizableMoments: cvProfileRow.personalizableMoments ?? [],
-            extractionStatus: cvProfileRow.extractionStatus,
-            errorMessage: cvProfileRow.errorMessage,
-            extractedAt: cvProfileRow.extractedAt ? cvProfileRow.extractedAt.toISOString() : null,
-          } : null}
-          canEdit={canEdit}
-        />
-      </div>
+      <MobilePanel title="CV Profile">
+        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
+          <h2 className="font-semibold text-zinc-100 mb-4">CV Profile</h2>
+          <CandidateCvProfile
+            candidateId={candidateId}
+            cvText={candidate.cvText}
+            cvTextFormatted={candidate.cvTextFormatted}
+            profile={cvProfileRow ? {
+              experienceLevel: cvProfileRow.experienceLevel,
+              summary: cvProfileRow.summary,
+              technicalSkills: cvProfileRow.technicalSkills ?? [],
+              companies: cvProfileRow.companies ?? [],
+              personalizableMoments: cvProfileRow.personalizableMoments ?? [],
+              extractionStatus: cvProfileRow.extractionStatus,
+              errorMessage: cvProfileRow.errorMessage,
+              extractedAt: cvProfileRow.extractedAt ? cvProfileRow.extractedAt.toISOString() : null,
+            } : null}
+            canEdit={canEdit}
+          />
+        </div>
+      </MobilePanel>
 
       {/* Notes */}
       <NotesPanel
