@@ -12,6 +12,7 @@ import {
 } from '@/actions/role-submissions'
 import { SubmissionFilters } from '@/components/submissions/submission-filters'
 import { SubmissionStatusPill } from '@/components/roles/submission-status-pill'
+import { SubmissionCard } from '@/components/submissions/submission-card'
 import type { SubmissionStatus } from '@/db/schema/role-submissions'
 
 // Agent A extends SubmissionWithDetails with roleTitle and customerName for the
@@ -270,8 +271,19 @@ export default async function SubmissionsPage({ searchParams }: PageProps) {
         </div>
       ) : (
         <>
-          {/* Table */}
-          <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)]">
+          {/* Mobile card list — hidden md:+ */}
+          <div className="md:hidden">
+            {allSubmissions.map((sub) => (
+              <SubmissionCard
+                key={sub.id}
+                submission={sub}
+                timeAgo={timeAgo}
+              />
+            ))}
+          </div>
+
+          {/* Desktop table — hidden below md */}
+          <div className="hidden md:block overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)]">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--color-border)]">

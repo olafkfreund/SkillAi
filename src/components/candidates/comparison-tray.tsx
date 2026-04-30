@@ -60,8 +60,13 @@ export function ComparisonTray() {
   if (items.length === 0) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-zinc-900 border-t border-zinc-700 shadow-2xl">
-      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-4">
+    // bottom-16 on mobile keeps the tray above any sticky pagination row;
+    // md:bottom-0 restores flush-bottom on larger screens.
+    // z-30 keeps below drawer scrim (z-40) and drawer panel (z-50).
+    <div className="fixed bottom-16 left-0 right-0 z-30 bg-zinc-900 border-t border-zinc-700 shadow-2xl
+                    md:bottom-0">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4
+                      sm:px-6">
         <span className="text-sm text-zinc-400 flex-shrink-0">
           Compare ({items.length}/5):
         </span>
