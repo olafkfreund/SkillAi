@@ -16,6 +16,7 @@ import { customers } from '@/db/schema/customers'
 import { auditLogs } from '@/db/schema/audit-logs'
 import { requireRole } from '@/lib/auth/require-role'
 import { writeAuditLog } from '@/lib/audit'
+import { notifyRecruiterOfCustomerUpdate } from '@/lib/email/notify-recruiter-of-customer-update'
 import { getActionContext } from '@/lib/auth/action-context'
 import { checkShareUpdateRateLimit } from '@/lib/api/share-rate-limit'
 
@@ -959,6 +960,21 @@ export async function updateSubmissionStatusByToken(
     // Audit must never fail the main action
     console.error('[audit] Failed to write customer_updated audit log:', err)
   })
+
+  // Fire-and-forget: notify the recruiter who originally submitted this candidate.
+  // Failures are swallowed inside the helper — must NEVER block the customer's
+  // status update. Skipped silently when SMTP isn't configured / status didn't
+  // change / recruiter has no email.
+  notifyRecruiterOfCustomerUpdate({
+    tenantId: foundTenantId,
+    submissionId: lookupRow.id,
+    candidateId: lookupRow.candidate_id,
+    roleId: lookupRow.role_id,
+    fromStatus: lookupRow.status,
+    toStatus: newStatus,
+    customerName: opts.customerName ?? null,
+    customerEmail: opts.customerEmail ?? null,
+  }).catch(() => { /* helper handles its own errors */ })
 
   return { success: true, data: { status: newStatus, statusUpdatedAt: now } }
 }
