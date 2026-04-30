@@ -9,7 +9,13 @@ const RANGES = [
   { key: '12mo', label: '12mo' },
 ] as const
 
-export function DateRangePresets({ current }: { current: '7d' | '30d' | '90d' | '12mo' }) {
+export function DateRangePresets({
+  current,
+  basePath = '/dashboard/reports',
+}: {
+  current: '7d' | '30d' | '90d' | '12mo'
+  basePath?: string
+}) {
   return (
     <div className="inline-flex rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-1">
       {RANGES.map((r) => {
@@ -17,7 +23,7 @@ export function DateRangePresets({ current }: { current: '7d' | '30d' | '90d' | 
         return (
           <Link
             key={r.key}
-            href={`/dashboard/reports?range=${r.key}`}
+            href={`${basePath}?range=${r.key}`}
             className={`px-3 py-1 text-sm rounded-md transition-colors ${
               isActive
                 ? 'bg-[var(--color-bg-input)] text-[var(--color-fg)]'

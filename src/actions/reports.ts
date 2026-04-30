@@ -14,6 +14,52 @@ import {
 import { getActionContext } from '@/lib/auth/action-context'
 import { requireRole } from '@/lib/auth/require-role'
 
+// ── AI Spend Detail types ──────────────────────────────────────────────────────
+
+export type AiSpendDetail = {
+  rangeDays: 7 | 30 | 90 | 365
+  kpis: {
+    totalUsd: number
+    totalCalls: number
+    avgCostPerCallUsd: number
+    monthOverMonthPct: number | null
+  }
+  byOperation: Array<{
+    operation: string
+    calls: number
+    totalUsd: number
+    avgCostPerCallUsd: number
+    inputTokens: number
+    outputTokens: number
+    cacheCreationTokens: number
+    cacheReadTokens: number
+    lastCallAt: Date | null
+  }>
+  byModel: Array<{
+    model: string
+    calls: number
+    totalUsd: number
+    sharePct: number
+  }>
+  dailyByOperation: Array<{
+    date: string                       // YYYY-MM-DD UTC
+    operation: string
+    costUsd: number
+  }>
+  latencyByOperation: Array<{
+    operation: string
+    samples: number
+    p50Ms: number | null
+    p95Ms: number | null
+    avgMs: number | null
+    maxMs: number | null
+  }>
+  pricingCoverage: {
+    callsWithZeroCost: number
+    distinctUnknownModels: string[]
+  }
+}
+
 // ── Public types ───────────────────────────────────────────────────────────────
 
 export type ReportRange = '7d' | '30d' | '90d' | '12mo'
@@ -608,6 +654,229 @@ export async function getReportsFeed(opts: { days: 7 | 30 | 90 | 365 }): Promise
       topPerformers: {
         fastestFilledRoles,
         topAgenciesByHitRate,
+      },
+    }
+  })
+}
+
+// ── AI Spend Detail action ─────────────────────────────────────────────────────
+
+export async function getAiSpendDetail(opts: { days: 7 | 30 | 90 | 365 }): Promise<AiSpendDetail> {
+  const ctx = await getActionContext()
+  if (!ctx) throw new Error('Unauthorized')
+  requireRole(ctx.userRole, 'admin')
+
+  const { days } = opts
+  const rangeStart = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
+
+  return withTenant(ctx.tenantId, async (tx) => {
+    // ── KPI totals ─────────────────────────────────────────────────────────
+    const kpiPromise = tx
+      .select({
+        totalCalls: sql<number>`count(*)::int`,
+        totalUsd: sql<string>`coalesce(sum(${aiUsage.costUsd}), 0)`,
+      })
+      .from(aiUsage)
+      .where(gte(aiUsage.createdAt, rangeStart))
+
+    // ── Month-over-month: last 30 days vs prior 30 days ────────────────────
+    const momLast30Promise = tx
+      .select({ total: sql<string>`coalesce(sum(${aiUsage.costUsd}), 0)` })
+      .from(aiUsage)
+      .where(gte(aiUsage.createdAt, thirtyDaysAgo))
+
+    const momPrior30Promise = tx
+      .select({ total: sql<string>`coalesce(sum(${aiUsage.costUsd}), 0)` })
+      .from(aiUsage)
+      .where(
+        and(
+          gte(aiUsage.createdAt, sixtyDaysAgo),
+          lt(aiUsage.createdAt, thirtyDaysAgo),
+        )
+      )
+
+    // ── Per-operation breakdown ────────────────────────────────────────────
+    const byOperationPromise = tx
+      .select({
+        operation: aiUsage.operation,
+        calls: sql<number>`count(*)::int`,
+        totalUsd: sql<string>`coalesce(sum(${aiUsage.costUsd}), 0)`,
+        inputTokens: sql<number>`coalesce(sum(${aiUsage.inputTokens}), 0)::int`,
+        outputTokens: sql<number>`coalesce(sum(${aiUsage.outputTokens}), 0)::int`,
+        cacheCreationTokens: sql<number>`coalesce(sum(${aiUsage.cacheCreationTokens}), 0)::int`,
+        cacheReadTokens: sql<number>`coalesce(sum(${aiUsage.cacheReadTokens}), 0)::int`,
+        lastCallAt: sql<Date | null>`max(${aiUsage.createdAt})`,
+      })
+      .from(aiUsage)
+      .where(gte(aiUsage.createdAt, rangeStart))
+      .groupBy(aiUsage.operation)
+      .orderBy(sql`sum(${aiUsage.costUsd}) desc`)
+
+    // ── Per-model breakdown ────────────────────────────────────────────────
+    const byModelPromise = tx
+      .select({
+        model: aiUsage.model,
+        calls: sql<number>`count(*)::int`,
+        totalUsd: sql<string>`coalesce(sum(${aiUsage.costUsd}), 0)`,
+      })
+      .from(aiUsage)
+      .where(gte(aiUsage.createdAt, rangeStart))
+      .groupBy(aiUsage.model)
+      .orderBy(sql`sum(${aiUsage.costUsd}) desc`)
+
+    // ── Daily cost by operation (long format; UI pivots to stacked area) ───
+    const dailyByOperationPromise = tx
+      .select({
+        date: sql<string>`to_char(${aiUsage.createdAt} at time zone 'UTC', 'YYYY-MM-DD')`,
+        operation: aiUsage.operation,
+        costUsd: sql<string>`coalesce(sum(${aiUsage.costUsd}), 0)`,
+      })
+      .from(aiUsage)
+      .where(gte(aiUsage.createdAt, rangeStart))
+      .groupBy(
+        sql`to_char(${aiUsage.createdAt} at time zone 'UTC', 'YYYY-MM-DD')`,
+        aiUsage.operation,
+      )
+      .orderBy(
+        sql`to_char(${aiUsage.createdAt} at time zone 'UTC', 'YYYY-MM-DD')`,
+        aiUsage.operation,
+      )
+
+    // ── Latency percentiles per operation ──────────────────────────────────
+    // COUNT on durationMs so 'samples' only counts rows where latency was recorded.
+    const latencyPromise = tx
+      .select({
+        operation: aiUsage.operation,
+        samples: sql<number>`count(${aiUsage.durationMs})::int`,
+        p50Ms: sql<number | null>`percentile_cont(0.5) WITHIN GROUP (ORDER BY ${aiUsage.durationMs})`,
+        p95Ms: sql<number | null>`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${aiUsage.durationMs})`,
+        avgMs: sql<number | null>`avg(${aiUsage.durationMs})`,
+        maxMs: sql<number | null>`max(${aiUsage.durationMs})`,
+      })
+      .from(aiUsage)
+      .where(
+        and(
+          gte(aiUsage.createdAt, rangeStart),
+          isNotNull(aiUsage.durationMs),
+        )
+      )
+      .groupBy(aiUsage.operation)
+      .orderBy(aiUsage.operation)
+
+    // ── Pricing coverage: calls priced as $0 (unknown model) ───────────────
+    const pricingCoveragePromise = tx
+      .select({
+        callsWithZeroCost: sql<number>`count(*)::int`,
+        unknownModels: sql<string[] | null>`array_agg(DISTINCT ${aiUsage.model}) FILTER (WHERE ${aiUsage.costUsd} = 0)`,
+      })
+      .from(aiUsage)
+      .where(
+        and(
+          gte(aiUsage.createdAt, rangeStart),
+          sql`${aiUsage.costUsd} = 0`,
+        )
+      )
+
+    // ── Run all eight queries in parallel ─────────────────────────────────
+    const [
+      kpiRes,
+      momLast30Res,
+      momPrior30Res,
+      byOperationRes,
+      byModelRes,
+      dailyByOperationRes,
+      latencyRes,
+      pricingCoverageRes,
+    ] = await Promise.all([
+      kpiPromise,
+      momLast30Promise,
+      momPrior30Promise,
+      byOperationPromise,
+      byModelPromise,
+      dailyByOperationPromise,
+      latencyPromise,
+      pricingCoveragePromise,
+    ])
+
+    // ── KPIs ───────────────────────────────────────────────────────────────
+    const totalCalls = kpiRes[0]?.totalCalls ?? 0
+    const totalUsd = Number(kpiRes[0]?.totalUsd ?? '0')
+    const avgCostPerCallUsd = totalCalls > 0 ? totalUsd / totalCalls : 0
+
+    const last30 = Number(momLast30Res[0]?.total ?? '0')
+    const prior30 = Number(momPrior30Res[0]?.total ?? '0')
+    let monthOverMonthPct: number | null = null
+    if (prior30 > 0 && last30 > 0) {
+      monthOverMonthPct = ((last30 - prior30) / prior30) * 100
+    }
+
+    // ── byModel — compute sharePct in TS (avoids SQL window function) ───────
+    // If total is 0, all shares stay 0 to avoid division-by-zero.
+    const byModel = byModelRes.map((r) => {
+      const modelUsd = Number(r.totalUsd)
+      return {
+        model: r.model,
+        calls: r.calls,
+        totalUsd: modelUsd,
+        sharePct: totalUsd > 0 ? Math.round((modelUsd / totalUsd) * 100 * 100) / 100 : 0,
+      }
+    })
+
+    // ── byOperation ────────────────────────────────────────────────────────
+    const byOperation = byOperationRes.map((r) => {
+      const opUsd = Number(r.totalUsd)
+      return {
+        operation: r.operation,
+        calls: r.calls,
+        totalUsd: opUsd,
+        avgCostPerCallUsd: r.calls > 0 ? opUsd / r.calls : 0,
+        inputTokens: r.inputTokens,
+        outputTokens: r.outputTokens,
+        cacheCreationTokens: r.cacheCreationTokens,
+        cacheReadTokens: r.cacheReadTokens,
+        lastCallAt: r.lastCallAt,
+      }
+    })
+
+    // ── dailyByOperation ───────────────────────────────────────────────────
+    const dailyByOperation = dailyByOperationRes.map((r) => ({
+      date: r.date,
+      operation: r.operation,
+      costUsd: Number(r.costUsd),
+    }))
+
+    // ── latencyByOperation ────────────────────────────────────────────────
+    const latencyByOperation = latencyRes.map((r) => ({
+      operation: r.operation,
+      samples: r.samples,
+      p50Ms: r.p50Ms !== null ? Math.round(Number(r.p50Ms)) : null,
+      p95Ms: r.p95Ms !== null ? Math.round(Number(r.p95Ms)) : null,
+      avgMs: r.avgMs !== null ? Math.round(Number(r.avgMs)) : null,
+      maxMs: r.maxMs !== null ? Number(r.maxMs) : null,
+    }))
+
+    // ── pricingCoverage ────────────────────────────────────────────────────
+    // Slice to 5 in TS — keeps the SQL simple and avoids a LIMIT inside array_agg.
+    const callsWithZeroCost = pricingCoverageRes[0]?.callsWithZeroCost ?? 0
+    const distinctUnknownModels = (pricingCoverageRes[0]?.unknownModels ?? []).slice(0, 5)
+
+    return {
+      rangeDays: days,
+      kpis: {
+        totalUsd,
+        totalCalls,
+        avgCostPerCallUsd,
+        monthOverMonthPct,
+      },
+      byOperation,
+      byModel,
+      dailyByOperation,
+      latencyByOperation,
+      pricingCoverage: {
+        callsWithZeroCost,
+        distinctUnknownModels,
       },
     }
   })

@@ -1,5 +1,5 @@
 import { auth } from '@/lib/auth'
-import { getReportsFeed } from '@/actions/reports'
+import { getReportsFeed, getAiSpendDetail } from '@/actions/reports'
 import { toCsv } from '@/lib/reports/to-csv'
 
 // ── Range parsing ─────────────────────────────────────────────────────────────
@@ -56,11 +56,53 @@ export async function GET(
 
   const { days, label: rangeLabel } = range
 
-  // 4. Fetch data — getReportsFeed also enforces admin internally
-  const feed = await getReportsFeed({ days })
-
-  // 5. Build CSV for the requested metric
+  // 4. Dispatch by metric
   const { metric } = await params
+
+  // ── AI-spend metrics use a separate loader to avoid paying for the full
+  //    ReportsFeed query when only spend data is needed.
+  if (metric === 'ai-spend-by-operation') {
+    const detail = await getAiSpendDetail({ days })
+    const csv = toCsv(detail.byOperation, [
+      { key: 'operation',           label: 'Operation' },
+      { key: 'calls',               label: 'Calls' },
+      { key: 'totalUsd',            label: 'Total USD' },
+      { key: 'avgCostPerCallUsd',   label: 'Avg USD per call' },
+      { key: 'inputTokens',         label: 'Input tokens' },
+      { key: 'outputTokens',        label: 'Output tokens' },
+      { key: 'cacheCreationTokens', label: 'Cache creation tokens' },
+      { key: 'cacheReadTokens',     label: 'Cache read tokens' },
+      { key: 'lastCallAt',          label: 'Last call' },
+    ])
+    return csvResponse(csv, `ai-spend-by-operation-${rangeLabel}.csv`)
+  }
+
+  if (metric === 'ai-spend-by-model') {
+    const detail = await getAiSpendDetail({ days })
+    const csv = toCsv(detail.byModel, [
+      { key: 'model',    label: 'Model' },
+      { key: 'calls',    label: 'Calls' },
+      { key: 'totalUsd', label: 'Total USD' },
+      { key: 'sharePct', label: 'Share %' },
+    ])
+    return csvResponse(csv, `ai-spend-by-model-${rangeLabel}.csv`)
+  }
+
+  if (metric === 'ai-latency-by-operation') {
+    const detail = await getAiSpendDetail({ days })
+    const csv = toCsv(detail.latencyByOperation, [
+      { key: 'operation', label: 'Operation' },
+      { key: 'samples',   label: 'Samples' },
+      { key: 'p50Ms',     label: 'p50 ms' },
+      { key: 'p95Ms',     label: 'p95 ms' },
+      { key: 'avgMs',     label: 'Avg ms' },
+      { key: 'maxMs',     label: 'Max ms' },
+    ])
+    return csvResponse(csv, `ai-latency-by-operation-${rangeLabel}.csv`)
+  }
+
+  // ── Remaining metrics come from the full ReportsFeed loader ─────────────
+  const feed = await getReportsFeed({ days })
 
   switch (metric) {
     case 'time-to-fill': {
