@@ -22,6 +22,10 @@ import {
   roleManagers,
   candidateRoleApprovals,
 } from '@/db/schema'
+import {
+  getRecentSubmissionsForTenant,
+  type SubmissionForDashboard,
+} from '@/actions/role-submissions'
 
 // ── Public types ───────────────────────────────────────────────────────────────
 
@@ -62,9 +66,12 @@ export type ForYouFeed = {
     pendingCount: number
     sentAt: Date | null
   }[]
+  staleSubmissions: SubmissionForDashboard[]
 }
 
 // ── Main function ──────────────────────────────────────────────────────────────
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 
 export async function getForYouFeed(
   userId: string,
@@ -86,7 +93,19 @@ export async function getForYouFeed(
 
   const todayDateStr = now.toISOString().slice(0, 10) // 'YYYY-MM-DD'
 
-  return withTenant(tenantId, async (tx) => {
+  // Stale submissions run in parallel with the main withTenant block because
+  // getRecentSubmissionsForTenant manages its own connection via getActionContext.
+  const staleSubmissionsPromise: Promise<SubmissionForDashboard[]> =
+    userRole === 'hiring_manager'
+      ? Promise.resolve([])
+      : getRecentSubmissionsForTenant({
+          staleBefore: new Date(now.getTime() - SEVEN_DAYS_MS),
+          status: ['submitted', 'interview_scheduled', 'interview_done', 'feedback_pending'],
+          limit: 5,
+        })
+
+  const [feedResult, staleSubmissions] = await Promise.all([
+    withTenant(tenantId, async (tx) => {
     // ── 1. Pending interviews (today & tomorrow) ────────────────────────────
     const interviewsPromise = tx
       .select({
@@ -290,5 +309,12 @@ export async function getForYouFeed(
       expiredRoles,
       pendingApprovals,
     }
-  })
+  }),
+    staleSubmissionsPromise,
+  ])
+
+  return {
+    ...feedResult,
+    staleSubmissions,
+  }
 }

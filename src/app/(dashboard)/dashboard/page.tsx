@@ -14,6 +14,7 @@ import { withTenant } from '@/db'
 import { roles, candidates, scores, interviewPacks, agencies, interviewSlots, users } from '@/db/schema'
 import { NextInterviewsCard } from '@/components/dashboard/next-interviews-card'
 import { ForYouSection } from '@/components/dashboard/for-you-section'
+import { AwaitingCustomerFeedbackWidget } from '@/components/dashboard/awaiting-customer-feedback-widget'
 import { getForYouFeed } from '@/actions/dashboard-tasks'
 
 export const metadata = { title: 'Dashboard — SkillAI' }
@@ -232,7 +233,8 @@ export default async function DashboardPage() {
 
       {/* ── Content grid ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1
-                      lg:grid-cols-3 gap-6">
+                      lg:grid-cols-2
+                      xl:grid-cols-4 gap-6">
 
         {/* Recent Roles */}
         <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-5">
@@ -360,6 +362,9 @@ export default async function DashboardPage() {
             </ul>
           )}
         </div>
+
+        {/* Awaiting Customer Feedback */}
+        <AwaitingCustomerFeedbackWidget />
       </div>
     </div>
   )

@@ -7,27 +7,26 @@ import { withTenant } from '@/db'
 import { roles, scores, candidates, customers, agencies, users } from '@/db/schema'
 import { DownloadPdfButton } from '@/components/export/download-pdf-button'
 import { archiveRole, regenerateRoleTags } from '@/actions/roles'
-import { removeCandidateFromRole, rescoreCandidate } from '@/actions/scores'
 import { hasRole } from '@/lib/auth/require-role'
 import { RoleTagsPanel } from '@/components/roles/role-tags-panel'
 import { RoleMetaBar } from '@/components/roles/role-meta-bar'
 import { RoleContent } from '@/components/roles/role-content'
-import { RoleCandidateCard } from '@/components/roles/role-candidate-card'
+import { SelectableRoleCandidateList } from '@/components/roles/selectable-role-candidate-list'
+import type { RoleCandidateRow } from '@/components/roles/selectable-role-candidate-list'
 import { SuggestCandidatesPanel } from '@/components/roles/suggest-candidates-panel'
 import { AddCandidatePanel } from '@/components/roles/add-candidate-panel'
 import { ShortlistSummaryPanel } from '@/components/roles/shortlist-summary-panel'
+import { SentToCustomerPanel } from '@/components/roles/sent-to-customer-panel'
 import { DownloadCvsButton } from '@/components/roles/download-cvs-button'
-import {
-  PriorityKeywordsPanel,
-  StaleScorePill,
-} from '@/components/roles/priority-keywords-panel'
+import { PriorityKeywordsPanel } from '@/components/roles/priority-keywords-panel'
 import { isScoreOutdatedAgainstPriorities } from '@/lib/scores/staleness'
 import { ManagerAssignmentDialog } from '@/components/roles/manager-assignment-dialog'
 import { SendForApprovalButton } from '@/components/roles/send-for-approval-button'
 import { ShortlistStatusPill } from '@/components/manager/shortlist-status-pill'
-import { ApprovalControls, ApproveAllRemainingButton } from '@/components/manager/approval-controls'
+import { ApproveAllRemainingButton } from '@/components/manager/approval-controls'
 import { getRoleManagers } from '@/actions/role-managers'
 import { getApprovalsForRole } from '@/actions/approvals'
+import { getSubmissionsForRole } from '@/actions/role-submissions'
 
 type Props = { params: Promise<{ roleId: string }> }
 
@@ -49,7 +48,7 @@ export default async function RoleDetailPage({ params }: Props) {
 
   // Fetch hiring manager users for the assignment dialog (recruiter view only)
   // We fetch directly in the server component — no admin-only gate needed here.
-  const [hiringManagerUsers, currentManagers, approvals] = await Promise.all([
+  const [hiringManagerUsers, currentManagers, approvals, submissions] = await Promise.all([
     !isHiringManager
       ? withTenant(tenantId, async (tx) =>
           tx
@@ -61,6 +60,7 @@ export default async function RoleDetailPage({ params }: Props) {
       : Promise.resolve([] as { id: string; name: string | null; email: string; role: 'admin' | 'recruiter' | 'hiring_manager' | 'viewer' }[]),
     getRoleManagers(roleId),
     getApprovalsForRole(roleId),
+    getSubmissionsForRole(roleId),
   ])
 
   // Derive shortlist pill stats from approvals
@@ -75,6 +75,9 @@ export default async function RoleDetailPage({ params }: Props) {
         (a) => a.managerId === session.user.id && a.decision === 'pending'
       ).length
     : 0
+
+  // Derive set of candidate IDs that already have a submission for this role
+  const submittedCandidateIds = new Set(submissions.map((s) => s.candidateId))
 
   // Fetch customer info if linked
   const [customer] = role.customerId
@@ -353,13 +356,18 @@ export default async function RoleDetailPage({ params }: Props) {
         {scoredCandidates.length === 0 ? (
           <p className="text-zinc-500 text-sm">No candidates scored for this role yet.</p>
         ) : (
-          <div className="grid gap-2">
-            {scoredCandidates.map((c) => {
+          <SelectableRoleCandidateList
+            roleId={roleId}
+            roleDayRate={role.customerDayRate}
+            roleCurrency={role.rateCurrency}
+            canEdit={canEdit}
+            isHiringManager={isHiringManager}
+            audience={audience}
+            candidates={scoredCandidates.map((c): RoleCandidateRow => {
               const isStale = isScoreOutdatedAgainstPriorities(
                 { updatedAt: c.scoreUpdatedAt },
                 { priorityKeywordsUpdatedAt: role.priorityKeywordsUpdatedAt },
               )
-              // Find this manager's approval row for this candidate (if any)
               const myApproval = isHiringManager
                 ? approvals.find(
                     (a) =>
@@ -367,60 +375,38 @@ export default async function RoleDetailPage({ params }: Props) {
                       a.managerId === session.user.id
                   )
                 : undefined
-              return (
-                <div key={c.scoreId} className="space-y-1">
-                  <RoleCandidateCard
-                    scoreId={c.scoreId}
-                    roleId={roleId}
-                    candidateId={c.candidateId}
-                    firstName={c.firstName}
-                    lastName={c.lastName}
-                    email={c.email}
-                    scoreStatus={c.scoreStatus}
-                    overallScore={c.overallScore}
-                    technicalScore={c.technicalScore}
-                    experienceScore={c.experienceScore}
-                    culturalFitScore={c.culturalFitScore}
-                    communicationScore={c.communicationScore}
-                    filePath={c.filePath ?? null}
-                    roleDayRate={role.customerDayRate}
-                    roleCurrency={role.rateCurrency}
-                    candidateRate={c.candidateRate}
-                    candidateCurrency={c.candidateCurrency}
-                    isInternal={Boolean(c.agencyIsInternal)}
-                    agencyId={c.agencyId ?? undefined}
-                    agencyName={c.agencyName ?? null}
-                    agencyLogoPath={c.agencyLogoPath ?? null}
-                    canEdit={canEdit}
-                    audience={audience}
-                    removeAction={removeCandidateFromRole}
-                  />
-                  {/* Manager: approval controls below each candidate card */}
-                  {isHiringManager && (
-                    <div className="pl-2">
-                      <ApprovalControls
-                        roleId={roleId}
-                        candidateId={c.candidateId}
-                        currentDecision={myApproval?.decision ?? 'pending'}
-                        currentComment={myApproval?.comment ?? null}
-                      />
-                    </div>
-                  )}
-                  {isStale && canEdit && (
-                    <div className="flex justify-end pr-2">
-                      <StaleScorePill
-                        candidateId={c.candidateId}
-                        roleId={roleId}
-                        rescoreAction={rescoreCandidate}
-                      />
-                    </div>
-                  )}
-                </div>
-              )
+              return {
+                scoreId: c.scoreId,
+                candidateId: c.candidateId,
+                firstName: c.firstName,
+                lastName: c.lastName,
+                email: c.email,
+                filePath: c.filePath ?? null,
+                scoreStatus: c.scoreStatus,
+                overallScore: c.overallScore,
+                technicalScore: c.technicalScore,
+                experienceScore: c.experienceScore,
+                culturalFitScore: c.culturalFitScore,
+                communicationScore: c.communicationScore,
+                candidateRate: c.candidateRate,
+                candidateCurrency: c.candidateCurrency,
+                agencyId: c.agencyId ?? null,
+                agencyName: c.agencyName ?? null,
+                agencyLogoPath: c.agencyLogoPath ?? null,
+                agencyIsInternal: c.agencyIsInternal,
+                isStale,
+                isSubmitted: submittedCandidateIds.has(c.candidateId),
+                approval: myApproval
+                  ? { decision: myApproval.decision, comment: myApproval.comment ?? null }
+                  : null,
+              }
             })}
-          </div>
+          />
         )}
       </div>
+
+      {/* Sent to Customer — recruiter-only panel listing all submitted candidates */}
+      <SentToCustomerPanel submissions={submissions} audience={audience} />
 
       {/* AI Shortlist Hiring Recommendation — only when ≥2 candidates scored */}
       {scoredCandidates.length >= 2 && <ShortlistSummaryPanel roleId={roleId} />}

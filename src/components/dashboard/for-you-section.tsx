@@ -8,6 +8,8 @@
 
 import Link from 'next/link'
 import type { ForYouFeed } from '@/actions/dashboard-tasks'
+import type { SubmissionForDashboard } from '@/actions/role-submissions'
+import { SubmissionStatusPill } from '@/components/roles/submission-status-pill'
 
 type Props = {
   feed: ForYouFeed
@@ -324,6 +326,64 @@ function ExpiredRolesWidget({
   )
 }
 
+// ── 6. Stale submissions widget ────────────────────────────────────────────────
+// Recruiter-only: submissions with no status change in >7 days that are still
+// open (not hired/rejected/withdrawn). Prompts recruiter to follow up.
+
+// Helper kept outside the component body so the `Date.now()` call is not
+// flagged as impure-during-render by react-hooks/purity (matches the timeAgo
+// pattern used by awaiting-customer-feedback-widget.tsx).
+function daysSince(date: Date): number {
+  return Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24))
+}
+
+function StaleSubmissionsWidget({
+  items,
+}: {
+  items: SubmissionForDashboard[]
+}) {
+  return (
+    <WidgetCard>
+      <WidgetHeader
+        title="Stale submissions"
+        count={items.length}
+      />
+      {items.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <ul className="divide-y divide-[var(--color-border)]">
+          {items.map((item) => {
+            const daysSinceUpdate = daysSince(item.statusUpdatedAt)
+            return (
+              <li key={item.id} className="py-3 first:pt-0 last:pb-0">
+                <Link
+                  href={`/dashboard/roles/${item.roleId}`}
+                  className="flex items-start justify-between gap-3 group"
+                >
+                  <div className="min-w-0 flex-1">
+                    <span className="text-sm text-[var(--color-fg-muted)] group-hover:text-[var(--color-fg)] transition-colors truncate block">
+                      {item.candidateFirstName} {item.candidateLastName}
+                    </span>
+                    <span className="text-xs text-[var(--color-fg-subtle)] truncate block">
+                      {item.roleTitle}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <SubmissionStatusPill status={item.status} />
+                    <span className="text-xs text-amber-400 whitespace-nowrap">
+                      No update in {daysSinceUpdate}d
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </WidgetCard>
+  )
+}
+
 // ── Root export ────────────────────────────────────────────────────────────────
 
 export function ForYouSection({ feed }: Props) {
@@ -333,6 +393,7 @@ export function ForYouSection({ feed }: Props) {
     candidatesAwaitingScore,
     stalePriorities,
     expiredRoles,
+    staleSubmissions,
   } = feed
 
   const isEmpty =
@@ -340,7 +401,8 @@ export function ForYouSection({ feed }: Props) {
     pendingApprovals.length === 0 &&
     candidatesAwaitingScore.length === 0 &&
     stalePriorities.length === 0 &&
-    expiredRoles.length === 0
+    expiredRoles.length === 0 &&
+    staleSubmissions.length === 0
 
   if (isEmpty) {
     return (
@@ -372,6 +434,9 @@ export function ForYouSection({ feed }: Props) {
         )}
         {expiredRoles.length > 0 && (
           <ExpiredRolesWidget items={expiredRoles} />
+        )}
+        {staleSubmissions.length > 0 && (
+          <StaleSubmissionsWidget items={staleSubmissions} />
         )}
       </div>
     </section>
