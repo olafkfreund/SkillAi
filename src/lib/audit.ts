@@ -47,6 +47,7 @@ export type AuditAction =
   | 'candidate.dsar_exported'
   | 'tenant.exported'
   | 'tenant.csv_exported'
+  | 'candidate.welcome_letter_generated'
 
 type AuditEntry = {
   action: AuditAction

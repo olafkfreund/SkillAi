@@ -39,6 +39,7 @@ import { EmailHistory } from '@/components/candidates/email-history'
 import { listEmailTemplates } from '@/actions/email-templates'
 import { listSentEmailsForCandidate } from '@/actions/emails'
 import { GdprActionsPanel } from '@/components/candidates/gdpr-actions-panel'
+import { WelcomeLetterButton } from '@/components/candidates/welcome-letter-button'
 
 type Props = { params: Promise<{ candidateId: string }>; searchParams: Promise<{ roleId?: string }> }
 
@@ -194,6 +195,11 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
     ? candidateScores.find((s) => s.score.roleId === roleId)
     : candidateScores[0]
 
+  // Deduplicated list of roles this candidate has scores for — used by WelcomeLetterButton
+  const candidateRolesForLetter = Array.from(
+    new Map(candidateScores.map((s) => [s.role.id, { id: s.role.id, title: s.role.title }])).values()
+  )
+
   const roleHistory = candidateScores.map((s) => ({
     scoreId: s.score.id,
     roleId: s.role.id,
@@ -301,6 +307,14 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
               label="Customer PDF"
             />
             <SynechronCvButton candidateId={candidateId} />
+            <WelcomeLetterButton
+              candidateId={candidateId}
+              candidateLanguagesSpoken={candidate.languagesSpoken ?? null}
+              defaultPackLanguage={tenantDefaultLanguage}
+              currentRoleId={roleId ?? null}
+              candidateRoles={candidateRolesForLetter}
+              audience={audience}
+            />
             {canEdit && !isHiringManager && candidate.isActive && (
               <form action={archiveCandidate.bind(null, candidateId)}>
                 <button

@@ -73,5 +73,6 @@ export const AI_OPERATIONS = [
   'role_tag_extract',
   'embedding',
   'personal_site_summary',
+  'welcome_letter_generate',
 ] as const
 export type AiOperation = (typeof AI_OPERATIONS)[number]
