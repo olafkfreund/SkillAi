@@ -2,6 +2,7 @@
 
 import { MenuIcon } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
+import { InstallPrompt } from '@/components/pwa/install-prompt'
 
 type Props = {
   /** Called when the hamburger button is tapped — opens the mobile drawer. */
@@ -47,15 +48,9 @@ export function TopAppBar({ onMenuClick, title }: Props) {
         <span className="flex-1 text-sm font-bold text-[var(--color-fg)]">SkillAI</span>
       )}
 
-      {/* Right side: theme toggle */}
-      {/*
-        ThemeToggle renders a full-width button styled for the sidebar.
-        Here we constrain it to icon-only size.
-        TODO: extract an icon-only variant from ThemeToggle if the label
-        becomes visually awkward in narrow bars — for now the component
-        is hidden at ≥lg so desktop layout is unaffected.
-      */}
-      <div className="flex-shrink-0">
+      {/* Right side: install prompt (when eligible) + theme toggle */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <InstallPrompt />
         <ThemeToggle />
       </div>
     </header>
