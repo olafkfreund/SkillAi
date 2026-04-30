@@ -164,7 +164,6 @@ const s = StyleSheet.create({
     ...base.text,
     fontFamily: 'Inter',
     color: colors.slate700,
-    fontStyle: 'italic',
   },
 })
 
