@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react'
 import { updateRole } from '@/actions/roles'
 import type { UpdateRoleState } from '@/actions/roles'
 import { ChipInput } from '@/components/ui/chip-input'
+import { FrameworkLevelField } from './framework-level-field'
 
 interface RoleData {
   id: string
@@ -197,42 +198,19 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
         </div>
       )}
 
-      {fields.customerId && (frameworks[fields.customerId]?.length ?? 0) > 0 && (
-        <div>
-          <label htmlFor="frameworkLevelId" className="block text-sm font-medium text-zinc-300 mb-1">
-            Framework Level <span className="text-zinc-500 font-normal">(optional)</span>
-          </label>
-          <select
-            id="frameworkLevelId"
-            name="frameworkLevelId"
-            disabled={pending}
-            value={fields.frameworkLevelId}
-            onChange={(e) => {
-              const level = frameworks[fields.customerId]?.find((l) => l.id === e.target.value)
-              setFields((f) => ({
-                ...f,
-                frameworkLevelId: e.target.value,
-                frameworkLevelLabel: level ? `${level.code} — ${level.title}` : '',
-              }))
-            }}
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                       disabled:opacity-50"
-          >
-            <option value="">Select band level…</option>
-            {[...(frameworks[fields.customerId] ?? [])].sort((a, b) => a.order - b.order).map((level) => (
-              <option key={level.id} value={level.id}>
-                {level.code} — {level.title}
-              </option>
-            ))}
-          </select>
-          {fields.frameworkLevelId && (
-            <p className="text-xs text-zinc-500 mt-1">
-              {frameworks[fields.customerId]?.find((l) => l.id === fields.frameworkLevelId)?.description}
-            </p>
-          )}
-        </div>
-      )}
+      <FrameworkLevelField
+        customerId={fields.customerId}
+        levels={frameworks[fields.customerId] ?? []}
+        value={{ id: fields.frameworkLevelId, label: fields.frameworkLevelLabel }}
+        onChange={(next) =>
+          setFields((f) => ({
+            ...f,
+            frameworkLevelId: next.id,
+            frameworkLevelLabel: next.label,
+          }))
+        }
+        disabled={pending}
+      />
 
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-zinc-300 mb-1">
