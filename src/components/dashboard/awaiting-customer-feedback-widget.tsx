@@ -36,6 +36,12 @@ export async function AwaitingCustomerFeedbackWidget() {
             </span>
           )}
         </h2>
+        <Link
+          href="/dashboard/submissions?status=submitted&sort=statusUpdatedAt-asc"
+          className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+        >
+          View all
+        </Link>
       </div>
 
       {submissions.length === 0 ? (

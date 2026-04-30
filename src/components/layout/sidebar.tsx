@@ -14,6 +14,7 @@ import {
   ListChecksIcon,
   HelpCircleIcon,
   BarChart3Icon,
+  SendIcon,
 } from 'lucide-react'
 import type { UserRole } from '@/lib/auth/types'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
@@ -37,6 +38,13 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Roles',
     icon: BriefcaseIcon,
     minRole: 'viewer',
+    hideForRoles: ['hiring_manager'],
+  },
+  {
+    href: '/dashboard/submissions',
+    label: 'Submissions',
+    icon: SendIcon,
+    minRole: 'recruiter',
     hideForRoles: ['hiring_manager'],
   },
   {
