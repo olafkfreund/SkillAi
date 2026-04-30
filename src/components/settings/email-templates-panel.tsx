@@ -199,7 +199,7 @@ function TemplateModal({
       aria-modal="true"
       aria-labelledby="template-modal-title"
     >
-      <div className="w-full max-w-2xl rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 shadow-2xl">
+      <div className="w-[calc(100vw-2rem)] max-w-2xl rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h2 id="template-modal-title" className="text-base font-semibold text-[var(--color-fg)]">
@@ -209,7 +209,7 @@ function TemplateModal({
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] disabled:opacity-50"
+            className="p-2 md:p-1 rounded text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] disabled:opacity-50"
             aria-label="Close"
           >
             <XIcon className="h-4 w-4" />

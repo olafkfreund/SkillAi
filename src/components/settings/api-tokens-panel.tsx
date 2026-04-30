@@ -157,7 +157,7 @@ function TokenRevealModal({
       aria-labelledby="token-reveal-title"
     >
       <div
-        className="w-full max-w-lg rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 shadow-2xl"
+        className="w-[calc(100vw-2rem)] max-w-lg rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 shadow-2xl"
       >
         {/* Header */}
         <div className="flex items-center gap-2 mb-4">

@@ -285,7 +285,7 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
                               type="button"
                               onClick={() => startEditing(note)}
                               aria-label="Edit note"
-                              className="rounded p-1 text-zinc-500 hover:text-zinc-200
+                              className="rounded p-2 md:p-1 text-zinc-500 hover:text-zinc-200
                                          hover:bg-zinc-700 transition-colors"
                             >
                               <PencilIcon className="h-3.5 w-3.5" />
@@ -294,7 +294,7 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
                               type="button"
                               onClick={() => setConfirmDeleteId(note.id)}
                               aria-label="Delete note"
-                              className="rounded p-1 text-zinc-500 hover:text-red-400
+                              className="rounded p-2 md:p-1 text-zinc-500 hover:text-red-400
                                          hover:bg-zinc-700 transition-colors"
                             >
                               <Trash2Icon className="h-3.5 w-3.5" />

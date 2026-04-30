@@ -111,7 +111,7 @@ export function ChipInput({
             aria-label={`Remove ${chip}`}
             disabled={disabled}
             onClick={() => removeAt(idx)}
-            className="text-yellow-300 hover:text-yellow-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="p-1 rounded text-yellow-300 hover:text-yellow-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X className="h-3 w-3" aria-hidden="true" />
           </button>

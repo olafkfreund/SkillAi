@@ -51,7 +51,7 @@ export function ScoreExpandModal({ dimension, score, reasoning }: Props) {
           onClick={close}
         >
           <div
-            className="relative bg-zinc-950 border border-zinc-700 rounded-xl p-6 max-w-xl w-full shadow-xl"
+            className="relative bg-zinc-950 border border-zinc-700 rounded-xl p-6 max-w-xl w-[calc(100vw-2rem)] shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -62,7 +62,7 @@ export function ScoreExpandModal({ dimension, score, reasoning }: Props) {
               </div>
               <button
                 onClick={close}
-                className="text-zinc-500 hover:text-zinc-300 transition-colors rounded-md p-1 hover:bg-zinc-800"
+                className="text-zinc-500 hover:text-zinc-300 transition-colors rounded-md p-2 md:p-1 hover:bg-zinc-800"
                 aria-label="Close"
               >
                 <XIcon className="h-4 w-4" />

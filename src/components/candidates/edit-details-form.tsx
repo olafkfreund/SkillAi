@@ -109,7 +109,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-zinc-300 mb-1">
                 First name <span className="text-red-500">*</span>
@@ -222,7 +222,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
           {/* Location & Language */}
           <div className="border-t border-zinc-800 pt-3 mt-1 col-span-2">
             <p className="text-sm font-medium text-zinc-400 mb-2">Location & Language</p>
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
               <div>
                 <label htmlFor="edit-country" className="block text-xs font-medium text-zinc-400 mb-1">Country</label>
                 <input id="edit-country" name="country" type="text" disabled={pending}
@@ -238,7 +238,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
                   className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="edit-languages" className="block text-xs font-medium text-zinc-400 mb-1">
                   Languages <span className="text-zinc-600">(comma-separated)</span>
@@ -264,7 +264,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
           {/* Commercial Details */}
           <div className="border-t border-zinc-800 pt-3 mt-1 col-span-2">
             <p className="text-sm font-medium text-zinc-400 mb-2">Commercial Details</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3">
               <div>
                 <label htmlFor="candidateRate" className="block text-xs font-medium text-zinc-400 mb-1">
                   Candidate Rate/day
@@ -331,7 +331,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
           {/* Availability */}
           <div className="border-t border-zinc-800 pt-3 mt-1 col-span-2">
             <p className="text-sm font-medium text-zinc-400 mb-2">Availability</p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="availabilityStatus" className="block text-xs font-medium text-zinc-400 mb-1">
                   Availability status

@@ -133,7 +133,7 @@ export function AgencyCandidatePanel({ agencyId, agencyCandidates, unassignedCan
                     href={`/api/candidates/${c.id}/cv`}
                     download
                     title="Download original CV"
-                    className="rounded p-1 text-zinc-600 hover:text-blue-400 hover:bg-blue-950
+                    className="rounded p-2 md:p-1 text-zinc-600 hover:text-blue-400 hover:bg-blue-950
                                transition-colors"
                   >
                     <Download className="h-4 w-4" />
@@ -145,7 +145,7 @@ export function AgencyCandidatePanel({ agencyId, agencyCandidates, unassignedCan
                     onClick={() => handleRemove(c.id)}
                     disabled={isPending}
                     title="Remove from agency"
-                    className="rounded p-1 text-zinc-600 hover:text-red-400 hover:bg-red-950
+                    className="rounded p-2 md:p-1 text-zinc-600 hover:text-red-400 hover:bg-red-950
                                disabled:opacity-50 transition-colors"
                   >
                     <XIcon className="h-4 w-4" />

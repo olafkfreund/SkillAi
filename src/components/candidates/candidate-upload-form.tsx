@@ -138,7 +138,7 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label htmlFor="firstName" className="block text-sm font-medium text-zinc-300 mb-1">
             First name <span className="text-red-500">*</span>
@@ -233,7 +233,7 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
       {/* Location & Language */}
       <div className="border-t border-zinc-800 pt-4 mt-2">
         <p className="text-sm font-medium text-zinc-400 mb-3">Location & Language (optional)</p>
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
           <div>
             <label htmlFor="country" className="block text-xs font-medium text-zinc-400 mb-1">Country</label>
             <input
@@ -263,7 +263,7 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label htmlFor="languagesSpoken" className="block text-xs font-medium text-zinc-400 mb-1">
               Languages <span className="text-zinc-600">(comma-separated)</span>
@@ -302,7 +302,7 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
       {/* Commercial Details */}
       <div className="border-t border-zinc-800 pt-4 mt-2">
         <p className="text-sm font-medium text-zinc-400 mb-3">Commercial Details (optional)</p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3">
           <div>
             <label htmlFor="candidateRate" className="block text-xs font-medium text-zinc-400 mb-1">
               Candidate Rate/day

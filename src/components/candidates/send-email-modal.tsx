@@ -148,7 +148,7 @@ export function SendEmailModal({
       }}
     >
       {/* Card */}
-      <div className="relative w-full max-w-xl rounded-xl border border-[--color-border] bg-[--color-bg-elevated] shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="relative w-[calc(100vw-2rem)] max-w-xl rounded-xl border border-[--color-border] bg-[--color-bg-elevated] shadow-2xl flex flex-col max-h-[90vh]">
 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[--color-border] px-6 py-4 shrink-0">
@@ -158,7 +158,7 @@ export function SendEmailModal({
                 type="button"
                 onClick={handleBack}
                 aria-label="Back to template selection"
-                className="rounded p-1 text-[--color-fg-subtle] hover:text-[--color-fg]
+                className="rounded p-2 md:p-1 text-[--color-fg-subtle] hover:text-[--color-fg]
                            hover:bg-[--color-bg-input] transition-colors"
               >
                 <ChevronLeftIcon className="h-4 w-4" />

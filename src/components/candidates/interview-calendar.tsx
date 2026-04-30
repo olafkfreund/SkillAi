@@ -89,7 +89,7 @@ function SlotPopover({ slot, candidateId, canSchedule, onCancelled, onEdit, onCl
                     rounded-lg shadow-xl p-4 text-sm">
       <div className="flex items-start justify-between gap-2 mb-2">
         <p className="font-semibold text-zinc-100 leading-tight">{slot.title}</p>
-        <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 flex-shrink-0">
+        <button onClick={onClose} className="p-1 rounded text-zinc-500 hover:text-zinc-300 flex-shrink-0">
           <XCircleIcon className="h-4 w-4" />
         </button>
       </div>
@@ -268,6 +268,11 @@ export function InterviewCalendar({
           </button>
         )}
       </div>
+
+      {/* Scroll hint — only shown on phones where the 640px grid overflows */}
+      <p className="md:hidden text-xs text-[var(--color-fg-subtle)] mb-2">
+        ← Scroll horizontally to see the full week →
+      </p>
 
       {/* Calendar grid */}
       <div className="overflow-x-auto">
