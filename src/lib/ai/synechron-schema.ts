@@ -40,12 +40,28 @@ export const SynechronCvDataSchema = z.object({
         company: z.string().optional(),
         role: z.string().optional(),
         dates: z.string().optional(),
-        teamSize: z.string().optional(),
+        teamSize: z.union([z.string(), z.number()]).optional(),
         client: z.string().optional(),
         duration: z.string().optional(),
+        location: z.string().optional(),
         description: z.string().optional(),
         responsibilities: z.array(z.string()).optional(),
         skills: z.array(z.string()).optional(),
+        keyAchievement: z.string().optional(),
+      })
+    )
+    .optional(),
+  projects: z
+    .array(
+      z.object({
+        name: z.string(),
+        client: z.string().optional(),
+        duration: z.string().optional(),
+        role: z.string().optional(),
+        teamSize: z.union([z.string(), z.number()]).optional(),
+        environment: z.union([z.string(), z.array(z.string())]).optional(),
+        description: z.string().optional(),
+        responsibilities: z.array(z.string()).optional(),
       })
     )
     .optional(),

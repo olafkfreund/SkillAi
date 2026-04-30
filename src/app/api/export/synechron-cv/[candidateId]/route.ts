@@ -57,16 +57,38 @@ async function fetchCandidate(tenantId: string, candidateId: string) {
   })
 }
 
+/**
+ * Stored Synechron data predates the v2 schema (Wave 1 of issue #142) when the
+ * `projects` field is entirely absent. An empty array `[]` counts as fresh —
+ * that means the model already considered the field and returned nothing for
+ * it. `undefined` means the cached row was extracted before `projects` /
+ * `keyAchievement` / `location` existed in the schema.
+ */
+function isStaleSynechronData(cached: SynechronCvData): boolean {
+  // We treat "projects key present" as the schema-version signal. The schema
+  // change always adds projects to the tool output (even if as an empty array
+  // when no projects are detected) since Claude is instructed about the field.
+  return !Object.prototype.hasOwnProperty.call(cached, 'projects')
+}
+
 async function ensureSynechronData(
   candidate: NonNullable<Candidate>,
   tenantId: string
 ): Promise<EnsureSynechronResult> {
   const cached = candidate.synechronCvData as SynechronCvData | null
-  if (cached) {
+
+  if (cached && !isStaleSynechronData(cached)) {
     return { data: cached, wasFreshlyExtracted: false }
   }
 
   if (!candidate.cvText) {
+    if (cached) {
+      // Stale but no CV text to re-extract from — fall through with what we have.
+      console.warn(
+        `[synechron-cv-export] candidateId=${candidate.id} has stale synechronCvData but no cvText to re-extract from; rendering with cached data`
+      )
+      return { data: cached, wasFreshlyExtracted: false }
+    }
     return {
       error: NextResponse.json(
         { error: 'Candidate has no CV text to extract from' },
@@ -77,8 +99,22 @@ async function ensureSynechronData(
 
   try {
     const data = await extractSynechronCvData(candidate.id, tenantId)
+    if (cached) {
+      console.log(
+        `[synechron-cv-export] candidateId=${candidate.id} re-extracted stale synechronCvData (added projects/keyAchievement/location)`
+      )
+    }
     return { data, wasFreshlyExtracted: true }
   } catch (err) {
+    if (cached) {
+      // Re-extraction failed but we still have usable cached data — never
+      // block the request. Log a warning and render with what we have.
+      console.warn(
+        `[synechron-cv-export] candidateId=${candidate.id} re-extraction of stale synechronCvData failed; falling back to cached data:`,
+        err instanceof Error ? err.message : err
+      )
+      return { data: cached, wasFreshlyExtracted: false }
+    }
     return { error: failResponse('Synechron extraction', err) }
   }
 }

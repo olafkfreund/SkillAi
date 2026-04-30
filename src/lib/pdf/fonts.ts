@@ -12,3 +12,11 @@ Font.register({
     { src: path.join(fontDir, 'Inter-Bold.ttf'), fontWeight: 700 },
   ],
 })
+
+Font.register({
+  family: 'SplineSans',
+  fonts: [
+    { src: path.join(fontDir, 'SplineSans-Regular.ttf') },
+    { src: path.join(fontDir, 'SplineSans-Bold.ttf'), fontWeight: 'bold' },
+  ],
+})
