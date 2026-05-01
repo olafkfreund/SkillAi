@@ -16,7 +16,8 @@ export type NoteActionResult = { success: true } | { success: false; error: stri
 // ---------------------------------------------------------------------------
 export async function createNote(
   candidateId: string,
-  body: string
+  body: string,
+  isShareable: boolean = false
 ): Promise<NoteActionResult> {
   const ctx = await getActionContext()
   if (!ctx) return { success: false, error: 'Unauthorized' }
@@ -37,6 +38,7 @@ export async function createNote(
       candidateId,
       authorId: userId,
       body: validated.data,
+      isShareable,
     })
   })
 
@@ -50,7 +52,8 @@ export async function createNote(
 export async function updateNote(
   noteId: string,
   candidateId: string,
-  body: string
+  body: string,
+  isShareable: boolean = false
 ): Promise<NoteActionResult> {
   const ctx = await getActionContext()
   if (!ctx) return { success: false, error: 'Unauthorized' }
@@ -88,7 +91,7 @@ export async function updateNote(
   await withTenant(tenantId, async (tx) => {
     await tx
       .update(notes)
-      .set({ body: validated.data, updatedAt: new Date(), isEdited: true })
+      .set({ body: validated.data, isShareable, updatedAt: new Date(), isEdited: true })
       .where(and(eq(notes.id, noteId), eq(notes.tenantId, tenantId)))
   })
 
