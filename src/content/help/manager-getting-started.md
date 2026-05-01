@@ -3,8 +3,8 @@ title: "Hiring manager: what you'll see when you log in"
 category: "Hiring Manager Workflow"
 audience: ["hiring_manager", "admin"]
 order: 10
-lastUpdated: "2026-04-28"
-tags: ["hiring-manager", "onboarding", "approvals"]
+lastUpdated: "2026-05-01"
+tags: ["hiring-manager", "onboarding", "approvals", "shareable-notes"]
 ---
 
 # Hiring manager: what you'll see when you log in
@@ -33,6 +33,12 @@ When you open a shortlisted candidate, you get the parts of the profile that mat
 - **Interview transcript analysis** (if uploaded) — how the candidate scored against the role in their actual interview.
 
 You will **not** see day rates, margin, or internal recruiter notes. Those are scrubbed from the manager view by design — your job is to judge fit, not to negotiate the commercial terms.
+
+### Shareable notes
+
+You will see notes the recruiter has explicitly marked **shareable**. The default for any new note is **private** (recruiter-only) — recruiters opt-in per note when they want managers to see it. This is a deliberate safety: notes often contain recruiter shorthand or commercially sensitive comments that aren't meant for the hiring panel.
+
+If you expect a note to be visible and it isn't, the recruiter hasn't toggled the shareable flag yet. Ask them; they can flip it in seconds without rewriting the note.
 
 ## What you do here
 
