@@ -54,6 +54,10 @@ export type AuditAction =
   | 'tenant.exported'
   | 'tenant.csv_exported'
   | 'candidate.welcome_letter_generated'
+  | 'notification.high_score_sent'
+  | 'notification.approval_sent'
+  | 'notification.webhook_failed'
+  | 'settings.notification_updated'
 
 type AuditEntry = {
   action: AuditAction

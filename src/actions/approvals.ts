@@ -30,6 +30,7 @@ import {
 import { requireRole } from '@/lib/auth/require-role'
 import { writeAuditLog } from '@/lib/audit'
 import { getActionContext } from '@/lib/auth/action-context'
+import { dispatchManagerDecisionNotification } from '@/lib/notifications/dispatcher'
 
 type ActionResult = { success: true } | { success: false; error: string }
 
@@ -231,6 +232,18 @@ async function recordDecision(
     entityId: candidateId,
     metadata: { roleId, candidateId, comment: commentValue },
   })
+
+  // Fire-and-forget: notify configured Slack / Teams webhooks of the decision.
+  // Dispatch starts before revalidatePath so it isn't blocked; .catch() ensures
+  // it never propagates to the caller.
+  dispatchManagerDecisionNotification({
+    tenantId,
+    decision,
+    candidateId,
+    roleId,
+    managerName: null, // ActionContext does not carry a display name; dispatcher renders it gracefully
+    comment: commentValue,
+  }).catch(() => {})
 
   revalidatePath(`/dashboard/roles/${roleId}`)
   return { success: true }

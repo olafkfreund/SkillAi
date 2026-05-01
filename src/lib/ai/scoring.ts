@@ -18,6 +18,7 @@ import { candidates, roles, scores, customerFrameworks, tenantSettings } from '@
 import { scoreCandidateWithClaude } from './claude'
 import { scoreCandidateWithGemini } from './gemini'
 import { writeAuditLog } from '@/lib/audit'
+import { dispatchHighScoreNotification } from '@/lib/notifications/dispatcher'
 
 export async function triggerScoring(
   candidateId: string,
@@ -127,6 +128,16 @@ When scoring experience_level, assess specifically whether the candidate's senio
         })
         .where(and(eq(scores.candidateId, candidateId), eq(scores.roleId, roleId)))
     })
+
+    // Fire-and-forget: notify configured Slack / Teams webhooks if this score
+    // meets the tenant's threshold. The dispatcher applies the threshold gate
+    // internally and loads names from the DB — no additional args needed here.
+    dispatchHighScoreNotification({
+      tenantId,
+      candidateId,
+      roleId,
+      overallScore: result.overall_score,
+    }).catch(() => {})
 
     writeAuditLog(tenantId, {
       action: 'score.completed',

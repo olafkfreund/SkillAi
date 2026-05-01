@@ -10,6 +10,7 @@ import {
   getTrustedHosts,
   getDefaultPackLanguage,
   getSmtpSettings,
+  getNotificationSettings,
 } from '@/actions/settings'
 import { listTenantUsers } from '@/actions/users'
 import { listApiTokens } from '@/actions/api-tokens'
@@ -26,6 +27,7 @@ import { DefaultLanguageForm } from '@/components/settings/default-language-form
 import { AiUsagePanel } from '@/components/settings/ai-usage-panel'
 import { ApiTokensPanel } from '@/components/settings/api-tokens-panel'
 import { SmtpSettingsPanel } from '@/components/settings/smtp-settings-panel'
+import { NotificationsPanel } from '@/components/settings/notifications-panel'
 import { EmailTemplatesPanel } from '@/components/settings/email-templates-panel'
 import { OAuthCredentialsForm } from '@/components/settings/oauth-credentials-form'
 import { BackupsPanel } from '@/components/settings/backups-panel'
@@ -43,6 +45,7 @@ export default async function SettingsPage() {
   const trustedHosts = isAdmin ? await getTrustedHosts(tenantId) : []
   const defaultPackLanguage = isAdmin ? await getDefaultPackLanguage(tenantId) : 'en'
   const smtpSettings = isAdmin ? await getSmtpSettings(tenantId) : null
+  const notificationSettings = isAdmin ? await getNotificationSettings() : null
   const emailTemplates = isAdmin ? await listEmailTemplates() : []
 
   // Last manual tenant export timestamp — admin only
@@ -240,6 +243,19 @@ export default async function SettingsPage() {
           {smtpSettings && (
             <div>
               <SmtpSettingsPanel initial={smtpSettings} />
+            </div>
+          )}
+
+          {/* Slack & Teams notifications */}
+          {notificationSettings && (
+            <div>
+              <NotificationsPanel
+                initialSlackWebhook={notificationSettings.slack_webhook_configured ? '••' : ''}
+                initialTeamsWebhook={notificationSettings.teams_webhook_configured ? '••' : ''}
+                initialHighScoreEnabled={notificationSettings.notify_high_score_enabled}
+                initialManagerDecisionEnabled={notificationSettings.notify_manager_decision_enabled}
+                initialScoreThreshold={notificationSettings.notify_score_threshold}
+              />
             </div>
           )}
 
