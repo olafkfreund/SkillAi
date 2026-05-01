@@ -25,7 +25,7 @@ import {
   SendIcon,
 } from 'lucide-react'
 import { saveNotificationSetting, testNotificationDelivery } from '@/actions/settings'
-import type { NotificationTestResult } from '@/actions/settings'
+import type { NotificationTestResult } from '@/lib/notifications/dispatcher'
 
 // ---------------------------------------------------------------------------
 // Types

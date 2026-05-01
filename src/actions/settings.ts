@@ -12,7 +12,9 @@ import { writeAuditLog } from '@/lib/audit'
 import { isSupportedLanguage } from '@/lib/ai/language'
 import { getSenderForTenant } from '@/lib/email/sender'
 import { testWebhookDelivery, type NotificationTestResult } from '@/lib/notifications/dispatcher'
-export type { NotificationTestResult }
+// NOTE: NotificationTestResult is intentionally NOT re-exported here. This file
+// has 'use server' which restricts exports to async functions. Consumers must
+// import the type directly from '@/lib/notifications/dispatcher'.
 
 const ALLOWED_KEYS = [
   'anthropic_api_key',
