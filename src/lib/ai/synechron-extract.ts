@@ -16,16 +16,11 @@ import { withTenant } from '@/db'
 import { candidates } from '@/db/schema/candidates'
 import { writeAuditLog } from '@/lib/audit'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
+import { resolveAnthropicKey } from './keys'
 import {
   SynechronCvDataSchema,
   type SynechronCvData,
 } from './synechron-schema'
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  maxRetries: 3,
-  timeout: 60_000,
-})
 
 const MODEL = 'claude-haiku-4-5-20251001'
 const INPUT_CHAR_CAP = 10_000
@@ -232,10 +227,12 @@ export async function extractSynechronCvData(
   candidateId: string,
   tenantId: string
 ): Promise<SynechronCvData> {
+  const apiKey = await resolveAnthropicKey(tenantId)
+  const anthropic = new Anthropic({ apiKey, maxRetries: 3, timeout: 60_000 })
   const cvText = await loadCandidateCvText(candidateId, tenantId)
   const input = capInputForClaude(cvText, candidateId)
   const startedAt = Date.now()
-  const response = await callClaudeWithSynechronTool(input)
+  const response = await callClaudeWithSynechronTool(anthropic, input)
   logAiUsage({
     tenantId,
     userId: null,
@@ -283,6 +280,7 @@ function capInputForClaude(cvText: string, candidateId: string): string {
 
 // 3. Call Claude with tool_use structured output
 async function callClaudeWithSynechronTool(
+  anthropic: Anthropic,
   input: string
 ): Promise<Anthropic.Message> {
   return anthropic.messages.create({

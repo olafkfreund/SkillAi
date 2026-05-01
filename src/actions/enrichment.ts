@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import Anthropic from '@anthropic-ai/sdk'
+import { resolveAnthropicKey } from '@/lib/ai/keys'
 import { eq, and } from 'drizzle-orm'
 import { withTenant } from '@/db'
 import { candidates, candidateEnrichments, cvProfiles } from '@/db/schema'
@@ -264,12 +265,6 @@ async function fetchStackOverflowProfile(url: string): Promise<StackOverflowProf
 
 const PERSONAL_SITE_INPUT_CHAR_CAP = 3000
 
-const personalSiteAnthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  maxRetries: 2,
-  timeout: 30_000,
-})
-
 async function fetchPersonalSiteSummary(
   url: string,
   candidateName: string,
@@ -309,6 +304,16 @@ async function fetchPersonalSiteSummary(
 
   let aiSummary = ''
   try {
+    let personalSiteApiKey: string
+    if (tenantId) {
+      personalSiteApiKey = await resolveAnthropicKey(tenantId)
+    } else {
+      console.warn('[enrichment] no tenantId — falling back to env API key')
+      const envKey = process.env.ANTHROPIC_API_KEY
+      if (!envKey) throw new Error('No Anthropic API key configured')
+      personalSiteApiKey = envKey
+    }
+    const personalSiteAnthropic = new Anthropic({ apiKey: personalSiteApiKey, maxRetries: 2, timeout: 30_000 })
     const startedAt = Date.now()
     const response = await personalSiteAnthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',

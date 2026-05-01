@@ -5,10 +5,7 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+import { resolveAnthropicKey } from './keys'
 
 const TAG_TOOL: Anthropic.Tool = {
   name: 'submit_role_tags',
@@ -45,6 +42,8 @@ export async function extractRoleTags(
   tenantId: string,
   roleId?: string
 ): Promise<RoleTags> {
+  const apiKey = await resolveAnthropicKey(tenantId)
+  const anthropic = new Anthropic({ apiKey })
   const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',

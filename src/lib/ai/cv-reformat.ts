@@ -13,13 +13,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { eq } from 'drizzle-orm'
 import { withTenant } from '@/db'
 import { candidates } from '@/db/schema'
+import { resolveAnthropicKey } from './keys'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  maxRetries: 3,
-  timeout: 120_000,
-})
 
 const REFORMAT_TOOL: Anthropic.Tool = {
   name: 'submit_formatted_cv',
@@ -53,6 +48,8 @@ export async function reformatCvText(
   const truncated = cvText.length > MAX_INPUT_CHARS
   const input = truncated ? cvText.slice(0, MAX_INPUT_CHARS) : cvText
 
+  const apiKey = await resolveAnthropicKey(tenantId)
+  const anthropic = new Anthropic({ apiKey, maxRetries: 3, timeout: 120_000 })
   const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',

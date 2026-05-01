@@ -14,12 +14,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { z } from 'zod'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  maxRetries: 3,
-  timeout: 60_000,
-})
+import { resolveAnthropicKey } from './keys'
 
 const MODEL = 'claude-haiku-4-5-20251001'
 const MAX_OUTPUT_TOKENS = 2048
@@ -97,6 +92,17 @@ export async function verifyProfilesAgainstCv(
   candidateId?: string,
 ): Promise<MatchVerdict[]> {
   if (candidates.length === 0) return []
+
+  let apiKey: string
+  if (tenantId) {
+    apiKey = await resolveAnthropicKey(tenantId)
+  } else {
+    console.warn('[profile-matcher] no tenantId — falling back to env API key')
+    const envKey = process.env.ANTHROPIC_API_KEY
+    if (!envKey) throw new Error('No Anthropic API key configured')
+    apiKey = envKey
+  }
+  const anthropic = new Anthropic({ apiKey, maxRetries: 3, timeout: 60_000 })
 
   const cvBlock = [
     `Name: ${cvSignals.fullName}`,

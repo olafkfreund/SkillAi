@@ -17,13 +17,8 @@ import {
   type InterviewType,
 } from './welcome-letter-schemas'
 import { formatLanguageDirective, TOOL_LANGUAGE_REINFORCEMENT, type SupportedLanguage } from './language'
+import { resolveAnthropicKey } from './keys'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  timeout: 60_000,
-  maxRetries: 3,
-})
 
 const KARAT_LINK = 'https://karat.com/candidate-experience/'
 
@@ -251,6 +246,8 @@ TEAM NAME (use in signoff): ${tenantName}
 
 Write the welcome letter now. Submit via the submit_welcome_letter tool.${formatLanguageDirective(language)}`
 
+  const apiKey = await resolveAnthropicKey(tenantId)
+  const anthropic = new Anthropic({ apiKey, timeout: 60_000, maxRetries: 3 })
   const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',

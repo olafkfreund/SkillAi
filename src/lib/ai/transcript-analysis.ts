@@ -25,17 +25,7 @@ import {
   type SupportedLanguage,
 } from './language'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  // Match the resilience config used by other AI calls in the codebase —
-  // built-in exponential backoff handles transient network blips and
-  // 429/529/500 responses that would otherwise surface as "Connection error".
-  // Long transcripts (60+ minute meetings ≈ 100K+ tokens) need a longer
-  // timeout — Claude can take 60-180s to process large inputs.
-  maxRetries: 3,
-  timeout: 300_000,
-})
+import { resolveAnthropicKey } from './keys'
 
 // Soft cap on transcript size sent to Claude. claude-sonnet-4-6 supports
 // 200K tokens (~800K chars) but very large requests are unreliable and
@@ -71,8 +61,11 @@ export type AnalyzeTranscriptResult = {
  * directive injection differs.
  */
 async function detectTranscriptLanguage(
-  transcriptText: string
+  transcriptText: string,
+  tenantId: string
 ): Promise<SupportedLanguage> {
+  const apiKey = await resolveAnthropicKey(tenantId)
+  const anthropic = new Anthropic({ apiKey, maxRetries: 3, timeout: 300_000 })
   const sample = transcriptText.slice(0, 500)
   try {
     const response = await anthropic.messages.create({
@@ -102,6 +95,22 @@ async function detectTranscriptLanguage(
 export async function analyzeTranscriptWithClaude(
   input: AnalysisInput
 ): Promise<AnalyzeTranscriptResult> {
+  let apiKey: string
+  if (input.tenantId) {
+    apiKey = await resolveAnthropicKey(input.tenantId)
+  } else {
+    console.warn('[profile-matcher] no tenantId — falling back to env API key')
+    const envKey = process.env.ANTHROPIC_API_KEY
+    if (!envKey) throw new Error('No Anthropic API key configured')
+    apiKey = envKey
+  }
+  // Match the resilience config used by other AI calls in the codebase —
+  // built-in exponential backoff handles transient network blips and
+  // 429/529/500 responses that would otherwise surface as "Connection error".
+  // Long transcripts (60+ minute meetings ≈ 100K+ tokens) need a longer
+  // timeout — Claude can take 60-180s to process large inputs.
+  const anthropic = new Anthropic({ apiKey, maxRetries: 3, timeout: 300_000 })
+
   const questionsBlock =
     input.packQuestions && input.packQuestions.length > 0
       ? `\n\nINTERVIEW QUESTIONS (score responses against these):\n${input.packQuestions
@@ -136,7 +145,7 @@ Numeric scores are language-agnostic. Reasoning text and the summary must be in 
   // language directive into the uncached per-transcript block. Putting
   // it in the cached system block would fragment the prompt cache per
   // language. Falls back to 'en' on any failure (analysis still works).
-  const detectedLanguage = await detectTranscriptLanguage(input.transcriptText)
+  const detectedLanguage = await detectTranscriptLanguage(input.transcriptText, input.tenantId ?? '')
   console.log(
     `[transcript-analysis] detected language=${detectedLanguage} for transcript=${input.transcriptId ?? '<unknown>'}`
   )
