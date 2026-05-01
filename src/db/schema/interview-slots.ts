@@ -44,6 +44,7 @@ export const interviewSlots = pgTable(
   (t) => [
     index('idx_interview_slots_candidate').on(t.candidateId),
     index('idx_interview_slots_tenant').on(t.tenantId),
+    index('idx_interview_slots_scheduled_status').on(t.scheduledAt, t.status),
     pgPolicy('interview_slots_tenant', {
       as: 'permissive',
       for: 'all',

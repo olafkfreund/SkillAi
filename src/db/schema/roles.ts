@@ -1,4 +1,4 @@
-import { pgTable, pgPolicy, pgEnum, uuid, varchar, text, boolean, timestamp, date, numeric } from 'drizzle-orm/pg-core'
+import { pgTable, pgPolicy, pgEnum, uuid, varchar, text, boolean, timestamp, date, numeric, index } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 import { users } from './users'
@@ -42,6 +42,7 @@ export const roles = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
+    index('idx_roles_tenant_active_created').on(t.tenantId, t.isActive, t.createdAt.desc()),
     pgPolicy('roles_tenant_isolation', {
       as: 'permissive',
       for: 'all',
