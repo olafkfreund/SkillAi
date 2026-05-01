@@ -3,8 +3,8 @@ title: "Creating and editing roles"
 category: "Roles & Candidates"
 audience: ["recruiter", "admin"]
 order: 10
-lastUpdated: "2026-04-28"
-tags: ["roles", "create", "edit", "deadlines", "budget"]
+lastUpdated: "2026-05-01"
+tags: ["roles", "create", "edit", "deadlines", "budget", "customer-role-id"]
 ---
 
 # Creating and editing roles
@@ -19,6 +19,7 @@ From **Roles → New role**, fill in:
 
 - **Title** — visible to candidates on interview packs and on customer-facing PDFs. Use the real job title, not an internal code.
 - **Customer** — pick the client this role is for, or skip if it's an internal hire. New customers can be added without leaving the form. See [Customers and frameworks](/dashboard/help/customers-and-frameworks).
+- **Customer-specific role ID** (optional) — the reference the customer uses for this role on their side, e.g. `ACME-2026-042` or whatever code they put in their requisition system. Independent of SkillAi's internal role ID. Shows up next to the role title on the role detail page, on the customer share-link view, and on the customer-facing PDF — so when the customer emails you "any update on ACME-2026-042?" you can find it instantly. The internal SkillAi role ID is unchanged and remains the canonical key everywhere else.
 - **Framework level** — if the customer has a hiring framework configured (Junior / Mid / Senior / Principal etc.), pick the level here. The AI uses this when judging experience level.
 
 ### Description

@@ -3,8 +3,8 @@ title: "Sending emails to candidates"
 category: "Roles & Candidates"
 audience: ["recruiter", "admin"]
 order: 60
-lastUpdated: "2026-04-28"
-tags: ["emails", "smtp", "templates", "communications"]
+lastUpdated: "2026-05-01"
+tags: ["emails", "smtp", "templates", "communications", "welcome-letter"]
 ---
 
 # Sending emails to candidates
@@ -85,8 +85,15 @@ The Email History panel is hidden for hiring managers — they see the candidate
 
 **Send failed (red status badge in Email History)** — Hover the red badge to see the error message. Common causes: incorrect SMTP credentials, the recipient address rejected the email, or a network issue between SkillAI and your mail server. Check Settings → Email & SMTP and confirm the credentials are correct.
 
+## Want to attach a personalised welcome letter?
+
+If you're inviting a candidate to a screening or interview, the AI-generated **welcome letter PDF** pairs naturally with the screening-invite email. Generate the letter on the candidate detail page, download it, and attach it to your screening-invite send.
+
+The letter is one page, multilingual, and explains in the candidate's preferred language exactly why they were shortlisted (STAR-format strengths, tied to the role's competencies). It gives candidates a reason to be excited before they walk in. See [Welcome letter PDF for candidates](/dashboard/help/candidates-welcome-letter).
+
 ## See also
 
 - [Settings: API keys and SMTP](/dashboard/help/settings-api-keys)
+- [Welcome letter PDF for candidates](/dashboard/help/candidates-welcome-letter)
 - [Candidate statuses and the bench](/dashboard/help/candidates-statuses-and-bench)
 - [Uploading CVs](/dashboard/help/candidates-uploading-cvs)
