@@ -90,8 +90,8 @@ export async function TranscriptSection({ candidateId, defaultRoleId }: Props) {
   const activeRoleId = defaultRoleId ?? allRoles[0]?.id ?? ''
 
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
-      <h2 className="font-semibold text-zinc-100 mb-4">Interview Transcripts</h2>
+    <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 mb-6">
+      <h2 className="font-semibold text-[var(--color-fg)] mb-4">Interview Transcripts</h2>
 
       {/* Upload form — recruiter+ only */}
       {canUpload && activeRoleId && (
@@ -108,10 +108,10 @@ export async function TranscriptSection({ candidateId, defaultRoleId }: Props) {
       {/* No transcripts yet */}
       {transcriptRows.length === 0 && (
         <div className="flex flex-col items-center justify-center py-8 text-center">
-          <FileTextIcon className="h-8 w-8 text-zinc-600 mb-2" />
-          <p className="text-sm text-zinc-500">No transcripts uploaded yet</p>
+          <FileTextIcon className="h-8 w-8 text-[var(--color-fg-subtle)] mb-2" />
+          <p className="text-sm text-[var(--color-fg-subtle)]">No transcripts uploaded yet</p>
           {!canUpload && (
-            <p className="text-xs text-zinc-600 mt-1">
+            <p className="text-xs text-[var(--color-fg-subtle)] mt-1">
               Transcripts will appear here once a recruiter uploads them
             </p>
           )}
@@ -144,18 +144,18 @@ export async function TranscriptSection({ candidateId, defaultRoleId }: Props) {
               isComplete && langCode && langCode !== 'en' && isSupportedLanguage(langCode)
 
             return (
-              <div key={t.id} className="rounded-lg border border-zinc-700 overflow-hidden">
+              <div key={t.id} className="rounded-lg border border-[var(--color-border)] overflow-hidden">
                 {/* Transcript header */}
-                <div className="flex items-center justify-between px-4 py-3 bg-zinc-800">
+                <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-bg-input)]">
                   <div className="flex items-center gap-3">
-                    <FileTextIcon className="h-4 w-4 text-zinc-500 flex-shrink-0" />
+                    <FileTextIcon className="h-4 w-4 text-[var(--color-fg-subtle)] flex-shrink-0" />
                     <div>
-                      <span className="text-sm font-medium text-zinc-200">{platform}</span>
+                      <span className="text-sm font-medium text-[var(--color-fg)]">{platform}</span>
                       {interviewDateStr && (
-                        <span className="ml-2 text-xs text-zinc-500">{interviewDateStr}</span>
+                        <span className="ml-2 text-xs text-[var(--color-fg-subtle)]">{interviewDateStr}</span>
                       )}
                       {showLanguageBadge && (
-                        <span className="ml-2 inline-flex items-center rounded-full border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-300">
+                        <span className="ml-2 inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-input)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-fg)]">
                           Analysis in {getDisplayName(langCode)}
                         </span>
                       )}
@@ -164,10 +164,10 @@ export async function TranscriptSection({ candidateId, defaultRoleId }: Props) {
                   <span
                     className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
                       isComplete
-                        ? 'bg-emerald-950 border-emerald-800 text-emerald-400'
+                        ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
                         : isFailed
-                          ? 'bg-red-950 border-red-800 text-red-400'
-                          : 'bg-amber-950 border-amber-800 text-amber-400'
+                          ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 border-red-300 dark:border-red-800'
+                          : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800'
                     }`}
                   >
                     {isPending && (
@@ -213,7 +213,7 @@ export async function TranscriptSection({ candidateId, defaultRoleId }: Props) {
 
                 {/* Pending/analyzing state */}
                 {isPending && (
-                  <div className="px-4 py-3 text-sm text-zinc-500">
+                  <div className="px-4 py-3 text-sm text-[var(--color-fg-subtle)]">
                     Analysis in progress — refresh the page to see results
                   </div>
                 )}

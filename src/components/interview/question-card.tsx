@@ -30,16 +30,16 @@ export function QuestionCard({ question, index }: Props) {
   }
 
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-700 overflow-hidden">
+    <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] overflow-hidden">
       <button
         onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-start gap-4 px-5 py-4 text-left hover:bg-zinc-800 transition-colors"
+        className="w-full flex items-start gap-4 px-5 py-4 text-left hover:bg-[var(--color-bg-input)] transition-colors"
       >
-        <span className="text-sm font-bold text-zinc-500 mt-0.5 w-5 flex-shrink-0">
+        <span className="text-sm font-bold text-[var(--color-fg-subtle)] mt-0.5 w-5 flex-shrink-0">
           {index + 1}
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-zinc-100">{question.questionText}</p>
+          <p className="text-sm font-medium text-[var(--color-fg)]">{question.questionText}</p>
           <div className="flex flex-wrap gap-1.5 mt-2">
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${TYPE_COLORS[question.questionType]}`}>
               {question.questionType}
@@ -48,33 +48,33 @@ export function QuestionCard({ question, index }: Props) {
               {question.difficulty}
             </span>
             {question.cvReferences?.length ? (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-zinc-800 text-zinc-400 border-zinc-700">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-[var(--color-bg-input)] text-[var(--color-fg-muted)] border-[var(--color-border)]">
                 personalised
               </span>
             ) : null}
           </div>
         </div>
         <ChevronDownIcon
-          className={`h-4 w-4 text-zinc-500 flex-shrink-0 mt-1 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 text-[var(--color-fg-subtle)] flex-shrink-0 mt-1 transition-transform ${expanded ? 'rotate-180' : ''}`}
         />
       </button>
 
       {expanded && (
-        <div className="px-5 pb-5 border-t border-zinc-700 pt-4 space-y-4">
+        <div className="px-5 pb-5 border-t border-[var(--color-border)] pt-4 space-y-4">
           {question.rationale && (
             <div>
-              <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-1">Why ask this</p>
-              <p className="text-sm text-zinc-400">{question.rationale}</p>
+              <p className="text-xs font-semibold text-[var(--color-fg-subtle)] uppercase tracking-wide mb-1">Why ask this</p>
+              <p className="text-sm text-[var(--color-fg-muted)]">{question.rationale}</p>
             </div>
           )}
 
           {followUps.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">Follow-ups</p>
+              <p className="text-xs font-semibold text-[var(--color-fg-subtle)] uppercase tracking-wide mb-2">Follow-ups</p>
               <ul className="space-y-1">
                 {followUps.map((f, i) => (
-                  <li key={i} className="text-sm text-zinc-400 flex gap-2">
-                    <span className="text-zinc-600">→</span> {f.question}
+                  <li key={i} className="text-sm text-[var(--color-fg-muted)] flex gap-2">
+                    <span className="text-[var(--color-fg-subtle)]">→</span> {f.question}
                   </li>
                 ))}
               </ul>
@@ -82,7 +82,7 @@ export function QuestionCard({ question, index }: Props) {
           )}
 
           <div>
-            <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">Scoring rubric</p>
+            <p className="text-xs font-semibold text-[var(--color-fg-subtle)] uppercase tracking-wide mb-2">Scoring rubric</p>
             <div className="grid gap-2">
               {question.strongAnswerSignals?.length ? (
                 <div className="rounded-md bg-emerald-100 dark:bg-green-950 border border-emerald-300 dark:border-green-800 px-3 py-2">
@@ -118,7 +118,7 @@ export function QuestionCard({ question, index }: Props) {
           </div>
 
           <div>
-            <label htmlFor={`notes-${question.id}`} className="text-xs font-semibold text-zinc-500 uppercase tracking-wide block mb-1">
+            <label htmlFor={`notes-${question.id}`} className="text-xs font-semibold text-[var(--color-fg-subtle)] uppercase tracking-wide block mb-1">
               Interviewer notes
             </label>
             <textarea
@@ -128,8 +128,8 @@ export function QuestionCard({ question, index }: Props) {
               onBlur={handleNotesBlur}
               rows={2}
               placeholder="Add your notes here…"
-              className="w-full text-sm rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2
-                         placeholder:text-zinc-500
+              className="w-full text-sm rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2
+                         placeholder:text-[var(--color-fg-subtle)]
                          focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             />
           </div>

@@ -39,13 +39,13 @@ export function SubmissionCard({ submission, timeAgo }: SubmissionCardProps) {
               alt={candidate.agencyName ?? ''}
               width={20}
               height={20}
-              className="rounded-full bg-zinc-800 object-contain shrink-0"
+              className="rounded-full bg-[var(--color-bg-input)] object-contain shrink-0"
               style={{ width: 20, height: 20 }}
             />
           ) : (
             <div
-              className="flex items-center justify-center rounded-full bg-zinc-800
-                         text-zinc-400 text-[10px] font-semibold shrink-0"
+              className="flex items-center justify-center rounded-full bg-[var(--color-bg-input)]
+                         text-[var(--color-fg-muted)] text-[10px] font-semibold shrink-0"
               style={{ width: 20, height: 20 }}
               aria-hidden="true"
             >

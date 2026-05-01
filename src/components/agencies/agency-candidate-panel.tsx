@@ -70,7 +70,7 @@ export function AgencyCandidatePanel({ agencyId, agencyCandidates, unassignedCan
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-zinc-100">Candidates ({candidates.length})</h2>
+        <h2 className="text-lg font-semibold text-[var(--color-fg)]">Candidates ({candidates.length})</h2>
       </div>
 
       {canEdit && unassigned.length > 0 && (
@@ -79,7 +79,7 @@ export function AgencyCandidatePanel({ agencyId, agencyCandidates, unassignedCan
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
             disabled={isPending}
-            className="flex-1 rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+            className="flex-1 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                        focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
             <option value="">— Assign a candidate —</option>
@@ -103,29 +103,29 @@ export function AgencyCandidatePanel({ agencyId, agencyCandidates, unassignedCan
       )}
 
       {candidates.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-zinc-700 bg-zinc-950 px-6 py-10 text-center">
-          <p className="text-zinc-500 text-sm">No candidates from this agency yet.</p>
+        <div className="rounded-xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-bg-app)] px-6 py-10 text-center">
+          <p className="text-[var(--color-fg-subtle)] text-sm">No candidates from this agency yet.</p>
         </div>
       ) : (
         <div className="grid gap-2">
           {candidates.map((c) => (
             <div
               key={c.id}
-              className="flex items-center justify-between rounded-lg bg-zinc-900 border border-zinc-700 px-5 py-3"
+              className="flex items-center justify-between rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border)] px-5 py-3"
             >
               <Link
                 href={`/dashboard/candidates/${c.id}`}
                 className="flex-1 min-w-0 hover:text-blue-400 transition-colors"
               >
-                <span className="text-sm font-medium text-zinc-100">
+                <span className="text-sm font-medium text-[var(--color-fg)]">
                   {c.firstName} {c.lastName}
                   {c.email && (
-                    <span className="font-normal text-zinc-500 ml-2">{c.email}</span>
+                    <span className="font-normal text-[var(--color-fg-subtle)] ml-2">{c.email}</span>
                   )}
                 </span>
               </Link>
               <div className="flex items-center gap-3 ml-3 flex-shrink-0">
-                <time className="text-xs text-zinc-500">
+                <time className="text-xs text-[var(--color-fg-subtle)]">
                   {new Date(c.createdAt).toLocaleDateString('en-GB')}
                 </time>
                 {c.filePath && (
@@ -133,7 +133,7 @@ export function AgencyCandidatePanel({ agencyId, agencyCandidates, unassignedCan
                     href={`/api/candidates/${c.id}/cv`}
                     download
                     title="Download original CV"
-                    className="rounded p-2 md:p-1 text-zinc-600 hover:text-blue-400 hover:bg-blue-950
+                    className="rounded p-2 md:p-1 text-[var(--color-fg-subtle)] hover:text-blue-400 hover:bg-blue-950
                                transition-colors"
                   >
                     <Download className="h-4 w-4" />
@@ -145,7 +145,7 @@ export function AgencyCandidatePanel({ agencyId, agencyCandidates, unassignedCan
                     onClick={() => handleRemove(c.id)}
                     disabled={isPending}
                     title="Remove from agency"
-                    className="rounded p-2 md:p-1 text-zinc-600 hover:text-red-400 hover:bg-red-950
+                    className="rounded p-2 md:p-1 text-[var(--color-fg-subtle)] hover:text-red-400 hover:bg-red-950
                                disabled:opacity-50 transition-colors"
                   >
                     <XIcon className="h-4 w-4" />

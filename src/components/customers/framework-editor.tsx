@@ -66,12 +66,12 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
   // View mode (framework exists and not editing)
   if (existingFramework && !isEditing) {
     return (
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 space-y-4">
+      <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="font-semibold text-zinc-100">{existingFramework.name}</h3>
+            <h3 className="font-semibold text-[var(--color-fg)]">{existingFramework.name}</h3>
             {existingFramework.description && (
-              <p className="text-sm text-zinc-400 mt-1">{existingFramework.description}</p>
+              <p className="text-sm text-[var(--color-fg-muted)] mt-1">{existingFramework.description}</p>
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -83,8 +83,8 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
                 setLevels([...existingFramework.levels])
                 setIsEditing(true)
               }}
-              className="flex items-center gap-1.5 rounded-md border border-zinc-600 text-zinc-300 text-xs
-                         font-medium px-3 py-1.5 hover:bg-zinc-800 transition-colors"
+              className="flex items-center gap-1.5 rounded-md border border-[var(--color-border)] text-[var(--color-fg)] text-xs
+                         font-medium px-3 py-1.5 hover:bg-[var(--color-bg-input)] transition-colors"
             >
               <Pencil className="h-3.5 w-3.5" />
               Edit
@@ -93,7 +93,7 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
               <>
                 {deleteConfirm ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-zinc-400">Delete framework?</span>
+                    <span className="text-xs text-[var(--color-fg-muted)]">Delete framework?</span>
                     <form action={deleteCustomerFramework.bind(null, customerId)}>
                       <button
                         type="submit"
@@ -105,7 +105,7 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
                     <button
                       type="button"
                       onClick={() => setDeleteConfirm(false)}
-                      className="text-xs text-zinc-500 hover:text-zinc-300"
+                      className="text-xs text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]"
                     >
                       Cancel
                     </button>
@@ -130,33 +130,33 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-700">
-                  <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wide pb-2 pr-4">
+                <tr className="border-b border-[var(--color-border)]">
+                  <th className="text-left text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide pb-2 pr-4">
                     Code
                   </th>
-                  <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wide pb-2 pr-4">
+                  <th className="text-left text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide pb-2 pr-4">
                     Title
                   </th>
-                  <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wide pb-2 pr-4">
+                  <th className="text-left text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide pb-2 pr-4">
                     Description
                   </th>
-                  <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wide pb-2">
+                  <th className="text-left text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide pb-2">
                     Order
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800">
+              <tbody className="divide-y divide-[var(--color-bg-input)]">
                 {sortedLevels.map((level) => (
                   <tr key={level.id}>
                     <td className="py-2.5 pr-4">
-                      <span className="inline-flex items-center rounded-md bg-zinc-800 border border-zinc-700
-                                       text-zinc-300 text-xs font-mono px-2 py-0.5">
+                      <span className="inline-flex items-center rounded-md bg-[var(--color-bg-input)] border border-[var(--color-border)]
+                                       text-[var(--color-fg)] text-xs font-mono px-2 py-0.5">
                         {level.code}
                       </span>
                     </td>
-                    <td className="py-2.5 pr-4 text-zinc-200 font-medium">{level.title}</td>
-                    <td className="py-2.5 pr-4 text-zinc-400 max-w-xs truncate">{level.description}</td>
-                    <td className="py-2.5 text-zinc-500 text-xs">{level.order}</td>
+                    <td className="py-2.5 pr-4 text-[var(--color-fg)] font-medium">{level.title}</td>
+                    <td className="py-2.5 pr-4 text-[var(--color-fg-muted)] max-w-xs truncate">{level.description}</td>
+                    <td className="py-2.5 text-[var(--color-fg-subtle)] text-xs">{level.order}</td>
                   </tr>
                 ))}
               </tbody>
@@ -176,9 +176,9 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
         fd.set('levels', JSON.stringify(levels))
         saveAction(fd)
       }}
-      className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 space-y-5"
+      className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 space-y-5"
     >
-      <h3 className="font-semibold text-zinc-100">
+      <h3 className="font-semibold text-[var(--color-fg)]">
         {existingFramework ? 'Edit framework' : 'Add hiring framework'}
       </h3>
 
@@ -189,7 +189,7 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
       )}
 
       <div>
-        <label className="block text-sm font-medium text-zinc-300 mb-1">
+        <label className="block text-sm font-medium text-[var(--color-fg)] mb-1">
           Framework name <span className="text-red-500">*</span>
         </label>
         <input
@@ -199,8 +199,8 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
           placeholder="e.g. HSBC GCB Framework"
           required
           disabled={savePending}
-          className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                     placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500
+          className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                     placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2 focus:ring-blue-500
                      disabled:opacity-50"
         />
         {saveState?.fieldErrors?.name && (
@@ -209,8 +209,8 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-zinc-300 mb-1">
-          Description <span className="text-zinc-500 font-normal">(optional)</span>
+        <label className="block text-sm font-medium text-[var(--color-fg)] mb-1">
+          Description <span className="text-[var(--color-fg-subtle)] font-normal">(optional)</span>
         </label>
         <textarea
           value={description}
@@ -218,8 +218,8 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
           rows={2}
           disabled={savePending}
           placeholder="Brief description of this grading framework…"
-          className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                     placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500
+          className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                     placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2 focus:ring-blue-500
                      disabled:opacity-50 resize-none"
         />
       </div>
@@ -227,7 +227,7 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
       {/* Levels */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-zinc-300">
+          <label className="text-sm font-medium text-[var(--color-fg)]">
             Band levels <span className="text-red-500">*</span>
           </label>
           <button
@@ -246,7 +246,7 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
         )}
 
         {levels.length === 0 && (
-          <p className="text-xs text-zinc-500 py-2">
+          <p className="text-xs text-[var(--color-fg-subtle)] py-2">
             No levels yet. Click &quot;Add level&quot; to define band levels.
           </p>
         )}
@@ -255,55 +255,55 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
           <div
             key={index}
             className="grid grid-cols-1 md:grid-cols-[1fr_1fr_2fr_4rem_2rem] gap-2 items-start
-                       bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-3"
+                       bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-3"
           >
             <div>
-              <label className="block text-xs text-zinc-500 mb-1">Code</label>
+              <label className="block text-xs text-[var(--color-fg-subtle)] mb-1">Code</label>
               <input
                 type="text"
                 value={level.code}
                 onChange={(e) => updateLevel(index, 'code', e.target.value)}
                 placeholder="GCB 4"
                 disabled={savePending}
-                className="w-full rounded border border-zinc-600 bg-zinc-900 text-zinc-100 px-2 py-1.5
-                           text-xs placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500
+                className="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-fg)] px-2 py-1.5
+                           text-xs placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-1 focus:ring-blue-500
                            disabled:opacity-50"
               />
             </div>
             <div>
-              <label className="block text-xs text-zinc-500 mb-1">Title</label>
+              <label className="block text-xs text-[var(--color-fg-subtle)] mb-1">Title</label>
               <input
                 type="text"
                 value={level.title}
                 onChange={(e) => updateLevel(index, 'title', e.target.value)}
                 placeholder="Specialist"
                 disabled={savePending}
-                className="w-full rounded border border-zinc-600 bg-zinc-900 text-zinc-100 px-2 py-1.5
-                           text-xs placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500
+                className="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-fg)] px-2 py-1.5
+                           text-xs placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-1 focus:ring-blue-500
                            disabled:opacity-50"
               />
             </div>
             <div>
-              <label className="block text-xs text-zinc-500 mb-1">Description</label>
+              <label className="block text-xs text-[var(--color-fg-subtle)] mb-1">Description</label>
               <input
                 type="text"
                 value={level.description}
                 onChange={(e) => updateLevel(index, 'description', e.target.value)}
                 placeholder="VP equivalent, leads a team…"
                 disabled={savePending}
-                className="w-full rounded border border-zinc-600 bg-zinc-900 text-zinc-100 px-2 py-1.5
-                           text-xs placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500
+                className="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-fg)] px-2 py-1.5
+                           text-xs placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-1 focus:ring-blue-500
                            disabled:opacity-50"
               />
             </div>
             <div>
-              <label className="block text-xs text-zinc-500 mb-1">Order</label>
+              <label className="block text-xs text-[var(--color-fg-subtle)] mb-1">Order</label>
               <input
                 type="number"
                 value={level.order}
                 onChange={(e) => updateLevel(index, 'order', parseInt(e.target.value, 10) || 0)}
                 disabled={savePending}
-                className="w-full rounded border border-zinc-600 bg-zinc-900 text-zinc-100 px-2 py-1.5
+                className="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-fg)] px-2 py-1.5
                            text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
@@ -312,7 +312,7 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
                 type="button"
                 onClick={() => removeLevel(index)}
                 disabled={savePending}
-                className="text-zinc-500 hover:text-red-400 transition-colors disabled:opacity-50"
+                className="text-[var(--color-fg-subtle)] hover:text-red-400 transition-colors disabled:opacity-50"
                 title="Remove level"
               >
                 <X className="h-4 w-4" />
@@ -337,7 +337,7 @@ export function FrameworkEditor({ customerId, existingFramework, isAdmin }: Prop
             type="button"
             onClick={() => setIsEditing(false)}
             disabled={savePending}
-            className="text-sm text-zinc-500 hover:text-zinc-300 disabled:opacity-50"
+            className="text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] disabled:opacity-50"
           >
             Cancel
           </button>
