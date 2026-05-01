@@ -44,12 +44,14 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
   )
 
   const [newBody, setNewBody] = useState('')
+  const [newShareable, setNewShareable] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
   const [isAdding, startAdd] = useTransition()
 
   // Per-note UI state
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editBody, setEditBody] = useState('')
+  const [editShareable, setEditShareable] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
   const [isEditing, startEdit] = useTransition()
 
@@ -68,7 +70,7 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
     setAddError(null)
 
     startAdd(async () => {
-      const result = await createNote(candidateId, newBody.trim())
+      const result = await createNote(candidateId, newBody.trim(), newShareable)
       if (!result.success) {
         setAddError(result.error)
         return
@@ -81,9 +83,11 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
         createdAt: new Date().toISOString(),
         updatedAt: null,
         isEdited: false,
+        isShareable: newShareable,
       }
       setNotesList((prev) => [optimistic, ...prev])
       setNewBody('')
+      setNewShareable(false)
     })
   }
 
@@ -93,12 +97,14 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
   function startEditing(note: NoteItem) {
     setEditingId(note.id)
     setEditBody(note.body)
+    setEditShareable(note.isShareable ?? false)
     setEditError(null)
   }
 
   function cancelEditing() {
     setEditingId(null)
     setEditBody('')
+    setEditShareable(false)
     setEditError(null)
   }
 
@@ -110,7 +116,7 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
     setEditError(null)
 
     startEdit(async () => {
-      const result = await updateNote(noteId, candidateId, editBody.trim())
+      const result = await updateNote(noteId, candidateId, editBody.trim(), editShareable)
       if (!result.success) {
         setEditError(result.error)
         return
@@ -118,12 +124,19 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
       setNotesList((prev) =>
         prev.map((n) =>
           n.id === noteId
-            ? { ...n, body: editBody.trim(), updatedAt: new Date().toISOString(), isEdited: true }
+            ? {
+                ...n,
+                body: editBody.trim(),
+                isShareable: editShareable,
+                updatedAt: new Date().toISOString(),
+                isEdited: true,
+              }
             : n
         )
       )
       setEditingId(null)
       setEditBody('')
+      setEditShareable(false)
     })
   }
 
@@ -171,7 +184,18 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
           {addError && (
             <p className="text-xs text-red-400 mt-1">{addError}</p>
           )}
-          <div className="flex justify-end mt-2">
+          <div className="flex items-center justify-between mt-2 gap-3">
+            <label className="flex items-center gap-2 text-xs text-[var(--color-fg-muted)] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={newShareable}
+                onChange={(e) => setNewShareable(e.target.checked)}
+                disabled={isAdding}
+                className="rounded border-[var(--color-border)] bg-[var(--color-bg-input)]
+                           text-violet-600 focus:ring-violet-600 focus:ring-offset-0 disabled:opacity-50"
+              />
+              Share with hiring manager
+            </label>
             <button
               type="button"
               onClick={handleAdd}
@@ -213,6 +237,17 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
                   {editError && (
                     <p className="text-xs text-red-400 mt-1">{editError}</p>
                   )}
+                  <label className="flex items-center gap-2 text-xs text-[var(--color-fg-muted)] cursor-pointer mt-2">
+                    <input
+                      type="checkbox"
+                      checked={editShareable}
+                      onChange={(e) => setEditShareable(e.target.checked)}
+                      disabled={isEditing}
+                      className="rounded border-[var(--color-border)] bg-[var(--color-bg-input)]
+                                 text-violet-600 focus:ring-violet-600 focus:ring-offset-0 disabled:opacity-50"
+                    />
+                    Share with hiring manager
+                  </label>
                   <div className="flex items-center gap-2 mt-2">
                     <button
                       type="button"
