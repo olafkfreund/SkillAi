@@ -44,7 +44,7 @@ function isAccepted(file: File): boolean {
 
 function StatusIcon({ status }: { status: FileStatus }) {
   if (status === 'queued')
-    return <ClockIcon className="h-4 w-4 text-zinc-500 shrink-0" />
+    return <ClockIcon className="h-4 w-4 text-[var(--color-fg-subtle)] shrink-0" />
   if (status === 'uploading')
     return <Loader2Icon className="h-4 w-4 text-blue-400 shrink-0 animate-spin" />
   if (status === 'done')
@@ -165,16 +165,16 @@ export function BulkUploadZone({ roleId, agencyId }: Props) {
           'px-6 py-12 cursor-pointer select-none transition-colors',
           dragOver
             ? 'border-blue-500 bg-blue-950/30'
-            : 'border-zinc-700 bg-zinc-900 hover:border-zinc-500 hover:bg-zinc-800/60',
+            : 'border-[var(--color-border)] bg-[var(--color-bg-elevated)] hover:border-[var(--color-fg-subtle)] hover:bg-[var(--color-bg-input)]/60',
           uploading ? 'opacity-50 pointer-events-none' : '',
         ].join(' ')}
       >
-        <UploadCloudIcon className="h-10 w-10 text-zinc-500" />
-        <p className="text-sm text-zinc-400 text-center">
-          <span className="font-medium text-zinc-200">Click to browse</span> or drag and drop
+        <UploadCloudIcon className="h-10 w-10 text-[var(--color-fg-subtle)]" />
+        <p className="text-sm text-[var(--color-fg-muted)] text-center">
+          <span className="font-medium text-[var(--color-fg)]">Click to browse</span> or drag and drop
           multiple CV files
         </p>
-        <p className="text-xs text-zinc-600">PDF, DOCX, ODT, RTF, TXT, MD &mdash; max 10 MB each</p>
+        <p className="text-xs text-[var(--color-fg-subtle)]">PDF, DOCX, ODT, RTF, TXT, MD &mdash; max 10 MB each</p>
         <input
           ref={inputRef}
           type="file"
@@ -190,7 +190,7 @@ export function BulkUploadZone({ roleId, agencyId }: Props) {
       {/* File list */}
       {files.length > 0 && (
         <div
-          className="rounded-xl border border-zinc-700 bg-zinc-900 divide-y divide-zinc-800 overflow-hidden"
+          className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] divide-y divide-[var(--color-bg-input)] overflow-hidden"
           role="list"
           aria-label="CV files to upload"
         >
@@ -202,7 +202,7 @@ export function BulkUploadZone({ roleId, agencyId }: Props) {
             >
               <StatusIcon status={item.status} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-zinc-200 truncate">{item.file.name}</p>
+                <p className="text-sm text-[var(--color-fg)] truncate">{item.file.name}</p>
                 {item.status === 'done' && item.candidateName && (
                   <p className="text-xs text-emerald-400 truncate">{item.candidateName}</p>
                 )}
@@ -210,13 +210,13 @@ export function BulkUploadZone({ roleId, agencyId }: Props) {
                   <p className="text-xs text-red-400 truncate">{item.error}</p>
                 )}
                 {item.status === 'queued' && (
-                  <p className="text-xs text-zinc-600">Queued</p>
+                  <p className="text-xs text-[var(--color-fg-subtle)]">Queued</p>
                 )}
                 {item.status === 'uploading' && (
                   <p className="text-xs text-blue-400">Uploading&hellip;</p>
                 )}
               </div>
-              <span className="text-xs text-zinc-600 shrink-0">
+              <span className="text-xs text-[var(--color-fg-subtle)] shrink-0">
                 {(item.file.size / 1024).toFixed(0)} KB
               </span>
               {!uploading && item.status !== 'uploading' && (
@@ -224,7 +224,7 @@ export function BulkUploadZone({ roleId, agencyId }: Props) {
                   type="button"
                   aria-label={`Remove ${item.file.name}`}
                   onClick={() => removeItem(item.id)}
-                  className="shrink-0 text-zinc-600 hover:text-red-400 transition-colors"
+                  className="shrink-0 text-[var(--color-fg-subtle)] hover:text-red-400 transition-colors"
                 >
                   <XCircleIcon className="h-4 w-4" />
                 </button>
@@ -236,7 +236,7 @@ export function BulkUploadZone({ roleId, agencyId }: Props) {
 
       {/* Progress counter */}
       {uploading && (
-        <p className="text-sm text-zinc-400" aria-live="polite">
+        <p className="text-sm text-[var(--color-fg-muted)]" aria-live="polite">
           {doneCount + errorCount} of {total} processed
           {uploadingCount > 0 && ' — uploading\u2026'}
         </p>
@@ -244,8 +244,8 @@ export function BulkUploadZone({ roleId, agencyId }: Props) {
 
       {/* Done summary */}
       {done && !uploading && total > 0 && (
-        <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 flex items-center justify-between gap-4">
-          <p className="text-sm text-zinc-300">
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-4 py-3 flex items-center justify-between gap-4">
+          <p className="text-sm text-[var(--color-fg)]">
             <span className="font-medium text-emerald-400">{doneCount} uploaded</span>
             {errorCount > 0 && (
               <span className="text-red-400">, {errorCount} failed</span>
@@ -291,7 +291,7 @@ export function BulkUploadZone({ roleId, agencyId }: Props) {
               setFiles([])
               setDone(false)
             }}
-            className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+            className="text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] transition-colors"
           >
             Clear all
           </button>

@@ -253,16 +253,16 @@ function collapseSpacers(blocks: Block[]): Block[] {
 
 function NameBlock({ text }: { text: string }) {
   return (
-    <p className="text-lg font-bold text-zinc-100 leading-tight">{text}</p>
+    <p className="text-lg font-bold text-[var(--color-fg)] leading-tight">{text}</p>
   )
 }
 
 function TaglineBlock({ parts }: { parts: string[] }) {
   return (
-    <p className="text-sm text-zinc-400 mt-0.5">
+    <p className="text-sm text-[var(--color-fg-muted)] mt-0.5">
       {parts.map((p, i) => (
         <span key={i}>
-          {i > 0 && <span className="mx-2 text-zinc-600">·</span>}
+          {i > 0 && <span className="mx-2 text-[var(--color-fg-subtle)]">·</span>}
           {p}
         </span>
       ))}
@@ -279,13 +279,13 @@ function ContactBlock({ items }: { items: string[] }) {
           const label = item.slice(0, colonIdx).trim()
           const value = item.slice(colonIdx + 1).trim()
           return (
-            <span key={i} className="text-xs text-zinc-500">
-              <span className="text-zinc-600 font-medium">{label}:</span>{' '}
-              <span className="text-zinc-400">{value}</span>
+            <span key={i} className="text-xs text-[var(--color-fg-subtle)]">
+              <span className="text-[var(--color-fg-subtle)] font-medium">{label}:</span>{' '}
+              <span className="text-[var(--color-fg-muted)]">{value}</span>
             </span>
           )
         }
-        return <span key={i} className="text-xs text-zinc-500">{item}</span>
+        return <span key={i} className="text-xs text-[var(--color-fg-subtle)]">{item}</span>
       })}
     </div>
   )
@@ -294,7 +294,7 @@ function ContactBlock({ items }: { items: string[] }) {
 function HeaderBlock({ text }: { text: string }) {
   return (
     <div className="mt-5 mb-2.5">
-      <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-violet-400 border-b border-zinc-800 pb-1.5">
+      <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-violet-400 border-b border-[var(--color-bg-input)] pb-1.5">
         {text}
       </h3>
     </div>
@@ -305,13 +305,13 @@ function RoleBlock({ title, org, dates }: { title: string; org: string; dates: s
   return (
     <div className="mt-2.5 mb-0.5 flex items-start justify-between gap-3 flex-wrap">
       <div className="min-w-0">
-        <span className="text-sm font-semibold text-zinc-200">{title}</span>
+        <span className="text-sm font-semibold text-[var(--color-fg)]">{title}</span>
         {org && (
-          <span className="text-sm text-zinc-500 font-normal"> · {org}</span>
+          <span className="text-sm text-[var(--color-fg-subtle)] font-normal"> · {org}</span>
         )}
       </div>
       {dates && (
-        <span className="text-xs text-zinc-500 whitespace-nowrap shrink-0 mt-0.5 font-mono">
+        <span className="text-xs text-[var(--color-fg-subtle)] whitespace-nowrap shrink-0 mt-0.5 font-mono">
           {dates}
         </span>
       )}
@@ -323,7 +323,7 @@ function BulletBlock({ text }: { text: string }) {
   return (
     <div className="flex gap-2.5 items-start mt-1">
       <span className="mt-[7px] h-1 w-1 flex-shrink-0 rounded-full bg-violet-500/70" />
-      <p className="text-sm text-zinc-400 leading-relaxed flex-1">{text}</p>
+      <p className="text-sm text-[var(--color-fg-muted)] leading-relaxed flex-1">{text}</p>
     </div>
   )
 }
@@ -333,17 +333,17 @@ function PlainBlock({ text }: { text: string }) {
   if (/\s*\|\s*/.test(text) && text.split(/\s*\|\s*/).length >= 2) {
     const parts = text.split(/\s*\|\s*/)
     return (
-      <p className="text-sm text-zinc-400 leading-relaxed">
+      <p className="text-sm text-[var(--color-fg-muted)] leading-relaxed">
         {parts.map((p, i) => (
           <span key={i}>
-            {i > 0 && <span className="mx-2 text-zinc-700">|</span>}
+            {i > 0 && <span className="mx-2 text-[var(--color-border)]">|</span>}
             {p}
           </span>
         ))}
       </p>
     )
   }
-  return <p className="text-sm text-zinc-400 leading-relaxed mt-0.5">{text}</p>
+  return <p className="text-sm text-[var(--color-fg-muted)] leading-relaxed mt-0.5">{text}</p>
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -352,7 +352,7 @@ export function CvDisplay({ cvText }: { cvText: string }) {
   const [expanded, setExpanded] = useState(false)
 
   if (!cvText?.trim()) {
-    return <p className="text-sm text-zinc-500 italic">No CV text available.</p>
+    return <p className="text-sm text-[var(--color-fg-subtle)] italic">No CV text available.</p>
   }
 
   const blocks = parse(cvText)
@@ -378,7 +378,7 @@ export function CvDisplay({ cvText }: { cvText: string }) {
       </div>
 
       {!expanded && (
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-zinc-900 to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[var(--color-bg-elevated)] to-transparent pointer-events-none" />
       )}
 
       <div className={expanded ? 'mt-4' : 'relative mt-2 flex justify-center'}>

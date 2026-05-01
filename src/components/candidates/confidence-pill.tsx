@@ -25,7 +25,7 @@ export function ConfidencePill({ score, className }: ConfidencePillProps) {
   const tierStyles = {
     high: 'bg-emerald-900/40 border-emerald-700 text-emerald-200',
     medium: 'bg-yellow-900/40 border-yellow-700 text-yellow-200',
-    low: 'bg-zinc-800 border-zinc-700 text-zinc-400',
+    low: 'bg-[var(--color-bg-input)] border-[var(--color-border)] text-[var(--color-fg-muted)]',
     not_match: 'bg-red-900/40 border-red-700 text-red-300',
   }[tier]
 

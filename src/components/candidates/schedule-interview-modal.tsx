@@ -126,19 +126,19 @@ export function ScheduleInterviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-xl w-[calc(100vw-2rem)] max-w-lg shadow-2xl">
+      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl w-[calc(100vw-2rem)] max-w-lg shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-700">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-4 w-4 text-violet-400" />
-            <h2 className="font-semibold text-zinc-100 text-sm">
+            <h2 className="font-semibold text-[var(--color-fg)] text-sm">
               {isEditMode ? 'Edit Interview' : 'Schedule Interview'}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-zinc-500 hover:text-zinc-300 transition-colors"
+            className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] transition-colors"
           >
             <XIcon className="h-4 w-4" />
           </button>
@@ -147,15 +147,15 @@ export function ScheduleInterviewModal({
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Title</label>
+            <label className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">Title</label>
             <input
               type="text"
               value={form.title}
               onChange={(e) => update('title', e.target.value)}
               required
               maxLength={300}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
-                         text-sm text-zinc-100 placeholder-zinc-500
+              className="w-full bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-2
+                         text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)]
                          focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
             />
           </div>
@@ -163,14 +163,14 @@ export function ScheduleInterviewModal({
           {/* Role (optional) */}
           {allRoles.length > 0 && (
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">
-                Role <span className="text-zinc-600">(optional)</span>
+              <label className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+                Role <span className="text-[var(--color-fg-subtle)]">(optional)</span>
               </label>
               <select
                 value={form.selectedRoleId}
                 onChange={(e) => update('selectedRoleId', e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
-                           text-sm text-zinc-100
+                className="w-full bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-2
+                           text-sm text-[var(--color-fg)]
                            focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
               >
                 <option value="">No specific role</option>
@@ -186,26 +186,26 @@ export function ScheduleInterviewModal({
           {/* Date + Time */}
           <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Date</label>
+              <label className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">Date</label>
               <input
                 type="date"
                 value={form.date}
                 onChange={(e) => update('date', e.target.value)}
                 required
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
-                           text-sm text-zinc-100
+                className="w-full bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-2
+                           text-sm text-[var(--color-fg)]
                            focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1">Time (UTC)</label>
+              <label className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">Time (UTC)</label>
               <input
                 type="time"
                 value={form.time}
                 onChange={(e) => update('time', e.target.value)}
                 required
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
-                           text-sm text-zinc-100
+                className="w-full bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-2
+                           text-sm text-[var(--color-fg)]
                            focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
               />
             </div>
@@ -213,12 +213,12 @@ export function ScheduleInterviewModal({
 
           {/* Duration */}
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Duration</label>
+            <label className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">Duration</label>
             <select
               value={form.durationMinutes}
               onChange={(e) => update('durationMinutes', Number(e.target.value))}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
-                         text-sm text-zinc-100
+              className="w-full bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-2
+                         text-sm text-[var(--color-fg)]
                          focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
             >
               {DURATION_OPTIONS.map((opt) => (
@@ -231,8 +231,8 @@ export function ScheduleInterviewModal({
 
           {/* Location */}
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">
-              Location <span className="text-zinc-600">(optional)</span>
+            <label className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+              Location <span className="text-[var(--color-fg-subtle)]">(optional)</span>
             </label>
             <input
               type="text"
@@ -240,32 +240,32 @@ export function ScheduleInterviewModal({
               onChange={(e) => update('location', e.target.value)}
               maxLength={500}
               placeholder="e.g. Conference Room A, or remote"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
-                         text-sm text-zinc-100 placeholder-zinc-500
+              className="w-full bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-2
+                         text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)]
                          focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
             />
           </div>
 
           {/* Meeting URL */}
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">
-              Meeting URL <span className="text-zinc-600">(optional)</span>
+            <label className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+              Meeting URL <span className="text-[var(--color-fg-subtle)]">(optional)</span>
             </label>
             <input
               type="url"
               value={form.meetingUrl}
               onChange={(e) => update('meetingUrl', e.target.value)}
               placeholder="https://meet.google.com/..."
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
-                         text-sm text-zinc-100 placeholder-zinc-500
+              className="w-full bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-2
+                         text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)]
                          focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
             />
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">
-              Notes <span className="text-zinc-600">(optional)</span>
+            <label className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+              Notes <span className="text-[var(--color-fg-subtle)]">(optional)</span>
             </label>
             <textarea
               value={form.slotNotes}
@@ -273,26 +273,26 @@ export function ScheduleInterviewModal({
               rows={2}
               maxLength={2000}
               placeholder="Any preparation notes or context..."
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
-                         text-sm text-zinc-100 placeholder-zinc-500 resize-none
+              className="w-full bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg px-3 py-2
+                         text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)] resize-none
                          focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
             />
           </div>
 
           {/* Calendar sync options */}
           {(hasGoogleCalendar || hasMicrosoftCalendar) && (
-            <div className="rounded-lg bg-zinc-800 border border-zinc-700 px-4 py-3 space-y-2">
-              <p className="text-xs font-medium text-zinc-400">Sync to calendar</p>
+            <div className="rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)] px-4 py-3 space-y-2">
+              <p className="text-xs font-medium text-[var(--color-fg-muted)]">Sync to calendar</p>
               {hasGoogleCalendar && (
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={form.syncGoogle}
                     onChange={(e) => update('syncGoogle', e.target.checked)}
-                    className="rounded border-zinc-600 bg-zinc-700 text-violet-500
-                               focus:ring-violet-500 focus:ring-offset-zinc-900"
+                    className="rounded border-[var(--color-border)] bg-[var(--color-bg-input)] text-violet-500
+                               focus:ring-violet-500 focus:ring-offset-[var(--color-bg-elevated)]"
                   />
-                  <span className="text-sm text-zinc-300">Add to Google Calendar</span>
+                  <span className="text-sm text-[var(--color-fg)]">Add to Google Calendar</span>
                 </label>
               )}
               {hasMicrosoftCalendar && (
@@ -301,10 +301,10 @@ export function ScheduleInterviewModal({
                     type="checkbox"
                     checked={form.syncMicrosoft}
                     onChange={(e) => update('syncMicrosoft', e.target.checked)}
-                    className="rounded border-zinc-600 bg-zinc-700 text-violet-500
-                               focus:ring-violet-500 focus:ring-offset-zinc-900"
+                    className="rounded border-[var(--color-border)] bg-[var(--color-bg-input)] text-violet-500
+                               focus:ring-violet-500 focus:ring-offset-[var(--color-bg-elevated)]"
                   />
-                  <span className="text-sm text-zinc-300">Add to Microsoft O365 Calendar</span>
+                  <span className="text-sm text-[var(--color-fg)]">Add to Microsoft O365 Calendar</span>
                 </label>
               )}
             </div>
@@ -322,7 +322,7 @@ export function ScheduleInterviewModal({
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors disabled:opacity-50"
             >
               Cancel
             </button>

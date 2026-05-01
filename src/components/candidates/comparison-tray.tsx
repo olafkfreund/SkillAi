@@ -63,23 +63,23 @@ export function ComparisonTray() {
     // bottom-16 on mobile keeps the tray above any sticky pagination row;
     // md:bottom-0 restores flush-bottom on larger screens.
     // z-30 keeps below drawer scrim (z-40) and drawer panel (z-50).
-    <div className="fixed bottom-16 left-0 right-0 z-30 bg-zinc-900 border-t border-zinc-700 shadow-2xl
+    <div className="fixed bottom-16 left-0 right-0 z-30 bg-[var(--color-bg-elevated)] border-t border-[var(--color-border)] shadow-2xl
                     md:bottom-0">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4
                       sm:px-6">
-        <span className="text-sm text-zinc-400 flex-shrink-0">
+        <span className="text-sm text-[var(--color-fg-muted)] flex-shrink-0">
           Compare ({items.length}/5):
         </span>
         <div className="flex flex-wrap gap-2 flex-1 min-w-0">
           {items.map((item) => (
             <span
               key={item.id}
-              className="inline-flex items-center gap-1.5 bg-zinc-800 border border-zinc-700 rounded-full px-3 py-1 text-xs text-zinc-300"
+              className="inline-flex items-center gap-1.5 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-full px-3 py-1 text-xs text-[var(--color-fg)]"
             >
               {item.name}
               <button
                 onClick={() => remove(item.id)}
-                className="text-zinc-500 hover:text-zinc-300 leading-none"
+                className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] leading-none"
                 aria-label={`Remove ${item.name} from comparison`}
               >
                 &times;
@@ -90,7 +90,7 @@ export function ComparisonTray() {
         <div className="flex gap-2 flex-shrink-0">
           <button
             onClick={clear}
-            className="text-xs text-zinc-500 hover:text-zinc-300 px-3 py-1.5 transition-colors"
+            className="text-xs text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] px-3 py-1.5 transition-colors"
           >
             Clear
           </button>

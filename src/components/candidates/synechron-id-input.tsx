@@ -91,9 +91,9 @@ export function SynechronIdInput({ candidateId, value }: SynechronIdInputProps) 
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="inline-flex items-center rounded-md border border-zinc-700 bg-zinc-800
-                   px-2 py-0.5 text-xs font-medium text-zinc-300
-                   hover:border-zinc-500 hover:text-zinc-100 transition-colors"
+        className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)]
+                   px-2 py-0.5 text-xs font-medium text-[var(--color-fg)]
+                   hover:border-[var(--color-border)] hover:text-[var(--color-fg)] transition-colors"
         aria-haspopup="dialog"
         aria-expanded={open}
       >
@@ -104,11 +104,11 @@ export function SynechronIdInput({ candidateId, value }: SynechronIdInputProps) 
         <div
           role="dialog"
           aria-label="Edit Synechron candidate ID"
-          className="absolute left-0 top-full mt-2 z-20 w-72 rounded-md border border-zinc-700
-                     bg-zinc-900 p-3 shadow-lg"
+          className="absolute left-0 top-full mt-2 z-20 w-72 rounded-md border border-[var(--color-border)]
+                     bg-[var(--color-bg-elevated)] p-3 shadow-lg"
         >
           <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-            <label className="text-xs font-medium text-zinc-300" htmlFor="synechron-id-field">
+            <label className="text-xs font-medium text-[var(--color-fg)]" htmlFor="synechron-id-field">
               Synechron Candidate ID
             </label>
             <input
@@ -120,20 +120,20 @@ export function SynechronIdInput({ candidateId, value }: SynechronIdInputProps) 
               placeholder="SYNE-1234"
               maxLength={64}
               disabled={pending}
-              className="rounded-md border border-zinc-600 bg-zinc-800 px-2 py-1.5 text-sm
-                         text-zinc-100 placeholder-zinc-500 focus:outline-none
+              className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] px-2 py-1.5 text-sm
+                         text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)] focus:outline-none
                          focus:ring-2 focus:ring-blue-500 focus:border-transparent
                          disabled:opacity-50"
             />
-            <p className="text-[10px] text-zinc-500">Letters, digits and hyphens only. Max 64 characters.</p>
+            <p className="text-[10px] text-[var(--color-fg-subtle)]">Letters, digits and hyphens only. Max 64 characters.</p>
             {error && <p className="text-xs text-red-400">{error}</p>}
             <div className="flex justify-end gap-2 pt-1">
               <button
                 type="button"
                 onClick={handleCancel}
                 disabled={pending}
-                className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1
-                           text-xs text-zinc-300 hover:bg-zinc-700 disabled:opacity-50"
+                className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] px-3 py-1
+                           text-xs text-[var(--color-fg)] hover:bg-[var(--color-border)] disabled:opacity-50"
               >
                 Cancel
               </button>

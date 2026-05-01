@@ -34,7 +34,7 @@ export function ComparisonCheckbox({ candidateId, candidateName }: ComparisonChe
                   disabled:cursor-not-allowed disabled:opacity-40
                   ${selected
                     ? 'bg-violet-950/40 text-violet-400'
-                    : 'text-zinc-600 hover:text-violet-400'
+                    : 'text-[var(--color-fg-subtle)] hover:text-violet-400'
                   }`}
     >
       <GitCompareArrows className="h-4 w-4" />

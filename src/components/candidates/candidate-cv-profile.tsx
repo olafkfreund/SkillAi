@@ -61,7 +61,7 @@ function categorizeSkill(skill: string): 'languages' | 'frameworks' | 'tools' | 
 
 // ── Experience level badge styles ───────────────────────────────────────────
 const LEVEL_STYLES: Record<string, string> = {
-  junior: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700',
+  junior: 'bg-zinc-100 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg)] border-zinc-300 dark:border-[var(--color-border)]',
   mid: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800',
   senior: 'bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300 border-violet-300 dark:border-violet-800',
   lead: 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800',
@@ -143,7 +143,7 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
             </span>
           )}
           {isComplete && profile?.extractedAt && (
-            <span className="inline-flex items-center gap-1 text-xs text-zinc-500">
+            <span className="inline-flex items-center gap-1 text-xs text-[var(--color-fg-subtle)]">
               <CheckCircle2Icon className="h-3 w-3 text-emerald-500" />
               Extracted {new Date(profile.extractedAt).toLocaleDateString('en-GB')}
             </span>
@@ -160,7 +160,7 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
             type="button"
             onClick={handleReextract}
             disabled={isPending}
-            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 text-zinc-400 text-xs px-2.5 py-1 hover:bg-zinc-800 hover:text-zinc-200 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] text-[var(--color-fg-muted)] text-xs px-2.5 py-1 hover:bg-[var(--color-bg-input)] hover:text-[var(--color-fg)] transition-colors disabled:opacity-50"
           >
             <RefreshCwIcon className={`h-3 w-3 ${isPending ? 'animate-spin' : ''}`} />
             {isPending ? 'Queuing…' : 'Re-extract'}
@@ -191,15 +191,15 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
 
       {/* Summary */}
       {isComplete && profile?.summary && (
-        <div className="bg-zinc-900 rounded-lg border border-zinc-700 p-4">
-          <p className="text-sm text-zinc-300 leading-relaxed">{profile.summary}</p>
+        <div className="bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border)] p-4">
+          <p className="text-sm text-[var(--color-fg)] leading-relaxed">{profile.summary}</p>
         </div>
       )}
 
       {/* Skills */}
       {isComplete && skills.length > 0 && (
         <div>
-          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">Skills</h3>
+          <h3 className="text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide mb-3">Skills</h3>
           <div className="space-y-3">
             {(['languages', 'frameworks', 'tools', 'other'] as const).map((cat) => {
               const items = skillGroups[cat]
@@ -207,7 +207,7 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
               const label = cat === 'languages' ? 'Languages' : cat === 'frameworks' ? 'Frameworks' : cat === 'tools' ? 'Tools & Platforms' : 'Other'
               return (
                 <div key={cat}>
-                  <p className="text-[11px] text-zinc-500 uppercase tracking-wide mb-1.5">{label}</p>
+                  <p className="text-[11px] text-[var(--color-fg-subtle)] uppercase tracking-wide mb-1.5">{label}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {items.map((skill) => (
                       <SkillChip key={skill} skill={skill} category={cat} />
@@ -223,9 +223,9 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
       {/* Company timeline */}
       {isComplete && companies.length > 0 && (
         <div>
-          <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">Experience</h3>
+          <h3 className="text-xs font-semibold text-[var(--color-fg-muted)] uppercase tracking-wide mb-3">Experience</h3>
           <div className="relative pl-6">
-            <div className="absolute left-[9px] top-2 bottom-2 w-px bg-zinc-800" />
+            <div className="absolute left-[9px] top-2 bottom-2 w-px bg-[var(--color-bg-input)]" />
             <div className="space-y-4">
               {companies.map((company, i) => (
                 <div key={`${company.name}-${i}`} className="relative">
@@ -233,15 +233,15 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
                     <BriefcaseIcon className="h-2 w-2 text-violet-300" />
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-zinc-100">
-                      {company.role} <span className="text-zinc-500 font-normal">·</span>{' '}
-                      <span className="text-zinc-300 font-normal">{company.name}</span>
+                    <p className="text-sm font-semibold text-[var(--color-fg)]">
+                      {company.role} <span className="text-[var(--color-fg-subtle)] font-normal">·</span>{' '}
+                      <span className="text-[var(--color-fg)] font-normal">{company.name}</span>
                     </p>
                     {company.keyAchievements.length > 0 && (
-                      <ul className="mt-1.5 space-y-1 text-sm text-zinc-400">
+                      <ul className="mt-1.5 space-y-1 text-sm text-[var(--color-fg-muted)]">
                         {company.keyAchievements.map((ach, j) => (
                           <li key={j} className="flex gap-2 leading-relaxed">
-                            <span className="text-zinc-600 flex-shrink-0">•</span>
+                            <span className="text-[var(--color-fg-subtle)] flex-shrink-0">•</span>
                             <span>{ach}</span>
                           </li>
                         ))}
@@ -258,9 +258,9 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
       {/* Pending skeleton when no profile data at all */}
       {isProcessing && skills.length === 0 && companies.length === 0 && (
         <div className="space-y-3">
-          <div className="h-16 bg-zinc-900 border border-zinc-800 rounded-lg animate-pulse" />
-          <div className="h-24 bg-zinc-900 border border-zinc-800 rounded-lg animate-pulse" />
-          <div className="h-32 bg-zinc-900 border border-zinc-800 rounded-lg animate-pulse" />
+          <div className="h-16 bg-[var(--color-bg-elevated)] border border-[var(--color-bg-input)] rounded-lg animate-pulse" />
+          <div className="h-24 bg-[var(--color-bg-elevated)] border border-[var(--color-bg-input)] rounded-lg animate-pulse" />
+          <div className="h-32 bg-[var(--color-bg-elevated)] border border-[var(--color-bg-input)] rounded-lg animate-pulse" />
         </div>
       )}
 
@@ -279,11 +279,11 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
           )}
         </summary>
 
-        <div className="mt-2 pt-3 border-t border-zinc-800">
+        <div className="mt-2 pt-3 border-t border-[var(--color-bg-input)]">
           {/* Reformat button — recruiters/admins only */}
           {canEdit && (
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-[var(--color-fg-subtle)]">
                 {cvTextFormatted
                   ? 'Showing AI-formatted version. Click below to regenerate from raw text.'
                   : 'Showing raw extracted text. Click "Reformat with AI" for a cleaner version.'}
@@ -328,7 +328,7 @@ function SkillChip({ skill, category }: { skill: string; category: 'languages' |
     languages: 'bg-blue-100 dark:bg-blue-950/50 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300',
     frameworks: 'bg-violet-100 dark:bg-violet-950/50 border-violet-300 dark:border-violet-800 text-violet-700 dark:text-violet-300',
     tools: 'bg-emerald-100 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300',
-    other: 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300',
+    other: 'bg-zinc-100 dark:bg-[var(--color-bg-input)] border-zinc-300 dark:border-[var(--color-border)] text-zinc-700 dark:text-[var(--color-fg)]',
   }[category]
   return (
     <span className={`inline-flex items-center rounded-full border text-xs px-2.5 py-1 ${styles}`}>

@@ -101,9 +101,9 @@ export function CvFilePanel({ candidateId, filePath, fileType }: Props) {
             <a
               href={`/api/candidates/${candidateId}/cv`}
               download
-              className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800
-                         text-zinc-400 text-xs font-medium px-3 py-1.5
-                         hover:bg-zinc-700 hover:text-zinc-200 transition-colors"
+              className="flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)]
+                         text-[var(--color-fg-muted)] text-xs font-medium px-3 py-1.5
+                         hover:bg-[var(--color-border)] hover:text-[var(--color-fg)] transition-colors"
             >
               <DownloadIcon className="h-3.5 w-3.5" />
               Download original CV
@@ -111,8 +111,8 @@ export function CvFilePanel({ candidateId, filePath, fileType }: Props) {
 
             {/* File-type badge */}
             {fileType && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-zinc-800 border border-zinc-700
-                               text-zinc-400 text-xs font-medium px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-bg-input)] border border-[var(--color-border)]
+                               text-[var(--color-fg-muted)] text-xs font-medium px-2 py-0.5">
                 <FileTextIcon className="h-3 w-3" />
                 {fileType.toUpperCase()}
               </span>
@@ -121,9 +121,9 @@ export function CvFilePanel({ candidateId, filePath, fileType }: Props) {
             {/* Replace button */}
             <button
               onClick={openModal}
-              className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800
-                         text-zinc-400 text-xs font-medium px-3 py-1.5
-                         hover:bg-zinc-700 hover:text-zinc-200 transition-colors"
+              className="flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)]
+                         text-[var(--color-fg-muted)] text-xs font-medium px-3 py-1.5
+                         hover:bg-[var(--color-border)] hover:text-[var(--color-fg)] transition-colors"
             >
               <UploadIcon className="h-3.5 w-3.5" />
               Replace…
@@ -131,12 +131,12 @@ export function CvFilePanel({ candidateId, filePath, fileType }: Props) {
           </>
         ) : (
           <>
-            <span className="text-xs text-zinc-500 italic">No original file on record</span>
+            <span className="text-xs text-[var(--color-fg-subtle)] italic">No original file on record</span>
             <button
               onClick={openModal}
-              className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800
-                         text-zinc-400 text-xs font-medium px-3 py-1.5
-                         hover:bg-zinc-700 hover:text-zinc-200 transition-colors"
+              className="flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)]
+                         text-[var(--color-fg-muted)] text-xs font-medium px-3 py-1.5
+                         hover:bg-[var(--color-border)] hover:text-[var(--color-fg)] transition-colors"
             >
               <UploadIcon className="h-3.5 w-3.5" />
               Attach CV
@@ -161,17 +161,17 @@ export function CvFilePanel({ candidateId, filePath, fileType }: Props) {
           onClick={closeModal}
         >
           <div
-            className="relative bg-zinc-950 border border-zinc-700 rounded-xl p-6 max-w-md w-[calc(100vw-2rem)] shadow-xl"
+            className="relative bg-[var(--color-bg-app)] border border-[var(--color-border)] rounded-xl p-6 max-w-md w-[calc(100vw-2rem)] shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-sm font-semibold text-zinc-100">
+              <h3 className="text-sm font-semibold text-[var(--color-fg)]">
                 {filePath ? 'Replace original CV' : 'Attach original CV'}
               </h3>
               <button
                 onClick={closeModal}
-                className="text-zinc-500 hover:text-zinc-300 transition-colors rounded-md p-2 md:p-1 hover:bg-zinc-800"
+                className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] transition-colors rounded-md p-2 md:p-1 hover:bg-[var(--color-bg-input)]"
                 aria-label="Close"
               >
                 <XIcon className="h-4 w-4" />
@@ -195,7 +195,7 @@ export function CvFilePanel({ candidateId, filePath, fileType }: Props) {
             )}
 
             {uploadState.status === 'uploading' && (
-              <div className="mt-4 flex items-center justify-center gap-2 text-sm text-zinc-400">
+              <div className="mt-4 flex items-center justify-center gap-2 text-sm text-[var(--color-fg-muted)]">
                 <Loader2Icon className="h-4 w-4 animate-spin" />
                 Uploading…
               </div>

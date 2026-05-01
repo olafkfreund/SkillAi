@@ -64,13 +64,13 @@ export function BulkStatusBar({ selectedIds, onClear, roleId }: Props) {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-zinc-700 px-6 py-4
+      className="fixed bottom-0 left-0 right-0 bg-[var(--color-bg-elevated)] border-t border-[var(--color-border)] px-6 py-4
                  flex items-center gap-4 z-50 shadow-2xl"
       role="region"
       aria-label="Bulk status actions"
     >
       {/* Selection count */}
-      <span className="text-sm font-medium text-zinc-200 flex-shrink-0">
+      <span className="text-sm font-medium text-[var(--color-fg)] flex-shrink-0">
         {selectedIds.length} candidate{selectedIds.length !== 1 ? 's' : ''} selected
       </span>
 
@@ -82,7 +82,7 @@ export function BulkStatusBar({ selectedIds, onClear, roleId }: Props) {
             onChange={(e) => setSelectedStatus(e.target.value as CandidateStatus)}
             disabled={isPending}
             aria-label="Select new status for selected candidates"
-            className="appearance-none rounded-md border border-zinc-600 bg-zinc-800 text-zinc-200
+            className="appearance-none rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)]
                        text-sm px-3 py-1.5 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500
                        focus:border-transparent disabled:opacity-50 cursor-pointer"
           >
@@ -93,7 +93,7 @@ export function BulkStatusBar({ selectedIds, onClear, roleId }: Props) {
             ))}
           </select>
           <svg
-            className="absolute right-1.5 h-4 w-4 text-zinc-500 pointer-events-none"
+            className="absolute right-1.5 h-4 w-4 text-[var(--color-fg-subtle)] pointer-events-none"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -161,7 +161,7 @@ export function BulkStatusBar({ selectedIds, onClear, roleId }: Props) {
       <button
         onClick={onClear}
         disabled={isPending}
-        className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-200
+        className="inline-flex items-center gap-1.5 text-sm text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]
                    transition-colors px-2 py-1.5 flex-shrink-0 disabled:opacity-50"
         aria-label="Clear selection"
       >

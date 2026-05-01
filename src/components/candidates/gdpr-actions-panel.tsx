@@ -68,13 +68,13 @@ export function GdprActionsPanel({ candidateId, candidateName }: Props) {
   return (
     <>
       {/* Panel card */}
-      <div className="bg-zinc-900 rounded-xl border border-red-900/50 p-6 mb-6">
+      <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-red-900/50 p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <ShieldIcon className="h-4 w-4 text-red-400" />
           <h2 className="font-semibold text-red-400">GDPR Actions (Admin only)</h2>
         </div>
 
-        <p className="text-xs text-zinc-500 mb-5">
+        <p className="text-xs text-[var(--color-fg-subtle)] mb-5">
           These actions are irreversible and are provided to fulfil data subject rights
           under the General Data Protection Regulation (GDPR).
         </p>
@@ -84,9 +84,9 @@ export function GdprActionsPanel({ candidateId, candidateName }: Props) {
           <a
             href={`/api/export/dsar/${candidateId}`}
             download
-            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700
-                       bg-zinc-800 text-zinc-300 text-xs font-medium px-3 py-1.5
-                       hover:bg-zinc-700 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)]
+                       bg-[var(--color-bg-input)] text-[var(--color-fg)] text-xs font-medium px-3 py-1.5
+                       hover:bg-[var(--color-border)] transition-colors"
           >
             <DownloadIcon className="h-3.5 w-3.5" />
             Export all data (GDPR)
@@ -123,7 +123,7 @@ export function GdprActionsPanel({ candidateId, candidateName }: Props) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="gdpr-delete-title"
-            className="relative z-10 w-[calc(100vw-2rem)] max-w-md bg-zinc-900 border border-red-900
+            className="relative z-10 w-[calc(100vw-2rem)] max-w-md bg-[var(--color-bg-elevated)] border border-red-900
                        rounded-xl shadow-2xl p-6"
           >
             {/* Header */}
@@ -138,7 +138,7 @@ export function GdprActionsPanel({ candidateId, candidateName }: Props) {
                 type="button"
                 onClick={closeModal}
                 disabled={isPending}
-                className="p-2 md:p-1 rounded text-zinc-500 hover:text-zinc-300 ml-4 shrink-0 disabled:opacity-50"
+                className="p-2 md:p-1 rounded text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] ml-4 shrink-0 disabled:opacity-50"
                 aria-label="Close dialog"
               >
                 <XIcon className="h-4 w-4" />
@@ -146,15 +146,15 @@ export function GdprActionsPanel({ candidateId, candidateName }: Props) {
             </div>
 
             {/* Description */}
-            <div className="text-sm text-zinc-400 space-y-2 mb-5">
+            <div className="text-sm text-[var(--color-fg-muted)] space-y-2 mb-5">
               <p>
-                This will <strong className="text-zinc-200">permanently and irreversibly</strong> delete
+                This will <strong className="text-[var(--color-fg)]">permanently and irreversibly</strong> delete
                 this candidate and all associated data including scores, notes, interview packs,
                 transcripts, and the uploaded CV file.
               </p>
               <p>
                 Audit log entries will be{' '}
-                <strong className="text-zinc-200">retained</strong> but personal
+                <strong className="text-[var(--color-fg)]">retained</strong> but personal
                 identifiers will be redacted to comply with GDPR Article 17 while
                 preserving the system audit trail.
               </p>
@@ -165,10 +165,10 @@ export function GdprActionsPanel({ candidateId, candidateName }: Props) {
             <div className="mb-5">
               <label
                 htmlFor="gdpr-confirm-name"
-                className="block text-xs text-zinc-400 mb-1.5"
+                className="block text-xs text-[var(--color-fg-muted)] mb-1.5"
               >
                 Type the candidate&apos;s full name to confirm:{' '}
-                <span className="font-semibold text-zinc-200">{candidateName}</span>
+                <span className="font-semibold text-[var(--color-fg)]">{candidateName}</span>
               </label>
               <input
                 id="gdpr-confirm-name"
@@ -181,8 +181,8 @@ export function GdprActionsPanel({ candidateId, candidateName }: Props) {
                 disabled={isPending || deleteSuccess}
                 placeholder={candidateName}
                 autoComplete="off"
-                className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2
-                           text-sm text-zinc-100 placeholder-zinc-600
+                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] px-3 py-2
+                           text-sm text-[var(--color-fg)] placeholder-[var(--color-fg-subtle)]
                            focus:border-red-700 focus:outline-none focus:ring-1 focus:ring-red-700
                            disabled:opacity-50"
               />
@@ -206,9 +206,9 @@ export function GdprActionsPanel({ candidateId, candidateName }: Props) {
                 type="button"
                 onClick={closeModal}
                 disabled={isPending}
-                className="rounded-md border border-zinc-700 bg-zinc-800 text-zinc-300
+                className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)]
                            text-sm font-medium px-4 py-2
-                           hover:bg-zinc-700 transition-colors
+                           hover:bg-[var(--color-border)] transition-colors
                            disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel

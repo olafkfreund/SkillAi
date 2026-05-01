@@ -30,12 +30,12 @@ export function ScoreExpandModal({ dimension, score, reasoning }: Props) {
   const preview = isLong ? reasoning.slice(0, PREVIEW_LENGTH).trimEnd() + '…' : reasoning
 
   if (!isLong) {
-    return <p className="mt-1.5 text-xs text-zinc-500">{reasoning}</p>
+    return <p className="mt-1.5 text-xs text-[var(--color-fg-subtle)]">{reasoning}</p>
   }
 
   return (
     <>
-      <p className="mt-1.5 text-xs text-zinc-500">
+      <p className="mt-1.5 text-xs text-[var(--color-fg-subtle)]">
         {preview}{' '}
         <button
           onClick={() => setOpen(true)}
@@ -51,18 +51,18 @@ export function ScoreExpandModal({ dimension, score, reasoning }: Props) {
           onClick={close}
         >
           <div
-            className="relative bg-zinc-950 border border-zinc-700 rounded-xl p-6 max-w-xl w-[calc(100vw-2rem)] shadow-xl"
+            className="relative bg-[var(--color-bg-app)] border border-[var(--color-border)] rounded-xl p-6 max-w-xl w-[calc(100vw-2rem)] shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-semibold text-zinc-100">{dimension}</h3>
-                <p className="text-xs text-zinc-500 mt-0.5">Score: {score}/100</p>
+                <h3 className="text-sm font-semibold text-[var(--color-fg)]">{dimension}</h3>
+                <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5">Score: {score}/100</p>
               </div>
               <button
                 onClick={close}
-                className="text-zinc-500 hover:text-zinc-300 transition-colors rounded-md p-2 md:p-1 hover:bg-zinc-800"
+                className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] transition-colors rounded-md p-2 md:p-1 hover:bg-[var(--color-bg-input)]"
                 aria-label="Close"
               >
                 <XIcon className="h-4 w-4" />
@@ -70,7 +70,7 @@ export function ScoreExpandModal({ dimension, score, reasoning }: Props) {
             </div>
 
             {/* Full reasoning */}
-            <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">{reasoning}</p>
+            <p className="text-sm text-[var(--color-fg)] leading-relaxed whitespace-pre-wrap">{reasoning}</p>
           </div>
         </div>
       )}

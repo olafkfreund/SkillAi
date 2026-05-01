@@ -149,8 +149,8 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
     canEdit || note.authorId === currentUserId
 
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6">
-      <h2 className="font-semibold text-zinc-100 mb-4">
+    <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6">
+      <h2 className="font-semibold text-[var(--color-fg)] mb-4">
         Notes ({notesList.length})
       </h2>
 
@@ -163,8 +163,8 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
             placeholder="Add a note…"
             rows={3}
             disabled={isAdding}
-            className="w-full rounded-md bg-zinc-800 border border-zinc-700
-                       text-sm text-zinc-200 placeholder-zinc-500 px-3 py-2
+            className="w-full rounded-md bg-[var(--color-bg-input)] border border-[var(--color-border)]
+                       text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)] px-3 py-2
                        focus:outline-none focus:ring-1 focus:ring-violet-600
                        resize-none disabled:opacity-50"
           />
@@ -189,13 +189,13 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
 
       {/* Notes list */}
       {notesList.length === 0 ? (
-        <p className="text-sm text-zinc-500">No notes yet.</p>
+        <p className="text-sm text-[var(--color-fg-subtle)]">No notes yet.</p>
       ) : (
         <div className="space-y-3">
           {notesList.map((note) => (
             <div
               key={note.id}
-              className="rounded-md bg-zinc-800 border border-zinc-700 px-4 py-3"
+              className="rounded-md bg-[var(--color-bg-input)] border border-[var(--color-border)] px-4 py-3"
             >
               {editingId === note.id ? (
                 /* Inline edit mode */
@@ -205,8 +205,8 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
                     onChange={(e) => setEditBody(e.target.value)}
                     rows={3}
                     disabled={isEditing}
-                    className="w-full rounded-md bg-zinc-900 border border-zinc-600
-                               text-sm text-zinc-200 px-3 py-2
+                    className="w-full rounded-md bg-[var(--color-bg-elevated)] border border-[var(--color-border)]
+                               text-sm text-[var(--color-fg)] px-3 py-2
                                focus:outline-none focus:ring-1 focus:ring-violet-600
                                resize-none disabled:opacity-50"
                   />
@@ -229,8 +229,8 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
                       type="button"
                       onClick={cancelEditing}
                       disabled={isEditing}
-                      className="inline-flex items-center gap-1 rounded-md border border-zinc-600
-                                 text-zinc-400 hover:text-zinc-200 text-xs font-medium px-2.5 py-1.5
+                      className="inline-flex items-center gap-1 rounded-md border border-[var(--color-border)]
+                                 text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] text-xs font-medium px-2.5 py-1.5
                                  transition-colors disabled:opacity-50"
                     >
                       <XIcon className="h-3 w-3" />
@@ -241,12 +241,12 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
               ) : (
                 /* Display mode */
                 <div>
-                  <p className="text-sm text-zinc-300 whitespace-pre-wrap">{note.body}</p>
+                  <p className="text-sm text-[var(--color-fg)] whitespace-pre-wrap">{note.body}</p>
                   <div className="flex items-center justify-between mt-2">
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-[var(--color-fg-subtle)]">
                       {formatTimestamp(note.createdAt)}
                       {note.isEdited && (
-                        <span className="ml-1.5 text-zinc-600">(edited)</span>
+                        <span className="ml-1.5 text-[var(--color-fg-subtle)]">(edited)</span>
                       )}
                     </p>
 
@@ -271,8 +271,8 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
                               type="button"
                               onClick={() => setConfirmDeleteId(null)}
                               disabled={isDeleting}
-                              className="inline-flex items-center gap-1 rounded-md border border-zinc-600
-                                         text-zinc-400 hover:text-zinc-200 text-xs font-medium px-2 py-1
+                              className="inline-flex items-center gap-1 rounded-md border border-[var(--color-border)]
+                                         text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] text-xs font-medium px-2 py-1
                                          transition-colors disabled:opacity-50"
                             >
                               <XIcon className="h-3 w-3" />
@@ -285,8 +285,8 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
                               type="button"
                               onClick={() => startEditing(note)}
                               aria-label="Edit note"
-                              className="rounded p-2 md:p-1 text-zinc-500 hover:text-zinc-200
-                                         hover:bg-zinc-700 transition-colors"
+                              className="rounded p-2 md:p-1 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]
+                                         hover:bg-[var(--color-bg-input)] transition-colors"
                             >
                               <PencilIcon className="h-3.5 w-3.5" />
                             </button>
@@ -294,8 +294,8 @@ export function NotesPanel({ candidateId, currentUserId, canEdit, initialNotes, 
                               type="button"
                               onClick={() => setConfirmDeleteId(note.id)}
                               aria-label="Delete note"
-                              className="rounded p-2 md:p-1 text-zinc-500 hover:text-red-400
-                                         hover:bg-zinc-700 transition-colors"
+                              className="rounded p-2 md:p-1 text-[var(--color-fg-subtle)] hover:text-red-400
+                                         hover:bg-[var(--color-bg-input)] transition-colors"
                             >
                               <Trash2Icon className="h-3.5 w-3.5" />
                             </button>

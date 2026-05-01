@@ -23,7 +23,7 @@ function FitScoreBadge({ score }: { score: number }) {
       ? 'bg-green-900 border-green-700 text-green-300'
       : score >= 50
         ? 'bg-blue-900 border-blue-700 text-blue-300'
-        : 'bg-zinc-800 border-zinc-600 text-zinc-400'
+        : 'bg-[var(--color-bg-input)] border-[var(--color-border)] text-[var(--color-fg-muted)]'
 
   return (
     <span
@@ -54,13 +54,13 @@ function RoleFitCard({
   }
 
   return (
-    <div className="rounded-lg bg-zinc-800/60 border border-zinc-700 px-4 py-4">
+    <div className="rounded-lg bg-[var(--color-bg-input)]/60 border border-[var(--color-border)] px-4 py-4">
       {/* Card header: title + score + add button */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 min-w-0">
           <Link
             href={`/dashboard/roles/${suggestion.role.id}`}
-            className="text-sm font-semibold text-zinc-100 hover:text-blue-300 transition-colors truncate"
+            className="text-sm font-semibold text-[var(--color-fg)] hover:text-blue-300 transition-colors truncate"
           >
             {suggestion.role.title}
           </Link>
@@ -74,8 +74,8 @@ function RoleFitCard({
             <button
               onClick={handleAdd}
               disabled={addedState === 'pending'}
-              className="flex items-center gap-1.5 rounded-md bg-zinc-700 text-zinc-200 text-xs
-                         font-medium px-3 py-1.5 hover:bg-zinc-600 transition-colors
+              className="flex items-center gap-1.5 rounded-md bg-[var(--color-bg-input)] text-[var(--color-fg)] text-xs
+                         font-medium px-3 py-1.5 hover:bg-[var(--color-border)] transition-colors
                          disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {addedState === 'pending' ? (
@@ -90,13 +90,13 @@ function RoleFitCard({
       </div>
 
       {/* Headline */}
-      <p className="text-xs italic text-zinc-400 mb-3">{suggestion.fit.headline}</p>
+      <p className="text-xs italic text-[var(--color-fg-muted)] mb-3">{suggestion.fit.headline}</p>
 
       {/* Pros */}
       {suggestion.fit.pros.length > 0 && (
         <ul className="mb-2 space-y-1">
           {suggestion.fit.pros.map((pro, i) => (
-            <li key={i} className="flex items-start gap-1.5 text-xs text-zinc-300">
+            <li key={i} className="flex items-start gap-1.5 text-xs text-[var(--color-fg)]">
               <span className="mt-px text-emerald-400 flex-shrink-0">&#10003;</span>
               {pro}
             </li>
@@ -108,7 +108,7 @@ function RoleFitCard({
       {suggestion.fit.cons.length > 0 && (
         <ul className="space-y-1">
           {suggestion.fit.cons.map((con, i) => (
-            <li key={i} className="flex items-start gap-1.5 text-xs text-zinc-400">
+            <li key={i} className="flex items-start gap-1.5 text-xs text-[var(--color-fg-muted)]">
               <span className="mt-px text-amber-400 flex-shrink-0">&#9888;</span>
               {con}
             </li>
@@ -142,30 +142,30 @@ export function MatchingRolesPanel({ candidateId }: Props) {
   }
 
   return (
-    <div className="bg-zinc-900 border border-zinc-700 rounded-xl mb-6 overflow-hidden">
+    <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl mb-6 overflow-hidden">
       {/* Collapsible toggle */}
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         className="w-full flex items-center justify-between px-4 py-4 text-left
-                   hover:bg-zinc-800/50 transition-colors"
+                   hover:bg-[var(--color-bg-input)]/50 transition-colors"
       >
         <div className="flex items-center gap-2">
           <BriefcaseIcon className="h-4 w-4 text-violet-400 flex-shrink-0" />
-          <span className="font-semibold text-zinc-100">Matching Roles</span>
+          <span className="font-semibold text-[var(--color-fg)]">Matching Roles</span>
         </div>
         {isOpen ? (
-          <ChevronUpIcon className="h-4 w-4 text-zinc-500" />
+          <ChevronUpIcon className="h-4 w-4 text-[var(--color-fg-subtle)]" />
         ) : (
-          <ChevronDownIcon className="h-4 w-4 text-zinc-500" />
+          <ChevronDownIcon className="h-4 w-4 text-[var(--color-fg-subtle)]" />
         )}
       </button>
 
       {isOpen && (
-        <div className="px-4 pb-5 border-t border-zinc-800">
+        <div className="px-4 pb-5 border-t border-[var(--color-border)]">
           {/* Analyse button */}
           <div className="flex items-center justify-between py-4">
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-[var(--color-fg-subtle)]">
               {hasSearched
                 ? suggestions && suggestions.length > 0
                   ? `${suggestions.length} role${suggestions.length !== 1 ? 's' : ''} analysed`
@@ -190,14 +190,14 @@ export function MatchingRolesPanel({ candidateId }: Props) {
 
           {/* Loading state */}
           {isPending && (
-            <p className="text-sm text-zinc-500 mb-4">
+            <p className="text-sm text-[var(--color-fg-subtle)] mb-4">
               Analysing candidate against active roles…
             </p>
           )}
 
           {/* Empty state after search */}
           {!isPending && hasSearched && suggestions !== null && suggestions.length === 0 && (
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-[var(--color-fg-subtle)]">
               No active roles found, or candidate profile needs more data.
             </p>
           )}

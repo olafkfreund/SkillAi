@@ -41,14 +41,14 @@ interface Props {
 
 const SOURCE_ICONS: Record<string, React.ReactNode> = {
   linkedin:     <Link2 className="h-3.5 w-3.5 text-blue-400" />,
-  github:       <GitBranch className="h-3.5 w-3.5 text-zinc-400" />,
+  github:       <GitBranch className="h-3.5 w-3.5 text-[var(--color-fg-muted)]" />,
   reddit:       <MessageSquare className="h-3.5 w-3.5 text-orange-400" />,
   twitter:      <Globe className="h-3.5 w-3.5 text-sky-400" />,
   facebook:     <Globe className="h-3.5 w-3.5 text-blue-400" />,
   stackoverflow:<Globe className="h-3.5 w-3.5 text-orange-400" />,
-  medium:       <BookOpen className="h-3.5 w-3.5 text-zinc-400" />,
-  devto:        <Code2 className="h-3.5 w-3.5 text-zinc-400" />,
-  web:          <Globe className="h-3.5 w-3.5 text-zinc-500" />,
+  medium:       <BookOpen className="h-3.5 w-3.5 text-[var(--color-fg-muted)]" />,
+  devto:        <Code2 className="h-3.5 w-3.5 text-[var(--color-fg-muted)]" />,
+  web:          <Globe className="h-3.5 w-3.5 text-[var(--color-fg-subtle)]" />,
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -118,20 +118,20 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
       {/* Controls */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-zinc-500 mb-1">LinkedIn URL</label>
+          <label className="block text-xs font-medium text-[var(--color-fg-subtle)] mb-1">LinkedIn URL</label>
           <input
             type="url"
             value={linkedinUrl}
             onChange={(e) => setLinkedinUrl(e.target.value)}
             placeholder="https://linkedin.com/in/username"
             disabled={isPending}
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-zinc-500 mb-1">GitHub username</label>
+          <label className="block text-xs font-medium text-[var(--color-fg-subtle)] mb-1">GitHub username</label>
           <div className="flex gap-2">
             <input
               type="text"
@@ -139,8 +139,8 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
               onChange={(e) => setGithubUsername(e.target.value)}
               placeholder="octocat"
               disabled={isPending}
-              className="flex-1 rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                         placeholder:text-zinc-500
+              className="flex-1 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                         placeholder:text-[var(--color-fg-subtle)]
                          focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
             <button
@@ -177,29 +177,29 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
 
       {/* GitHub profile card */}
       {github && (
-        <div className="rounded-xl border border-zinc-700 bg-zinc-800 p-4">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-input)] p-4">
           <div className="flex items-start gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={github.avatarUrl}
               alt={github.login}
-              className="h-14 w-14 rounded-full border border-zinc-600 shrink-0"
+              className="h-14 w-14 rounded-full border border-[var(--color-border)] shrink-0"
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <GitBranch className="h-4 w-4 text-zinc-400" />
+                <GitBranch className="h-4 w-4 text-[var(--color-fg-muted)]" />
                 <a
                   href={github.profileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-semibold text-zinc-100 hover:text-blue-400"
+                  className="font-semibold text-[var(--color-fg)] hover:text-blue-400"
                 >
                   {github.name ?? github.login}
                 </a>
-                <span className="text-zinc-500 text-sm">@{github.login}</span>
+                <span className="text-[var(--color-fg-subtle)] text-sm">@{github.login}</span>
               </div>
-              {github.bio && <p className="text-sm text-zinc-400 mt-1">{github.bio}</p>}
-              <div className="flex gap-4 mt-2 text-xs text-zinc-500">
+              {github.bio && <p className="text-sm text-[var(--color-fg-muted)] mt-1">{github.bio}</p>}
+              <div className="flex gap-4 mt-2 text-xs text-[var(--color-fg-subtle)]">
                 <span className="flex items-center gap-1">
                   <BookOpen className="h-3.5 w-3.5" /> {github.publicRepos} repos
                 </span>
@@ -212,28 +212,28 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
 
           {github.topRepos.length > 0 && (
             <div className="mt-4 space-y-2">
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Top repositories</p>
+              <p className="text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide">Top repositories</p>
               {github.topRepos.map((repo) => (
                 <a
                   key={repo.name}
                   href={repo.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-start justify-between rounded-lg border border-zinc-700 bg-zinc-900
+                  className="flex items-start justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)]
                              px-3 py-2 hover:border-blue-500 hover:bg-blue-950/40 transition-colors"
                 >
                   <div className="min-w-0">
                     <span className="text-sm font-medium text-blue-400">{repo.name}</span>
                     {repo.language && (
-                      <span className="ml-2 text-xs text-zinc-500 bg-zinc-700 rounded px-1.5 py-0.5">
+                      <span className="ml-2 text-xs text-[var(--color-fg-subtle)] bg-[var(--color-border)] rounded px-1.5 py-0.5">
                         {repo.language}
                       </span>
                     )}
                     {repo.description && (
-                      <p className="text-xs text-zinc-500 mt-0.5 truncate">{repo.description}</p>
+                      <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5 truncate">{repo.description}</p>
                     )}
                   </div>
-                  <span className="flex items-center gap-1 text-xs text-zinc-500 ml-3 shrink-0">
+                  <span className="flex items-center gap-1 text-xs text-[var(--color-fg-subtle)] ml-3 shrink-0">
                     <Star className="h-3 w-3" /> {repo.stars}
                   </span>
                 </a>
@@ -246,7 +246,7 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
       {/* Confirmed profiles (Wave 2 enrichment) */}
       {enrichment?.verifiedProfiles && enrichment.verifiedProfiles.length > 0 && (
         <section>
-          <h4 className="text-sm font-medium text-zinc-200 mb-2">
+          <h4 className="text-sm font-medium text-[var(--color-fg)] mb-2">
             Confirmed profiles ({enrichment.verifiedProfiles.length})
           </h4>
           <div className="flex flex-col gap-1.5">
@@ -269,24 +269,24 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
 
       {/* Stack Overflow card */}
       {enrichment?.stackOverflowProfile && (
-        <section className="rounded-md border border-zinc-700 bg-zinc-900/50 p-3">
+        <section className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/50 p-3">
           <div className="flex items-start gap-2">
-            <div className="text-xs text-zinc-400">Stack Overflow</div>
+            <div className="text-xs text-[var(--color-fg-muted)]">Stack Overflow</div>
             <div className="flex-1">
               <a
                 href={enrichment.stackOverflowProfile.profileUrl}
                 target="_blank" rel="noopener noreferrer"
-                className="text-sm text-zinc-200 hover:text-white"
+                className="text-sm text-[var(--color-fg)] hover:text-white"
               >
                 {enrichment.stackOverflowProfile.username}
               </a>
-              <div className="mt-1 text-xs text-zinc-500">
-                Reputation: <span className="text-zinc-300">{enrichment.stackOverflowProfile.reputation.toLocaleString('en-GB')}</span>
+              <div className="mt-1 text-xs text-[var(--color-fg-subtle)]">
+                Reputation: <span className="text-[var(--color-fg)]">{enrichment.stackOverflowProfile.reputation.toLocaleString('en-GB')}</span>
               </div>
               {enrichment.stackOverflowProfile.topTags?.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1">
                   {enrichment.stackOverflowProfile.topTags.slice(0, 5).map((tag) => (
-                    <span key={tag} className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-300">
+                    <span key={tag} className="rounded bg-[var(--color-bg-input)] px-1.5 py-0.5 text-[10px] text-[var(--color-fg)]">
                       {tag}
                     </span>
                   ))}
@@ -299,17 +299,17 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
 
       {/* Personal site summary card */}
       {enrichment?.personalSiteSummary && (
-        <section className="rounded-md border border-zinc-700 bg-zinc-900/50 p-3">
-          <div className="text-xs text-zinc-400 mb-1">Personal site</div>
+        <section className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)]/50 p-3">
+          <div className="text-xs text-[var(--color-fg-muted)] mb-1">Personal site</div>
           <a
             href={enrichment.personalSiteSummary.url}
             target="_blank" rel="noopener noreferrer"
-            className="text-sm font-medium text-zinc-200 hover:text-white"
+            className="text-sm font-medium text-[var(--color-fg)] hover:text-white"
           >
             {enrichment.personalSiteSummary.title || enrichment.personalSiteSummary.url}
           </a>
           {enrichment.personalSiteSummary.aiSummary && (
-            <p className="mt-1.5 text-xs text-zinc-400 leading-relaxed">
+            <p className="mt-1.5 text-xs text-[var(--color-fg-muted)] leading-relaxed">
               {enrichment.personalSiteSummary.aiSummary}
             </p>
           )}
@@ -324,8 +324,8 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
             {Object.entries(sourceCounts).map(([source, count]) => (
               <span
                 key={source}
-                className="flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-800
-                           px-2.5 py-1 text-xs text-zinc-400"
+                className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-input)]
+                           px-2.5 py-1 text-xs text-[var(--color-fg-muted)]"
               >
                 {SOURCE_ICONS[source] ?? SOURCE_ICONS.web}
                 {SOURCE_LABELS[source] ?? source} ({count})
@@ -339,20 +339,20 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
               href={hit.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex gap-3 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3
+              className="flex gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-input)] px-4 py-3
                          hover:border-blue-500 hover:shadow-sm transition-all group"
             >
               <div className="mt-0.5 shrink-0">
                 {SOURCE_ICONS[hit.source] ?? SOURCE_ICONS.web}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-zinc-100 group-hover:text-blue-400 truncate">
+                <p className="text-sm font-medium text-[var(--color-fg)] group-hover:text-blue-400 truncate">
                   {hit.title}
                 </p>
-                <p className="text-xs text-zinc-500 mt-0.5 line-clamp-2">{hit.description}</p>
-                <p className="text-xs text-zinc-600 mt-1 truncate">{hit.url}</p>
+                <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5 line-clamp-2">{hit.description}</p>
+                <p className="text-xs text-[var(--color-fg-subtle)] mt-1 truncate">{hit.url}</p>
               </div>
-              <ExternalLink className="h-3.5 w-3.5 text-zinc-600 group-hover:text-blue-400 shrink-0 mt-0.5" />
+              <ExternalLink className="h-3.5 w-3.5 text-[var(--color-fg-subtle)] group-hover:text-blue-400 shrink-0 mt-0.5" />
             </a>
           ))}
 
@@ -371,7 +371,7 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
           )}
 
           {enrichment?.searchedAt && (
-            <p className="text-xs text-zinc-500 mt-2" suppressHydrationWarning>
+            <p className="text-xs text-[var(--color-fg-subtle)] mt-2" suppressHydrationWarning>
               Last searched {new Date(enrichment.searchedAt).toLocaleString('en-GB')}
             </p>
           )}
@@ -379,7 +379,7 @@ export function EnrichmentPanel({ candidateId, initialLinkedinUrl, initialGithub
       )}
 
       {enrichment && hits.length === 0 && !github && !isPending && (
-        <p className="text-sm text-zinc-500 text-center py-4">
+        <p className="text-sm text-[var(--color-fg-subtle)] text-center py-4">
           No results found. Try adding a LinkedIn URL or GitHub username for better results.
         </p>
       )}
