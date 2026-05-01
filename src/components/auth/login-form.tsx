@@ -69,7 +69,7 @@ export function LoginForm({ callbackUrl, error }: Props) {
       <div>
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-zinc-300 mb-1"
+          className="block text-sm font-medium text-[var(--color-fg)] mb-1"
         >
           Email
         </label>
@@ -80,8 +80,8 @@ export function LoginForm({ callbackUrl, error }: Props) {
           autoComplete="email"
           required
           disabled={pending}
-          className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                     placeholder:text-zinc-500
+          className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                     placeholder:text-[var(--color-fg-subtle)]
                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                      disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="you@company.com"
@@ -91,7 +91,7 @@ export function LoginForm({ callbackUrl, error }: Props) {
       <div>
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-zinc-300 mb-1"
+          className="block text-sm font-medium text-[var(--color-fg)] mb-1"
         >
           Password
         </label>
@@ -102,8 +102,8 @@ export function LoginForm({ callbackUrl, error }: Props) {
           autoComplete="current-password"
           required
           disabled={pending}
-          className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                     placeholder:text-zinc-500
+          className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                     placeholder:text-[var(--color-fg-subtle)]
                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                      disabled:opacity-50 disabled:cursor-not-allowed"
         />

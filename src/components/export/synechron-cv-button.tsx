@@ -48,7 +48,7 @@ export function SynechronCvButton({ candidateId, className, disabled }: Synechro
   }
 
   const baseClass =
-    'inline-flex items-center gap-1.5 rounded-md border border-zinc-600 text-sm text-zinc-400 px-3 py-1.5 hover:bg-zinc-800 hover:text-zinc-200 transition-colors'
+    'inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] text-sm text-[var(--color-fg-muted)] px-3 py-1.5 hover:bg-[var(--color-bg-input)] hover:text-[var(--color-fg)] transition-colors'
   const stateClass = loading || disabled ? 'opacity-60 pointer-events-none' : ''
   const merged = [className ?? baseClass, stateClass].filter(Boolean).join(' ')
 

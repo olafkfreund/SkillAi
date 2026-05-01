@@ -27,7 +27,7 @@ export function DownloadPdfButton({ href, label = 'Download PDF', className }: P
       rel="noopener noreferrer"
       className={
         className ??
-        'inline-flex items-center gap-1.5 rounded-md border border-zinc-600 text-sm text-zinc-400 px-3 py-1.5 hover:bg-zinc-800 hover:text-zinc-200 transition-colors'
+        'inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] text-sm text-[var(--color-fg-muted)] px-3 py-1.5 hover:bg-[var(--color-bg-input)] hover:text-[var(--color-fg)] transition-colors'
       }
     >
       <DownloadIcon className="h-3.5 w-3.5" />

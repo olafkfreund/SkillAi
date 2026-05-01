@@ -44,7 +44,7 @@ export function AcceptInviteForm({ token, prefilledEmail }: Props) {
 
       {/* Name */}
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-zinc-300 mb-1.5">
+        <label htmlFor="name" className="block text-sm font-medium text-[var(--color-fg)] mb-1.5">
           Full name
         </label>
         <input
@@ -53,8 +53,8 @@ export function AcceptInviteForm({ token, prefilledEmail }: Props) {
           type="text"
           autoComplete="name"
           required
-          className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2.5 text-sm
-                     text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2
+          className="w-full rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)] px-3 py-2.5 text-sm
+                     text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2
                      focus:ring-blue-600 focus:border-transparent"
           placeholder="Jane Smith"
         />
@@ -65,7 +65,7 @@ export function AcceptInviteForm({ token, prefilledEmail }: Props) {
 
       {/* Email */}
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-1.5">
+        <label htmlFor="email" className="block text-sm font-medium text-[var(--color-fg)] mb-1.5">
           Email address
         </label>
         <input
@@ -76,8 +76,8 @@ export function AcceptInviteForm({ token, prefilledEmail }: Props) {
           required
           defaultValue={prefilledEmail}
           readOnly={!!prefilledEmail}
-          className={`w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2.5 text-sm
-                     text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2
+          className={`w-full rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)] px-3 py-2.5 text-sm
+                     text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2
                      focus:ring-blue-600 focus:border-transparent
                      ${prefilledEmail ? 'opacity-75 cursor-not-allowed' : ''}`}
           placeholder="you@company.com"
@@ -89,7 +89,7 @@ export function AcceptInviteForm({ token, prefilledEmail }: Props) {
 
       {/* Password */}
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-zinc-300 mb-1.5">
+        <label htmlFor="password" className="block text-sm font-medium text-[var(--color-fg)] mb-1.5">
           Password
         </label>
         <input
@@ -98,8 +98,8 @@ export function AcceptInviteForm({ token, prefilledEmail }: Props) {
           type="password"
           autoComplete="new-password"
           required
-          className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2.5 text-sm
-                     text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2
+          className="w-full rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)] px-3 py-2.5 text-sm
+                     text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2
                      focus:ring-blue-600 focus:border-transparent"
           placeholder="At least 8 characters"
         />
@@ -110,7 +110,7 @@ export function AcceptInviteForm({ token, prefilledEmail }: Props) {
 
       {/* Confirm Password */}
       <div>
-        <label htmlFor="confirmPassword" className="block text-sm font-medium text-zinc-300 mb-1.5">
+        <label htmlFor="confirmPassword" className="block text-sm font-medium text-[var(--color-fg)] mb-1.5">
           Confirm password
         </label>
         <input
@@ -119,8 +119,8 @@ export function AcceptInviteForm({ token, prefilledEmail }: Props) {
           type="password"
           autoComplete="new-password"
           required
-          className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2.5 text-sm
-                     text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2
+          className="w-full rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)] px-3 py-2.5 text-sm
+                     text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2
                      focus:ring-blue-600 focus:border-transparent"
           placeholder="Repeat your password"
         />
