@@ -60,7 +60,7 @@ export function AgencyLogoUpload({ agencyId, currentLogoPath }: Props) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Agency logo</p>
+      <p className="text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide">Agency logo</p>
 
       {/* Current logo preview + remove */}
       {currentLogoPath && (
@@ -70,7 +70,7 @@ export function AgencyLogoUpload({ agencyId, currentLogoPath }: Props) {
             alt="Agency logo"
             width={96}
             height={96}
-            className="rounded-lg border border-zinc-700 bg-zinc-800 object-contain"
+            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-input)] object-contain"
             style={{ width: 96, height: 96 }}
           />
           <button
@@ -97,10 +97,10 @@ export function AgencyLogoUpload({ agencyId, currentLogoPath }: Props) {
           ref={fileInputRef}
           type="file"
           accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
-          className="block w-full text-sm text-zinc-400
-                     file:mr-3 file:rounded file:border-0 file:bg-zinc-700
-                     file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-200
-                     file:cursor-pointer hover:file:bg-zinc-600"
+          className="block w-full text-sm text-[var(--color-fg-muted)]
+                     file:mr-3 file:rounded file:border-0 file:bg-[var(--color-border)]
+                     file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-[var(--color-fg)]
+                     file:cursor-pointer hover:file:bg-[var(--color-border)]"
         />
         <button
           type="button"
@@ -119,7 +119,7 @@ export function AgencyLogoUpload({ agencyId, currentLogoPath }: Props) {
         </button>
       </div>
 
-      <p className="text-xs text-zinc-600">PNG, JPEG or WebP — max 2 MB</p>
+      <p className="text-xs text-[var(--color-fg-subtle)]">PNG, JPEG or WebP — max 2 MB</p>
 
       {error && (
         <p role="alert" className="text-xs text-red-400">

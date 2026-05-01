@@ -16,11 +16,11 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6">
+      <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6">
         <CustomerLogoUpload customerId={customer.id} currentLogoPath={customer.logoPath ?? null} />
       </div>
-      <form action={action} className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 space-y-4">
-        <h3 className="font-semibold text-zinc-100">Customer details</h3>
+      <form action={action} className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 space-y-4">
+        <h3 className="font-semibold text-[var(--color-fg)]">Customer details</h3>
 
         {state?.error && (
           <div className="rounded-md bg-red-950 border border-red-800 px-4 py-3 text-sm text-red-400">
@@ -29,7 +29,7 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
         )}
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="name">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="name">
             Company name <span className="text-red-500">*</span>
           </label>
           <input
@@ -38,8 +38,8 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
             type="text"
             required
             defaultValue={customer.name}
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {state?.fieldErrors?.name && (
@@ -48,7 +48,7 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="contactName">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="contactName">
             Contact name
           </label>
           <input
@@ -56,14 +56,14 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
             name="contactName"
             type="text"
             defaultValue={customer.contactName ?? ''}
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="contactEmail">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="contactEmail">
             Contact email
           </label>
           <input
@@ -71,8 +71,8 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
             name="contactEmail"
             type="email"
             defaultValue={customer.contactEmail ?? ''}
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {state?.fieldErrors?.contactEmail && (
@@ -81,7 +81,7 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="contactPhone">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="contactPhone">
             Contact phone
           </label>
           <input
@@ -89,14 +89,14 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
             name="contactPhone"
             type="tel"
             defaultValue={customer.contactPhone ?? ''}
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="website">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="website">
             Website
           </label>
           <input
@@ -104,14 +104,14 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
             name="website"
             type="url"
             defaultValue={customer.website ?? ''}
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="portalBaseUrl">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="portalBaseUrl">
             Customer portal base URL
           </label>
           <input
@@ -120,11 +120,11 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
             type="url"
             defaultValue={customer.portalBaseUrl ?? ''}
             placeholder="https://jobs.acme.com"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-[var(--color-fg-subtle)]">
             Used as the base for per-role portal links. Each role can append its own path.
           </p>
           {state?.fieldErrors?.portalBaseUrl && (
@@ -133,7 +133,7 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="roleIdLabel">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="roleIdLabel">
             Role ID label
           </label>
           <input
@@ -143,11 +143,11 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
             maxLength={60}
             defaultValue={customer.roleIdLabel ?? ''}
             placeholder="e.g. CtoolId"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-[var(--color-fg-subtle)]">
             Optional. The name your customer uses for their role identifiers (e.g. CtoolId, Job Number, Req ID).
             Leave blank to use the default &ldquo;Customer Role ID&rdquo;.
           </p>
@@ -157,7 +157,7 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="notes">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="notes">
             Notes
           </label>
           <textarea
@@ -165,8 +165,8 @@ export function CustomerEditForm({ customer, isAdmin }: Props) {
             name="notes"
             rows={4}
             defaultValue={customer.notes ?? ''}
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />
         </div>

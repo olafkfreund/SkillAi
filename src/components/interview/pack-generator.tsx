@@ -124,10 +124,10 @@ export function PackGenerator({ candidateId, roleId, roleName, candidateLanguage
           onClick={(e) => { if (e.target === e.currentTarget && !pending) setOpen(false) }}
           onKeyDown={(e) => { if (e.key === 'Escape' && !pending) setOpen(false) }}
         >
-          <div className="bg-zinc-900 rounded-xl shadow-xl border border-zinc-700 w-[calc(100vw-2rem)] max-w-md p-6">
-            <h2 id="pack-gen-title" className="text-lg font-semibold text-zinc-100 mb-1">Generate interview pack</h2>
-            <p className="text-sm text-zinc-500 mb-5">
-              Role: <span className="font-medium text-zinc-300">{roleName}</span>
+          <div className="bg-[var(--color-bg-elevated)] rounded-xl shadow-xl border border-[var(--color-border)] w-[calc(100vw-2rem)] max-w-md p-6">
+            <h2 id="pack-gen-title" className="text-lg font-semibold text-[var(--color-fg)] mb-1">Generate interview pack</h2>
+            <p className="text-sm text-[var(--color-fg-subtle)] mb-5">
+              Role: <span className="font-medium text-[var(--color-fg)]">{roleName}</span>
             </p>
 
             {state && !state.success && (
@@ -151,8 +151,8 @@ export function PackGenerator({ candidateId, roleId, roleName, candidateLanguage
 
               {/* Pack type radio group */}
               <fieldset className="space-y-2">
-                <legend className="text-sm font-medium text-zinc-300 mb-1">Pack type</legend>
-                <label className="flex items-start gap-3 cursor-pointer rounded-md border border-zinc-700 bg-zinc-800/50 p-3 hover:bg-zinc-800 transition-colors">
+                <legend className="text-sm font-medium text-[var(--color-fg)] mb-1">Pack type</legend>
+                <label className="flex items-start gap-3 cursor-pointer rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)]/50 p-3 hover:bg-[var(--color-bg-input)] transition-colors">
                   <input
                     type="radio"
                     name="packTypeRadio"
@@ -160,14 +160,14 @@ export function PackGenerator({ candidateId, roleId, roleName, candidateLanguage
                     checked={packType === 'full'}
                     onChange={() => setPackType('full')}
                     disabled={pending}
-                    className="mt-0.5 h-4 w-4 border-zinc-600 text-violet-600"
+                    className="mt-0.5 h-4 w-4 border-[var(--color-border)] text-violet-600"
                   />
-                  <span className="text-sm text-zinc-100">
+                  <span className="text-sm text-[var(--color-fg)]">
                     Full interview pack
-                    <span className="block text-xs text-zinc-500">8-12 questions · ~60 min</span>
+                    <span className="block text-xs text-[var(--color-fg-subtle)]">8-12 questions · ~60 min</span>
                   </span>
                 </label>
-                <label className="flex items-start gap-3 cursor-pointer rounded-md border border-zinc-700 bg-zinc-800/50 p-3 hover:bg-zinc-800 transition-colors">
+                <label className="flex items-start gap-3 cursor-pointer rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)]/50 p-3 hover:bg-[var(--color-bg-input)] transition-colors">
                   <input
                     type="radio"
                     name="packTypeRadio"
@@ -175,11 +175,11 @@ export function PackGenerator({ candidateId, roleId, roleName, candidateLanguage
                     checked={packType === 'pre_screening'}
                     onChange={() => setPackType('pre_screening')}
                     disabled={pending}
-                    className="mt-0.5 h-4 w-4 border-zinc-600 text-violet-600"
+                    className="mt-0.5 h-4 w-4 border-[var(--color-border)] text-violet-600"
                   />
-                  <span className="text-sm text-zinc-100">
+                  <span className="text-sm text-[var(--color-fg)]">
                     Pre-screening call
-                    <span className="block text-xs text-zinc-500">5 questions · ~30 min · quick fit check</span>
+                    <span className="block text-xs text-[var(--color-fg-subtle)]">5 questions · ~30 min · quick fit check</span>
                   </span>
                 </label>
               </fieldset>
@@ -191,11 +191,11 @@ export function PackGenerator({ candidateId, roleId, roleName, candidateLanguage
                   checked={effectiveIncludeCode}
                   onChange={(e) => setIncludeCode(e.target.checked)}
                   disabled={pending || isPreScreening}
-                  className="mt-0.5 h-4 w-4 rounded border-zinc-600 text-violet-600"
+                  className="mt-0.5 h-4 w-4 rounded border-[var(--color-border)] text-violet-600"
                 />
-                <span className="text-sm text-zinc-300">
+                <span className="text-sm text-[var(--color-fg)]">
                   Include code challenge
-                  <span className="block text-xs text-zinc-500">
+                  <span className="block text-xs text-[var(--color-fg-subtle)]">
                     {isPreScreening
                       ? 'Not available for pre-screening calls'
                       : 'AI generates a language-appropriate coding exercise'}
@@ -218,8 +218,8 @@ export function PackGenerator({ candidateId, roleId, roleName, candidateLanguage
                   type="button"
                   onClick={() => setOpen(false)}
                   disabled={pending}
-                  className="flex-1 rounded-md border border-zinc-600 text-sm text-zinc-400
-                             py-2.5 hover:bg-zinc-800 disabled:opacity-50 transition-colors"
+                  className="flex-1 rounded-md border border-[var(--color-border)] text-sm text-[var(--color-fg-muted)]
+                             py-2.5 hover:bg-[var(--color-bg-input)] disabled:opacity-50 transition-colors"
                 >
                   Cancel
                 </button>

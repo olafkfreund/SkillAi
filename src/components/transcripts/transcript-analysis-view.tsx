@@ -43,37 +43,37 @@ function QuestionAccordion({ responses }: { responses: QuestionResponse[] }) {
         const isOpen = openIndex === i
         const quality = QUALITY_CONFIG[qr.quality]
         return (
-          <div key={i} className="rounded-lg border border-zinc-700 overflow-hidden">
+          <div key={i} className="rounded-lg border border-[var(--color-border)] overflow-hidden">
             <button
               type="button"
-              className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-zinc-800 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-[var(--color-bg-input)] transition-colors"
               onClick={() => setOpenIndex(isOpen ? null : i)}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <span className={`flex-shrink-0 rounded border px-2 py-0.5 text-xs font-medium ${quality.classes}`}>
                   {quality.label}
                 </span>
-                <span className="text-sm text-zinc-200 truncate">{qr.questionText}</span>
+                <span className="text-sm text-[var(--color-fg)] truncate">{qr.questionText}</span>
               </div>
               {isOpen
-                ? <ChevronUpIcon className="h-4 w-4 text-zinc-500 flex-shrink-0 ml-2" />
-                : <ChevronDownIcon className="h-4 w-4 text-zinc-500 flex-shrink-0 ml-2" />
+                ? <ChevronUpIcon className="h-4 w-4 text-[var(--color-fg-subtle)] flex-shrink-0 ml-2" />
+                : <ChevronDownIcon className="h-4 w-4 text-[var(--color-fg-subtle)] flex-shrink-0 ml-2" />
               }
             </button>
             {isOpen && (
-              <div className="px-4 pb-4 pt-1 border-t border-zinc-700 space-y-3">
+              <div className="px-4 pb-4 pt-1 border-t border-[var(--color-border)] space-y-3">
                 {qr.transcriptExcerpt && (
                   <div>
-                    <p className="text-xs font-medium text-zinc-500 mb-1">Transcript excerpt</p>
-                    <p className="text-sm text-zinc-400 italic font-mono bg-zinc-800 rounded px-3 py-2">
+                    <p className="text-xs font-medium text-[var(--color-fg-subtle)] mb-1">Transcript excerpt</p>
+                    <p className="text-sm text-[var(--color-fg-muted)] italic font-mono bg-[var(--color-bg-input)] rounded px-3 py-2">
                       &ldquo;{qr.transcriptExcerpt}&rdquo;
                     </p>
                   </div>
                 )}
                 {qr.notes && (
                   <div>
-                    <p className="text-xs font-medium text-zinc-500 mb-1">Assessor notes</p>
-                    <p className="text-sm text-zinc-400">{qr.notes}</p>
+                    <p className="text-xs font-medium text-[var(--color-fg-subtle)] mb-1">Assessor notes</p>
+                    <p className="text-sm text-[var(--color-fg-muted)]">{qr.notes}</p>
                   </div>
                 )}
               </div>
@@ -148,7 +148,7 @@ export function TranscriptAnalysisView({ analysis }: Props) {
       {/* Question responses accordion */}
       {questionResponses.length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold text-zinc-300 mb-3">
+          <h4 className="text-sm font-semibold text-[var(--color-fg)] mb-3">
             Question-by-Question Responses
           </h4>
           <QuestionAccordion responses={questionResponses} />

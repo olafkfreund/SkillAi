@@ -88,8 +88,8 @@ export function TranscriptScoreCard({
       <div className="flex items-center justify-between">
         {overallScore !== null && (
           <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-bold text-zinc-100">{overallScore}</span>
-            <span className="text-sm text-zinc-500">/100</span>
+            <span className="text-3xl font-bold text-[var(--color-fg)]">{overallScore}</span>
+            <span className="text-sm text-[var(--color-fg-subtle)]">/100</span>
           </div>
         )}
         {decision && DecisionIcon && (
@@ -105,19 +105,19 @@ export function TranscriptScoreCard({
         {dimensions.map((dim) => (
           <div key={dim.label}>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-sm font-medium text-zinc-300">{dim.label}</span>
-              <span className="text-sm font-bold text-zinc-100">
+              <span className="text-sm font-medium text-[var(--color-fg)]">{dim.label}</span>
+              <span className="text-sm font-bold text-[var(--color-fg)]">
                 {dim.score !== null ? `${dim.score}/100` : '—'}
               </span>
             </div>
-            <div className="h-2 rounded-full bg-zinc-700 overflow-hidden">
+            <div className="h-2 rounded-full bg-[var(--color-border)] overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${dim.color}`}
                 style={{ width: `${dim.score ?? 0}%` }}
               />
             </div>
             {dim.reasoning && (
-              <p className="mt-1.5 text-xs text-zinc-500 line-clamp-2">{dim.reasoning}</p>
+              <p className="mt-1.5 text-xs text-[var(--color-fg-subtle)] line-clamp-2">{dim.reasoning}</p>
             )}
           </div>
         ))}
@@ -125,8 +125,8 @@ export function TranscriptScoreCard({
 
       {/* Summary */}
       {summary && (
-        <div className="pt-4 border-t border-zinc-700">
-          <p className="text-sm text-zinc-400">{summary}</p>
+        <div className="pt-4 border-t border-[var(--color-border)]">
+          <p className="text-sm text-[var(--color-fg-muted)]">{summary}</p>
         </div>
       )}
     </div>

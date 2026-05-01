@@ -112,8 +112,8 @@ export function TranscriptUploadForm({ candidateId, roleId, packs = [], userRole
   }
 
   return (
-    <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-5 space-y-4">
-      <h3 className="text-sm font-semibold text-zinc-100">Upload interview transcript</h3>
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-5 space-y-4">
+      <h3 className="text-sm font-semibold text-[var(--color-fg)]">Upload interview transcript</h3>
 
       {/* Upload error */}
       {state && !state.success && (
@@ -130,7 +130,7 @@ export function TranscriptUploadForm({ candidateId, roleId, packs = [], userRole
 
         {/* Platform selector */}
         <div>
-          <label className="block text-xs font-medium text-zinc-400 mb-1.5">Platform</label>
+          <label className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1.5">Platform</label>
           <div className="flex flex-wrap gap-2">
             {(Object.entries(PLATFORM_LABELS) as [Platform, string][]).map(([key, label]) => (
               <button
@@ -140,7 +140,7 @@ export function TranscriptUploadForm({ candidateId, roleId, packs = [], userRole
                 className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                   platform === key
                     ? 'bg-blue-600 text-white'
-                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200 border border-zinc-600'
+                    : 'bg-[var(--color-bg-input)] text-[var(--color-fg-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-fg)] border border-[var(--color-border)]'
                 }`}
               >
                 {label}
@@ -152,13 +152,13 @@ export function TranscriptUploadForm({ candidateId, roleId, packs = [], userRole
         {/* Optional pack selector */}
         {packs.length > 0 && (
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1.5" htmlFor="packId">
-              Link to interview pack <span className="text-zinc-500">(optional)</span>
+            <label className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1.5" htmlFor="packId">
+              Link to interview pack <span className="text-[var(--color-fg-subtle)]">(optional)</span>
             </label>
             <select
               id="packId"
               name="packId"
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">No pack selected</option>
@@ -172,14 +172,14 @@ export function TranscriptUploadForm({ candidateId, roleId, packs = [], userRole
         )}
 
         {/* Tab toggle */}
-        <div className="flex rounded-lg border border-zinc-700 p-0.5 bg-zinc-800 w-fit">
+        <div className="flex rounded-lg border border-[var(--color-border)] p-0.5 bg-[var(--color-bg-input)] w-fit">
           <button
             type="button"
             onClick={() => setTab('file')}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
               tab === 'file'
-                ? 'bg-zinc-700 text-zinc-100'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-[var(--color-border)] text-[var(--color-fg)]'
+                : 'text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]'
             }`}
           >
             <UploadIcon className="h-3 w-3" />
@@ -190,8 +190,8 @@ export function TranscriptUploadForm({ candidateId, roleId, packs = [], userRole
             onClick={() => setTab('paste')}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
               tab === 'paste'
-                ? 'bg-zinc-700 text-zinc-100'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-[var(--color-border)] text-[var(--color-fg)]'
+                : 'text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]'
             }`}
           >
             <ClipboardIcon className="h-3 w-3" />
@@ -204,16 +204,16 @@ export function TranscriptUploadForm({ candidateId, roleId, packs = [], userRole
           <div>
             <label
               className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed
-                         border-zinc-600 bg-zinc-800 px-6 py-8 cursor-pointer
-                         hover:border-zinc-500 hover:bg-zinc-750 transition-colors"
+                         border-[var(--color-border)] bg-[var(--color-bg-input)] px-6 py-8 cursor-pointer
+                         hover:border-[var(--color-fg-subtle)] hover:bg-[var(--color-bg-input)] transition-colors"
             >
-              <UploadIcon className="h-6 w-6 text-zinc-500" />
+              <UploadIcon className="h-6 w-6 text-[var(--color-fg-subtle)]" />
               {fileName ? (
-                <span className="text-sm text-zinc-300">{fileName}</span>
+                <span className="text-sm text-[var(--color-fg)]">{fileName}</span>
               ) : (
                 <>
-                  <span className="text-sm text-zinc-400">Click to select transcript file</span>
-                  <span className="text-xs text-zinc-500">VTT, SRT, or TXT — up to 5 MB</span>
+                  <span className="text-sm text-[var(--color-fg-muted)]">Click to select transcript file</span>
+                  <span className="text-xs text-[var(--color-fg-subtle)]">VTT, SRT, or TXT — up to 5 MB</span>
                 </>
               )}
               <input
@@ -230,7 +230,7 @@ export function TranscriptUploadForm({ candidateId, roleId, packs = [], userRole
         {/* Paste text */}
         {tab === 'paste' && (
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1.5" htmlFor="text">
+            <label className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1.5" htmlFor="text">
               Transcript text
             </label>
             <textarea
@@ -238,11 +238,11 @@ export function TranscriptUploadForm({ candidateId, roleId, packs = [], userRole
               name="text"
               rows={10}
               placeholder={"Interviewer: Tell me about your experience with TypeScript.\n\nAlice: I've been using TypeScript for three years…"}
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                         placeholder:text-zinc-600 font-mono
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                         placeholder:text-[var(--color-fg-subtle)] font-mono
                          focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             />
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-[var(--color-fg-subtle)]">
               Format: <span className="font-mono">Speaker Name: text</span> — one turn per paragraph
             </p>
           </div>
@@ -250,14 +250,14 @@ export function TranscriptUploadForm({ candidateId, roleId, packs = [], userRole
 
         {/* Optional interview date */}
         <div>
-          <label className="block text-xs font-medium text-zinc-400 mb-1.5" htmlFor="interviewDate">
-            Interview date <span className="text-zinc-500">(optional)</span>
+          <label className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1.5" htmlFor="interviewDate">
+            Interview date <span className="text-[var(--color-fg-subtle)]">(optional)</span>
           </label>
           <input
             id="interviewDate"
             name="interviewDate"
             type="date"
-            className="rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+            className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>

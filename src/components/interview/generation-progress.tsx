@@ -92,11 +92,11 @@ export function GenerationProgress({ packId }: Props) {
   }
 
   return (
-    <div className="rounded-xl bg-zinc-900 border border-zinc-700 px-5 py-5 mb-6">
+    <div className="rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] px-5 py-5 mb-6">
       <div className="flex items-center gap-3 mb-4">
         <div className="h-5 w-5 rounded-full border-2 border-violet-400 border-t-transparent animate-spin flex-shrink-0" />
         <div>
-          <p className="text-sm font-semibold text-zinc-100">
+          <p className="text-sm font-semibold text-[var(--color-fg)]">
             {isPending ? 'Starting generation…' : (generationStage ?? 'Processing…')}
           </p>
         </div>
@@ -115,7 +115,7 @@ export function GenerationProgress({ packId }: Props) {
                   ? 'bg-emerald-600 text-white'
                   : isActive
                     ? 'bg-violet-600 text-white ring-2 ring-violet-400/30'
-                    : 'bg-zinc-800 text-zinc-600 border border-zinc-700'
+                    : 'bg-[var(--color-bg-input)] text-[var(--color-fg-subtle)] border border-[var(--color-border)]'
                 }`}
               >
                 {isDone ? (
@@ -130,8 +130,8 @@ export function GenerationProgress({ packId }: Props) {
                 isDone
                   ? 'text-emerald-400'
                   : isActive
-                    ? 'text-zinc-100 font-medium'
-                    : 'text-zinc-600'
+                    ? 'text-[var(--color-fg)] font-medium'
+                    : 'text-[var(--color-fg-subtle)]'
               }`}>
                 {step}
                 {isActive && (
@@ -144,7 +144,7 @@ export function GenerationProgress({ packId }: Props) {
       </div>
 
       {/* Progress bar */}
-      <div className="mt-4 h-1 bg-zinc-800 rounded-full overflow-hidden">
+      <div className="mt-4 h-1 bg-[var(--color-bg-input)] rounded-full overflow-hidden">
         <div
           className="h-full bg-violet-500 rounded-full transition-all duration-700 ease-out"
           style={{
