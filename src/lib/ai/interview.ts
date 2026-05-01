@@ -16,15 +16,10 @@ import {
 import { inferExperienceLevel, inferLanguage } from './interview-helpers'
 import { formatManagerPriorities } from './priorities'
 import { formatLanguageDirective, TOOL_LANGUAGE_REINFORCEMENT, type SupportedLanguage } from './language'
+import { resolveAnthropicKey } from './keys'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 
 export { inferExperienceLevel, inferLanguage }
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  timeout: 240_000,
-  maxRetries: 3,
-})
 
 // -- Stage 1: CV Profile Extraction --
 
@@ -77,6 +72,8 @@ export async function extractCvProfile(
   tenantId: string,
   candidateId?: string
 ): Promise<CvProfile> {
+  const apiKey = await resolveAnthropicKey(tenantId)
+  const anthropic = new Anthropic({ apiKey, timeout: 240_000, maxRetries: 3 })
   const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
@@ -184,6 +181,8 @@ export async function generateQuestions(
     },
   }
 
+  const apiKey = await resolveAnthropicKey(tenantId ?? '')
+  const anthropic = new Anthropic({ apiKey, timeout: 240_000, maxRetries: 3 })
   const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',

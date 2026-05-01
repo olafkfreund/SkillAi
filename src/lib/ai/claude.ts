@@ -7,15 +7,10 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
+import { resolveAnthropicKey } from './keys'
 import { CandidateScoreSchema, type CandidateScore } from './schema'
 import { formatManagerPriorities } from './priorities'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  timeout: 120_000,
-  maxRetries: 3,
-})
 
 const SCORING_TOOL: Anthropic.Tool = {
   name: 'submit_candidate_score',
@@ -89,6 +84,8 @@ type ScoringInput = {
 }
 
 export async function scoreCandidateWithClaude(input: ScoringInput): Promise<CandidateScore> {
+  const apiKey = await resolveAnthropicKey(input.tenantId)
+  const anthropic = new Anthropic({ apiKey, timeout: 120_000, maxRetries: 3 })
   const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
