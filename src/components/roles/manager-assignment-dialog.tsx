@@ -120,9 +120,9 @@ export function ManagerAssignmentDialog({
       <button
         type="button"
         onClick={handleOpen}
-        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-600
-                   bg-zinc-800 text-zinc-200 text-sm font-medium px-3 py-1.5
-                   hover:bg-zinc-700 hover:border-zinc-500 transition-colors"
+        className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)]
+                   bg-[var(--color-bg-input)] text-[var(--color-fg)] text-sm font-medium px-3 py-1.5
+                   hover:bg-[var(--color-border)] hover:border-[var(--color-border)] transition-colors"
         aria-label={`Assign managers — ${assignedCount} currently assigned`}
       >
         <UsersIcon className="h-3.5 w-3.5" />
@@ -139,17 +139,17 @@ export function ManagerAssignmentDialog({
           aria-label="Assign hiring managers to role"
         >
           <div
-            className="relative bg-zinc-950 border border-zinc-700 rounded-xl p-6
+            className="relative bg-[var(--color-bg-app)] border border-[var(--color-border)] rounded-xl p-6
                         max-w-md w-[calc(100vw-2rem)] shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-base font-semibold text-zinc-100">
+                <h2 className="text-base font-semibold text-[var(--color-fg)]">
                   Assign hiring managers
                 </h2>
-                <p className="text-xs text-zinc-500 mt-0.5">
+                <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5">
                   Select one or more managers who will review this role&apos;s shortlist.
                 </p>
               </div>
@@ -157,8 +157,8 @@ export function ManagerAssignmentDialog({
                 type="button"
                 onClick={handleClose}
                 disabled={isPending}
-                className="text-zinc-500 hover:text-zinc-300 transition-colors rounded-md p-2 md:p-1
-                           hover:bg-zinc-800 disabled:opacity-40"
+                className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] transition-colors rounded-md p-2 md:p-1
+                           hover:bg-[var(--color-bg-input)] disabled:opacity-40"
                 aria-label="Close dialog"
               >
                 <XIcon className="h-4 w-4" />
@@ -167,7 +167,7 @@ export function ManagerAssignmentDialog({
 
             {/* Manager checklist */}
             {tenantUsers.length === 0 ? (
-              <p className="text-sm text-zinc-500 mb-5">
+              <p className="text-sm text-[var(--color-fg-subtle)] mb-5">
                 No hiring manager accounts found in this tenant.
               </p>
             ) : (
@@ -183,8 +183,8 @@ export function ManagerAssignmentDialog({
                         className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 cursor-pointer
                                     transition-colors
                                     ${isChecked
-                                      ? 'border-violet-600 bg-violet-950/40 text-zinc-100'
-                                      : 'border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800'
+                                      ? 'border-violet-600 bg-violet-950/40 text-[var(--color-fg)]'
+                                      : 'border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-fg)] hover:border-[var(--color-border)] hover:bg-[var(--color-bg-input)]'
                                     }`}
                       >
                         <input
@@ -200,7 +200,7 @@ export function ManagerAssignmentDialog({
                           className={`flex-shrink-0 h-4 w-4 rounded border flex items-center justify-center
                                       ${isChecked
                                         ? 'bg-violet-600 border-violet-600'
-                                        : 'border-zinc-600 bg-zinc-800'
+                                        : 'border-[var(--color-border)] bg-[var(--color-bg-input)]'
                                       }`}
                           aria-hidden="true"
                         >
@@ -211,7 +211,7 @@ export function ManagerAssignmentDialog({
                             {user.name ?? user.email}
                           </p>
                           {user.name && (
-                            <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+                            <p className="text-xs text-[var(--color-fg-subtle)] truncate">{user.email}</p>
                           )}
                         </div>
                       </label>
@@ -235,8 +235,8 @@ export function ManagerAssignmentDialog({
                 type="button"
                 onClick={handleClose}
                 disabled={isPending}
-                className="inline-flex items-center rounded-md border border-zinc-600
-                           text-zinc-400 hover:text-zinc-200 text-sm font-medium px-3 py-1.5
+                className="inline-flex items-center rounded-md border border-[var(--color-border)]
+                           text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] text-sm font-medium px-3 py-1.5
                            transition-colors disabled:opacity-40"
               >
                 Cancel

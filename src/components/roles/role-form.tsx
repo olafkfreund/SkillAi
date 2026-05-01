@@ -142,7 +142,7 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleFileDrop}
         className={`relative rounded-xl border-2 border-dashed px-6 py-5 transition-colors
-          ${importing ? 'border-blue-500 bg-blue-950' : imported ? 'border-emerald-600 bg-emerald-950' : 'border-zinc-600 bg-zinc-800 hover:border-blue-500 hover:bg-blue-950/40'}`}
+          ${importing ? 'border-blue-500 bg-blue-950' : imported ? 'border-emerald-600 bg-emerald-950' : 'border-[var(--color-border)] bg-[var(--color-bg-input)] hover:border-blue-500 hover:bg-blue-950/40'}`}
       >
         <input
           ref={fileInputRef}
@@ -166,7 +166,7 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
             <button
               type="button"
               onClick={clearImport}
-              className="text-zinc-500 hover:text-zinc-300 ml-3"
+              className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] ml-3"
               title="Clear import"
             >
               <X className="h-4 w-4" />
@@ -174,13 +174,13 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
           </div>
         ) : (
           <div className="flex items-center gap-4">
-            <UploadCloud className="h-6 w-6 text-zinc-500 shrink-0" />
+            <UploadCloud className="h-6 w-6 text-[var(--color-fg-subtle)] shrink-0" />
             <div>
-              <p className="text-sm font-medium text-zinc-300">
+              <p className="text-sm font-medium text-[var(--color-fg)]">
                 Import from document{' '}
-                <span className="font-normal text-zinc-500">(optional)</span>
+                <span className="font-normal text-[var(--color-fg-subtle)]">(optional)</span>
               </p>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5">
                 Drop a PDF or DOCX job description here, or{' '}
                 <button
                   type="button"
@@ -221,7 +221,7 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
 
         {customers.length > 0 && (
           <div>
-            <label htmlFor="customerId" className="block text-sm font-medium text-zinc-300 mb-1">
+            <label htmlFor="customerId" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
               Customer
             </label>
             <select
@@ -241,7 +241,7 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
                   customerRoleId: '',
                 }))
               }}
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                          disabled:opacity-50"
             >
@@ -257,9 +257,9 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
 
         {fields.customerId && (
           <div>
-            <label htmlFor="customerRoleId" className="block text-sm font-medium text-zinc-300 mb-1">
+            <label htmlFor="customerRoleId" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
               {customerRoleIdLabels[fields.customerId] ?? 'Customer Role ID'}{' '}
-              <span className="text-zinc-500 font-normal">(optional)</span>
+              <span className="text-[var(--color-fg-subtle)] font-normal">(optional)</span>
             </label>
             <input
               id="customerRoleId"
@@ -270,12 +270,12 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
               value={fields.customerRoleId}
               onChange={(e) => setFields((f) => ({ ...f, customerRoleId: e.target.value }))}
               placeholder="e.g. JOB-12345"
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                         placeholder:text-zinc-500
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                         placeholder:text-[var(--color-fg-subtle)]
                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                          disabled:opacity-50"
             />
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-[var(--color-fg-subtle)]">
               The customer&apos;s identifier for this role.
             </p>
             {fieldErrors?.customerRoleId && (
@@ -299,7 +299,7 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
         />
 
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-zinc-300 mb-1">
+          <label htmlFor="title" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
             Role title <span className="text-red-500">*</span>
           </label>
           <input
@@ -311,8 +311,8 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
             value={fields.title}
             onChange={(e) => setFields((f) => ({ ...f, title: e.target.value }))}
             placeholder="e.g. Senior TypeScript Engineer"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                        disabled:opacity-50"
           />
@@ -322,7 +322,7 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-zinc-300 mb-1">
+          <label htmlFor="description" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
             Description <span className="text-red-500">*</span>
           </label>
           <textarea
@@ -334,8 +334,8 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
             value={fields.description}
             onChange={(e) => setFields((f) => ({ ...f, description: e.target.value }))}
             placeholder="Describe the role and responsibilities…"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                        disabled:opacity-50 resize-y"
           />
@@ -345,7 +345,7 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
         </div>
 
         <div>
-          <label htmlFor="requirements" className="block text-sm font-medium text-zinc-300 mb-1">
+          <label htmlFor="requirements" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
             Requirements <span className="text-red-500">*</span>
           </label>
           <textarea
@@ -357,8 +357,8 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
             value={fields.requirements}
             onChange={(e) => setFields((f) => ({ ...f, requirements: e.target.value }))}
             placeholder="List the key requirements, one per line…"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                        disabled:opacity-50 resize-y"
           />
@@ -368,14 +368,14 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
         </div>
 
         {/* Manager Priorities */}
-        <div className="border-t border-zinc-800 pt-4 mt-2">
-          <label htmlFor="priorityKeywords" className="block text-sm font-medium text-zinc-300 mb-1">
-            Manager Priorities <span className="text-zinc-500 font-normal">(optional)</span>
+        <div className="border-t border-[var(--color-border)] pt-4 mt-2">
+          <label htmlFor="priorityKeywords" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
+            Manager Priorities <span className="text-[var(--color-fg-subtle)] font-normal">(optional)</span>
           </label>
-          <p id="priorityKeywords-help" className="text-xs text-zinc-500 mb-2">
+          <p id="priorityKeywords-help" className="text-xs text-[var(--color-fg-subtle)] mb-2">
             Soft-signal phrases the hiring manager wants prioritised. E.g.{' '}
-            <span className="text-zinc-400">&quot;Self-starting&quot;</span>,{' '}
-            <span className="text-zinc-400">&quot;Engineer who codes&quot;</span>.
+            <span className="text-[var(--color-fg-muted)]">&quot;Self-starting&quot;</span>,{' '}
+            <span className="text-[var(--color-fg-muted)]">&quot;Engineer who codes&quot;</span>.
           </p>
           <ChipInput
             id="priorityKeywords"
@@ -393,11 +393,11 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
         </div>
 
         {/* Location & Language */}
-        <div className="border-t border-zinc-800 pt-4 mt-2">
-          <p className="text-sm font-medium text-zinc-400 mb-3">Location & Language</p>
+        <div className="border-t border-[var(--color-border)] pt-4 mt-2">
+          <p className="text-sm font-medium text-[var(--color-fg-muted)] mb-3">Location & Language</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div>
-              <label htmlFor="country" className="block text-xs font-medium text-zinc-400 mb-1">Country</label>
+              <label htmlFor="country" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">Country</label>
               <input
                 id="country"
                 name="country"
@@ -406,12 +406,12 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
                 value={fields.country}
                 onChange={(e) => setFields((f) => ({ ...f, country: e.target.value }))}
                 placeholder="United Kingdom"
-                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                           placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                           placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
             <div>
-              <label htmlFor="city" className="block text-xs font-medium text-zinc-400 mb-1">City</label>
+              <label htmlFor="city" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">City</label>
               <input
                 id="city"
                 name="city"
@@ -420,21 +420,21 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
                 value={fields.city}
                 onChange={(e) => setFields((f) => ({ ...f, city: e.target.value }))}
                 placeholder="London"
-                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                           placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                           placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="workMode" className="block text-xs font-medium text-zinc-400 mb-1">Work Mode</label>
+              <label htmlFor="workMode" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">Work Mode</label>
               <select
                 id="workMode"
                 name="workMode"
                 disabled={pending}
                 value={fields.workMode}
                 onChange={(e) => setFields((f) => ({ ...f, workMode: e.target.value }))}
-                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                            focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               >
                 <option value="">— Not specified —</option>
@@ -444,8 +444,8 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
               </select>
             </div>
             <div>
-              <label htmlFor="languageRequirements" className="block text-xs font-medium text-zinc-400 mb-1">
-                Language Requirements <span className="text-zinc-600">(comma-separated)</span>
+              <label htmlFor="languageRequirements" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+                Language Requirements <span className="text-[var(--color-fg-subtle)]">(comma-separated)</span>
               </label>
               <input
                 id="languageRequirements"
@@ -455,19 +455,19 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
                 value={fields.languageRequirements}
                 onChange={(e) => setFields((f) => ({ ...f, languageRequirements: e.target.value }))}
                 placeholder="English, German"
-                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                           placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                           placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
           </div>
         </div>
 
         {/* Budget */}
-        <div className="border-t border-zinc-800 pt-4 mt-2">
-          <p className="text-sm font-medium text-zinc-400 mb-3">Budget</p>
+        <div className="border-t border-[var(--color-border)] pt-4 mt-2">
+          <p className="text-sm font-medium text-[var(--color-fg-muted)] mb-3">Budget</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="customerDayRate" className="block text-sm font-medium text-zinc-300 mb-1">
+              <label htmlFor="customerDayRate" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
                 Customer Day Rate
               </label>
               <input
@@ -479,12 +479,12 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
                 value={fields.customerDayRate}
                 onChange={(e) => setFields((f) => ({ ...f, customerDayRate: e.target.value }))}
                 placeholder="850.00"
-                className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-zinc-100 focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-md bg-[var(--color-bg-app)] border border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-fg)] focus:border-blue-500 focus:outline-none"
               />
-              <p className="mt-1 text-xs text-zinc-500">Budget the client pays per day for this role.</p>
+              <p className="mt-1 text-xs text-[var(--color-fg-subtle)]">Budget the client pays per day for this role.</p>
             </div>
             <div>
-              <label htmlFor="rateCurrency" className="block text-sm font-medium text-zinc-300 mb-1">
+              <label htmlFor="rateCurrency" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
                 Currency
               </label>
               <select
@@ -492,7 +492,7 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
                 name="rateCurrency"
                 value={fields.rateCurrency}
                 onChange={(e) => setFields((f) => ({ ...f, rateCurrency: e.target.value }))}
-                className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-zinc-100 focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-md bg-[var(--color-bg-app)] border border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-fg)] focus:border-blue-500 focus:outline-none"
               >
                 <option value="">—</option>
                 <option value="GBP">GBP</option>
@@ -507,12 +507,12 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
         </div>
 
         {/* Deadlines & Customer Portal */}
-        <div className="border-t border-zinc-800 pt-4 mt-2">
-          <p className="text-sm font-medium text-zinc-400 mb-3">Deadlines & Customer Portal</p>
+        <div className="border-t border-[var(--color-border)] pt-4 mt-2">
+          <p className="text-sm font-medium text-[var(--color-fg-muted)] mb-3">Deadlines & Customer Portal</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div>
-              <label htmlFor="targetFillDate" className="block text-xs font-medium text-zinc-400 mb-1">
-                Target Fill Date <span className="text-zinc-600">(optional)</span>
+              <label htmlFor="targetFillDate" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+                Target Fill Date <span className="text-[var(--color-fg-subtle)]">(optional)</span>
               </label>
               <input
                 id="targetFillDate"
@@ -521,13 +521,13 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
                 disabled={pending}
                 value={fields.targetFillDate}
                 onChange={(e) => setFields((f) => ({ ...f, targetFillDate: e.target.value }))}
-                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                            focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
             <div>
-              <label htmlFor="cutoffDate" className="block text-xs font-medium text-zinc-400 mb-1">
-                Cut-off Date <span className="text-zinc-600">(absolute deadline)</span>
+              <label htmlFor="cutoffDate" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+                Cut-off Date <span className="text-[var(--color-fg-subtle)]">(absolute deadline)</span>
               </label>
               <input
                 id="cutoffDate"
@@ -536,15 +536,15 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
                 disabled={pending}
                 value={fields.cutoffDate}
                 onChange={(e) => setFields((f) => ({ ...f, cutoffDate: e.target.value }))}
-                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                            focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
           </div>
           {fields.customerId && (
             <div>
-              <label htmlFor="customerPortalPath" className="block text-xs font-medium text-zinc-400 mb-1">
-                Customer Portal Path <span className="text-zinc-600">(optional)</span>
+              <label htmlFor="customerPortalPath" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+                Customer Portal Path <span className="text-[var(--color-fg-subtle)]">(optional)</span>
               </label>
               <input
                 id="customerPortalPath"
@@ -554,10 +554,10 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
                 value={fields.customerPortalPath}
                 onChange={(e) => setFields((f) => ({ ...f, customerPortalPath: e.target.value }))}
                 placeholder="/jobs/12345"
-                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                           placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                           placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-1 text-xs text-[var(--color-fg-subtle)]">
                 Path on the customer&apos;s portal for this role. Combined with the customer&apos;s base URL.
               </p>
             </div>
@@ -574,7 +574,7 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
             {pending && <Loader2 className="h-4 w-4 animate-spin" />}
             {pending ? 'Creating…' : 'Create role'}
           </button>
-          <a href="/dashboard/roles" className="text-sm text-zinc-500 hover:text-zinc-300">
+          <a href="/dashboard/roles" className="text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]">
             Cancel
           </a>
         </div>

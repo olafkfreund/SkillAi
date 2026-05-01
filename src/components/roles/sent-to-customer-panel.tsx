@@ -10,16 +10,16 @@ export function SentToCustomerPanel({ submissions, audience }: Props) {
   if (audience !== 'recruiter') return null
 
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mt-6">
+    <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 mt-6">
       <div className="flex items-center gap-2 mb-4">
-        <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide">
+        <h2 className="text-sm font-semibold text-[var(--color-fg)] uppercase tracking-wide">
           Sent to Customer
         </h2>
-        <span className="text-sm text-zinc-500">({submissions.length})</span>
+        <span className="text-sm text-[var(--color-fg-subtle)]">({submissions.length})</span>
       </div>
 
       {submissions.length === 0 ? (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-[var(--color-fg-subtle)]">
           No candidates submitted to the customer yet. Tick candidates above and click &ldquo;Submit to customer&rdquo;.
         </p>
       ) : (

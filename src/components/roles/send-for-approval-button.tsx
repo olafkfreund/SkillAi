@@ -53,8 +53,8 @@ export function SendForApprovalButton({
           disabled
           aria-label="Shortlist already sent for approval"
           title="Shortlist already sent for manager approval"
-          className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700
-                     bg-zinc-800 text-zinc-500 text-sm font-medium px-3 py-1.5
+          className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)]
+                     bg-[var(--color-bg-input)] text-[var(--color-fg-subtle)] text-sm font-medium px-3 py-1.5
                      cursor-not-allowed opacity-60"
         >
           <CheckIcon className="h-3.5 w-3.5" />
@@ -87,8 +87,8 @@ export function SendForApprovalButton({
             type="button"
             onClick={handleCancel}
             disabled={isPending}
-            className="inline-flex items-center gap-1 rounded-md border border-zinc-600
-                       text-zinc-400 hover:text-zinc-200 text-xs font-medium px-2.5 py-1.5
+            className="inline-flex items-center gap-1 rounded-md border border-[var(--color-border)]
+                       text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] text-xs font-medium px-2.5 py-1.5
                        transition-colors disabled:opacity-50"
           >
             <XIcon className="h-3 w-3" />

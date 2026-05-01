@@ -102,8 +102,8 @@ export function RoleMetaBar({ role, customer, portalUrl, customerRoleId, custome
       )}
 
       {location && (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-800 text-zinc-300 text-xs font-medium px-2.5 py-1">
-          <MapPinIcon className="h-3 w-3 text-zinc-500" />
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] text-xs font-medium px-2.5 py-1">
+          <MapPinIcon className="h-3 w-3 text-[var(--color-fg-subtle)]" />
           {location}
         </span>
       )}
@@ -121,9 +121,9 @@ export function RoleMetaBar({ role, customer, portalUrl, customerRoleId, custome
       {customer && (
         <Link
           href={`/dashboard/customers/${customer.id}`}
-          className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-800 text-zinc-300 text-xs font-medium px-2.5 py-1 hover:bg-zinc-700 hover:text-zinc-100 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] text-xs font-medium px-2.5 py-1 hover:bg-[var(--color-border)] hover:text-[var(--color-fg)] transition-colors"
         >
-          <UsersIcon className="h-3 w-3 text-zinc-500" />
+          <UsersIcon className="h-3 w-3 text-[var(--color-fg-subtle)]" />
           {customer.name}
         </Link>
       )}
@@ -150,8 +150,8 @@ export function RoleMetaBar({ role, customer, portalUrl, customerRoleId, custome
       )}
 
       {role.targetFillDate && (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-800 text-zinc-300 text-xs font-medium px-2.5 py-1">
-          <CalendarIcon className="h-3 w-3 text-zinc-500" />
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] text-xs font-medium px-2.5 py-1">
+          <CalendarIcon className="h-3 w-3 text-[var(--color-fg-subtle)]" />
           Fill by {fmtDate(role.targetFillDate)}
         </span>
       )}

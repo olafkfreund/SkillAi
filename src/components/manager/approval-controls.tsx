@@ -96,10 +96,10 @@ export function ApprovalControls({
   const badge = decisionLabel[decision]
 
   return (
-    <div className="rounded-xl bg-zinc-900 border border-zinc-700 p-5 space-y-4">
+    <div className="rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] p-5 space-y-4">
       {/* Current decision badge */}
       <div className="flex items-center gap-3">
-        <span className="text-sm font-medium text-zinc-400">Decision:</span>
+        <span className="text-sm font-medium text-[var(--color-fg-muted)]">Decision:</span>
         <span
           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.classes}`}
         >
@@ -109,7 +109,7 @@ export function ApprovalControls({
 
       {/* Previously saved comment (read-only display when decided) */}
       {decision !== 'pending' && savedComment && (
-        <p className="text-sm text-zinc-400 bg-zinc-800 rounded-md px-3 py-2 border border-zinc-700">
+        <p className="text-sm text-[var(--color-fg-muted)] bg-[var(--color-bg-input)] rounded-md px-3 py-2 border border-[var(--color-border)]">
           {savedComment}
         </p>
       )}
@@ -118,7 +118,7 @@ export function ApprovalControls({
       <div>
         <label
           htmlFor={`approval-comment-${candidateId}`}
-          className="block text-xs font-medium text-zinc-500 mb-1"
+          className="block text-xs font-medium text-[var(--color-fg-subtle)] mb-1"
         >
           Comment (optional)
         </label>
@@ -129,8 +129,8 @@ export function ApprovalControls({
           placeholder="Add a comment for this decision…"
           rows={3}
           disabled={isPending}
-          className="w-full rounded-md bg-zinc-800 border border-zinc-700
-                     text-sm text-zinc-200 placeholder-zinc-500 px-3 py-2
+          className="w-full rounded-md bg-[var(--color-bg-input)] border border-[var(--color-border)]
+                     text-sm text-[var(--color-fg)] placeholder-[var(--color-fg-subtle)] px-3 py-2
                      focus:outline-none focus:ring-1 focus:ring-violet-600
                      resize-none disabled:opacity-50"
         />
@@ -170,8 +170,8 @@ export function ApprovalControls({
             onClick={handleClear}
             disabled={isPending}
             aria-label="Clear decision"
-            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-600
-                       text-zinc-400 hover:text-zinc-200 text-sm font-medium px-3 py-1.5
+            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)]
+                       text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] text-sm font-medium px-3 py-1.5
                        transition-colors disabled:opacity-40"
           >
             <RotateCcwIcon className="h-3.5 w-3.5" />
@@ -261,8 +261,8 @@ export function ApproveAllRemainingButton({
           type="button"
           onClick={handleCancel}
           disabled={isPending}
-          className="inline-flex items-center gap-1 rounded-md border border-zinc-600
-                     text-zinc-400 hover:text-zinc-200 text-xs font-medium px-2.5 py-1.5
+          className="inline-flex items-center gap-1 rounded-md border border-[var(--color-border)]
+                     text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] text-xs font-medium px-2.5 py-1.5
                      transition-colors disabled:opacity-50"
         >
           <XIcon className="h-3 w-3" />
@@ -280,8 +280,8 @@ export function ApproveAllRemainingButton({
         onClick={handleInitialClick}
         disabled={pendingCount === 0 || isPending}
         aria-label={`Approve all remaining ${pendingCount} candidates`}
-        className="inline-flex items-center gap-1.5 rounded-md bg-zinc-700
-                   hover:bg-zinc-600 text-zinc-100 text-sm font-medium px-3 py-1.5
+        className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-bg-input)]
+                   hover:bg-[var(--color-border)] text-[var(--color-fg)] text-sm font-medium px-3 py-1.5
                    transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <CheckCheckIcon className="h-4 w-4" />

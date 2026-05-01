@@ -11,10 +11,10 @@ function ScorePill({ label, score }: ScorePillProps) {
   const color =
     score >= 75 ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800' :
     score >= 50 ? 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-800' :
-    'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-600'
+    'bg-zinc-100 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg-muted)] border-zinc-300 dark:border-[var(--color-border)]'
   return (
     <span className={`inline-flex items-center gap-1 text-xs border rounded px-1.5 py-0.5 ${color}`}>
-      <span className="text-zinc-500">{label}</span>
+      <span className="text-[var(--color-fg-subtle)]">{label}</span>
       <span className="font-medium">{score}</span>
     </span>
   )
@@ -34,7 +34,7 @@ function MarginPill({
       className={`inline-flex items-center gap-1 text-xs border rounded-full px-2 py-0.5 ${color}`}
       title={mismatch ? `Currency mismatch: role ${roleCurrency} vs candidate ${candCurrency}` : undefined}
     >
-      <span className="text-zinc-400">Margin</span>
+      <span className="text-[var(--color-fg-muted)]">Margin</span>
       <span className="font-medium">{margin >= 0 ? '+' : ''}{roleCurrency ?? ''} {margin.toFixed(0)}/day</span>
       {mismatch && <span className="text-amber-400">⚠</span>}
     </span>
@@ -125,12 +125,12 @@ export function RoleCandidateCard({
   return (
     <Link
       href={`/dashboard/candidates/${candidateId}?roleId=${roleId}`}
-      className={`flex items-center justify-between rounded-xl bg-zinc-900 border px-5 py-4
+      className={`flex items-center justify-between rounded-xl bg-[var(--color-bg-elevated)] border px-5 py-4
                   hover:border-blue-500 hover:shadow-sm transition-all
-                  ${isPending ? 'opacity-40 pointer-events-none border-zinc-700' : 'border-zinc-700'}`}
+                  ${isPending ? 'opacity-40 pointer-events-none border-[var(--color-border)]' : 'border-[var(--color-border)]'}`}
     >
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-zinc-100 flex items-center gap-2 flex-wrap">
+        <p className="font-medium text-[var(--color-fg)] flex items-center gap-2 flex-wrap">
           <span>
             {firstName} {lastName}
           </span>
@@ -147,7 +147,7 @@ export function RoleCandidateCard({
               Submitted
             </span>
           )}
-          {email && <span className="font-normal text-zinc-500 text-sm ml-1">{email}</span>}
+          {email && <span className="font-normal text-[var(--color-fg-subtle)] text-sm ml-1">{email}</span>}
         </p>
         {scoreStatus === 'complete' && technicalScore !== null && (
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -174,19 +174,19 @@ export function RoleCandidateCard({
                 width={20}
                 height={20}
                 style={{ width: 20, height: 20 }}
-                className="rounded-full border border-zinc-700 bg-zinc-800 object-contain shrink-0"
+                className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-input)] object-contain shrink-0"
               />
             ) : (
               <div
-                className="flex items-center justify-center rounded-full bg-zinc-800
-                           text-zinc-400 text-xs font-semibold shrink-0"
+                className="flex items-center justify-center rounded-full bg-[var(--color-bg-input)]
+                           text-[var(--color-fg-muted)] text-xs font-semibold shrink-0"
                 style={{ width: 20, height: 20 }}
                 aria-hidden="true"
               >
                 {agencyName.charAt(0).toUpperCase()}
               </div>
             )}
-            <span className="text-xs text-zinc-500">{agencyName}</span>
+            <span className="text-xs text-[var(--color-fg-subtle)]">{agencyName}</span>
           </div>
         )}
       </div>
@@ -198,8 +198,8 @@ export function RoleCandidateCard({
           </span>
         ) : scoreStatus === 'complete' && overallScore !== null ? (
           <div className="text-center">
-            <p className="text-xl font-bold text-zinc-100">{overallScore}</p>
-            <p className="text-xs text-zinc-500">/ 100</p>
+            <p className="text-xl font-bold text-[var(--color-fg)]">{overallScore}</p>
+            <p className="text-xs text-[var(--color-fg-subtle)]">/ 100</p>
           </div>
         ) : (
           <span className="text-xs text-red-400">Failed</span>
@@ -210,7 +210,7 @@ export function RoleCandidateCard({
             type="button"
             onClick={handleDownloadCv}
             title="Download original CV"
-            className="p-1.5 rounded-md text-zinc-600 hover:text-blue-400 hover:bg-blue-950/40
+            className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-blue-400 hover:bg-blue-950/40
                        border border-transparent hover:border-blue-800 transition-colors"
           >
             <Download className="h-4 w-4" />
@@ -221,7 +221,7 @@ export function RoleCandidateCard({
           <button
             onClick={handleRemove}
             title="Remove from role"
-            className="p-1.5 rounded-md text-zinc-600 hover:text-red-400 hover:bg-red-950/40
+            className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-red-400 hover:bg-red-950/40
                        border border-transparent hover:border-red-800 transition-colors"
           >
             <XIcon className="h-4 w-4" />

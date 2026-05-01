@@ -76,15 +76,15 @@ export function SubmitToCustomerButton({ roleId, selectedCandidateIds, onSuccess
           aria-label="Submit candidates to customer"
         >
           <div
-            className="relative bg-zinc-950 border border-zinc-700 rounded-xl p-6
+            className="relative bg-[var(--color-bg-app)] border border-[var(--color-border)] rounded-xl p-6
                         max-w-md w-[calc(100vw-2rem)] shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-base font-semibold text-zinc-100">Submit to customer</h2>
-                <p className="text-xs text-zinc-500 mt-0.5">
+                <h2 className="text-base font-semibold text-[var(--color-fg)]">Submit to customer</h2>
+                <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5">
                   Submit {selectedCandidateIds.length} candidate{selectedCandidateIds.length !== 1 ? 's' : ''} to the customer for this role.
                 </p>
               </div>
@@ -92,7 +92,7 @@ export function SubmitToCustomerButton({ roleId, selectedCandidateIds, onSuccess
                 type="button"
                 onClick={handleClose}
                 disabled={isPending}
-                className="p-2 md:p-1 rounded text-zinc-500 hover:text-zinc-300 disabled:opacity-40 transition-colors"
+                className="p-2 md:p-1 rounded text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] disabled:opacity-40 transition-colors"
                 aria-label="Close"
               >
                 <XIcon className="h-4 w-4" />
@@ -101,8 +101,8 @@ export function SubmitToCustomerButton({ roleId, selectedCandidateIds, onSuccess
 
             {/* Optional notes */}
             <div className="mb-5">
-              <label htmlFor="stc-notes" className="block text-xs font-medium text-zinc-400 mb-1.5">
-                Notes <span className="text-zinc-600">(optional, visible to recruiters only)</span>
+              <label htmlFor="stc-notes" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1.5">
+                Notes <span className="text-[var(--color-fg-subtle)]">(optional, visible to recruiters only)</span>
               </label>
               <textarea
                 id="stc-notes"
@@ -111,7 +111,7 @@ export function SubmitToCustomerButton({ roleId, selectedCandidateIds, onSuccess
                 rows={3}
                 placeholder="Optional notes (visible only to recruiters)"
                 disabled={isPending}
-                className="w-full rounded-md border border-zinc-700 bg-zinc-900 text-zinc-100
+                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-fg)]
                            text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500
                            disabled:opacity-50 resize-none"
               />
@@ -130,9 +130,9 @@ export function SubmitToCustomerButton({ roleId, selectedCandidateIds, onSuccess
                 type="button"
                 onClick={handleClose}
                 disabled={isPending}
-                className="rounded-md border border-zinc-700 bg-zinc-800 text-zinc-300
+                className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)]
                            text-sm font-medium px-4 py-2
-                           hover:bg-zinc-700 hover:text-zinc-100 disabled:opacity-50
+                           hover:bg-[var(--color-border)] hover:text-[var(--color-fg)] disabled:opacity-50
                            transition-colors"
               >
                 Cancel
