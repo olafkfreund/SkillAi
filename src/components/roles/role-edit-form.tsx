@@ -135,7 +135,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
 
       {customers.length > 0 && (
         <div>
-          <label htmlFor="customerId" className="block text-sm font-medium text-zinc-300 mb-1">
+          <label htmlFor="customerId" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
             Customer
           </label>
           <select
@@ -155,7 +155,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
                 customerRoleId: '',
               }))
             }}
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                        disabled:opacity-50"
           >
@@ -171,9 +171,9 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
 
       {fields.customerId && (
         <div>
-          <label htmlFor="customerRoleId" className="block text-sm font-medium text-zinc-300 mb-1">
+          <label htmlFor="customerRoleId" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
             {customerRoleIdLabels[fields.customerId] ?? 'Customer Role ID'}{' '}
-            <span className="text-zinc-500 font-normal">(optional)</span>
+            <span className="text-[var(--color-fg-subtle)] font-normal">(optional)</span>
           </label>
           <input
             id="customerRoleId"
@@ -184,12 +184,12 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
             value={fields.customerRoleId}
             onChange={(e) => setFields((f) => ({ ...f, customerRoleId: e.target.value }))}
             placeholder="e.g. JOB-12345"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                        disabled:opacity-50"
           />
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-[var(--color-fg-subtle)]">
             The customer&apos;s identifier for this role.
           </p>
           {fieldErrors?.customerRoleId && (
@@ -213,7 +213,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
       />
 
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-zinc-300 mb-1">
+        <label htmlFor="title" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
           Role title <span className="text-red-500">*</span>
         </label>
         <input
@@ -224,8 +224,8 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
           disabled={pending}
           value={fields.title}
           onChange={(e) => setFields((f) => ({ ...f, title: e.target.value }))}
-          className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                     placeholder:text-zinc-500
+          className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                     placeholder:text-[var(--color-fg-subtle)]
                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                      disabled:opacity-50"
         />
@@ -235,7 +235,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-zinc-300 mb-1">
+        <label htmlFor="description" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
           Description <span className="text-red-500">*</span>
         </label>
         <textarea
@@ -246,8 +246,8 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
           disabled={pending}
           value={fields.description}
           onChange={(e) => setFields((f) => ({ ...f, description: e.target.value }))}
-          className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                     placeholder:text-zinc-500
+          className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                     placeholder:text-[var(--color-fg-subtle)]
                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                      disabled:opacity-50 resize-y"
         />
@@ -257,7 +257,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
       </div>
 
       <div>
-        <label htmlFor="requirements" className="block text-sm font-medium text-zinc-300 mb-1">
+        <label htmlFor="requirements" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
           Requirements <span className="text-red-500">*</span>
         </label>
         <textarea
@@ -268,8 +268,8 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
           disabled={pending}
           value={fields.requirements}
           onChange={(e) => setFields((f) => ({ ...f, requirements: e.target.value }))}
-          className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                     placeholder:text-zinc-500
+          className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                     placeholder:text-[var(--color-fg-subtle)]
                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                      disabled:opacity-50 resize-y"
         />
@@ -279,14 +279,14 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
       </div>
 
       {/* Manager Priorities */}
-      <div className="border-t border-zinc-800 pt-4 mt-2">
-        <label htmlFor="priorityKeywords" className="block text-sm font-medium text-zinc-300 mb-1">
-          Manager Priorities <span className="text-zinc-500 font-normal">(optional)</span>
+      <div className="border-t border-[var(--color-border)] pt-4 mt-2">
+        <label htmlFor="priorityKeywords" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
+          Manager Priorities <span className="text-[var(--color-fg-subtle)] font-normal">(optional)</span>
         </label>
-        <p id="priorityKeywords-help" className="text-xs text-zinc-500 mb-2">
+        <p id="priorityKeywords-help" className="text-xs text-[var(--color-fg-subtle)] mb-2">
           Soft-signal phrases the hiring manager wants prioritised. E.g.{' '}
-          <span className="text-zinc-400">&quot;Self-starting&quot;</span>,{' '}
-          <span className="text-zinc-400">&quot;Engineer who codes&quot;</span>.
+          <span className="text-[var(--color-fg-muted)]">&quot;Self-starting&quot;</span>,{' '}
+          <span className="text-[var(--color-fg-muted)]">&quot;Engineer who codes&quot;</span>.
         </p>
         <ChipInput
           id="priorityKeywords"
@@ -304,11 +304,11 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
       </div>
 
       {/* Location & Language */}
-      <div className="border-t border-zinc-800 pt-4 mt-2">
-        <p className="text-sm font-medium text-zinc-400 mb-3">Location & Language</p>
+      <div className="border-t border-[var(--color-border)] pt-4 mt-2">
+        <p className="text-sm font-medium text-[var(--color-fg-muted)] mb-3">Location & Language</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
           <div>
-            <label htmlFor="country" className="block text-xs font-medium text-zinc-400 mb-1">Country</label>
+            <label htmlFor="country" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">Country</label>
             <input
               id="country"
               name="country"
@@ -317,12 +317,12 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
               value={fields.country}
               onChange={(e) => setFields((f) => ({ ...f, country: e.target.value }))}
               placeholder="United Kingdom"
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                         placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                         placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
           </div>
           <div>
-            <label htmlFor="city" className="block text-xs font-medium text-zinc-400 mb-1">City</label>
+            <label htmlFor="city" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">City</label>
             <input
               id="city"
               name="city"
@@ -331,21 +331,21 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
               value={fields.city}
               onChange={(e) => setFields((f) => ({ ...f, city: e.target.value }))}
               placeholder="London"
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                         placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                         placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label htmlFor="workMode" className="block text-xs font-medium text-zinc-400 mb-1">Work Mode</label>
+            <label htmlFor="workMode" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">Work Mode</label>
             <select
               id="workMode"
               name="workMode"
               disabled={pending}
               value={fields.workMode}
               onChange={(e) => setFields((f) => ({ ...f, workMode: e.target.value }))}
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             >
               <option value="">— Not specified —</option>
@@ -355,8 +355,8 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
             </select>
           </div>
           <div>
-            <label htmlFor="languageRequirements" className="block text-xs font-medium text-zinc-400 mb-1">
-              Language Requirements <span className="text-zinc-600">(comma-separated)</span>
+            <label htmlFor="languageRequirements" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+              Language Requirements <span className="text-[var(--color-fg-subtle)]">(comma-separated)</span>
             </label>
             <input
               id="languageRequirements"
@@ -366,19 +366,19 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
               value={fields.languageRequirements}
               onChange={(e) => setFields((f) => ({ ...f, languageRequirements: e.target.value }))}
               placeholder="English, German"
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                         placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                         placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
           </div>
         </div>
       </div>
 
       {/* Budget */}
-      <div className="border-t border-zinc-800 pt-4 mt-2">
-        <p className="text-sm font-medium text-zinc-400 mb-3">Budget</p>
+      <div className="border-t border-[var(--color-border)] pt-4 mt-2">
+        <p className="text-sm font-medium text-[var(--color-fg-muted)] mb-3">Budget</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label htmlFor="customerDayRate" className="block text-sm font-medium text-zinc-300 mb-1">
+            <label htmlFor="customerDayRate" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
               Customer Day Rate
             </label>
             <input
@@ -391,12 +391,12 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
               value={fields.customerDayRate}
               onChange={(e) => setFields((f) => ({ ...f, customerDayRate: e.target.value }))}
               placeholder="850.00"
-              className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-zinc-100 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+              className="w-full rounded-md bg-[var(--color-bg-app)] border border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-fg)] focus:border-blue-500 focus:outline-none disabled:opacity-50"
             />
-            <p className="mt-1 text-xs text-zinc-500">Budget the client pays per day for this role.</p>
+            <p className="mt-1 text-xs text-[var(--color-fg-subtle)]">Budget the client pays per day for this role.</p>
           </div>
           <div>
-            <label htmlFor="rateCurrency" className="block text-sm font-medium text-zinc-300 mb-1">
+            <label htmlFor="rateCurrency" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
               Currency
             </label>
             <select
@@ -405,7 +405,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
               disabled={pending}
               value={fields.rateCurrency}
               onChange={(e) => setFields((f) => ({ ...f, rateCurrency: e.target.value }))}
-              className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm text-zinc-100 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+              className="w-full rounded-md bg-[var(--color-bg-app)] border border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-fg)] focus:border-blue-500 focus:outline-none disabled:opacity-50"
             >
               <option value="">—</option>
               <option value="GBP">GBP</option>
@@ -420,12 +420,12 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
       </div>
 
       {/* Deadlines & Customer Portal */}
-      <div className="border-t border-zinc-800 pt-4 mt-2">
-        <p className="text-sm font-medium text-zinc-300 mb-3">Deadlines & Customer Portal</p>
+      <div className="border-t border-[var(--color-border)] pt-4 mt-2">
+        <p className="text-sm font-medium text-[var(--color-fg)] mb-3">Deadlines & Customer Portal</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
           <div>
-            <label htmlFor="targetFillDate" className="block text-xs font-medium text-zinc-400 mb-1">
-              Target Fill Date <span className="text-zinc-600">(optional)</span>
+            <label htmlFor="targetFillDate" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+              Target Fill Date <span className="text-[var(--color-fg-subtle)]">(optional)</span>
             </label>
             <input
               id="targetFillDate"
@@ -434,13 +434,13 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
               disabled={pending}
               value={fields.targetFillDate}
               onChange={(e) => setFields((f) => ({ ...f, targetFillDate: e.target.value }))}
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
           </div>
           <div>
-            <label htmlFor="cutoffDate" className="block text-xs font-medium text-zinc-400 mb-1">
-              Cut-off Date <span className="text-zinc-600">(absolute deadline)</span>
+            <label htmlFor="cutoffDate" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+              Cut-off Date <span className="text-[var(--color-fg-subtle)]">(absolute deadline)</span>
             </label>
             <input
               id="cutoffDate"
@@ -449,15 +449,15 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
               disabled={pending}
               value={fields.cutoffDate}
               onChange={(e) => setFields((f) => ({ ...f, cutoffDate: e.target.value }))}
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
           </div>
         </div>
         {fields.customerId && (
           <div>
-            <label htmlFor="customerPortalPath" className="block text-xs font-medium text-zinc-400 mb-1">
-              Customer Portal Path <span className="text-zinc-600">(optional)</span>
+            <label htmlFor="customerPortalPath" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+              Customer Portal Path <span className="text-[var(--color-fg-subtle)]">(optional)</span>
             </label>
             <input
               id="customerPortalPath"
@@ -467,10 +467,10 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
               value={fields.customerPortalPath}
               onChange={(e) => setFields((f) => ({ ...f, customerPortalPath: e.target.value }))}
               placeholder="/jobs/12345"
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                         placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                         placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-[var(--color-fg-subtle)]">
               Path on the customer&apos;s portal for this role. Combined with the customer&apos;s base URL.
             </p>
           </div>
@@ -489,7 +489,7 @@ export function RoleEditForm({ role, customers = [], frameworks = {}, customerRo
         </button>
         <a
           href={`/dashboard/roles/${role.id}`}
-          className="text-sm text-zinc-500 hover:text-zinc-300"
+          className="text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]"
         >
           Cancel
         </a>

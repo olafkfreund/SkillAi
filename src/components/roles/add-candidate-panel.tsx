@@ -64,22 +64,22 @@ export function AddCandidatePanel({ roleId, canEdit }: Props) {
   if (!canEdit) return null
 
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-700 mb-6">
+    <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] mb-6">
       {/* Toggle header */}
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center justify-between px-6 py-4 text-left
-                   hover:bg-zinc-800 transition-colors rounded-xl"
+                   hover:bg-[var(--color-bg-input)] transition-colors rounded-xl"
       >
         <div className="flex items-center gap-2">
           <UserPlusIcon className="h-4 w-4 text-blue-400" />
-          <span className="font-semibold text-zinc-100">Add from archive</span>
+          <span className="font-semibold text-[var(--color-fg)]">Add from archive</span>
         </div>
         {expanded ? (
-          <ChevronUpIcon className="h-4 w-4 text-zinc-500" />
+          <ChevronUpIcon className="h-4 w-4 text-[var(--color-fg-subtle)]" />
         ) : (
-          <ChevronDownIcon className="h-4 w-4 text-zinc-500" />
+          <ChevronDownIcon className="h-4 w-4 text-[var(--color-fg-subtle)]" />
         )}
       </button>
 
@@ -91,14 +91,14 @@ export function AddCandidatePanel({ roleId, canEdit }: Props) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name or email…"
-            className="w-full rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100
-                       placeholder:text-zinc-500 text-sm px-4 py-2.5 mb-3
+            className="w-full rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)] text-[var(--color-fg)]
+                       placeholder:text-[var(--color-fg-subtle)] text-sm px-4 py-2.5 mb-3
                        focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
           />
 
           {/* Results */}
           {searched && results.length === 0 && (
-            <p className="text-zinc-500 text-sm">No candidates found.</p>
+            <p className="text-[var(--color-fg-subtle)] text-sm">No candidates found.</p>
           )}
 
           {results.length > 0 && (
@@ -108,15 +108,15 @@ export function AddCandidatePanel({ roleId, canEdit }: Props) {
                 return (
                   <div
                     key={c.id}
-                    className="flex items-center justify-between rounded-lg bg-zinc-800
-                               border border-zinc-700 px-4 py-3 gap-3"
+                    className="flex items-center justify-between rounded-lg bg-[var(--color-bg-input)]
+                               border border-[var(--color-border)] px-4 py-3 gap-3"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-zinc-100 truncate">
+                      <p className="text-sm font-medium text-[var(--color-fg)] truncate">
                         {c.firstName} {c.lastName}
                       </p>
                       {c.email && (
-                        <p className="text-xs text-zinc-500 truncate">{c.email}</p>
+                        <p className="text-xs text-[var(--color-fg-subtle)] truncate">{c.email}</p>
                       )}
                     </div>
 

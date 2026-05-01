@@ -40,17 +40,17 @@ export function FrameworkLevelField({
   if (sortedLevels.length === 0) {
     return (
       <div>
-        <label className="block text-sm font-medium text-zinc-300 mb-1">
-          Framework Level <span className="text-zinc-500 font-normal">(optional)</span>
+        <label className="block text-sm font-medium text-[var(--color-fg)] mb-1">
+          Framework Level <span className="text-[var(--color-fg-subtle)] font-normal">(optional)</span>
         </label>
-        <div className="rounded-md border border-dashed border-zinc-700 bg-zinc-900/50 px-3 py-3 text-sm text-zinc-400">
+        <div className="rounded-md border border-dashed border-[var(--color-border)] bg-[var(--color-bg-elevated)]/50 px-3 py-3 text-sm text-[var(--color-fg-muted)]">
           {value.label ? (
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-zinc-300">
+                <p className="text-[var(--color-fg)]">
                   Current value: <span className="font-medium">{value.label}</span>
                 </p>
-                <p className="text-xs text-zinc-500 mt-1">
+                <p className="text-xs text-[var(--color-fg-subtle)] mt-1">
                   This level is no longer in the customer&apos;s framework.{' '}
                   <Link
                     href={`/dashboard/customers/${customerId}`}
@@ -64,8 +64,8 @@ export function FrameworkLevelField({
                 type="button"
                 onClick={() => onChange({ id: '', label: '' })}
                 disabled={disabled}
-                className="rounded-md border border-zinc-600 bg-zinc-800 px-2.5 py-1 text-xs text-zinc-300
-                           hover:bg-zinc-700 hover:text-zinc-100 disabled:opacity-50 transition-colors flex-shrink-0"
+                className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] px-2.5 py-1 text-xs text-[var(--color-fg)]
+                           hover:bg-[var(--color-border)] hover:text-[var(--color-fg)] disabled:opacity-50 transition-colors flex-shrink-0"
               >
                 Clear
               </button>
@@ -88,8 +88,8 @@ export function FrameworkLevelField({
 
   return (
     <div>
-      <label htmlFor="frameworkLevelId" className="block text-sm font-medium text-zinc-300 mb-1">
-        Framework Level <span className="text-zinc-500 font-normal">(optional)</span>
+      <label htmlFor="frameworkLevelId" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
+        Framework Level <span className="text-[var(--color-fg-subtle)] font-normal">(optional)</span>
       </label>
       <select
         id="frameworkLevelId"
@@ -103,7 +103,7 @@ export function FrameworkLevelField({
             label: level ? `${level.code} — ${level.title}` : '',
           })
         }}
-        className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+        className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                    disabled:opacity-50"
       >
@@ -115,7 +115,7 @@ export function FrameworkLevelField({
         ))}
       </select>
       {selected && (
-        <p className="text-xs text-zinc-500 mt-1">{selected.description}</p>
+        <p className="text-xs text-[var(--color-fg-subtle)] mt-1">{selected.description}</p>
       )}
     </div>
   )

@@ -29,11 +29,11 @@ export function ShortlistSummaryPanel({ roleId }: Props) {
   }
 
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mt-6">
+    <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 mt-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <SparklesIcon className="h-4 w-4 text-violet-400" />
-          <h2 className="font-semibold text-zinc-100">AI Hiring Recommendation</h2>
+          <h2 className="font-semibold text-[var(--color-fg)]">AI Hiring Recommendation</h2>
         </div>
         <button
           onClick={handleGenerate}
@@ -58,13 +58,13 @@ export function ShortlistSummaryPanel({ roleId }: Props) {
       </div>
 
       {!summary && !error && !isPending && (
-        <p className="text-zinc-500 text-sm">
+        <p className="text-[var(--color-fg-subtle)] text-sm">
           Generate an AI-powered narrative summary comparing the top candidates for this role.
         </p>
       )}
 
       {isPending && (
-        <div className="flex items-center gap-3 text-zinc-400 text-sm py-4">
+        <div className="flex items-center gap-3 text-[var(--color-fg-muted)] text-sm py-4">
           <Loader2Icon className="h-4 w-4 animate-spin flex-shrink-0" />
           <span>Analysing top candidates and generating hiring recommendation…</span>
         </div>
@@ -78,7 +78,7 @@ export function ShortlistSummaryPanel({ roleId }: Props) {
 
       {summary && (
         <div className="rounded-xl bg-violet-950/30 border border-violet-800 p-5">
-          <div className="text-sm text-zinc-300 leading-relaxed space-y-3 [&_h1]:text-base [&_h1]:font-semibold [&_h1]:text-zinc-100 [&_h1]:mb-1 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-zinc-100 [&_h2]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-zinc-200 [&_strong]:text-zinc-100 [&_strong]:font-semibold [&_ul]:space-y-1 [&_ul]:pl-4 [&_ul>li]:list-disc [&_ul>li]:marker:text-violet-400 [&_ol]:space-y-1 [&_ol]:pl-4 [&_ol>li]:list-decimal [&_ol>li]:marker:text-violet-400 [&_p]:leading-relaxed">
+          <div className="text-sm text-[var(--color-fg)] leading-relaxed space-y-3 [&_h1]:text-base [&_h1]:font-semibold [&_h1]:text-[var(--color-fg)] [&_h1]:mb-1 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-[var(--color-fg)] [&_h2]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-[var(--color-fg)] [&_strong]:text-[var(--color-fg)] [&_strong]:font-semibold [&_ul]:space-y-1 [&_ul]:pl-4 [&_ul>li]:list-disc [&_ul>li]:marker:text-violet-400 [&_ol]:space-y-1 [&_ol]:pl-4 [&_ol>li]:list-decimal [&_ol>li]:marker:text-violet-400 [&_p]:leading-relaxed">
             <ReactMarkdown>{summary}</ReactMarkdown>
           </div>
         </div>

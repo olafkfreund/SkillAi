@@ -81,7 +81,7 @@ export function SelectableRoleCandidateList({
                   type="checkbox"
                   checked={selectedIds.has(c.candidateId)}
                   onChange={() => toggleOne(c.candidateId)}
-                  className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-blue-600
+                  className="h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-bg-input)] text-blue-600
                              cursor-pointer focus:ring-blue-500 flex-shrink-0"
                   aria-label={`Select ${c.firstName} ${c.lastName}`}
                   title={selectedIds.has(c.candidateId) ? 'Deselect candidate' : 'Select candidate'}

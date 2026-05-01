@@ -137,8 +137,8 @@ export function SubmissionRow({ submission }: Props) {
 
   return (
     <div
-      className={`flex items-start justify-between gap-4 px-4 py-3 rounded-lg bg-zinc-800/50
-                  border border-zinc-700/50 transition-opacity ${isPending ? 'opacity-60' : ''}`}
+      className={`flex items-start justify-between gap-4 px-4 py-3 rounded-lg bg-[var(--color-bg-input)]/50
+                  border border-[var(--color-border)]/50 transition-opacity ${isPending ? 'opacity-60' : ''}`}
     >
       {/* Left: candidate identity + agency */}
       <div className="flex-1 min-w-0">
@@ -151,12 +151,12 @@ export function SubmissionRow({ submission }: Props) {
                 width={20}
                 height={20}
                 style={{ width: 20, height: 20 }}
-                className="rounded-full border border-zinc-700 bg-zinc-800 object-contain shrink-0"
+                className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-input)] object-contain shrink-0"
               />
             ) : candidate.agencyName ? (
               <div
-                className="flex items-center justify-center rounded-full bg-zinc-800
-                           text-zinc-400 text-xs font-semibold shrink-0"
+                className="flex items-center justify-center rounded-full bg-[var(--color-bg-input)]
+                           text-[var(--color-fg-muted)] text-xs font-semibold shrink-0"
                 style={{ width: 20, height: 20 }}
                 aria-hidden="true"
               >
@@ -167,20 +167,20 @@ export function SubmissionRow({ submission }: Props) {
 
           <Link
             href={`/dashboard/candidates/${submission.candidateId}?roleId=${submission.roleId}`}
-            className="text-sm font-medium text-zinc-100 hover:text-blue-400 transition-colors"
+            className="text-sm font-medium text-[var(--color-fg)] hover:text-blue-400 transition-colors"
           >
             {candidate.firstName} {candidate.lastName}
           </Link>
 
           {candidate.agencyName && (
-            <span className="text-xs text-zinc-500">{candidate.agencyName}</span>
+            <span className="text-xs text-[var(--color-fg-subtle)]">{candidate.agencyName}</span>
           )}
         </div>
 
         {/* Middle: pill + timing */}
         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
           <SubmissionStatusPill status={currentStatus} />
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-[var(--color-fg-subtle)]">
             Sent {timeAgo(sentAt)}, last update {timeAgo(statusUpdatedAt)}
           </span>
         </div>
@@ -194,7 +194,7 @@ export function SubmissionRow({ submission }: Props) {
               rows={3}
               placeholder="Add notes (visible to recruiters only)"
               disabled={isPending}
-              className="w-full rounded-md border border-zinc-600 bg-zinc-900 text-zinc-200
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-fg)]
                          text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500
                          disabled:opacity-50 resize-none"
             />
@@ -213,7 +213,7 @@ export function SubmissionRow({ submission }: Props) {
                 type="button"
                 onClick={() => setNotesOpen(false)}
                 disabled={isPending}
-                className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+                className="text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors"
               >
                 Cancel
               </button>
@@ -235,7 +235,7 @@ export function SubmissionRow({ submission }: Props) {
             onChange={handleStatusChange}
             disabled={isPending}
             aria-label={`Update status for ${candidate.firstName} ${candidate.lastName}`}
-            className="appearance-none rounded-md border border-zinc-600 bg-zinc-800 text-zinc-200
+            className="appearance-none rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)]
                        text-xs px-2.5 py-1.5 pr-6 focus:outline-none focus:ring-1 focus:ring-blue-500
                        focus:border-transparent disabled:opacity-50 cursor-pointer"
           >
@@ -246,7 +246,7 @@ export function SubmissionRow({ submission }: Props) {
             ))}
           </select>
           <svg
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500 pointer-events-none"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--color-fg-subtle)] pointer-events-none"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -261,8 +261,8 @@ export function SubmissionRow({ submission }: Props) {
           type="button"
           onClick={() => setNotesOpen((v) => !v)}
           disabled={isPending}
-          className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors px-1.5 py-1
-                     rounded border border-transparent hover:border-zinc-600"
+          className="text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors px-1.5 py-1
+                     rounded border border-transparent hover:border-[var(--color-border)]"
           aria-label="Toggle notes"
           title={submission.notes ? 'Edit notes' : 'Add notes'}
         >
@@ -278,8 +278,8 @@ export function SubmissionRow({ submission }: Props) {
               onClick={handleCopyLink}
               title="Copy customer share link"
               aria-label="Copy share link to clipboard"
-              className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200
-                         px-1.5 py-1 rounded border border-transparent hover:border-zinc-600
+              className="inline-flex items-center gap-1 text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]
+                         px-1.5 py-1 rounded border border-transparent hover:border-[var(--color-border)]
                          transition-colors"
             >
               {copied ? (
@@ -311,7 +311,7 @@ export function SubmissionRow({ submission }: Props) {
                   type="button"
                   onClick={() => setRevokeConfirming(false)}
                   disabled={isPending}
-                  className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+                  className="text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors"
                 >
                   No
                 </button>
@@ -321,7 +321,7 @@ export function SubmissionRow({ submission }: Props) {
                 type="button"
                 onClick={() => setRevokeConfirming(true)}
                 disabled={isPending}
-                className="text-xs text-zinc-600 hover:text-amber-400 transition-colors"
+                className="text-xs text-[var(--color-fg-subtle)] hover:text-amber-400 transition-colors"
                 title="Revoke share link"
               >
                 Revoke
@@ -336,8 +336,8 @@ export function SubmissionRow({ submission }: Props) {
             disabled={isGenerating || isPending}
             title="Generate a share link for this submission"
             aria-label={`Share ${candidate.firstName} ${candidate.lastName}'s submission with customer`}
-            className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200
-                       px-1.5 py-1 rounded border border-transparent hover:border-zinc-600
+            className="inline-flex items-center gap-1 text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]
+                       px-1.5 py-1 rounded border border-transparent hover:border-[var(--color-border)]
                        transition-colors disabled:opacity-50"
           >
             {isGenerating ? (
@@ -370,7 +370,7 @@ export function SubmissionRow({ submission }: Props) {
               type="button"
               onClick={() => setRemoveConfirming(false)}
               disabled={isPending}
-              className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+              className="text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors"
             >
               No
             </button>
@@ -382,7 +382,7 @@ export function SubmissionRow({ submission }: Props) {
             disabled={isPending}
             title="Remove from submitted"
             aria-label={`Remove ${candidate.firstName} ${candidate.lastName} from submitted`}
-            className="p-2 md:p-1 rounded-md text-zinc-600 hover:text-red-400 hover:bg-red-950/40
+            className="p-2 md:p-1 rounded-md text-[var(--color-fg-subtle)] hover:text-red-400 hover:bg-red-950/40
                        border border-transparent hover:border-red-800 transition-colors"
           >
             <Trash2Icon className="h-3.5 w-3.5" />

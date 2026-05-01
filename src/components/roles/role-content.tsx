@@ -16,33 +16,33 @@ type Props = {
  */
 export function RoleContent({ text }: Props) {
   if (!text || text.trim().length === 0) {
-    return <p className="text-sm text-zinc-500 italic">No content yet.</p>
+    return <p className="text-sm text-[var(--color-fg-subtle)] italic">No content yet.</p>
   }
 
   return (
-    <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
+    <div className="text-sm text-[var(--color-fg)] leading-relaxed space-y-3">
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
-            <h3 className="text-base font-semibold text-zinc-100 mt-4 mb-2">{children}</h3>
+            <h3 className="text-base font-semibold text-[var(--color-fg)] mt-4 mb-2">{children}</h3>
           ),
           h2: ({ children }) => (
-            <h3 className="text-sm font-semibold text-zinc-100 mt-4 mb-2 uppercase tracking-wide">{children}</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-fg)] mt-4 mb-2 uppercase tracking-wide">{children}</h3>
           ),
           h3: ({ children }) => (
-            <h4 className="text-sm font-semibold text-zinc-200 mt-3 mb-1.5">{children}</h4>
+            <h4 className="text-sm font-semibold text-[var(--color-fg)] mt-3 mb-1.5">{children}</h4>
           ),
           h4: ({ children }) => (
-            <h5 className="text-xs font-semibold text-zinc-200 mt-2 mb-1 uppercase tracking-wide">{children}</h5>
+            <h5 className="text-xs font-semibold text-[var(--color-fg)] mt-2 mb-1 uppercase tracking-wide">{children}</h5>
           ),
-          p: ({ children }) => <p className="text-zinc-300">{children}</p>,
-          ul: ({ children }) => <ul className="list-disc pl-5 space-y-1 text-zinc-300">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1 text-zinc-300">{children}</ol>,
-          li: ({ children }) => <li className="text-zinc-300">{children}</li>,
-          strong: ({ children }) => <strong className="font-semibold text-zinc-100">{children}</strong>,
-          em: ({ children }) => <em className="italic text-zinc-200">{children}</em>,
+          p: ({ children }) => <p className="text-[var(--color-fg)]">{children}</p>,
+          ul: ({ children }) => <ul className="list-disc pl-5 space-y-1 text-[var(--color-fg)]">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1 text-[var(--color-fg)]">{children}</ol>,
+          li: ({ children }) => <li className="text-[var(--color-fg)]">{children}</li>,
+          strong: ({ children }) => <strong className="font-semibold text-[var(--color-fg)]">{children}</strong>,
+          em: ({ children }) => <em className="italic text-[var(--color-fg)]">{children}</em>,
           code: ({ children }) => (
-            <code className="rounded bg-zinc-800 border border-zinc-700 px-1.5 py-0.5 text-xs font-mono text-violet-300">
+            <code className="rounded bg-[var(--color-bg-input)] border border-[var(--color-border)] px-1.5 py-0.5 text-xs font-mono text-violet-300">
               {children}
             </code>
           ),
@@ -57,7 +57,7 @@ export function RoleContent({ text }: Props) {
             </a>
           ),
           blockquote: ({ children }) => (
-            <blockquote className="border-l-2 border-zinc-700 pl-3 italic text-zinc-400">{children}</blockquote>
+            <blockquote className="border-l-2 border-[var(--color-border)] pl-3 italic text-[var(--color-fg-muted)]">{children}</blockquote>
           ),
         }}
       >

@@ -27,16 +27,16 @@ export function RoleTagsPanel({ keySkills, topRequirements, canEdit, audience = 
   }
 
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+    <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold text-zinc-100">Skills &amp; Requirements</h2>
+        <h2 className="font-semibold text-[var(--color-fg)]">Skills &amp; Requirements</h2>
         {canEdit && !isManagerView && (
           <button
             type="button"
             onClick={handleRegenerate}
             disabled={isPending}
-            className="flex items-center gap-1.5 text-xs text-zinc-400 border border-zinc-600
-                       rounded-md px-3 py-1.5 hover:bg-zinc-800 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-[var(--color-fg-muted)] border border-[var(--color-border)]
+                       rounded-md px-3 py-1.5 hover:bg-[var(--color-bg-input)] disabled:opacity-50 transition-colors"
           >
             {isPending ? (
               <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
@@ -49,7 +49,7 @@ export function RoleTagsPanel({ keySkills, topRequirements, canEdit, audience = 
       </div>
 
       {isPending && (
-        <p className="text-sm text-zinc-500 mb-4">
+        <p className="text-sm text-[var(--color-fg-subtle)] mb-4">
           AI is extracting tags — this page will refresh in a few seconds…
         </p>
       )}
@@ -61,7 +61,7 @@ export function RoleTagsPanel({ keySkills, topRequirements, canEdit, audience = 
       )}
 
       {hasNoTags && !isPending ? (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-[var(--color-fg-subtle)]">
           {canEdit
             ? 'No tags yet. Click "Generate tags" to extract skills and requirements using AI.'
             : 'No tags extracted yet.'}
@@ -70,7 +70,7 @@ export function RoleTagsPanel({ keySkills, topRequirements, canEdit, audience = 
         <div className="space-y-4">
           {keySkills.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">
+              <p className="text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide mb-2">
                 Key Skills
               </p>
               <div className="flex flex-wrap gap-2">
@@ -89,7 +89,7 @@ export function RoleTagsPanel({ keySkills, topRequirements, canEdit, audience = 
 
           {topRequirements.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">
+              <p className="text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide mb-2">
                 Top Requirements
               </p>
               <div className="flex flex-wrap gap-2">

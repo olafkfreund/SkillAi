@@ -27,17 +27,17 @@ export function PriorityKeywordsPanel({
   const empty = items.length === 0
 
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+    <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 mb-6">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold text-zinc-100 flex items-center gap-2">
+        <h2 className="font-semibold text-[var(--color-fg)] flex items-center gap-2">
           <SparklesIcon className="h-4 w-4 text-yellow-400" />
           Manager Priorities
         </h2>
         {canEdit && !isManagerView && (
           <a
             href={roleEditHref}
-            className="text-xs text-zinc-400 border border-zinc-600 rounded-md px-3 py-1.5
-                       hover:bg-zinc-800 transition-colors"
+            className="text-xs text-[var(--color-fg-muted)] border border-[var(--color-border)] rounded-md px-3 py-1.5
+                       hover:bg-[var(--color-bg-input)] transition-colors"
           >
             {empty ? 'Add priorities' : 'Edit'}
           </a>
@@ -45,7 +45,7 @@ export function PriorityKeywordsPanel({
       </div>
 
       {empty ? (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-[var(--color-fg-subtle)]">
           {canEdit
             ? 'No manager priorities recorded for this role. Click "Add priorities" to record what the hiring manager cares about most.'
             : 'No manager priorities recorded for this role.'}
@@ -64,7 +64,7 @@ export function PriorityKeywordsPanel({
         </div>
       )}
 
-      <p className="mt-3 text-[11px] text-zinc-500">
+      <p className="mt-3 text-[11px] text-[var(--color-fg-subtle)]">
         Soft-signal priorities surfaced in AI scoring summaries. Not a numeric dimension.
       </p>
     </div>

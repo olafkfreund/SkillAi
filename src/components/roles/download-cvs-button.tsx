@@ -32,8 +32,8 @@ export function DownloadCvsButton({ roleId }: Props) {
         value={status}
         onChange={(e) => setStatus(e.target.value)}
         disabled={loading}
-        className="bg-zinc-800 border border-zinc-700 rounded-md px-2 py-1.5
-                   text-sm text-zinc-300
+        className="bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-md px-2 py-1.5
+                   text-sm text-[var(--color-fg)]
                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                    transition-colors cursor-pointer disabled:opacity-50"
         aria-label="Candidate status filter for CV download"
@@ -47,9 +47,9 @@ export function DownloadCvsButton({ roleId }: Props) {
       <button
         onClick={handleDownload}
         disabled={loading}
-        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-600
-                   text-sm text-zinc-400 px-3 py-1.5
-                   hover:bg-zinc-800 disabled:opacity-50 transition-colors"
+        className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)]
+                   text-sm text-[var(--color-fg-muted)] px-3 py-1.5
+                   hover:bg-[var(--color-bg-input)] disabled:opacity-50 transition-colors"
       >
         {loading ? (
           <Loader2Icon className="h-3.5 w-3.5 animate-spin" />

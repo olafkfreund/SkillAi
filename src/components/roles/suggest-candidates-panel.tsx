@@ -26,7 +26,7 @@ function SimilarityBadge({ similarity }: { similarity: number }) {
       ? 'bg-green-950 border border-green-700 text-green-300'
       : similarity >= 50
         ? 'bg-blue-950 border border-blue-700 text-blue-300'
-        : 'bg-zinc-800 border border-zinc-600 text-zinc-400'
+        : 'bg-[var(--color-bg-input)] border border-[var(--color-border)] text-[var(--color-fg-muted)]'
 
   return (
     <span className={`inline-flex items-center rounded-full text-xs font-medium px-2.5 py-0.5 ${colorClass}`}>
@@ -65,11 +65,11 @@ export function SuggestCandidatesPanel({ roleId, roleText }: Props) {
   }
 
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+    <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <SparklesIcon className="h-4 w-4 text-violet-400" />
-          <h2 className="font-semibold text-zinc-100">Matching candidates from archive</h2>
+          <h2 className="font-semibold text-[var(--color-fg)]">Matching candidates from archive</h2>
         </div>
         <button
           onClick={handleFind}
@@ -88,19 +88,19 @@ export function SuggestCandidatesPanel({ roleId, roleText }: Props) {
       </div>
 
       {candidates === null && !isPending && (
-        <p className="text-zinc-500 text-sm">
+        <p className="text-[var(--color-fg-subtle)] text-sm">
           Click the button above to find archived candidates who might be a good fit for this role.
         </p>
       )}
 
       {notEnoughData && candidates !== null && candidates.length === 0 && (
-        <p className="text-zinc-500 text-sm">
+        <p className="text-[var(--color-fg-subtle)] text-sm">
           Not enough candidate data yet. Upload more CVs to enable matching.
         </p>
       )}
 
       {candidates !== null && candidates.length === 0 && !notEnoughData && (
-        <p className="text-zinc-500 text-sm">No matching candidates found in archive.</p>
+        <p className="text-[var(--color-fg-subtle)] text-sm">No matching candidates found in archive.</p>
       )}
 
       {candidates !== null && candidates.length > 0 && (
@@ -108,19 +108,19 @@ export function SuggestCandidatesPanel({ roleId, roleText }: Props) {
           {candidates.map((c) => (
             <div
               key={c.id}
-              className="flex items-center justify-between rounded-lg bg-zinc-800 border border-zinc-700
+              className="flex items-center justify-between rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)]
                          px-4 py-3 gap-3"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="min-w-0">
                   <Link
                     href={`/dashboard/candidates/${c.id}?roleId=${roleId}`}
-                    className="text-sm font-medium text-zinc-100 hover:text-violet-300 transition-colors truncate block"
+                    className="text-sm font-medium text-[var(--color-fg)] hover:text-violet-300 transition-colors truncate block"
                   >
                     {c.firstName} {c.lastName}
                   </Link>
                   {c.email && (
-                    <p className="text-xs text-zinc-500 truncate">{c.email}</p>
+                    <p className="text-xs text-[var(--color-fg-subtle)] truncate">{c.email}</p>
                   )}
                 </div>
                 <SimilarityBadge similarity={c.similarity} />
@@ -131,7 +131,7 @@ export function SuggestCandidatesPanel({ roleId, roleText }: Props) {
                     href={`/api/candidates/${c.id}/cv`}
                     download
                     title="Download original CV"
-                    className="rounded p-1.5 text-zinc-600 hover:text-blue-400 hover:bg-blue-950/40
+                    className="rounded p-1.5 text-[var(--color-fg-subtle)] hover:text-blue-400 hover:bg-blue-950/40
                                border border-transparent hover:border-blue-800 transition-colors"
                   >
                     <Download className="h-4 w-4" />
@@ -143,8 +143,8 @@ export function SuggestCandidatesPanel({ roleId, roleText }: Props) {
                   <button
                     onClick={() => handleScore(c.id)}
                     disabled={scoringId === c.id}
-                    className="flex items-center gap-1.5 rounded-md bg-zinc-700 text-zinc-200 text-xs
-                               font-medium px-3 py-1.5 hover:bg-zinc-600 transition-colors
+                    className="flex items-center gap-1.5 rounded-md bg-[var(--color-border)] text-[var(--color-fg)] text-xs
+                               font-medium px-3 py-1.5 hover:bg-[var(--color-bg-input)] transition-colors
                                disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {scoringId === c.id ? (
