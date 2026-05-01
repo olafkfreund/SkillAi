@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
 import { DashboardMobileShell } from '@/components/layout/dashboard-mobile-shell'
 import { Providers } from '@/components/providers'
+import { CommandPaletteTrigger } from '@/components/search/command-palette-trigger'
 
 // Dashboard pages all depend on the authenticated session, so they cannot be
 // statically prerendered. Marking the segment dynamic also avoids the
@@ -20,6 +21,7 @@ export default async function DashboardLayout({
 
   return (
     <Providers>
+      <CommandPaletteTrigger userRole={session.user.role} />
       <div className="flex h-screen bg-[var(--color-bg-app)]">
         <Sidebar role={session.user.role} userName={session.user.name ?? ''} />
         <div className="flex-1 flex flex-col overflow-hidden">
