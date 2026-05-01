@@ -53,6 +53,7 @@ export const scores = pgTable(
     unique('scores_candidate_role_unique').on(t.candidateId, t.roleId),
     index('idx_scores_role_overall').on(t.roleId, t.overallScore),
     index('idx_scores_candidate').on(t.candidateId),
+    index('idx_scores_status_updated').on(t.scoreStatus, t.updatedAt.desc()),
     pgPolicy('scores_tenant_isolation', {
       as: 'permissive',
       for: 'all',

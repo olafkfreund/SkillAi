@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { unstable_cache } from 'next/cache'
 import { desc, asc, eq, and, gte, ne, count, sql, isNull } from 'drizzle-orm'
 import {
   BriefcaseIcon,
@@ -19,6 +20,44 @@ import { getForYouFeed } from '@/actions/dashboard-tasks'
 
 export const metadata = { title: 'Dashboard — SkillAI' }
 
+// Stat counts are stable for several minutes — wrap in unstable_cache with a
+// 60-second TTL. The cache key includes tenantId so tenants don't share entries.
+// Eventual consistency is acceptable here: the cards show round-number aggregates
+// (active roles, total candidates, …); a few seconds of staleness after a write
+// is not user-visible. Lists below stay uncached because users expect freshness.
+const getDashboardStats = unstable_cache(
+  async (tenantId: string) => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    return withTenant(tenantId, async (tx) => {
+      const [
+        [{ value: roleCount }],
+        [{ value: candidateCount }],
+        [{ value: scoredCount }],
+        [{ value: packsCount }],
+        [{ value: missingCvCount }],
+      ] = await Promise.all([
+        tx.select({ value: count() }).from(roles).where(eq(roles.isActive, true)),
+        tx.select({ value: count() }).from(candidates).where(eq(candidates.isActive, true)),
+        tx
+          .select({ value: count() })
+          .from(scores)
+          .where(and(eq(scores.scoreStatus, 'complete'), gte(scores.createdAt, sevenDaysAgo))),
+        tx
+          .select({ value: count() })
+          .from(interviewPacks)
+          .where(eq(interviewPacks.generationStatus, 'complete')),
+        tx
+          .select({ value: count() })
+          .from(candidates)
+          .where(and(eq(candidates.isActive, true), isNull(candidates.filePath))),
+      ])
+      return { roleCount, candidateCount, scoredCount, packsCount, missingCvCount }
+    })
+  },
+  ['dashboard-stats'],
+  { revalidate: 60 }
+)
+
 const STATUS_BADGE: Record<string, string> = {
   new:          'bg-[var(--color-bg-input)] text-[var(--color-fg-muted)]',
   shortlisted:  'bg-blue-900/60 text-blue-300',
@@ -35,126 +74,106 @@ export default async function DashboardPage() {
   if (!tenantId) notFound()
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  const now = new Date()
 
-  // ── For You feed ──────────────────────────────────────────────────────────
-  const feed = await getForYouFeed(
-    session.user.id,
-    session.user.role as 'admin' | 'recruiter' | 'hiring_manager' | 'viewer',
-    tenantId,
-  )
+  // Three independent top-level fetches run in parallel:
+  //   1. for-you feed (its own withTenant + parallel sub-queries internally)
+  //   2. stat counts (cached for 60s, single withTenant when cold)
+  //   3. list queries (one withTenant + Promise.all across the four lists)
+  //
+  // Previously the page ran 8 separate withTenant calls sequentially. Each
+  // withTenant opens a transaction and sets the RLS session variable, so each
+  // is one round-trip to Postgres. Collapsing to three top-level fetches
+  // (parallel), one of which batches four queries, removes ~7 round-trips.
+  const [feed, stats, lists] = await Promise.all([
+    getForYouFeed(
+      session.user.id,
+      session.user.role as 'admin' | 'recruiter' | 'hiring_manager' | 'viewer',
+      tenantId,
+    ),
+    getDashboardStats(tenantId),
+    withTenant(tenantId, async (tx) =>
+      Promise.all([
+        // Recent roles (with candidate count via scores)
+        tx
+          .select({
+            id:             roles.id,
+            title:          roles.title,
+            createdAt:      roles.createdAt,
+            candidateCount: sql<number>`cast(count(${scores.id}) as integer)`,
+          })
+          .from(roles)
+          .leftJoin(scores, eq(scores.roleId, roles.id))
+          .where(eq(roles.isActive, true))
+          .groupBy(roles.id)
+          .orderBy(desc(roles.createdAt))
+          .limit(5),
 
-  // ── Stat queries ─────────────────────────────────────────────────────────
-  const [{ value: roleCount }] = await withTenant(tenantId, async (tx) =>
-    tx.select({ value: count() }).from(roles).where(eq(roles.isActive, true))
-  )
+        // Top candidates this week by overall score
+        tx
+          .select({
+            candidateId:  candidates.id,
+            firstName:    candidates.firstName,
+            lastName:     candidates.lastName,
+            overallScore: scores.overallScore,
+            roleId:       roles.id,
+            roleTitle:    roles.title,
+          })
+          .from(scores)
+          .innerJoin(candidates, eq(scores.candidateId, candidates.id))
+          .innerJoin(roles, eq(scores.roleId, roles.id))
+          .where(and(eq(scores.scoreStatus, 'complete'), gte(scores.updatedAt, sevenDaysAgo)))
+          .orderBy(desc(scores.overallScore))
+          .limit(5),
 
-  const [{ value: candidateCount }] = await withTenant(tenantId, async (tx) =>
-    tx.select({ value: count() }).from(candidates).where(eq(candidates.isActive, true))
-  )
+        // Recent uploads (with agency name)
+        tx
+          .select({
+            id:         candidates.id,
+            firstName:  candidates.firstName,
+            lastName:   candidates.lastName,
+            status:     candidates.status,
+            createdAt:  candidates.createdAt,
+            agencyName: agencies.name,
+          })
+          .from(candidates)
+          .leftJoin(agencies, eq(candidates.agencyId, agencies.id))
+          .where(eq(candidates.isActive, true))
+          .orderBy(desc(candidates.createdAt))
+          .limit(8),
 
-  const [{ value: scoredCount }] = await withTenant(tenantId, async (tx) =>
-    tx
-      .select({ value: count() })
-      .from(scores)
-      .where(and(eq(scores.scoreStatus, 'complete'), gte(scores.createdAt, sevenDaysAgo)))
-  )
+        // Upcoming interviews (next 5, soonest first, excluding cancelled)
+        tx
+          .select({
+            id:                  interviewSlots.id,
+            scheduledAt:         interviewSlots.scheduledAt,
+            durationMinutes:     interviewSlots.durationMinutes,
+            title:               interviewSlots.title,
+            location:            interviewSlots.location,
+            meetingUrl:          interviewSlots.meetingUrl,
+            status:              interviewSlots.status,
+            candidateId:         interviewSlots.candidateId,
+            candidateFirstName:  candidates.firstName,
+            candidateLastName:   candidates.lastName,
+            roleTitle:           roles.title,
+            interviewerName:     users.name,
+          })
+          .from(interviewSlots)
+          .innerJoin(candidates, eq(interviewSlots.candidateId, candidates.id))
+          .leftJoin(roles, eq(interviewSlots.roleId, roles.id))
+          .leftJoin(users, eq(interviewSlots.interviewerId, users.id))
+          .where(and(
+            gte(interviewSlots.scheduledAt, now),
+            ne(interviewSlots.status, 'cancelled')
+          ))
+          .orderBy(asc(interviewSlots.scheduledAt))
+          .limit(5),
+      ])
+    ),
+  ])
 
-  const [{ value: packsCount }] = await withTenant(tenantId, async (tx) =>
-    tx
-      .select({ value: count() })
-      .from(interviewPacks)
-      .where(eq(interviewPacks.generationStatus, 'complete'))
-  )
-
-  const [{ value: missingCvCount }] = await withTenant(tenantId, async (tx) =>
-    tx
-      .select({ value: count() })
-      .from(candidates)
-      .where(and(eq(candidates.isActive, true), isNull(candidates.filePath)))
-  )
-
-  // ── Recent roles (with candidate count via scores) ───────────────────────
-  const recentRoles = await withTenant(tenantId, async (tx) =>
-    tx
-      .select({
-        id:             roles.id,
-        title:          roles.title,
-        createdAt:      roles.createdAt,
-        candidateCount: sql<number>`cast(count(${scores.id}) as integer)`,
-      })
-      .from(roles)
-      .leftJoin(scores, eq(scores.roleId, roles.id))
-      .where(eq(roles.isActive, true))
-      .groupBy(roles.id)
-      .orderBy(desc(roles.createdAt))
-      .limit(5)
-  )
-
-  // ── Top candidates this week by overall score ────────────────────────────
-  const topCandidates = await withTenant(tenantId, async (tx) =>
-    tx
-      .select({
-        candidateId:  candidates.id,
-        firstName:    candidates.firstName,
-        lastName:     candidates.lastName,
-        overallScore: scores.overallScore,
-        roleId:       roles.id,
-        roleTitle:    roles.title,
-      })
-      .from(scores)
-      .innerJoin(candidates, eq(scores.candidateId, candidates.id))
-      .innerJoin(roles, eq(scores.roleId, roles.id))
-      .where(and(eq(scores.scoreStatus, 'complete'), gte(scores.updatedAt, sevenDaysAgo)))
-      .orderBy(desc(scores.overallScore))
-      .limit(5)
-  )
-
-  // ── Recent uploads (with agency name) ────────────────────────────────────
-  const recentUploads = await withTenant(tenantId, async (tx) =>
-    tx
-      .select({
-        id:         candidates.id,
-        firstName:  candidates.firstName,
-        lastName:   candidates.lastName,
-        status:     candidates.status,
-        createdAt:  candidates.createdAt,
-        agencyName: agencies.name,
-      })
-      .from(candidates)
-      .leftJoin(agencies, eq(candidates.agencyId, agencies.id))
-      .where(eq(candidates.isActive, true))
-      .orderBy(desc(candidates.createdAt))
-      .limit(8)
-  )
-
-  // ── Upcoming interviews (next 5, soonest first, excluding cancelled) ─────
-  const upcomingInterviews = await withTenant(tenantId, async (tx) =>
-    tx
-      .select({
-        id:                  interviewSlots.id,
-        scheduledAt:         interviewSlots.scheduledAt,
-        durationMinutes:     interviewSlots.durationMinutes,
-        title:               interviewSlots.title,
-        location:            interviewSlots.location,
-        meetingUrl:          interviewSlots.meetingUrl,
-        status:              interviewSlots.status,
-        candidateId:         interviewSlots.candidateId,
-        candidateFirstName:  candidates.firstName,
-        candidateLastName:   candidates.lastName,
-        roleTitle:           roles.title,
-        interviewerName:     users.name,
-      })
-      .from(interviewSlots)
-      .innerJoin(candidates, eq(interviewSlots.candidateId, candidates.id))
-      .leftJoin(roles, eq(interviewSlots.roleId, roles.id))
-      .leftJoin(users, eq(interviewSlots.interviewerId, users.id))
-      .where(and(
-        gte(interviewSlots.scheduledAt, new Date()),
-        ne(interviewSlots.status, 'cancelled')
-      ))
-      .orderBy(asc(interviewSlots.scheduledAt))
-      .limit(5)
-  )
+  const { roleCount, candidateCount, scoredCount, packsCount, missingCvCount } = stats
+  const [recentRoles, topCandidates, recentUploads, upcomingInterviews] = lists
 
   return (
     <div>

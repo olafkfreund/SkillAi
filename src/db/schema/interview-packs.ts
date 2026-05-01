@@ -62,6 +62,7 @@ export const interviewPacks = pgTable(
   (t) => [
     index('idx_interview_packs_candidate').on(t.candidateId),
     index('idx_interview_packs_role').on(t.roleId),
+    index('idx_interview_packs_status').on(t.generationStatus),
     pgPolicy('interview_packs_tenant_isolation', {
       as: 'permissive',
       for: 'all',

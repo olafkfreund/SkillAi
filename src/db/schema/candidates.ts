@@ -83,6 +83,8 @@ export const candidates = pgTable(
     index('idx_candidates_tenant').on(t.tenantId),
     index('idx_candidates_agency').on(t.agencyId),
     index('idx_candidates_agency_availability').on(t.agencyId, t.availabilityStatus),
+    index('idx_candidates_tenant_active_created').on(t.tenantId, t.isActive, t.createdAt.desc()),
+    index('idx_candidates_tenant_status_active').on(t.tenantId, t.status, t.isActive),
     pgPolicy('candidates_tenant_isolation', {
       as: 'permissive',
       for: 'all',
