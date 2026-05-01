@@ -83,8 +83,8 @@ export function IcsImportButton({ candidateId, roleId }: Props) {
       <button
         onClick={handleClick}
         disabled={isPending}
-        className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-400
-                   border border-zinc-700 rounded-md hover:text-zinc-200 hover:border-zinc-600
+        className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-[var(--color-fg-muted)]
+                   border border-[var(--color-border)] rounded-md hover:text-[var(--color-fg)] hover:border-[var(--color-border)]
                    transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isPending ? (

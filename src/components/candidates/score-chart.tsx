@@ -45,12 +45,12 @@ export function ScoreChart({ score }: Props) {
       {dimensions.map((dim) => (
         <div key={dim.label}>
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-sm font-medium text-zinc-300">{dim.label}</span>
-            <span className="text-sm font-bold text-zinc-100">
+            <span className="text-sm font-medium text-[var(--color-fg)]">{dim.label}</span>
+            <span className="text-sm font-bold text-[var(--color-fg)]">
               {dim.score !== null ? `${dim.score}/100` : '—'}
             </span>
           </div>
-          <div className="h-2 rounded-full bg-zinc-700 overflow-hidden">
+          <div className="h-2 rounded-full bg-[var(--color-bg-input)] overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${dim.color}`}
               style={{ width: `${dim.score ?? 0}%` }}
@@ -63,7 +63,7 @@ export function ScoreChart({ score }: Props) {
               reasoning={dim.reasoning}
             />
           ) : dim.reasoning ? (
-            <p className="mt-1.5 text-xs text-zinc-500">{dim.reasoning}</p>
+            <p className="mt-1.5 text-xs text-[var(--color-fg-subtle)]">{dim.reasoning}</p>
           ) : null}
         </div>
       ))}

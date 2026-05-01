@@ -113,7 +113,7 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
 
       {/* CV upload — top of form so extraction happens before user fills fields */}
       <div>
-        <label className="block text-sm font-medium text-zinc-300 mb-2">
+        <label className="block text-sm font-medium text-[var(--color-fg)] mb-2">
           CV file <span className="text-red-500">*</span>
         </label>
         <CvDropzone
@@ -140,7 +140,7 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="firstName" className="block text-sm font-medium text-zinc-300 mb-1">
+          <label htmlFor="firstName" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
             First name <span className="text-red-500">*</span>
           </label>
           <input
@@ -150,8 +150,8 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
             disabled={pending || extracting}
             value={fields.firstName}
             onChange={(e) => setFields((f) => ({ ...f, firstName: e.target.value }))}
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           />
           {fieldErrors?.firstName && (
@@ -159,7 +159,7 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
           )}
         </div>
         <div>
-          <label htmlFor="lastName" className="block text-sm font-medium text-zinc-300 mb-1">
+          <label htmlFor="lastName" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
             Last name <span className="text-red-500">*</span>
           </label>
           <input
@@ -169,15 +169,15 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
             disabled={pending || extracting}
             value={fields.lastName}
             onChange={(e) => setFields((f) => ({ ...f, lastName: e.target.value }))}
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           />
         </div>
       </div>
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-1">
+        <label htmlFor="email" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
           Email
         </label>
         <input
@@ -187,14 +187,14 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
           disabled={pending || extracting}
           value={fields.email}
           onChange={(e) => setFields((f) => ({ ...f, email: e.target.value }))}
-          className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                     placeholder:text-zinc-500
+          className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                     placeholder:text-[var(--color-fg-subtle)]
                      focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
         />
       </div>
 
       <div>
-        <label htmlFor="phone" className="block text-sm font-medium text-zinc-300 mb-1">
+        <label htmlFor="phone" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
           Phone
         </label>
         <input
@@ -204,22 +204,22 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
           disabled={pending || extracting}
           value={fields.phone}
           onChange={(e) => setFields((f) => ({ ...f, phone: e.target.value }))}
-          className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                     placeholder:text-zinc-500
+          className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                     placeholder:text-[var(--color-fg-subtle)]
                      focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
         />
       </div>
 
       {agencies.length > 0 && (
         <div>
-          <label htmlFor="agencyId" className="block text-sm font-medium text-zinc-300 mb-1">
+          <label htmlFor="agencyId" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
             Agency
           </label>
           <select
             id="agencyId"
             name="agencyId"
             disabled={pending}
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                        focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
             <option value="">— No agency —</option>
@@ -231,11 +231,11 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
       )}
 
       {/* Location & Language */}
-      <div className="border-t border-zinc-800 pt-4 mt-2">
-        <p className="text-sm font-medium text-zinc-400 mb-3">Location & Language (optional)</p>
+      <div className="border-t border-[var(--color-bg-input)] pt-4 mt-2">
+        <p className="text-sm font-medium text-[var(--color-fg-muted)] mb-3">Location & Language (optional)</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
           <div>
-            <label htmlFor="country" className="block text-xs font-medium text-zinc-400 mb-1">Country</label>
+            <label htmlFor="country" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">Country</label>
             <input
               id="country"
               name="country"
@@ -244,12 +244,12 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
               onChange={(e) => setFields((f) => ({ ...f, country: e.target.value }))}
               disabled={pending}
               placeholder="United Kingdom"
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
           </div>
           <div>
-            <label htmlFor="city" className="block text-xs font-medium text-zinc-400 mb-1">City</label>
+            <label htmlFor="city" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">City</label>
             <input
               id="city"
               name="city"
@@ -258,15 +258,15 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
               onChange={(e) => setFields((f) => ({ ...f, city: e.target.value }))}
               disabled={pending}
               placeholder="London"
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label htmlFor="languagesSpoken" className="block text-xs font-medium text-zinc-400 mb-1">
-              Languages <span className="text-zinc-600">(comma-separated)</span>
+            <label htmlFor="languagesSpoken" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+              Languages <span className="text-[var(--color-fg-subtle)]">(comma-separated)</span>
             </label>
             <input
               id="languagesSpoken"
@@ -276,19 +276,19 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
               onChange={(e) => setFields((f) => ({ ...f, languagesSpoken: e.target.value }))}
               disabled={pending}
               placeholder="English, German"
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
           </div>
           <div>
-            <label htmlFor="willingToRelocate" className="block text-xs font-medium text-zinc-400 mb-1">Willing to Relocate</label>
+            <label htmlFor="willingToRelocate" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">Willing to Relocate</label>
             <select
               id="willingToRelocate"
               name="willingToRelocate"
               value={fields.willingToRelocate}
               onChange={(e) => setFields((f) => ({ ...f, willingToRelocate: e.target.value }))}
               disabled={pending}
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             >
               <option value="">— Not specified —</option>
@@ -300,11 +300,11 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
       </div>
 
       {/* Commercial Details */}
-      <div className="border-t border-zinc-800 pt-4 mt-2">
-        <p className="text-sm font-medium text-zinc-400 mb-3">Commercial Details (optional)</p>
+      <div className="border-t border-[var(--color-bg-input)] pt-4 mt-2">
+        <p className="text-sm font-medium text-[var(--color-fg-muted)] mb-3">Commercial Details (optional)</p>
         <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3">
           <div>
-            <label htmlFor="candidateRate" className="block text-xs font-medium text-zinc-400 mb-1">
+            <label htmlFor="candidateRate" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
               Candidate Rate/day
             </label>
             <input
@@ -317,12 +317,12 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
               onChange={(e) => setFields((f) => ({ ...f, candidateRate: e.target.value }))}
               disabled={pending}
               placeholder="650.00"
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
           </div>
           <div>
-            <label htmlFor="customerRate" className="block text-xs font-medium text-zinc-400 mb-1">
+            <label htmlFor="customerRate" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
               Customer Rate/day
             </label>
             <input
@@ -335,12 +335,12 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
               onChange={(e) => setFields((f) => ({ ...f, customerRate: e.target.value }))}
               disabled={pending}
               placeholder="850.00"
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
           </div>
           <div>
-            <label htmlFor="rateCurrency" className="block text-xs font-medium text-zinc-400 mb-1">
+            <label htmlFor="rateCurrency" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
               Currency
             </label>
             <select
@@ -349,7 +349,7 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
               value={fields.rateCurrency}
               onChange={(e) => setFields((f) => ({ ...f, rateCurrency: e.target.value }))}
               disabled={pending}
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             >
               <option value="GBP">GBP</option>

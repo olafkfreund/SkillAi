@@ -85,30 +85,30 @@ function SlotPopover({ slot, candidateId, canSchedule, onCancelled, onEdit, onCl
   }
 
   return (
-    <div className="absolute z-30 left-0 top-full mt-1 w-64 bg-zinc-800 border border-zinc-700
+    <div className="absolute z-30 left-0 top-full mt-1 w-64 bg-[var(--color-bg-input)] border border-[var(--color-border)]
                     rounded-lg shadow-xl p-4 text-sm">
       <div className="flex items-start justify-between gap-2 mb-2">
-        <p className="font-semibold text-zinc-100 leading-tight">{slot.title}</p>
-        <button onClick={onClose} className="p-1 rounded text-zinc-500 hover:text-zinc-300 flex-shrink-0">
+        <p className="font-semibold text-[var(--color-fg)] leading-tight">{slot.title}</p>
+        <button onClick={onClose} className="p-1 rounded text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] flex-shrink-0">
           <XCircleIcon className="h-4 w-4" />
         </button>
       </div>
-      <p className="text-zinc-400 text-xs mb-1">
+      <p className="text-[var(--color-fg-muted)] text-xs mb-1">
         {start.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'UTC' })}
       </p>
-      <p className="text-zinc-300 text-xs mb-3">
+      <p className="text-[var(--color-fg)] text-xs mb-3">
         {formatTime(start)} – {formatTime(end)} UTC ({slot.durationMinutes} min)
       </p>
 
       {slot.location && (
-        <div className="flex items-center gap-1.5 text-xs text-zinc-400 mb-1">
+        <div className="flex items-center gap-1.5 text-xs text-[var(--color-fg-muted)] mb-1">
           <MapPinIcon className="h-3 w-3 flex-shrink-0" />
           <span>{slot.location}</span>
         </div>
       )}
       {slot.meetingUrl && (
         <div className="flex items-center gap-1.5 text-xs mb-3">
-          <VideoIcon className="h-3 w-3 flex-shrink-0 text-zinc-400" />
+          <VideoIcon className="h-3 w-3 flex-shrink-0 text-[var(--color-fg-muted)]" />
           <a
             href={slot.meetingUrl}
             target="_blank"
@@ -233,26 +233,26 @@ export function InterviewCalendar({
         <div className="flex items-center gap-2">
           <button
             onClick={prevWeek}
-            className="p-1.5 rounded-md border border-zinc-700 text-zinc-400 hover:text-zinc-200
-                       hover:border-zinc-600 transition-colors"
+            className="p-1.5 rounded-md border border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]
+                       hover:border-[var(--color-border)] transition-colors"
           >
             <ChevronLeftIcon className="h-4 w-4" />
           </button>
           <button
             onClick={goToday}
-            className="px-3 py-1 text-xs font-medium text-zinc-400 border border-zinc-700 rounded-md
-                       hover:text-zinc-200 hover:border-zinc-600 transition-colors"
+            className="px-3 py-1 text-xs font-medium text-[var(--color-fg-muted)] border border-[var(--color-border)] rounded-md
+                       hover:text-[var(--color-fg)] hover:border-[var(--color-border)] transition-colors"
           >
             Today
           </button>
           <button
             onClick={nextWeek}
-            className="p-1.5 rounded-md border border-zinc-700 text-zinc-400 hover:text-zinc-200
-                       hover:border-zinc-600 transition-colors"
+            className="p-1.5 rounded-md border border-[var(--color-border)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]
+                       hover:border-[var(--color-border)] transition-colors"
           >
             <ChevronRightIcon className="h-4 w-4" />
           </button>
-          <span className="text-xs text-zinc-500 ml-1">
+          <span className="text-xs text-[var(--color-fg-subtle)] ml-1">
             {formatDate(weekStart)} – {formatDate(addDays(weekStart, 6))}
           </span>
         </div>
@@ -278,21 +278,21 @@ export function InterviewCalendar({
       <div className="overflow-x-auto">
         <div className="min-w-[640px]">
           {/* Day headers */}
-          <div className="grid grid-cols-8 border-b border-zinc-700 mb-0">
+          <div className="grid grid-cols-8 border-b border-[var(--color-border)] mb-0">
             {/* Time label column header */}
             <div className="col-span-1" />
             {weekDays.map((day, i) => (
               <div
                 key={i}
                 className={`col-span-1 text-center py-2 text-xs font-medium
-                  ${isToday(day) ? 'text-violet-400' : 'text-zinc-400'}`}
+                  ${isToday(day) ? 'text-violet-400' : 'text-[var(--color-fg-muted)]'}`}
               >
                 <div>{DAY_LABELS[i]}</div>
                 <div
                   className={`text-lg font-bold leading-tight
                     ${isToday(day)
                       ? 'text-violet-300 bg-violet-900/50 rounded-full w-8 h-8 flex items-center justify-center mx-auto'
-                      : 'text-zinc-300'
+                      : 'text-[var(--color-fg)]'
                     }`}
                 >
                   {day.getDate()}
@@ -304,13 +304,13 @@ export function InterviewCalendar({
           {/* Time rows + slot blocks */}
           <div className="grid grid-cols-8" style={{ height: `${GRID_HEIGHT}px` }}>
             {/* Hour labels */}
-            <div className="col-span-1 flex flex-col border-r border-zinc-800">
+            <div className="col-span-1 flex flex-col border-r border-[var(--color-border)]">
               {Array.from({ length: TOTAL_HOURS }, (_, i) => START_HOUR + i).map((hour) => (
                 <div
                   key={hour}
-                  className="flex-1 border-b border-zinc-800 pr-2 flex items-start justify-end"
+                  className="flex-1 border-b border-[var(--color-border)] pr-2 flex items-start justify-end"
                 >
-                  <span className="text-[10px] text-zinc-600 mt-1">
+                  <span className="text-[10px] text-[var(--color-fg-subtle)] mt-1">
                     {hour.toString().padStart(2, '0')}:00
                   </span>
                 </div>
@@ -323,14 +323,14 @@ export function InterviewCalendar({
               return (
                 <div
                   key={dayIndex}
-                  className={`col-span-1 relative border-r border-zinc-800
+                  className={`col-span-1 relative border-r border-[var(--color-border)]
                     ${isToday(day) ? 'bg-violet-950/20' : ''}`}
                 >
                   {/* Hour grid lines */}
                   {Array.from({ length: TOTAL_HOURS }, (_, i) => (
                     <div
                       key={i}
-                      className="absolute w-full border-b border-zinc-800"
+                      className="absolute w-full border-b border-[var(--color-border)]"
                       style={{ top: `${(i / TOTAL_HOURS) * 100}%` }}
                     />
                   ))}
@@ -347,18 +347,18 @@ export function InterviewCalendar({
                                    hover:opacity-90 relative"
                         style={{
                           ...slotStyle(slot),
-                          backgroundColor: isCancelled ? '#3f3f46' : '#6d28d9',
+                          backgroundColor: isCancelled ? 'var(--color-bg-input)' : '#6d28d9',
                           opacity: isCancelled ? 0.6 : 1,
                         }}
                         onClick={() => setOpenPopoverId(isOpen ? null : slot.id)}
                       >
                         <p
                           className={`font-semibold text-white truncate
-                            ${isCancelled ? 'line-through text-zinc-400' : ''}`}
+                            ${isCancelled ? 'line-through text-[var(--color-fg-muted)]' : ''}`}
                         >
                           {slot.title}
                         </p>
-                        <p className={`text-[9px] ${isCancelled ? 'text-zinc-500' : 'text-violet-200'}`}>
+                        <p className={`text-[9px] ${isCancelled ? 'text-[var(--color-fg-subtle)]' : 'text-violet-200'}`}>
                           {formatSlotTime(slot.scheduledAt)}
                         </p>
 
@@ -384,8 +384,8 @@ export function InterviewCalendar({
 
       {/* Upcoming slots list (for slots outside the visible week) */}
       {slots.length > 0 && (
-        <div className="mt-4 border-t border-zinc-700 pt-4">
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">
+        <div className="mt-4 border-t border-[var(--color-border)] pt-4">
+          <p className="text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide mb-2">
             All scheduled interviews
           </p>
           <div className="space-y-1.5">
@@ -396,16 +396,16 @@ export function InterviewCalendar({
                 <div
                   key={slot.id}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-xs
-                    ${isCancelled ? 'bg-zinc-800/50' : 'bg-zinc-800'}`}
+                    ${isCancelled ? 'bg-[var(--color-bg-input)]/50' : 'bg-[var(--color-bg-input)]'}`}
                 >
                   <div className={`w-2 h-2 rounded-full flex-shrink-0
-                    ${isCancelled ? 'bg-zinc-600' : 'bg-violet-500'}`} />
+                    ${isCancelled ? 'bg-[var(--color-border)]' : 'bg-violet-500'}`} />
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium truncate
-                      ${isCancelled ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
+                      ${isCancelled ? 'text-[var(--color-fg-subtle)] line-through' : 'text-[var(--color-fg)]'}`}>
                       {slot.title}
                     </p>
-                    <p className="text-zinc-500">
+                    <p className="text-[var(--color-fg-subtle)]">
                       {d.toLocaleDateString('en-GB', {
                         weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
                       })}{' '}
@@ -414,7 +414,7 @@ export function InterviewCalendar({
                     </p>
                   </div>
                   {isCancelled ? (
-                    <span className="text-[10px] text-zinc-500 bg-zinc-700 px-2 py-0.5 rounded">
+                    <span className="text-[10px] text-[var(--color-fg-subtle)] bg-[var(--color-bg-input)] px-2 py-0.5 rounded">
                       Cancelled
                     </span>
                   ) : canSchedule && (

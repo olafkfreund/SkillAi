@@ -64,18 +64,18 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
   const fieldErrors = state && !state.success ? state.fieldErrors : {}
 
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
+    <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 mb-6">
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         className="flex items-center justify-between w-full text-left"
       >
         <div className="flex items-center gap-2">
-          <PencilIcon className="h-4 w-4 text-zinc-500" />
-          <span className="font-semibold text-zinc-100">Edit Details</span>
+          <PencilIcon className="h-4 w-4 text-[var(--color-fg-subtle)]" />
+          <span className="font-semibold text-[var(--color-fg)]">Edit Details</span>
         </div>
         <ChevronDownIcon
-          className={`h-4 w-4 text-zinc-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 text-[var(--color-fg-subtle)] transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -111,7 +111,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-zinc-300 mb-1">
+              <label htmlFor="firstName" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
                 First name <span className="text-red-500">*</span>
               </label>
               <input
@@ -122,7 +122,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
                 disabled={pending}
                 value={fields.firstName}
                 onChange={(e) => setFields((f) => ({ ...f, firstName: e.target.value }))}
-                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                            disabled:opacity-50"
               />
@@ -132,7 +132,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
             </div>
 
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-zinc-300 mb-1">
+              <label htmlFor="lastName" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
                 Last name <span className="text-red-500">*</span>
               </label>
               <input
@@ -143,7 +143,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
                 disabled={pending}
                 value={fields.lastName}
                 onChange={(e) => setFields((f) => ({ ...f, lastName: e.target.value }))}
-                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                            disabled:opacity-50"
               />
@@ -154,8 +154,8 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-1">
-              Email <span className="text-zinc-500 font-normal">(optional)</span>
+            <label htmlFor="email" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
+              Email <span className="text-[var(--color-fg-subtle)] font-normal">(optional)</span>
             </label>
             <input
               id="email"
@@ -165,8 +165,8 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
               value={fields.email}
               onChange={(e) => setFields((f) => ({ ...f, email: e.target.value }))}
               placeholder="candidate@example.com"
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                         placeholder:text-zinc-500
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                         placeholder:text-[var(--color-fg-subtle)]
                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                          disabled:opacity-50"
             />
@@ -176,8 +176,8 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
           </div>
 
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-zinc-300 mb-1">
-              Phone <span className="text-zinc-500 font-normal">(optional)</span>
+            <label htmlFor="phone" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
+              Phone <span className="text-[var(--color-fg-subtle)] font-normal">(optional)</span>
             </label>
             <input
               id="phone"
@@ -187,8 +187,8 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
               value={fields.phone}
               onChange={(e) => setFields((f) => ({ ...f, phone: e.target.value }))}
               placeholder="+44 7700 900000"
-              className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                         placeholder:text-zinc-500
+              className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                         placeholder:text-[var(--color-fg-subtle)]
                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                          disabled:opacity-50"
             />
@@ -196,8 +196,8 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
 
           {agencies.length > 0 && (
             <div>
-              <label htmlFor="agencyId" className="block text-sm font-medium text-zinc-300 mb-1">
-                Agency <span className="text-zinc-500 font-normal">(optional)</span>
+              <label htmlFor="agencyId" className="block text-sm font-medium text-[var(--color-fg)] mb-1">
+                Agency <span className="text-[var(--color-fg-subtle)] font-normal">(optional)</span>
               </label>
               <select
                 id="agencyId"
@@ -205,7 +205,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
                 disabled={pending}
                 value={fields.agencyId}
                 onChange={(e) => setFields((f) => ({ ...f, agencyId: e.target.value }))}
-                className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                            disabled:opacity-50"
               >
@@ -220,39 +220,39 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
           )}
 
           {/* Location & Language */}
-          <div className="border-t border-zinc-800 pt-3 mt-1 col-span-2">
-            <p className="text-sm font-medium text-zinc-400 mb-2">Location & Language</p>
+          <div className="border-t border-[var(--color-bg-input)] pt-3 mt-1 col-span-2">
+            <p className="text-sm font-medium text-[var(--color-fg-muted)] mb-2">Location & Language</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
               <div>
-                <label htmlFor="edit-country" className="block text-xs font-medium text-zinc-400 mb-1">Country</label>
+                <label htmlFor="edit-country" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">Country</label>
                 <input id="edit-country" name="country" type="text" disabled={pending}
                   value={fields.country} onChange={(e) => setFields((f) => ({ ...f, country: e.target.value }))}
                   placeholder="United Kingdom"
-                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" />
+                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" />
               </div>
               <div>
-                <label htmlFor="edit-city" className="block text-xs font-medium text-zinc-400 mb-1">City</label>
+                <label htmlFor="edit-city" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">City</label>
                 <input id="edit-city" name="city" type="text" disabled={pending}
                   value={fields.city} onChange={(e) => setFields((f) => ({ ...f, city: e.target.value }))}
                   placeholder="London"
-                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" />
+                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label htmlFor="edit-languages" className="block text-xs font-medium text-zinc-400 mb-1">
-                  Languages <span className="text-zinc-600">(comma-separated)</span>
+                <label htmlFor="edit-languages" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+                  Languages <span className="text-[var(--color-fg-subtle)]">(comma-separated)</span>
                 </label>
                 <input id="edit-languages" name="languagesSpoken" type="text" disabled={pending}
                   value={fields.languagesSpoken} onChange={(e) => setFields((f) => ({ ...f, languagesSpoken: e.target.value }))}
                   placeholder="English, German"
-                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" />
+                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm placeholder:text-[var(--color-fg-subtle)] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" />
               </div>
               <div>
-                <label htmlFor="edit-relocate" className="block text-xs font-medium text-zinc-400 mb-1">Willing to Relocate</label>
+                <label htmlFor="edit-relocate" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">Willing to Relocate</label>
                 <select id="edit-relocate" name="willingToRelocate" disabled={pending}
                   value={fields.willingToRelocate} onChange={(e) => setFields((f) => ({ ...f, willingToRelocate: e.target.value }))}
-                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
+                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
                   <option value="">— Not specified —</option>
                   <option value="true">Yes</option>
                   <option value="false">No</option>
@@ -262,11 +262,11 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
           </div>
 
           {/* Commercial Details */}
-          <div className="border-t border-zinc-800 pt-3 mt-1 col-span-2">
-            <p className="text-sm font-medium text-zinc-400 mb-2">Commercial Details</p>
+          <div className="border-t border-[var(--color-bg-input)] pt-3 mt-1 col-span-2">
+            <p className="text-sm font-medium text-[var(--color-fg-muted)] mb-2">Commercial Details</p>
             <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3">
               <div>
-                <label htmlFor="candidateRate" className="block text-xs font-medium text-zinc-400 mb-1">
+                <label htmlFor="candidateRate" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
                   Candidate Rate/day
                 </label>
                 <input
@@ -279,13 +279,13 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
                   value={fields.candidateRate}
                   onChange={(e) => setFields((f) => ({ ...f, candidateRate: e.target.value }))}
                   placeholder="650.00"
-                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                             placeholder:text-zinc-500
+                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                             placeholder:text-[var(--color-fg-subtle)]
                              focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 />
               </div>
               <div>
-                <label htmlFor="customerRate" className="block text-xs font-medium text-zinc-400 mb-1">
+                <label htmlFor="customerRate" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
                   Customer Rate/day
                 </label>
                 <input
@@ -298,13 +298,13 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
                   value={fields.customerRate}
                   onChange={(e) => setFields((f) => ({ ...f, customerRate: e.target.value }))}
                   placeholder="850.00"
-                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                             placeholder:text-zinc-500
+                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                             placeholder:text-[var(--color-fg-subtle)]
                              focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 />
               </div>
               <div>
-                <label htmlFor="rateCurrency" className="block text-xs font-medium text-zinc-400 mb-1">
+                <label htmlFor="rateCurrency" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
                   Currency
                 </label>
                 <select
@@ -313,7 +313,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
                   disabled={pending}
                   value={fields.rateCurrency}
                   onChange={(e) => setFields((f) => ({ ...f, rateCurrency: e.target.value }))}
-                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                              focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 >
                   <option value="GBP">GBP</option>
@@ -329,11 +329,11 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
           </div>
 
           {/* Availability */}
-          <div className="border-t border-zinc-800 pt-3 mt-1 col-span-2">
-            <p className="text-sm font-medium text-zinc-400 mb-2">Availability</p>
+          <div className="border-t border-[var(--color-bg-input)] pt-3 mt-1 col-span-2">
+            <p className="text-sm font-medium text-[var(--color-fg-muted)] mb-2">Availability</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label htmlFor="availabilityStatus" className="block text-xs font-medium text-zinc-400 mb-1">
+                <label htmlFor="availabilityStatus" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
                   Availability status
                 </label>
                 <select
@@ -349,7 +349,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
                       availableFrom: e.target.value === 'on_project' ? f.availableFrom : '',
                     }))
                   }
-                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                              focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 >
                   <option value="available">Available</option>
@@ -358,8 +358,8 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
                 </select>
               </div>
               <div>
-                <label htmlFor="availableFrom" className="block text-xs font-medium text-zinc-400 mb-1">
-                  Available from <span className="text-zinc-600">(when on project)</span>
+                <label htmlFor="availableFrom" className="block text-xs font-medium text-[var(--color-fg-muted)] mb-1">
+                  Available from <span className="text-[var(--color-fg-subtle)]">(when on project)</span>
                 </label>
                 <input
                   id="availableFrom"
@@ -368,7 +368,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
                   disabled={pending || fields.availabilityStatus !== 'on_project'}
                   value={fields.availableFrom}
                   onChange={(e) => setFields((f) => ({ ...f, availableFrom: e.target.value }))}
-                  className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
+                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                              focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 />
               </div>
@@ -388,7 +388,7 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="text-sm text-zinc-500 hover:text-zinc-300"
+              className="text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]"
             >
               Cancel
             </button>

@@ -69,17 +69,17 @@ export function VerifiedProfileChip({
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-sm">
+    <div className="flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] px-2 py-1.5 text-sm">
       <a
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 text-zinc-200 hover:text-white truncate"
+        className="inline-flex items-center gap-1.5 text-[var(--color-fg)] hover:text-[var(--color-fg)] truncate"
         title={url}
       >
         <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0" />
         <span className="truncate">
-          <span className="text-zinc-400">{SOURCE_LABEL[source] ?? source}:</span> {displayUrl}
+          <span className="text-[var(--color-fg-muted)]">{SOURCE_LABEL[source] ?? source}:</span> {displayUrl}
         </span>
       </a>
 
@@ -102,7 +102,7 @@ export function VerifiedProfileChip({
           type="button"
           onClick={handle(onDismiss)}
           disabled={isPending}
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-1.5 py-0.5 text-xs text-zinc-400 hover:text-zinc-200 disabled:opacity-50"
+          className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-1.5 py-0.5 text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] disabled:opacity-50"
           aria-label="Dismiss this profile"
         >
           <XIcon className="h-3 w-3" />
