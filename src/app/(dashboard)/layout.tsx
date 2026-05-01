@@ -5,10 +5,16 @@ import { DashboardMobileShell } from '@/components/layout/dashboard-mobile-shell
 import { Providers } from '@/components/providers'
 import { CommandPaletteTrigger } from '@/components/search/command-palette-trigger'
 
-// Dashboard pages all depend on the authenticated session, so they cannot be
-// statically prerendered. Marking the segment dynamic also avoids the
-// useContext null prerender error in Next 16 / React 19 caused by the
-// `next-auth/react` module-scope hook initialization (#41).
+// ─────────────────────────────────────────────────────────────────────────────
+// DO NOT REMOVE `export const dynamic = 'force-dynamic'`
+// ─────────────────────────────────────────────────────────────────────────────
+// Two reasons it must stay:
+//  1. Dashboard pages are session-gated; static prerender would never apply to
+//     authenticated traffic anyway (no useful caching surface).
+//  2. Removing it re-breaks `next build` — the segment hits the same Next 16.2
+//     / React 19 prerender useContext-null bug tracked in #41. Fixed-by-
+//     workaround across page.tsx + this layout. Upstream fix not yet in 16.2.x.
+// ─────────────────────────────────────────────────────────────────────────────
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardLayout({
