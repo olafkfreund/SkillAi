@@ -81,15 +81,15 @@ export function ApprovalControls({
   const decisionLabel: Record<Decision, { label: string; classes: string }> = {
     approved: {
       label: 'Approved',
-      classes: 'text-green-400 bg-green-950 border border-green-800',
+      classes: 'text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800',
     },
     rejected: {
       label: 'Rejected',
-      classes: 'text-red-400 bg-red-950 border border-red-800',
+      classes: 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-950 border border-red-300 dark:border-red-800',
     },
     pending: {
       label: 'Pending',
-      classes: 'text-amber-400 bg-amber-950 border border-amber-800',
+      classes: 'text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950 border border-amber-300 dark:border-amber-800',
     },
   }
 

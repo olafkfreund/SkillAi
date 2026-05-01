@@ -10,13 +10,13 @@ export default function NewCustomerPage() {
   return (
     <div className="max-w-xl">
       <div className="mb-6">
-        <Link href="/dashboard/customers" className="text-sm text-zinc-500 hover:text-zinc-300">
+        <Link href="/dashboard/customers" className="text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]">
           ← Back to customers
         </Link>
-        <h1 className="text-2xl font-bold text-zinc-100 mt-2">Add customer</h1>
+        <h1 className="text-2xl font-bold text-[var(--color-fg)] mt-2">Add customer</h1>
       </div>
 
-      <form action={action} className="space-y-5 bg-zinc-900 rounded-xl border border-zinc-700 p-6">
+      <form action={action} className="space-y-5 bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6">
         {state?.error && (
           <div className="rounded-md bg-red-950 border border-red-800 px-4 py-3 text-sm text-red-400">
             {state.error}
@@ -24,7 +24,7 @@ export default function NewCustomerPage() {
         )}
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="name">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="name">
             Company name <span className="text-red-500">*</span>
           </label>
           <input
@@ -33,8 +33,8 @@ export default function NewCustomerPage() {
             type="text"
             required
             placeholder="e.g. Acme Corp"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {state?.fieldErrors?.name && (
@@ -43,7 +43,7 @@ export default function NewCustomerPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="contactName">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="contactName">
             Contact name
           </label>
           <input
@@ -51,14 +51,14 @@ export default function NewCustomerPage() {
             name="contactName"
             type="text"
             placeholder="e.g. Jane Smith"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="contactEmail">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="contactEmail">
             Contact email
           </label>
           <input
@@ -66,8 +66,8 @@ export default function NewCustomerPage() {
             name="contactEmail"
             type="email"
             placeholder="jane@acmecorp.com"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {state?.fieldErrors?.contactEmail && (
@@ -76,7 +76,7 @@ export default function NewCustomerPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="contactPhone">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="contactPhone">
             Contact phone
           </label>
           <input
@@ -84,14 +84,14 @@ export default function NewCustomerPage() {
             name="contactPhone"
             type="tel"
             placeholder="+1 (555) 000-0000"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="website">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="website">
             Website
           </label>
           <input
@@ -99,14 +99,14 @@ export default function NewCustomerPage() {
             name="website"
             type="url"
             placeholder="https://acmecorp.com"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="portalBaseUrl">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="portalBaseUrl">
             Customer portal base URL
           </label>
           <input
@@ -114,17 +114,17 @@ export default function NewCustomerPage() {
             name="portalBaseUrl"
             type="url"
             placeholder="https://jobs.acmecorp.com"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-[var(--color-fg-subtle)]">
             Used as the base URL for per-role portal links.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="roleIdLabel">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="roleIdLabel">
             Role ID label
           </label>
           <input
@@ -133,11 +133,11 @@ export default function NewCustomerPage() {
             type="text"
             maxLength={60}
             placeholder="e.g. CtoolId"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-[var(--color-fg-subtle)]">
             Optional. The name your customer uses for their role identifiers (e.g. CtoolId, Job Number, Req ID).
             Leave blank to use the default &ldquo;Customer Role ID&rdquo;.
           </p>
@@ -147,7 +147,7 @@ export default function NewCustomerPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="notes">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="notes">
             Notes
           </label>
           <textarea
@@ -155,8 +155,8 @@ export default function NewCustomerPage() {
             name="notes"
             rows={3}
             placeholder="Industry, hiring context, preferences..."
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />
         </div>
@@ -172,8 +172,8 @@ export default function NewCustomerPage() {
           </button>
           <Link
             href="/dashboard/customers"
-            className="rounded-md border border-zinc-600 text-zinc-300 text-sm font-medium
-                       px-4 py-2 hover:bg-zinc-800 transition-colors"
+            className="rounded-md border border-[var(--color-border)] text-[var(--color-fg)] text-sm font-medium
+                       px-4 py-2 hover:bg-[var(--color-bg-input)] transition-colors"
           >
             Cancel
           </Link>

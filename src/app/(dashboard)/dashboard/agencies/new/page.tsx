@@ -10,13 +10,13 @@ export default function NewAgencyPage() {
   return (
     <div className="max-w-xl">
       <div className="mb-6">
-        <Link href="/dashboard/agencies" className="text-sm text-zinc-500 hover:text-zinc-300">
+        <Link href="/dashboard/agencies" className="text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]">
           ← Back to agencies
         </Link>
-        <h1 className="text-2xl font-bold text-zinc-100 mt-2">Add agency</h1>
+        <h1 className="text-2xl font-bold text-[var(--color-fg)] mt-2">Add agency</h1>
       </div>
 
-      <form action={action} className="space-y-5 bg-zinc-900 rounded-xl border border-zinc-700 p-6">
+      <form action={action} className="space-y-5 bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6">
         {state?.error && (
           <div className="rounded-md bg-red-950 border border-red-800 px-4 py-3 text-sm text-red-400">
             {state.error}
@@ -24,7 +24,7 @@ export default function NewAgencyPage() {
         )}
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="name">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="name">
             Agency name <span className="text-red-500">*</span>
           </label>
           <input
@@ -33,14 +33,14 @@ export default function NewAgencyPage() {
             type="text"
             required
             placeholder="e.g. TechSearch Partners"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="contactEmail">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="contactEmail">
             Contact email
           </label>
           <input
@@ -48,14 +48,14 @@ export default function NewAgencyPage() {
             name="contactEmail"
             type="email"
             placeholder="contact@agency.com"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="contactPhone">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="contactPhone">
             Contact phone
           </label>
           <input
@@ -63,14 +63,14 @@ export default function NewAgencyPage() {
             name="contactPhone"
             type="tel"
             placeholder="+1 (555) 000-0000"
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-1" htmlFor="notes">
+          <label className="block text-sm font-medium text-[var(--color-fg)] mb-1" htmlFor="notes">
             Notes
           </label>
           <textarea
@@ -78,8 +78,8 @@ export default function NewAgencyPage() {
             name="notes"
             rows={3}
             placeholder="Specialisations, terms, performance history..."
-            className="w-full rounded-md border border-zinc-600 bg-zinc-800 text-zinc-100 px-3 py-2 text-sm
-                       placeholder:text-zinc-500
+            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
+                       placeholder:text-[var(--color-fg-subtle)]
                        focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />
         </div>
@@ -95,8 +95,8 @@ export default function NewAgencyPage() {
           </button>
           <Link
             href="/dashboard/agencies"
-            className="rounded-md border border-zinc-600 text-zinc-300 text-sm font-medium
-                       px-4 py-2 hover:bg-zinc-800 transition-colors"
+            className="rounded-md border border-[var(--color-border)] text-[var(--color-fg)] text-sm font-medium
+                       px-4 py-2 hover:bg-[var(--color-bg-input)] transition-colors"
           >
             Cancel
           </Link>

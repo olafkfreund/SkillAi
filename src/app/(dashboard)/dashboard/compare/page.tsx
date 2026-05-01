@@ -25,11 +25,11 @@ function DimensionBar({ label, value }: { label: string; value: number | null })
   const pct = value ?? 0
   return (
     <div className="mb-2">
-      <div className="flex justify-between text-xs text-zinc-500 mb-1">
+      <div className="flex justify-between text-xs text-[var(--color-fg-subtle)] mb-1">
         <span className="capitalize">{label.replace('_', ' ')}</span>
-        <span className="text-zinc-400">{value ?? '—'}</span>
+        <span className="text-[var(--color-fg-muted)]">{value ?? '—'}</span>
       </div>
-      <div className="h-1.5 bg-zinc-700 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-[var(--color-border)] rounded-full overflow-hidden">
         <div
           className="h-full bg-blue-500 rounded-full transition-all"
           style={{ width: `${pct}%` }}
@@ -44,7 +44,7 @@ function DimensionBar({ label, value }: { label: string; value: number | null })
 // ---------------------------------------------------------------------------
 
 const STATUS_STYLES: Record<string, string> = {
-  new: 'bg-zinc-700 text-zinc-300',
+  new: 'bg-[var(--color-bg-input)] text-[var(--color-fg-muted)]',
   shortlisted: 'bg-blue-900 text-blue-300',
   interviewing: 'bg-amber-900 text-amber-300',
   offered: 'bg-purple-900 text-purple-300',
@@ -76,15 +76,15 @@ function CandidateCard({ data }: { data: CandidateData }) {
     summary && summary.length > 250 ? summary.slice(0, 247) + '…' : summary
 
   return (
-    <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5 flex flex-col gap-4">
+    <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl p-5 flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h2 className="text-base font-semibold text-zinc-100 truncate">
+          <h2 className="text-base font-semibold text-[var(--color-fg)] truncate">
             {candidate.firstName} {candidate.lastName}
           </h2>
           {candidate.email && (
-            <p className="text-xs text-zinc-500 truncate mt-0.5">{candidate.email}</p>
+            <p className="text-xs text-[var(--color-fg-subtle)] truncate mt-0.5">{candidate.email}</p>
           )}
           <div className="mt-2">
             <StatusBadge status={candidate.status ?? 'new'} />
@@ -102,9 +102,9 @@ function CandidateCard({ data }: { data: CandidateData }) {
 
       {/* Role */}
       {topScore && (
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-[var(--color-fg-subtle)]">
           Scored for:{' '}
-          <span className="text-zinc-400 font-medium">{topScore.roleTitle}</span>
+          <span className="text-[var(--color-fg-muted)] font-medium">{topScore.roleTitle}</span>
         </p>
       )}
 
@@ -120,12 +120,12 @@ function CandidateCard({ data }: { data: CandidateData }) {
 
       {/* No score state */}
       {!topScore && (
-        <p className="text-xs text-zinc-600 italic">No completed score yet</p>
+        <p className="text-xs text-[var(--color-fg-subtle)] italic">No completed score yet</p>
       )}
 
       {/* AI summary */}
       {truncatedSummary && (
-        <p className="text-xs text-zinc-400 leading-relaxed border-t border-zinc-800 pt-3">
+        <p className="text-xs text-[var(--color-fg-muted)] leading-relaxed border-t border-[var(--color-border)] pt-3">
           {truncatedSummary}
         </p>
       )}
@@ -182,15 +182,15 @@ export default async function ComparePage({ searchParams }: Props) {
       <div className="max-w-4xl">
         <Link
           href="/dashboard/candidates"
-          className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 mb-6"
+          className="inline-flex items-center gap-1.5 text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] mb-6"
         >
           <ArrowLeftIcon className="h-3.5 w-3.5" />
           All candidates
         </Link>
-        <div className="flex flex-col items-center justify-center rounded-xl border border-zinc-700 bg-zinc-900 py-20 text-center">
-          <UsersIcon className="h-10 w-10 text-zinc-600 mb-4" />
-          <h1 className="text-lg font-semibold text-zinc-300 mb-2">No candidates selected</h1>
-          <p className="text-sm text-zinc-500 max-w-xs mb-6">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] py-20 text-center">
+          <UsersIcon className="h-10 w-10 text-[var(--color-fg-subtle)] mb-4" />
+          <h1 className="text-lg font-semibold text-[var(--color-fg)] mb-2">No candidates selected</h1>
+          <p className="text-sm text-[var(--color-fg-subtle)] max-w-xs mb-6">
             Select 2–5 candidates from the candidates list using the comparison checkboxes, then
             click &ldquo;Compare&rdquo;.
           </p>
@@ -247,13 +247,13 @@ export default async function ComparePage({ searchParams }: Props) {
       <div className="max-w-4xl">
         <Link
           href="/dashboard/candidates"
-          className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 mb-6"
+          className="inline-flex items-center gap-1.5 text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] mb-6"
         >
           <ArrowLeftIcon className="h-3.5 w-3.5" />
           All candidates
         </Link>
-        <div className="rounded-xl border border-zinc-700 bg-zinc-900 px-6 py-10 text-center">
-          <p className="text-sm text-zinc-400">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-6 py-10 text-center">
+          <p className="text-sm text-[var(--color-fg-muted)]">
             Could not load enough candidates. They may have been archived or the IDs are invalid.
           </p>
           <Link
@@ -274,12 +274,12 @@ export default async function ComparePage({ searchParams }: Props) {
         <div>
           <Link
             href="/dashboard/candidates"
-            className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 mb-2"
+            className="inline-flex items-center gap-1.5 text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] mb-2"
           >
             <ArrowLeftIcon className="h-3.5 w-3.5" />
             All candidates
           </Link>
-          <h1 className="text-xl font-bold text-zinc-100">
+          <h1 className="text-xl font-bold text-[var(--color-fg)]">
             Comparing {candidatesData.length} candidates
           </h1>
         </div>

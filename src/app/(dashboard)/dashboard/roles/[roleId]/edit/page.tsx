@@ -45,15 +45,15 @@ export default async function RoleEditPage({ params }: Props) {
     <div>
       <Link
         href={`/dashboard/roles/${roleId}`}
-        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] mb-6"
       >
         <ArrowLeftIcon className="h-3.5 w-3.5" />
         Back to role
       </Link>
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-zinc-100">Edit role</h1>
-        <p className="text-zinc-500 mt-1 text-sm">{role.title}</p>
+        <h1 className="text-2xl font-bold text-[var(--color-fg)]">Edit role</h1>
+        <p className="text-[var(--color-fg-subtle)] mt-1 text-sm">{role.title}</p>
       </div>
 
       <RoleEditForm

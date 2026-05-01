@@ -57,7 +57,7 @@ export default async function CustomerDetailPage({ params }: Props) {
   return (
     <div>
       <div className="mb-6">
-        <Link href="/dashboard/customers" className="text-sm text-zinc-500 hover:text-zinc-300">
+        <Link href="/dashboard/customers" className="text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]">
           ← Back to customers
         </Link>
         <div className="flex items-center gap-4 mt-2">
@@ -68,12 +68,12 @@ export default async function CustomerDetailPage({ params }: Props) {
               alt=""
               width={64}
               height={64}
-              className="rounded-xl border border-zinc-700 bg-zinc-800 object-contain shrink-0"
+              className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-input)] object-contain shrink-0"
               style={{ width: 64, height: 64 }}
             />
           ) : (
             <div
-              className="flex items-center justify-center rounded-xl bg-zinc-800 text-zinc-400
+              className="flex items-center justify-center rounded-xl bg-[var(--color-bg-input)] text-[var(--color-fg-muted)]
                          text-xl font-semibold shrink-0"
               style={{ width: 64, height: 64 }}
               aria-hidden="true"
@@ -81,7 +81,7 @@ export default async function CustomerDetailPage({ params }: Props) {
               {customer.name.charAt(0).toUpperCase()}
             </div>
           )}
-          <h1 className="text-2xl font-bold text-zinc-100">{customer.name}</h1>
+          <h1 className="text-2xl font-bold text-[var(--color-fg)]">{customer.name}</h1>
         </div>
       </div>
 
@@ -91,28 +91,28 @@ export default async function CustomerDetailPage({ params }: Props) {
           {canEdit ? (
             <CustomerEditForm customer={customer} isAdmin={isAdmin} />
           ) : (
-            <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 space-y-4">
+            <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 space-y-4">
               {customer.contactName && (
                 <div>
-                  <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Contact</p>
-                  <p className="text-sm text-zinc-300 mt-0.5">{customer.contactName}</p>
+                  <p className="text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide">Contact</p>
+                  <p className="text-sm text-[var(--color-fg)] mt-0.5">{customer.contactName}</p>
                 </div>
               )}
               {customer.contactEmail && (
                 <div>
-                  <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Email</p>
-                  <p className="text-sm text-zinc-300 mt-0.5">{customer.contactEmail}</p>
+                  <p className="text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide">Email</p>
+                  <p className="text-sm text-[var(--color-fg)] mt-0.5">{customer.contactEmail}</p>
                 </div>
               )}
               {customer.contactPhone && (
                 <div>
-                  <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Phone</p>
-                  <p className="text-sm text-zinc-300 mt-0.5">{customer.contactPhone}</p>
+                  <p className="text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide">Phone</p>
+                  <p className="text-sm text-[var(--color-fg)] mt-0.5">{customer.contactPhone}</p>
                 </div>
               )}
               {customer.website && (
                 <div>
-                  <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Website</p>
+                  <p className="text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide">Website</p>
                   <a
                     href={customer.website}
                     target="_blank"
@@ -125,7 +125,7 @@ export default async function CustomerDetailPage({ params }: Props) {
               )}
               {customer.portalBaseUrl && (
                 <div>
-                  <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Portal Base URL</p>
+                  <p className="text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide">Portal Base URL</p>
                   <a
                     href={customer.portalBaseUrl}
                     target="_blank"
@@ -138,8 +138,8 @@ export default async function CustomerDetailPage({ params }: Props) {
               )}
               {customer.notes && (
                 <div>
-                  <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Notes</p>
-                  <p className="text-sm text-zinc-300 mt-0.5 whitespace-pre-wrap">{customer.notes}</p>
+                  <p className="text-xs font-medium text-[var(--color-fg-subtle)] uppercase tracking-wide">Notes</p>
+                  <p className="text-sm text-[var(--color-fg)] mt-0.5 whitespace-pre-wrap">{customer.notes}</p>
                 </div>
               )}
             </div>
@@ -149,7 +149,7 @@ export default async function CustomerDetailPage({ params }: Props) {
         {/* Hiring Framework + Active Roles */}
         <div className="lg:col-span-2 space-y-6">
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100 mb-4">Hiring Framework</h2>
+            <h2 className="text-lg font-semibold text-[var(--color-fg)] mb-4">Hiring Framework</h2>
             <FrameworkEditor
               customerId={customerId}
               existingFramework={
@@ -163,12 +163,12 @@ export default async function CustomerDetailPage({ params }: Props) {
 
           {/* Active roles for this customer */}
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100 mb-3">
+            <h2 className="text-lg font-semibold text-[var(--color-fg)] mb-3">
               Active roles ({customerRoles.length})
             </h2>
             {customerRoles.length === 0 ? (
-              <div className="rounded-xl border-2 border-dashed border-zinc-700 bg-zinc-950 px-6 py-10 text-center">
-                <p className="text-zinc-500 text-sm">No active roles linked to this customer yet.</p>
+              <div className="rounded-xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-bg-app)] px-6 py-10 text-center">
+                <p className="text-[var(--color-fg-subtle)] text-sm">No active roles linked to this customer yet.</p>
               </div>
             ) : (
               <div className="grid gap-2">
@@ -176,11 +176,11 @@ export default async function CustomerDetailPage({ params }: Props) {
                   <Link
                     key={role.id}
                     href={`/dashboard/roles/${role.id}`}
-                    className="flex items-center justify-between rounded-lg bg-zinc-900 border border-zinc-700
+                    className="flex items-center justify-between rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border)]
                                px-5 py-3 hover:border-blue-500 hover:shadow-sm transition-all"
                   >
-                    <span className="text-sm font-medium text-zinc-100">{role.title}</span>
-                    <time className="text-xs text-zinc-500">
+                    <span className="text-sm font-medium text-[var(--color-fg)]">{role.title}</span>
+                    <time className="text-xs text-[var(--color-fg-subtle)]">
                       {new Date(role.createdAt).toLocaleDateString('en-GB')}
                     </time>
                   </Link>

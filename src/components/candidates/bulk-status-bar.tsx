@@ -123,8 +123,8 @@ export function BulkStatusBar({ selectedIds, onClear, roleId }: Props) {
         <button
           onClick={handleMarkInternal}
           disabled={isPending}
-          className="inline-flex items-center gap-1.5 rounded-md border border-blue-800 bg-blue-950 text-blue-300
-                     text-sm font-medium px-3 py-1.5 hover:bg-blue-900 disabled:opacity-50
+          className="inline-flex items-center gap-1.5 rounded-md border border-blue-300 dark:border-blue-800 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300
+                     text-sm font-medium px-3 py-1.5 hover:bg-blue-200 dark:hover:bg-blue-900 disabled:opacity-50
                      disabled:cursor-not-allowed transition-colors flex-shrink-0"
           title="Move selected candidates to the Internal agency"
         >
