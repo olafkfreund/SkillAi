@@ -95,7 +95,7 @@ export function ChipInput({
   return (
     <div
       className={
-        'flex flex-wrap items-center gap-1.5 min-h-[36px] rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1.5' +
+        'flex flex-wrap items-center gap-1.5 min-h-[36px] rounded-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-2 py-1.5' +
         (disabled ? ' opacity-60' : '') +
         (className ? ` ${className}` : '')
       }
@@ -119,7 +119,7 @@ export function ChipInput({
       ))}
 
       {inputHidden ? (
-        <span className="text-xs text-zinc-500" aria-live="polite">
+        <span className="text-xs text-[var(--color-fg-subtle)]" aria-live="polite">
           Max reached
         </span>
       ) : (
@@ -133,7 +133,7 @@ export function ChipInput({
           maxLength={maxLength}
           disabled={disabled}
           aria-describedby={ariaDescribedBy}
-          className="flex-1 min-w-[120px] bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none disabled:opacity-50"
+          className="flex-1 min-w-[120px] bg-transparent text-sm text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)] focus:outline-none disabled:opacity-50"
         />
       )}
     </div>

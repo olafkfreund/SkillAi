@@ -14,9 +14,9 @@ const VARIANTS = {
     body: 'text-amber-500',
   },
   info: {
-    container: 'bg-zinc-900 border-zinc-700',
-    title: 'text-zinc-100',
-    body: 'text-zinc-500',
+    container: 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]',
+    title: 'text-[var(--color-fg)]',
+    body: 'text-[var(--color-fg-subtle)]',
   },
   loading: {
     container: 'bg-amber-950 border-amber-800',

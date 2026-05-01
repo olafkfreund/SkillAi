@@ -78,7 +78,7 @@ export function UserManagementTable({ users, currentUserId }: Props) {
                 </td>
                 <td className="px-4 py-3">
                   {isInactive ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-500 border border-zinc-600">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-500 border border-zinc-300 dark:border-zinc-600">
                       Inactive
                     </span>
                   ) : (

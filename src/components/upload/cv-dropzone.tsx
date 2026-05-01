@@ -74,7 +74,7 @@ export function CvDropzone({ onFileSelect, uploadState = { status: 'idle' }, dis
         {...getRootProps()}
         className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed
           px-6 py-10 text-center transition-colors cursor-pointer
-          ${isDragActive ? 'border-blue-500 bg-blue-950' : 'border-zinc-600 bg-zinc-800'}
+          ${isDragActive ? 'border-blue-500 bg-blue-950' : 'border-[var(--color-border)] bg-[var(--color-bg-input)]'}
           ${isSuccess ? 'border-green-500 bg-green-950' : ''}
           ${isError ? 'border-red-700 bg-red-950' : ''}
           ${disabled || isUploading || isSuccess ? 'cursor-not-allowed opacity-60' : 'hover:border-blue-500 hover:bg-blue-950/40'}
@@ -85,7 +85,7 @@ export function CvDropzone({ onFileSelect, uploadState = { status: 'idle' }, dis
         {isUploading ? (
           <>
             <Loader2Icon className="h-10 w-10 text-blue-400 animate-spin mb-3" />
-            <p className="text-sm font-medium text-zinc-300">Uploading…</p>
+            <p className="text-sm font-medium text-[var(--color-fg)]">Uploading…</p>
           </>
         ) : isSuccess ? (
           <>
@@ -95,18 +95,18 @@ export function CvDropzone({ onFileSelect, uploadState = { status: 'idle' }, dis
         ) : isSelected && uploadState.status === 'selected' ? (
           <>
             <FileTextIcon className="h-10 w-10 text-blue-400 mb-3" />
-            <p className="text-sm font-medium text-zinc-300">{uploadState.file.name}</p>
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-sm font-medium text-[var(--color-fg)]">{uploadState.file.name}</p>
+            <p className="text-xs text-[var(--color-fg-subtle)] mt-1">
               {(uploadState.file.size / 1024).toFixed(1)} KB — ready to upload
             </p>
           </>
         ) : (
           <>
-            <UploadCloudIcon className="h-10 w-10 text-zinc-500 mb-3" />
-            <p className="text-sm font-medium text-zinc-300">
+            <UploadCloudIcon className="h-10 w-10 text-[var(--color-fg-subtle)] mb-3" />
+            <p className="text-sm font-medium text-[var(--color-fg)]">
               {isDragActive ? 'Drop the CV here' : 'Drag & drop a CV or click to browse'}
             </p>
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-xs text-[var(--color-fg-subtle)] mt-1">
               PDF, DOCX, ODT, RTF, TXT, MD — max 10 MB
             </p>
           </>
