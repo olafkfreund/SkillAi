@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { eq, and, notInArray } from 'drizzle-orm'
+import { eq, and, inArray, notInArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { withTenant, db } from '@/db'
 import { tenantSettings, users } from '@/db/schema'
@@ -11,6 +11,8 @@ import { getActionContext } from '@/lib/auth/action-context'
 import { writeAuditLog } from '@/lib/audit'
 import { isSupportedLanguage } from '@/lib/ai/language'
 import { getSenderForTenant } from '@/lib/email/sender'
+import { testWebhookDelivery, type NotificationTestResult } from '@/lib/notifications/dispatcher'
+export type { NotificationTestResult }
 
 const ALLOWED_KEYS = [
   'anthropic_api_key',
@@ -537,4 +539,179 @@ export async function sendSmtpTestEmail(): Promise<SmtpSettingsState> {
   }
 
   return { success: true }
+}
+
+// ---------------------------------------------------------------------------
+// Notification settings (Slack / Teams webhooks + per-event toggles)
+// ---------------------------------------------------------------------------
+
+const NOTIFICATION_KEYS = [
+  'slack_webhook_url',
+  'teams_webhook_url',
+  'notify_high_score_enabled',
+  'notify_manager_decision_enabled',
+  'notify_score_threshold',
+] as const
+type NotificationKey = (typeof NOTIFICATION_KEYS)[number]
+
+// Keys that are encrypted before storage (webhook URLs contain bearer secrets)
+const ENCRYPTED_NOTIFICATION_KEYS = new Set<string>(['slack_webhook_url', 'teams_webhook_url'])
+
+export type NotificationSettingsState =
+  | { success: true }
+  | { success: false; error: string }
+
+/**
+ * Saves a single notification setting for the current tenant.
+ *
+ * Webhook URL keys (slack_webhook_url, teams_webhook_url) are encrypted with
+ * the same AES-256-GCM scheme used for SMTP passwords and API keys.
+ * Toggle and threshold keys are stored as plain text.
+ */
+export async function saveNotificationSetting(
+  key: string,
+  value: string
+): Promise<NotificationSettingsState> {
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
+
+  try { requireRole(userRole ?? undefined, 'admin') } catch {
+    return { success: false, error: 'Only admins can manage notification settings' }
+  }
+
+  if (!NOTIFICATION_KEYS.includes(key as NotificationKey)) {
+    return { success: false, error: 'Invalid notification setting key' }
+  }
+
+  if (!value || value.trim().length === 0) {
+    return { success: false, error: 'Value cannot be empty' }
+  }
+
+  const storedValue = ENCRYPTED_NOTIFICATION_KEYS.has(key) ? encrypt(value.trim()) : value.trim()
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .insert(tenantSettings)
+      .values({ tenantId, key, value: storedValue, updatedBy: userId })
+      .onConflictDoUpdate({
+        target: [tenantSettings.tenantId, tenantSettings.key],
+        set: { value: storedValue, updatedBy: userId, updatedAt: new Date() },
+      })
+  })
+
+  writeAuditLog(tenantId, {
+    action: 'settings.notification_updated',
+    entityType: 'settings',
+    metadata: { key },
+  }).catch(() => {})
+
+  revalidatePath('/dashboard/settings')
+  return { success: true }
+}
+
+/**
+ * Removes a single notification setting for the current tenant.
+ */
+export async function removeNotificationSetting(
+  key: string
+): Promise<NotificationSettingsState> {
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userRole } = ctx
+
+  try { requireRole(userRole ?? undefined, 'admin') } catch {
+    return { success: false, error: 'Only admins can manage notification settings' }
+  }
+
+  if (!NOTIFICATION_KEYS.includes(key as NotificationKey)) {
+    return { success: false, error: 'Invalid notification setting key' }
+  }
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .delete(tenantSettings)
+      .where(and(eq(tenantSettings.tenantId, tenantId), eq(tenantSettings.key, key)))
+  })
+
+  writeAuditLog(tenantId, {
+    action: 'settings.notification_updated',
+    entityType: 'settings',
+    metadata: { key, removed: true },
+  }).catch(() => {})
+
+  revalidatePath('/dashboard/settings')
+  return { success: true }
+}
+
+/**
+ * Sends a test message to all configured Slack / Teams webhooks and returns
+ * the per-channel result. Intended for the settings UI "Send test message"
+ * button — Agent B's component calls this action directly.
+ */
+export async function testNotificationDelivery(): Promise<NotificationTestResult> {
+  const ctx = await getActionContext()
+  if (!ctx) {
+    return {
+      slack: { configured: false, ok: false, error: 'Unauthorized' },
+      teams: { configured: false, ok: false, error: 'Unauthorized' },
+    }
+  }
+
+  const { tenantId, userRole } = ctx
+
+  try { requireRole(userRole ?? undefined, 'admin') } catch {
+    return {
+      slack: { configured: false, ok: false, error: 'Forbidden' },
+      teams: { configured: false, ok: false, error: 'Forbidden' },
+    }
+  }
+
+  return testWebhookDelivery(tenantId)
+}
+
+/**
+ * Reads the current notification settings for the tenant. Returns boolean flags
+ * for whether webhook URLs are configured (NEVER returns the decrypted URLs to
+ * the client), plus the toggle + threshold values. Used by the settings page
+ * to seed the NotificationsPanel props.
+ */
+export type NotificationSettingsRecord = {
+  slack_webhook_configured: boolean
+  teams_webhook_configured: boolean
+  notify_high_score_enabled: boolean
+  notify_manager_decision_enabled: boolean
+  notify_score_threshold: number
+}
+
+export async function getNotificationSettings(): Promise<NotificationSettingsRecord> {
+  const fallback: NotificationSettingsRecord = {
+    slack_webhook_configured: false,
+    teams_webhook_configured: false,
+    notify_high_score_enabled: true,
+    notify_manager_decision_enabled: true,
+    notify_score_threshold: 85,
+  }
+
+  const ctx = await getActionContext()
+  if (!ctx) return fallback
+  const { tenantId, userRole } = ctx
+  try { requireRole(userRole ?? undefined, 'admin') } catch { return fallback }
+
+  const rows = await withTenant(tenantId, async (tx) =>
+    tx
+      .select({ key: tenantSettings.key, value: tenantSettings.value })
+      .from(tenantSettings)
+      .where(and(eq(tenantSettings.tenantId, tenantId), inArray(tenantSettings.key, NOTIFICATION_KEYS as unknown as string[])))
+  )
+
+  const m = new Map(rows.map((r) => [r.key, r.value]))
+
+  return {
+    slack_webhook_configured: m.has('slack_webhook_url'),
+    teams_webhook_configured: m.has('teams_webhook_url'),
+    notify_high_score_enabled: (m.get('notify_high_score_enabled') ?? 'true') === 'true',
+    notify_manager_decision_enabled: (m.get('notify_manager_decision_enabled') ?? 'true') === 'true',
+    notify_score_threshold: parseInt(m.get('notify_score_threshold') ?? '85', 10) || 85,
+  }
 }
