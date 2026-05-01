@@ -44,23 +44,23 @@ function daysFromNow(iso: string): number {
 
 const WORK_MODE_STYLES: Record<string, { bg: string; text: string; border: string; icon: React.ReactNode; label: string }> = {
   remote: {
-    bg: 'bg-emerald-950',
-    text: 'text-emerald-300',
-    border: 'border-emerald-800',
+    bg: 'bg-emerald-100 dark:bg-emerald-950',
+    text: 'text-emerald-700 dark:text-emerald-300',
+    border: 'border-emerald-300 dark:border-emerald-800',
     icon: <HomeIcon className="h-3 w-3" />,
     label: 'Remote',
   },
   hybrid: {
-    bg: 'bg-blue-950',
-    text: 'text-blue-300',
-    border: 'border-blue-800',
+    bg: 'bg-blue-100 dark:bg-blue-950',
+    text: 'text-blue-700 dark:text-blue-300',
+    border: 'border-blue-300 dark:border-blue-800',
     icon: <MonitorIcon className="h-3 w-3" />,
     label: 'Hybrid',
   },
   onsite: {
-    bg: 'bg-amber-950',
-    text: 'text-amber-300',
-    border: 'border-amber-800',
+    bg: 'bg-amber-100 dark:bg-amber-950',
+    text: 'text-amber-700 dark:text-amber-300',
+    border: 'border-amber-300 dark:border-amber-800',
     icon: <BuildingIcon className="h-3 w-3" />,
     label: 'Onsite',
   },
@@ -80,10 +80,10 @@ export function RoleMetaBar({ role, customer, portalUrl, customerRoleId, custome
   const cutoffStyle = cutoffDays === null
     ? null
     : cutoffDays < 0
-      ? { bg: 'bg-red-950', text: 'text-red-300', border: 'border-red-800', label: 'EXPIRED' }
+      ? { bg: 'bg-red-100 dark:bg-red-950', text: 'text-red-700 dark:text-red-300', border: 'border-red-300 dark:border-red-800', label: 'EXPIRED' }
       : cutoffDays <= 14
-        ? { bg: 'bg-amber-950', text: 'text-amber-300', border: 'border-amber-800', label: `Cut-off ${fmtDate(role.cutoffDate!)}` }
-        : { bg: 'bg-emerald-950', text: 'text-emerald-300', border: 'border-emerald-800', label: `Cut-off ${fmtDate(role.cutoffDate!)}` }
+        ? { bg: 'bg-amber-100 dark:bg-amber-950', text: 'text-amber-700 dark:text-amber-300', border: 'border-amber-300 dark:border-amber-800', label: `Cut-off ${fmtDate(role.cutoffDate!)}` }
+        : { bg: 'bg-emerald-100 dark:bg-emerald-950', text: 'text-emerald-700 dark:text-emerald-300', border: 'border-emerald-300 dark:border-emerald-800', label: `Cut-off ${fmtDate(role.cutoffDate!)}` }
 
   // No metadata at all — render nothing
   if (!workMode && !location && !hasLanguages && !customer && !role.frameworkLevelLabel
@@ -111,7 +111,7 @@ export function RoleMetaBar({ role, customer, portalUrl, customerRoleId, custome
       {hasLanguages && role.languageRequirements!.map((lang) => (
         <span
           key={lang}
-          className="inline-flex items-center gap-1.5 rounded-full border border-violet-800 bg-violet-950 text-violet-300 text-xs font-medium px-2.5 py-1"
+          className="inline-flex items-center gap-1.5 rounded-full border border-violet-300 dark:border-violet-800 bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300 text-xs font-medium px-2.5 py-1"
         >
           <GlobeIcon className="h-3 w-3" />
           {lang}
@@ -136,14 +136,14 @@ export function RoleMetaBar({ role, customer, portalUrl, customerRoleId, custome
       )}
 
       {role.frameworkLevelLabel && (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-800 bg-indigo-950 text-indigo-300 text-xs font-medium px-2.5 py-1">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-300 dark:border-indigo-800 bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-medium px-2.5 py-1">
           <LayersIcon className="h-3 w-3" />
           {role.frameworkLevelLabel}
         </span>
       )}
 
       {role.customerDayRate && (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-800 bg-emerald-950 text-emerald-300 text-xs font-medium px-2.5 py-1">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 dark:border-emerald-800 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-medium px-2.5 py-1">
           <BanknoteIcon className="h-3 w-3" />
           {role.rateCurrency ?? ''} {Number(role.customerDayRate).toFixed(0)}/day budget
         </span>
@@ -168,7 +168,7 @@ export function RoleMetaBar({ role, customer, portalUrl, customerRoleId, custome
           href={portalUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-full border border-blue-800 bg-blue-950 text-blue-300 text-xs font-medium px-2.5 py-1 hover:bg-blue-900 hover:text-blue-200 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-full border border-blue-300 dark:border-blue-800 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-medium px-2.5 py-1 hover:bg-blue-200 dark:hover:bg-blue-900 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
         >
           <ExternalLinkIcon className="h-3 w-3" />
           Customer portal

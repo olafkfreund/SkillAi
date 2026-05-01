@@ -63,7 +63,7 @@ export default async function InterviewPackPage({ params }: Props) {
     <div className="max-w-3xl">
       <Link
         href={`/dashboard/candidates/${candidateId}`}
-        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] mb-6"
       >
         <ArrowLeftIcon className="h-3.5 w-3.5" />
         Back to candidate
@@ -76,12 +76,12 @@ export default async function InterviewPackPage({ params }: Props) {
             <BrainIcon className="h-5 w-5 text-violet-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-zinc-100">
+            <h1 className="text-xl font-bold text-[var(--color-fg)]">
               {role ? role.title : 'Interview Pack'}
             </h1>
-            <p className="text-sm text-zinc-500 mt-0.5">
+            <p className="text-sm text-[var(--color-fg-subtle)] mt-0.5">
               Interview pack for{' '}
-              <span className="text-zinc-300">
+              <span className="text-[var(--color-fg)]">
                 {candidate.firstName} {candidate.lastName}
               </span>
             </p>
@@ -96,7 +96,7 @@ export default async function InterviewPackPage({ params }: Props) {
               </span>
             )}
             {pack.language && pack.language !== 'en' && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[var(--color-bg-input)] text-[var(--color-fg)] border border-[var(--color-border)]">
                 {pack.language.toUpperCase()}
               </span>
             )}
@@ -106,12 +106,12 @@ export default async function InterviewPackPage({ params }: Props) {
               </span>
             )}
             {pack.recommendedDurationMinutes && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[var(--color-bg-input)] text-[var(--color-fg-muted)] border border-[var(--color-border)]">
                 <ClockIcon className="h-3 w-3" />
                 {pack.recommendedDurationMinutes} min recommended
               </span>
             )}
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[var(--color-bg-input)] text-[var(--color-fg-muted)] border border-[var(--color-border)]">
               {questions.length} questions
             </span>
             {pack.includesCodeChallenge && (
@@ -150,7 +150,7 @@ export default async function InterviewPackPage({ params }: Props) {
       {/* Questions */}
       {questions.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">
+          <h2 className="text-sm font-semibold text-[var(--color-fg)] uppercase tracking-wide mb-3">
             Interview Questions
           </h2>
           <div className="space-y-2">
@@ -164,7 +164,7 @@ export default async function InterviewPackPage({ params }: Props) {
       {/* Code challenge */}
       {codeChallenge && (
         <div>
-          <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">
+          <h2 className="text-sm font-semibold text-[var(--color-fg)] uppercase tracking-wide mb-3">
             Code Challenge
           </h2>
           <CodeChallengeCard challenge={codeChallenge} />

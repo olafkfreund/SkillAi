@@ -28,16 +28,16 @@ export default async function BulkUploadPage({ params }: Props) {
     <div className="max-w-2xl">
       <Link
         href={`/dashboard/roles/${roleId}`}
-        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] mb-6"
       >
         <ArrowLeftIcon className="h-3.5 w-3.5" />
         Back to {role.title}
       </Link>
 
-      <h1 className="text-2xl font-bold text-zinc-100 mb-2">Bulk Upload CVs</h1>
-      <p className="text-sm text-zinc-500 mb-8">
+      <h1 className="text-2xl font-bold text-[var(--color-fg)] mb-2">Bulk Upload CVs</h1>
+      <p className="text-sm text-[var(--color-fg-subtle)] mb-8">
         Upload multiple CV files at once. Each file will be parsed and scored against{' '}
-        <span className="text-zinc-300 font-medium">{role.title}</span> automatically.
+        <span className="text-[var(--color-fg)] font-medium">{role.title}</span> automatically.
       </p>
 
       <BulkUploadZone roleId={roleId} />

@@ -18,19 +18,19 @@ type Props = {
 }
 
 function scoreBadgeClass(score: number): string {
-  if (score >= 75) return 'bg-green-900 text-green-300 border-green-700'
-  if (score >= 50) return 'bg-blue-900 text-blue-300 border-blue-700'
-  return 'bg-zinc-800 text-zinc-400 border-zinc-600'
+  if (score >= 75) return 'bg-emerald-100 dark:bg-green-900 text-emerald-700 dark:text-green-300 border-emerald-300 dark:border-green-700'
+  if (score >= 50) return 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700'
+  return 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-600'
 }
 
 function DimensionPill({ label, score }: { label: string; score: number | null }) {
   if (score === null) return null
   const colorClass =
     score >= 75
-      ? 'bg-green-900/50 text-green-300'
+      ? 'bg-emerald-100 dark:bg-green-900/50 text-emerald-700 dark:text-green-300'
       : score >= 50
-        ? 'bg-blue-900/50 text-blue-300'
-        : 'bg-zinc-800 text-zinc-400'
+        ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400'
   return (
     <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium ${colorClass}`}>
       {label} {score}
@@ -90,11 +90,11 @@ export function RoleHistoryPanel({ roleHistory }: Props) {
                       {entry.overallScore}
                     </span>
                   ) : isFailed ? (
-                    <span className="rounded-lg border border-red-800 bg-red-950 px-3 py-1 text-xs font-medium text-red-400">
+                    <span className="rounded-lg border border-red-300 dark:border-red-800 bg-red-100 dark:bg-red-950 px-3 py-1 text-xs font-medium text-red-700 dark:text-red-400">
                       Failed
                     </span>
                   ) : isPending ? (
-                    <span className="rounded-lg border border-yellow-800 bg-yellow-950 px-3 py-1 text-xs font-medium text-yellow-400">
+                    <span className="rounded-lg border border-amber-300 dark:border-yellow-800 bg-amber-100 dark:bg-yellow-950 px-3 py-1 text-xs font-medium text-amber-700 dark:text-yellow-400">
                       Pending
                     </span>
                   ) : null}

@@ -135,7 +135,7 @@ export default async function RoleDetailPage({ params }: Props) {
     <div>
       <Link
         href="/dashboard/roles"
-        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] mb-6"
       >
         <ArrowLeftIcon className="h-3.5 w-3.5" />
         All roles
@@ -143,12 +143,12 @@ export default async function RoleDetailPage({ params }: Props) {
 
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100">{role.title}</h1>
-          <div className="flex items-center gap-3 mt-1 text-sm text-zinc-500 flex-wrap">
+          <h1 className="text-2xl font-bold text-[var(--color-fg)]">{role.title}</h1>
+          <div className="flex items-center gap-3 mt-1 text-sm text-[var(--color-fg-subtle)] flex-wrap">
             <span>Created {new Date(role.createdAt).toLocaleDateString('en-GB')}</span>
             {customer && (
-              <span className="text-zinc-400">
-                &middot; <span className="font-medium text-zinc-300">{customer.name}</span>
+              <span className="text-[var(--color-fg-muted)]">
+                &middot; <span className="font-medium text-[var(--color-fg)]">{customer.name}</span>
               </span>
             )}
             {role.frameworkLevelLabel && (
@@ -158,7 +158,7 @@ export default async function RoleDetailPage({ params }: Props) {
               </span>
             )}
             {!role.isActive && (
-              <span className="text-xs bg-zinc-800 text-zinc-400 border border-zinc-600 px-2 py-0.5 rounded-full">
+              <span className="text-xs bg-[var(--color-bg-input)] text-[var(--color-fg-muted)] border border-[var(--color-border)] px-2 py-0.5 rounded-full">
                 Archived
               </span>
             )}
@@ -196,8 +196,8 @@ export default async function RoleDetailPage({ params }: Props) {
           {canEdit && (
             <Link
               href={`/dashboard/roles/${roleId}/edit`}
-              className="flex items-center gap-2 rounded-md bg-zinc-700 text-zinc-100 text-sm
-                         font-medium px-4 py-2 hover:bg-zinc-600 transition-colors"
+              className="flex items-center gap-2 rounded-md bg-[var(--color-bg-input)] text-[var(--color-fg)] text-sm
+                         font-medium px-4 py-2 hover:bg-[var(--color-border)] transition-colors"
             >
               <PencilIcon className="h-4 w-4" />
               Edit role
@@ -206,8 +206,8 @@ export default async function RoleDetailPage({ params }: Props) {
           {!isHiringManager && (
             <Link
               href={`/dashboard/roles/${roleId}/bulk-upload`}
-              className="flex items-center gap-2 rounded-md bg-zinc-700 text-zinc-100 text-sm
-                         font-medium px-4 py-2 hover:bg-zinc-600 transition-colors"
+              className="flex items-center gap-2 rounded-md bg-[var(--color-bg-input)] text-[var(--color-fg)] text-sm
+                         font-medium px-4 py-2 hover:bg-[var(--color-border)] transition-colors"
             >
               <UploadCloudIcon className="h-4 w-4" />
               Bulk Upload
@@ -228,9 +228,9 @@ export default async function RoleDetailPage({ params }: Props) {
               <button
                 type="submit"
                 formAction={archiveRole.bind(null, roleId)}
-                className="flex items-center gap-2 rounded-md bg-zinc-800 text-zinc-400 text-sm
+                className="flex items-center gap-2 rounded-md bg-[var(--color-bg-input)] text-[var(--color-fg-muted)] text-sm
                            font-medium px-4 py-2 hover:bg-red-950 hover:text-red-400
-                           border border-zinc-700 hover:border-red-800 transition-colors"
+                           border border-[var(--color-border)] hover:border-red-800 transition-colors"
               >
                 <ArchiveIcon className="h-4 w-4" />
                 Archive role
@@ -259,7 +259,7 @@ export default async function RoleDetailPage({ params }: Props) {
               {canEdit && (
                 <Link
                   href={`/dashboard/roles/${roleId}/edit`}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-medium px-2.5 py-1.5 hover:bg-zinc-700 transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-bg-input)] border border-[var(--color-border)] text-[var(--color-fg)] text-xs font-medium px-2.5 py-1.5 hover:bg-[var(--color-border)] transition-colors"
                 >
                   <PencilIcon className="h-3 w-3" />
                   Edit
@@ -308,16 +308,16 @@ export default async function RoleDetailPage({ params }: Props) {
       />
 
       {/* Role description */}
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
-        <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-4">
+      <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 mb-6">
+        <h2 className="text-sm font-semibold text-[var(--color-fg)] uppercase tracking-wide mb-4">
           Role Description
         </h2>
         <RoleContent text={role.description} />
       </div>
 
       {/* Requirements */}
-      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 mb-6">
-        <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-4">
+      <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 mb-6">
+        <h2 className="text-sm font-semibold text-[var(--color-fg)] uppercase tracking-wide mb-4">
           Requirements
         </h2>
         <RoleContent text={role.requirements} />
@@ -335,7 +335,7 @@ export default async function RoleDetailPage({ params }: Props) {
       {/* Candidates shortlist */}
       <div>
         <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-          <h2 className="font-semibold text-zinc-100">
+          <h2 className="font-semibold text-[var(--color-fg)]">
             Candidates ({scoredCandidates.length})
           </h2>
           {/* Recruiter: send shortlist to managers for approval */}
@@ -354,7 +354,7 @@ export default async function RoleDetailPage({ params }: Props) {
           )}
         </div>
         {scoredCandidates.length === 0 ? (
-          <p className="text-zinc-500 text-sm">No candidates scored for this role yet.</p>
+          <p className="text-[var(--color-fg-subtle)] text-sm">No candidates scored for this role yet.</p>
         ) : (
           <SelectableRoleCandidateList
             roleId={roleId}

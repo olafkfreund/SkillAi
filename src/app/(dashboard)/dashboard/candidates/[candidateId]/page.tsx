@@ -245,7 +245,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
     <div className="max-w-4xl">
       <Link
         href={roleId ? `/dashboard/roles/${roleId}` : '/dashboard/candidates'}
-        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] mb-6"
       >
         <ArrowLeftIcon className="h-3.5 w-3.5" />
         {roleId ? 'Back to role' : 'All candidates'}
@@ -263,7 +263,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between mb-6">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-zinc-100 break-words min-w-0">
+            <h1 className="text-2xl font-bold text-[var(--color-fg)] break-words min-w-0">
               {candidate.firstName} {candidate.lastName}
             </h1>
             {canEdit && (
@@ -279,7 +279,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
               />
             )}
           </div>
-          <div className="flex items-center gap-3 mt-1 text-sm text-zinc-500">
+          <div className="flex items-center gap-3 mt-1 text-sm text-[var(--color-fg-subtle)]">
             {candidate.email && <span>{candidate.email}</span>}
             {candidate.phone && <span>{candidate.phone}</span>}
             {agency && audience !== 'manager' && (
@@ -291,12 +291,12 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
                     width={24}
                     height={24}
                     style={{ width: 24, height: 24 }}
-                    className="rounded-full border border-zinc-700 bg-zinc-800 object-contain shrink-0"
+                    className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-input)] object-contain shrink-0"
                   />
                 ) : (
                   <div
-                    className="flex items-center justify-center rounded-full bg-zinc-800
-                               text-zinc-400 text-xs font-semibold shrink-0"
+                    className="flex items-center justify-center rounded-full bg-[var(--color-bg-input)]
+                               text-[var(--color-fg-muted)] text-xs font-semibold shrink-0"
                     style={{ width: 24, height: 24 }}
                     aria-hidden="true"
                   >
@@ -329,8 +329,8 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
               <form action={archiveCandidate.bind(null, candidateId)}>
                 <button
                   type="submit"
-                  className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800
-                             text-zinc-400 text-xs font-medium px-3 py-1.5
+                  className="flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)]
+                             text-[var(--color-fg-muted)] text-xs font-medium px-3 py-1.5
                              hover:bg-red-950 hover:text-red-400 hover:border-red-800 transition-colors"
                 >
                   <ArchiveIcon className="h-3.5 w-3.5" />
@@ -396,27 +396,27 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
 
       {/* Location & Language */}
       {(candidate.country || candidate.city || (candidate.languagesSpoken && candidate.languagesSpoken.length > 0)) && (
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
-          <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">Location & Language</h3>
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-4 md:p-6 mb-6">
+          <h3 className="text-sm font-semibold text-[var(--color-fg)] uppercase tracking-wide mb-3">Location & Language</h3>
           <div className="flex flex-wrap gap-x-3 gap-y-2 md:gap-x-8">
             {(candidate.country || candidate.city) && (
               <div>
-                <p className="text-xs text-zinc-500">Location</p>
-                <p className="text-sm text-zinc-100">
+                <p className="text-xs text-[var(--color-fg-subtle)]">Location</p>
+                <p className="text-sm text-[var(--color-fg)]">
                   {[candidate.city, candidate.country].filter(Boolean).join(', ')}
                 </p>
               </div>
             )}
             {candidate.languagesSpoken && candidate.languagesSpoken.length > 0 && (
               <div>
-                <p className="text-xs text-zinc-500">Languages</p>
-                <p className="text-sm text-zinc-100">{candidate.languagesSpoken.join(', ')}</p>
+                <p className="text-xs text-[var(--color-fg-subtle)]">Languages</p>
+                <p className="text-sm text-[var(--color-fg)]">{candidate.languagesSpoken.join(', ')}</p>
               </div>
             )}
             {candidate.willingToRelocate !== null && (
               <div>
-                <p className="text-xs text-zinc-500">Willing to Relocate</p>
-                <p className="text-sm text-zinc-100">{candidate.willingToRelocate ? 'Yes' : 'No'}</p>
+                <p className="text-xs text-[var(--color-fg-subtle)]">Willing to Relocate</p>
+                <p className="text-sm text-[var(--color-fg)]">{candidate.willingToRelocate ? 'Yes' : 'No'}</p>
               </div>
             )}
           </div>
@@ -425,31 +425,31 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
 
       {/* Commercial Details — hidden for hiring managers */}
       {!isHiringManager && (candidate.candidateRate || candidate.customerRate) && (
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
-          <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide mb-3">Commercial Details</h3>
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-4 md:p-6 mb-6">
+          <h3 className="text-sm font-semibold text-[var(--color-fg)] uppercase tracking-wide mb-3">Commercial Details</h3>
           <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-4">
             {candidate.candidateRate && (
               <div>
-                <p className="text-xs text-zinc-500">Candidate Rate/day</p>
-                <p className="text-lg font-semibold text-zinc-100">
+                <p className="text-xs text-[var(--color-fg-subtle)]">Candidate Rate/day</p>
+                <p className="text-lg font-semibold text-[var(--color-fg)]">
                   {candidate.rateCurrency ?? ''} {Number(candidate.candidateRate).toFixed(2)}
                 </p>
               </div>
             )}
             {candidate.customerRate && (
               <div>
-                <p className="text-xs text-zinc-500">Customer Rate/day</p>
-                <p className="text-lg font-semibold text-zinc-100">
+                <p className="text-xs text-[var(--color-fg-subtle)]">Customer Rate/day</p>
+                <p className="text-lg font-semibold text-[var(--color-fg)]">
                   {candidate.rateCurrency ?? ''} {Number(candidate.customerRate).toFixed(2)}
                 </p>
               </div>
             )}
             {candidate.candidateRate && candidate.customerRate && (
               <div>
-                <p className="text-xs text-zinc-500">Margin</p>
+                <p className="text-xs text-[var(--color-fg-subtle)]">Margin</p>
                 <p className="text-lg font-semibold text-emerald-400">
                   {candidate.rateCurrency ?? ''} {(Number(candidate.customerRate) - Number(candidate.candidateRate)).toFixed(2)}
-                  <span className="text-sm text-zinc-500 ml-1">
+                  <span className="text-sm text-[var(--color-fg-subtle)] ml-1">
                     ({((Number(candidate.customerRate) - Number(candidate.candidateRate)) / Number(candidate.customerRate) * 100).toFixed(1)}%)
                   </span>
                 </p>
@@ -467,10 +467,10 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
           currentStatus={activeScore.score.scoreStatus}
         />
       ) : activeScore?.score.scoreStatus === 'complete' ? (
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-4 md:p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3 flex-wrap">
-              <h2 className="font-semibold text-zinc-100">Score for: {activeScore.role.title}</h2>
+              <h2 className="font-semibold text-[var(--color-fg)]">Score for: {activeScore.role.title}</h2>
               {isScoreOutdatedAgainstPriorities(activeScore.score, activeScore.role) && canEdit && (
                 <StaleScorePill
                   candidateId={candidateId}
@@ -489,9 +489,9 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
           </div>
           <ScoreChart score={activeScore.score} />
           {activeScore.score.aiSummary && (
-            <div className="mt-5 pt-5 border-t border-zinc-700">
-              <h3 className="text-sm font-semibold text-zinc-300 mb-1">AI Summary</h3>
-              <p className="text-sm text-zinc-400">{activeScore.score.aiSummary}</p>
+            <div className="mt-5 pt-5 border-t border-[var(--color-border)]">
+              <h3 className="text-sm font-semibold text-[var(--color-fg)] mb-1">AI Summary</h3>
+              <p className="text-sm text-[var(--color-fg-muted)]">{activeScore.score.aiSummary}</p>
             </div>
           )}
         </div>
@@ -517,9 +517,9 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
       {/* Manager approval controls — shown when the manager is assigned to one or
           more roles that this candidate has been scored on */}
       {isHiringManager && rolesWithThisCandidate.length > 0 && (
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
-          <h2 className="font-semibold text-zinc-100 mb-1">Your Approval</h2>
-          <p className="text-xs text-zinc-500 mb-4">
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-4 md:p-6 mb-6">
+          <h2 className="font-semibold text-[var(--color-fg)] mb-1">Your Approval</h2>
+          <p className="text-xs text-[var(--color-fg-subtle)] mb-4">
             Record your approval decision for each role this candidate has been shortlisted on.
           </p>
           <div className="space-y-4">
@@ -529,7 +529,7 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
               if (!roleEntry) return null
               return (
                 <div key={rid}>
-                  <p className="text-xs font-medium text-zinc-400 mb-2 uppercase tracking-wide">
+                  <p className="text-xs font-medium text-[var(--color-fg-muted)] mb-2 uppercase tracking-wide">
                     {roleEntry.role.title}
                   </p>
                   <ApprovalControls
@@ -547,11 +547,11 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
 
       {/* Web intelligence */}
       <MobilePanel title="Web Intelligence">
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-4 md:p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="font-semibold text-zinc-100">Web Intelligence</h2>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <h2 className="font-semibold text-[var(--color-fg)]">Web Intelligence</h2>
+              <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5">
                 Search LinkedIn, GitHub, Reddit and more to build a fuller picture
               </p>
             </div>
@@ -568,9 +568,9 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
 
       {/* Interview packs */}
       <MobilePanel title="Interview Packs">
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-4 md:p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-zinc-100">Interview Packs</h2>
+            <h2 className="font-semibold text-[var(--color-fg)]">Interview Packs</h2>
             {allRoles.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {allRoles.map((role) => (
@@ -598,8 +598,8 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
 
       {/* Interview Schedule */}
       <MobilePanel title="Interview Schedule">
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
-          <h2 className="font-semibold text-zinc-100 mb-4">Interview Schedule</h2>
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-4 md:p-6 mb-6">
+          <h2 className="font-semibold text-[var(--color-fg)] mb-4">Interview Schedule</h2>
           {canEdit && (
             <div className="mb-4">
               <IcsImportButton candidateId={candidateId} roleId={roleId ?? null} />
@@ -620,8 +620,8 @@ export default async function CandidateProfilePage({ params, searchParams }: Pro
 
       {/* CV Profile */}
       <MobilePanel title="CV Profile">
-        <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-4 md:p-6 mb-6">
-          <h2 className="font-semibold text-zinc-100 mb-4">CV Profile</h2>
+        <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-4 md:p-6 mb-6">
+          <h2 className="font-semibold text-[var(--color-fg)] mb-4">CV Profile</h2>
           <CandidateCvProfile
             candidateId={candidateId}
             cvText={candidate.cvText}

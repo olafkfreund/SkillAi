@@ -30,8 +30,8 @@ export function ShortlistStatusPill({
   if (!sentAt) {
     return (
       <span
-        className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-800
-                   text-zinc-400 text-xs font-medium px-3 py-1"
+        className="inline-flex items-center rounded-full border border-zinc-300 dark:border-zinc-700
+                   bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 text-xs font-medium px-3 py-1"
         aria-label="Shortlist not yet sent for approval"
       >
         Not sent for approval
@@ -47,17 +47,17 @@ export function ShortlistStatusPill({
   // Colour logic
   let colourClasses: string
   if (total === 0) {
-    colourClasses = 'border-zinc-700 bg-zinc-800 text-zinc-400'
+    colourClasses = 'border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400'
   } else if (allApproved) {
-    colourClasses = 'border-green-800 bg-green-950 text-green-300'
+    colourClasses = 'border-emerald-300 dark:border-emerald-800 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
   } else if (allRejected) {
-    colourClasses = 'border-red-800 bg-red-950 text-red-300'
+    colourClasses = 'border-red-300 dark:border-red-800 bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300'
   } else if (allReviewed) {
     // Mix of approved + rejected — amber
-    colourClasses = 'border-amber-800 bg-amber-950 text-amber-300'
+    colourClasses = 'border-amber-300 dark:border-amber-800 bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
   } else {
     // Still pending reviews
-    colourClasses = 'border-blue-800 bg-blue-950 text-blue-300'
+    colourClasses = 'border-blue-300 dark:border-blue-800 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
   }
 
   const sentLabel = formatSentDate(sentAt)

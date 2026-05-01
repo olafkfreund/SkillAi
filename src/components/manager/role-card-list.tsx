@@ -72,8 +72,8 @@ export function RoleCardList({ roles }: Props) {
 
                   {role.isPrimary && (
                     <span
-                      className="inline-flex items-center rounded-full bg-blue-950 border border-blue-800
-                                  text-blue-300 text-xs font-semibold px-2 py-0.5 flex-shrink-0"
+                      className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-950 border border-blue-300 dark:border-blue-800
+                                  text-blue-700 dark:text-blue-300 text-xs font-semibold px-2 py-0.5 flex-shrink-0"
                     >
                       Primary reviewer
                     </span>
@@ -81,8 +81,8 @@ export function RoleCardList({ roles }: Props) {
 
                   {role.pendingCount > 0 && (
                     <span
-                      className="inline-flex items-center gap-1 rounded-full bg-amber-950 border border-amber-800
-                                  text-amber-300 text-xs font-semibold px-2 py-0.5 flex-shrink-0"
+                      className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950 border border-amber-300 dark:border-amber-800
+                                  text-amber-700 dark:text-amber-300 text-xs font-semibold px-2 py-0.5 flex-shrink-0"
                     >
                       <ClockIcon className="h-3 w-3" aria-hidden="true" />
                       {role.pendingCount} pending
@@ -91,8 +91,8 @@ export function RoleCardList({ roles }: Props) {
 
                   {role.pendingCount === 0 && role.shortlistSentAt && (
                     <span
-                      className="inline-flex items-center gap-1 rounded-full bg-emerald-950 border border-emerald-800
-                                  text-emerald-300 text-xs font-medium px-2 py-0.5 flex-shrink-0"
+                      className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800
+                                  text-emerald-700 dark:text-emerald-300 text-xs font-medium px-2 py-0.5 flex-shrink-0"
                     >
                       <CheckCircleIcon className="h-3 w-3" aria-hidden="true" />
                       All reviewed

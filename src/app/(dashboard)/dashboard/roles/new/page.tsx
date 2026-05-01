@@ -34,7 +34,7 @@ export default async function NewRolePage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-zinc-100 mb-6">Create role</h1>
+      <h1 className="text-2xl font-bold text-[var(--color-fg)] mb-6">Create role</h1>
       <RoleForm
         customers={activeCustomers.map(({ id, name }) => ({ id, name }))}
         frameworks={frameworks}

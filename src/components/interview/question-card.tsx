@@ -6,16 +6,16 @@ import type { InterviewQuestion } from '@/db/schema'
 import { updateQuestionNotes } from '@/actions/interview'
 
 const TYPE_COLORS: Record<string, string> = {
-  behavioral: 'bg-blue-950 text-blue-300 border-blue-700',
-  technical: 'bg-orange-950 text-orange-300 border-orange-700',
-  situational: 'bg-green-950 text-green-300 border-green-700',
-  cultural: 'bg-purple-950 text-purple-300 border-purple-700',
+  behavioral: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700',
+  technical: 'bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700',
+  situational: 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700',
+  cultural: 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700',
 }
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  easy: 'bg-emerald-950 text-emerald-400 border-emerald-700',
-  medium: 'bg-amber-950 text-amber-400 border-amber-800',
-  hard: 'bg-red-950 text-red-400 border-red-800',
+  easy: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700',
+  medium: 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800',
+  hard: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 border-red-300 dark:border-red-800',
 }
 
 type Props = { question: InterviewQuestion; index: number }
@@ -85,31 +85,31 @@ export function QuestionCard({ question, index }: Props) {
             <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">Scoring rubric</p>
             <div className="grid gap-2">
               {question.strongAnswerSignals?.length ? (
-                <div className="rounded-md bg-green-950 border border-green-800 px-3 py-2">
-                  <p className="text-xs font-semibold text-green-400 mb-1">Strong answer signals</p>
+                <div className="rounded-md bg-emerald-100 dark:bg-green-950 border border-emerald-300 dark:border-green-800 px-3 py-2">
+                  <p className="text-xs font-semibold text-emerald-700 dark:text-green-400 mb-1">Strong answer signals</p>
                   <ul className="space-y-0.5">
                     {question.strongAnswerSignals.map((s, i) => (
-                      <li key={i} className="text-xs text-green-400">• {s}</li>
+                      <li key={i} className="text-xs text-emerald-700 dark:text-green-400">• {s}</li>
                     ))}
                   </ul>
                 </div>
               ) : null}
               {question.acceptableAnswerSignals?.length ? (
-                <div className="rounded-md bg-amber-950 border border-amber-800 px-3 py-2">
-                  <p className="text-xs font-semibold text-amber-400 mb-1">Acceptable answer signals</p>
+                <div className="rounded-md bg-amber-100 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 px-3 py-2">
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1">Acceptable answer signals</p>
                   <ul className="space-y-0.5">
                     {question.acceptableAnswerSignals.map((s, i) => (
-                      <li key={i} className="text-xs text-amber-400">• {s}</li>
+                      <li key={i} className="text-xs text-amber-700 dark:text-amber-400">• {s}</li>
                     ))}
                   </ul>
                 </div>
               ) : null}
               {question.weakAnswerSignals?.length ? (
-                <div className="rounded-md bg-red-950 border border-red-800 px-3 py-2">
-                  <p className="text-xs font-semibold text-red-400 mb-1">Weak answer signals</p>
+                <div className="rounded-md bg-red-100 dark:bg-red-950 border border-red-300 dark:border-red-800 px-3 py-2">
+                  <p className="text-xs font-semibold text-red-700 dark:text-red-400 mb-1">Weak answer signals</p>
                   <ul className="space-y-0.5">
                     {question.weakAnswerSignals.map((s, i) => (
-                      <li key={i} className="text-xs text-red-400">• {s}</li>
+                      <li key={i} className="text-xs text-red-700 dark:text-red-400">• {s}</li>
                     ))}
                   </ul>
                 </div>

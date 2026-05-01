@@ -20,7 +20,7 @@ import { getForYouFeed } from '@/actions/dashboard-tasks'
 export const metadata = { title: 'Dashboard — SkillAI' }
 
 const STATUS_BADGE: Record<string, string> = {
-  new:          'bg-zinc-700 text-zinc-300',
+  new:          'bg-[var(--color-bg-input)] text-[var(--color-fg-muted)]',
   shortlisted:  'bg-blue-900/60 text-blue-300',
   interviewing: 'bg-violet-900/60 text-violet-300',
   offered:      'bg-amber-900/60 text-amber-300',
@@ -352,7 +352,7 @@ export default async function DashboardPage() {
                       </p>
                     </div>
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize whitespace-nowrap ${STATUS_BADGE[c.status] ?? 'bg-zinc-700 text-zinc-300'}`}
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize whitespace-nowrap ${STATUS_BADGE[c.status] ?? 'bg-[var(--color-bg-input)] text-[var(--color-fg-muted)]'}`}
                     >
                       {c.status}
                     </span>

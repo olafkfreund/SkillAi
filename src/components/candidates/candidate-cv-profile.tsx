@@ -61,10 +61,10 @@ function categorizeSkill(skill: string): 'languages' | 'frameworks' | 'tools' | 
 
 // ── Experience level badge styles ───────────────────────────────────────────
 const LEVEL_STYLES: Record<string, string> = {
-  junior: 'bg-zinc-800 text-zinc-300 border-zinc-700',
-  mid: 'bg-blue-950 text-blue-300 border-blue-800',
-  senior: 'bg-violet-950 text-violet-300 border-violet-800',
-  lead: 'bg-amber-950 text-amber-300 border-amber-800',
+  junior: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700',
+  mid: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800',
+  senior: 'bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300 border-violet-300 dark:border-violet-800',
+  lead: 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800',
 }
 
 export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profile: initialProfile, canEdit }: Props) {
@@ -169,20 +169,20 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
       </div>
 
       {retryError && (
-        <div className="rounded-md bg-red-950 border border-red-800 px-3 py-2 text-xs text-red-400">
+        <div className="rounded-md bg-red-100 dark:bg-red-950 border border-red-300 dark:border-red-800 px-3 py-2 text-xs text-red-700 dark:text-red-400">
           {retryError}
         </div>
       )}
 
       {/* Failed state */}
       {isFailed && (
-        <div className="rounded-xl bg-red-950 border border-red-800 px-4 py-3">
+        <div className="rounded-xl bg-red-100 dark:bg-red-950 border border-red-300 dark:border-red-800 px-4 py-3">
           <div className="flex items-start gap-3">
-            <AlertCircleIcon className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <AlertCircleIcon className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-red-400">Profile extraction failed</p>
+              <p className="text-sm font-semibold text-red-700 dark:text-red-400">Profile extraction failed</p>
               {profile?.errorMessage && (
-                <p className="text-xs text-red-500 mt-0.5">{profile.errorMessage.split('\n')[0]}</p>
+                <p className="text-xs text-red-600 dark:text-red-500 mt-0.5">{profile.errorMessage.split('\n')[0]}</p>
               )}
             </div>
           </div>
@@ -272,7 +272,7 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
             <span className="hidden group-open:inline">▾ Hide full CV text</span>
           </span>
           {cvTextFormatted && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-violet-950 border border-violet-800 text-violet-300 text-[10px] font-medium px-2 py-0.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 dark:bg-violet-950 border border-violet-300 dark:border-violet-800 text-violet-700 dark:text-violet-300 text-[10px] font-medium px-2 py-0.5">
               <SparklesIcon className="h-2.5 w-2.5" />
               AI-formatted
             </span>
@@ -292,7 +292,7 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
                 type="button"
                 onClick={handleReformat}
                 disabled={isReformatting}
-                className="inline-flex items-center gap-1.5 rounded-md border border-violet-800 bg-violet-950 text-violet-300 text-xs font-medium px-2.5 py-1 hover:bg-violet-900 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-md border border-violet-300 dark:border-violet-800 bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300 text-xs font-medium px-2.5 py-1 hover:bg-violet-200 dark:hover:bg-violet-900 transition-colors disabled:opacity-50"
               >
                 {isReformatting ? (
                   <Loader2Icon className="h-3 w-3 animate-spin" />
@@ -306,7 +306,7 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
             </div>
           )}
           {reformatError && (
-            <div className="mb-3 rounded-md bg-red-950 border border-red-800 px-3 py-2 text-xs text-red-400">
+            <div className="mb-3 rounded-md bg-red-100 dark:bg-red-950 border border-red-300 dark:border-red-800 px-3 py-2 text-xs text-red-700 dark:text-red-400">
               {reformatError}
             </div>
           )}
@@ -325,10 +325,10 @@ export function CandidateCvProfile({ candidateId, cvText, cvTextFormatted, profi
 // ── Skill chip ──────────────────────────────────────────────────────────────
 function SkillChip({ skill, category }: { skill: string; category: 'languages' | 'frameworks' | 'tools' | 'other' }) {
   const styles = {
-    languages: 'bg-blue-950/50 border-blue-800 text-blue-300',
-    frameworks: 'bg-violet-950/50 border-violet-800 text-violet-300',
-    tools: 'bg-emerald-950/50 border-emerald-800 text-emerald-300',
-    other: 'bg-zinc-800 border-zinc-700 text-zinc-300',
+    languages: 'bg-blue-100 dark:bg-blue-950/50 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300',
+    frameworks: 'bg-violet-100 dark:bg-violet-950/50 border-violet-300 dark:border-violet-800 text-violet-700 dark:text-violet-300',
+    tools: 'bg-emerald-100 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300',
+    other: 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300',
   }[category]
   return (
     <span className={`inline-flex items-center rounded-full border text-xs px-2.5 py-1 ${styles}`}>

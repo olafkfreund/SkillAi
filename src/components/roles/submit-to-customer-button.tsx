@@ -57,9 +57,9 @@ export function SubmitToCustomerButton({ roleId, selectedCandidateIds, onSuccess
         type="button"
         onClick={() => setOpen(true)}
         disabled={selectedCandidateIds.length === 0}
-        className="inline-flex items-center gap-1.5 rounded-md border border-emerald-800
-                   bg-emerald-950 text-emerald-300 text-sm font-medium px-3 py-1.5
-                   hover:bg-emerald-900 disabled:opacity-50 disabled:cursor-not-allowed
+        className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 dark:border-emerald-800
+                   bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-sm font-medium px-3 py-1.5
+                   hover:bg-emerald-200 dark:hover:bg-emerald-900 disabled:opacity-50 disabled:cursor-not-allowed
                    transition-colors flex-shrink-0"
         title="Submit selected candidates to customer"
       >
@@ -119,7 +119,7 @@ export function SubmitToCustomerButton({ roleId, selectedCandidateIds, onSuccess
 
             {/* Inline error */}
             {error && (
-              <p className="mb-4 text-xs text-red-400 bg-red-950 border border-red-800 rounded-md px-3 py-2">
+              <p className="mb-4 text-xs text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-950 border border-red-300 dark:border-red-800 rounded-md px-3 py-2">
                 {error}
               </p>
             )}

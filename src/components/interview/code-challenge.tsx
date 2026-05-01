@@ -19,7 +19,7 @@ export function CodeChallengeCard({ challenge }: Props) {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-zinc-100">{challenge.title}</p>
           <div className="flex items-center gap-3 mt-0.5">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-violet-950 text-violet-400 border-violet-700">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-400 border-violet-300 dark:border-violet-700">
               {challenge.language}
             </span>
             {challenge.estimatedMinutes && (

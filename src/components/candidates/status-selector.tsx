@@ -15,12 +15,12 @@ const STATUS_OPTIONS: Array<{ value: CandidateStatus; label: string }> = [
 ]
 
 const STATUS_BADGE: Record<CandidateStatus, string> = {
-  new: 'bg-zinc-800 text-zinc-300 border-zinc-600',
-  shortlisted: 'bg-blue-950 text-blue-300 border-blue-700',
-  interviewing: 'bg-amber-950 text-amber-300 border-amber-700',
-  offered: 'bg-violet-950 text-violet-300 border-violet-700',
-  rejected: 'bg-red-950 text-red-300 border-red-800',
-  hired: 'bg-emerald-950 text-emerald-300 border-emerald-700',
+  new: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-600',
+  shortlisted: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700',
+  interviewing: 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700',
+  offered: 'bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300 border-violet-300 dark:border-violet-700',
+  rejected: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-300 dark:border-red-800',
+  hired: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
 }
 
 interface StatusSelectorProps {
