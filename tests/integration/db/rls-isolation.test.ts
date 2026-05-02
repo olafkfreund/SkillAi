@@ -12,8 +12,12 @@ import { db, withTenant } from '@/db'
 import { tenants } from '@/db/schema/tenants'
 import { agencies } from '@/db/schema/agencies'
 
-// These tests run against the real DB — ensure DATABASE_URL is set
-const REQUIRES_DB = !!process.env.DATABASE_URL
+// These tests insert real rows + then delete them. They MUST NOT run against
+// a developer's working DB — running with just DATABASE_URL set was too loose,
+// because the dev container always has DATABASE_URL pointing at the live DB.
+// Opt-in via RUN_DB_INTEGRATION_TESTS=1 from a dedicated test database.
+const REQUIRES_DB =
+  !!process.env.RUN_DB_INTEGRATION_TESTS && !!process.env.DATABASE_URL
 
 describe.skipIf(!REQUIRES_DB)('RLS isolation', () => {
   let tenantAId: string

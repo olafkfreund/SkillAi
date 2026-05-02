@@ -12,10 +12,10 @@
     "db:push": "drizzle-kit push",
     "db:seed": "npx tsx src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
+    "test": "NODE_ENV=test vitest run",
+    "test:watch": "NODE_ENV=test vitest",
+    "test:coverage": "NODE_ENV=test vitest run --coverage",
+    "test:e2e": "NODE_ENV=test playwright test",
     "docs:mcp-tools": "npx tsx scripts/generate-mcp-tools-doc.ts"
   },
   "dependencies": {

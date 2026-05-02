@@ -15,9 +15,10 @@ import { parseFile, ParseError } from '@/lib/parsers'
 const fixture = (name: string) =>
   readFileSync(resolve(__dirname, '../../fixtures', name))
 
-// -- Mock pdf-parse and mammoth for PDF/DOCX tests --
-vi.mock('pdf-parse', () => ({
-  default: vi.fn().mockResolvedValue({ text: 'PDF extracted text content' }),
+// -- Mock unpdf and mammoth for PDF/DOCX tests --
+// (source uses `unpdf`'s extractText, not pdf-parse)
+vi.mock('unpdf', () => ({
+  extractText: vi.fn().mockResolvedValue({ text: 'PDF extracted text content' }),
 }))
 
 vi.mock('mammoth', () => ({
@@ -26,7 +27,7 @@ vi.mock('mammoth', () => ({
 
 describe('parseFile()', () => {
   describe('PDF', () => {
-    it('returns extracted text from pdf-parse', async () => {
+    it('returns extracted text from unpdf', async () => {
       const result = await parseFile(Buffer.from('fake-pdf'), 'pdf')
       expect(result).toBe('PDF extracted text content')
       expect(result.length).toBeGreaterThan(0)

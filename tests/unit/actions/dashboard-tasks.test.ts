@@ -31,6 +31,13 @@ vi.mock('@/db', () => ({
   ),
 }))
 
+// getForYouFeed delegates the customer-submissions widget to
+// getRecentSubmissionsForTenant, which calls Next's `headers()` and is
+// not the subject of this test. Stub it to a deterministic empty array.
+vi.mock('@/actions/role-submissions', () => ({
+  getRecentSubmissionsForTenant: vi.fn().mockResolvedValue([]),
+}))
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Chainable Drizzle query mock that resolves to `returnValue` when awaited. */
