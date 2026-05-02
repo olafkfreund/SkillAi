@@ -90,11 +90,23 @@ Add the following to your `claude_desktop_config.json`:
 }
 ```
 
+### Configure Claude Code
+
+Claude Code can talk to `/api/mcp` directly over HTTP — no bridge install needed. The fastest path is the CLI:
+
+```bash
+claude mcp add --transport http --scope user skillai \
+  https://your-skillai-instance.example.com/api/mcp \
+  --header "Authorization: Bearer skl_prod_xxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+For a project-shared `.mcp.json`, the env-var pattern, and the stdio-bridge alternative, see the in-app help article *"Connecting SkillAi to Claude Code (MCP server)"*.
+
 ### Token generation
 
 Tokens are minted in the SkillAI web UI at `/settings/api-tokens`. You choose a scope (`read`, `write`, or `admin`), give the token a name, and the secret is shown **once** — copy it into your client config immediately. Tokens are stored as argon2 hashes, never recoverable, and can be revoked at any time. Rate limits apply per-token and per-tenant.
 
-See [`skillai-mcp/README.md`](skillai-mcp/README.md) for the full tool / resource / prompt catalogue.
+See [`docs/mcp-tools.md`](docs/mcp-tools.md) for the full tool / resource / prompt catalogue (auto-generated; re-run `npm run docs:mcp-tools` after changes) and [`skillai-mcp/README.md`](skillai-mcp/README.md) for bridge install details.
 
 ---
 

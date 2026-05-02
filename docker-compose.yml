@@ -28,7 +28,8 @@ services:
       BRAVE_SEARCH_API_KEY: ${BRAVE_SEARCH_API_KEY}
       GITHUB_TOKEN: ${GITHUB_TOKEN}
     healthcheck:
-      test: ['CMD-SHELL', 'curl -sf http://localhost:3000/api/health || exit 1']
+      # node:22-alpine doesn't ship curl. wget is BusyBox-built-in.
+      test: ['CMD-SHELL', 'wget -q --spider http://localhost:3000/api/health || exit 1']
       interval: 30s
       timeout: 10s
       retries: 3
