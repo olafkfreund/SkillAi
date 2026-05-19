@@ -5,7 +5,7 @@ import { renderToBuffer } from '@react-pdf/renderer'
 import { auth } from '@/lib/auth'
 import { withTenant } from '@/db'
 import { candidates } from '@/db/schema'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 import { extractSynechronCvData } from '@/lib/ai/synechron-extract'
 import { SynechronCvPDF } from '@/lib/pdf'
 import type { SynechronCvData } from '@/lib/ai/synechron-schema'
@@ -181,14 +181,12 @@ export async function GET(
     return failResponse('PDF generation', err)
   }
 
-  writeAuditLog(tenantId, {
+  emitAudit(tenantId, {
     action: 'candidate.synechron_cv_downloaded',
     entityType: 'candidate',
     entityId: candidateId,
     entityLabel: `${candidate.firstName} ${candidate.lastName}`.trim() || candidateId,
     metadata: { wasFreshlyExtracted },
-  }).catch(() => {
-    /* audit failures must not break the download */
   })
 
   const filename = buildFilename(candidate)

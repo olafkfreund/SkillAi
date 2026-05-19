@@ -2,7 +2,7 @@ import { verify } from '@node-rs/argon2'
 import { eq } from 'drizzle-orm'
 import { db, withTenant } from '@/db'
 import { apiTokens } from '@/db/schema'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 
 export type ValidatedToken = {
   tenantId: string
@@ -65,7 +65,7 @@ export async function validateApiToken(rawToken: string): Promise<ValidatedToken
 
     // Sampled audit log: every 10th call to avoid log flooding
     if (Math.random() < 0.1) {
-      void writeAuditLog(token.tenantId, {
+      emitAudit(token.tenantId, {
         action: 'api_token.used',
         entityType: 'api_token',
         entityId: token.id,

@@ -5,7 +5,7 @@
  * Design principles (mirrors src/lib/email/notify-recruiter-of-customer-update.ts):
  *  - Never throws. All failure paths are swallowed and logged via console.warn.
  *  - All dispatches are fire-and-forget — callers use .catch(() => {}).
- *  - Audit log writes are themselves fire-and-forget (.catch(() => {})).
+ *  - Audit log writes go via `emitAudit` — fire-and-forget by contract.
  *  - Names are loaded internally from the DB so call sites stay minimal.
  */
 
@@ -13,7 +13,7 @@ import { eq, and, inArray } from 'drizzle-orm'
 import { withTenant } from '@/db'
 import { candidates, roles, tenantSettings } from '@/db/schema'
 import { decrypt } from '@/lib/crypto'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 import { sendSlack } from './slack'
 import { sendTeams } from './teams'
 
@@ -172,7 +172,7 @@ export async function dispatchHighScoreNotification(args: HighScoreArgs): Promis
       const settled = results[i]
       if (settled.status === 'rejected') {
         console.warn(`[notifications] ${channel} high-score dispatch threw:`, settled.reason)
-        writeAuditLog(args.tenantId, {
+        emitAudit(args.tenantId, {
           action: 'notification.webhook_failed',
           entityType: 'candidate',
           entityId: args.candidateId,
@@ -182,7 +182,7 @@ export async function dispatchHighScoreNotification(args: HighScoreArgs): Promis
             candidateId: args.candidateId,
             roleId: args.roleId,
           },
-        }).catch(() => {})
+        })
         continue
       }
 
@@ -191,7 +191,7 @@ export async function dispatchHighScoreNotification(args: HighScoreArgs): Promis
 
       if (!result.ok) {
         console.warn(`[notifications] ${channel} high-score delivery failed:`, result.error)
-        writeAuditLog(args.tenantId, {
+        emitAudit(args.tenantId, {
           action: 'notification.webhook_failed',
           entityType: 'candidate',
           entityId: args.candidateId,
@@ -201,9 +201,9 @@ export async function dispatchHighScoreNotification(args: HighScoreArgs): Promis
             candidateId: args.candidateId,
             roleId: args.roleId,
           },
-        }).catch(() => {})
+        })
       } else {
-        writeAuditLog(args.tenantId, {
+        emitAudit(args.tenantId, {
           action: 'notification.high_score_sent',
           entityType: 'candidate',
           entityId: args.candidateId,
@@ -213,7 +213,7 @@ export async function dispatchHighScoreNotification(args: HighScoreArgs): Promis
             overallScore: args.overallScore,
             roleId: args.roleId,
           },
-        }).catch(() => {})
+        })
       }
     }
   } catch (err) {
@@ -296,7 +296,7 @@ export async function dispatchManagerDecisionNotification(args: ManagerDecisionA
       const settled = results[i]
       if (settled.status === 'rejected') {
         console.warn(`[notifications] ${channel} manager-decision dispatch threw:`, settled.reason)
-        writeAuditLog(args.tenantId, {
+        emitAudit(args.tenantId, {
           action: 'notification.webhook_failed',
           entityType: 'candidate',
           entityId: args.candidateId,
@@ -306,7 +306,7 @@ export async function dispatchManagerDecisionNotification(args: ManagerDecisionA
             candidateId: args.candidateId,
             roleId: args.roleId,
           },
-        }).catch(() => {})
+        })
         continue
       }
 
@@ -315,7 +315,7 @@ export async function dispatchManagerDecisionNotification(args: ManagerDecisionA
 
       if (!result.ok) {
         console.warn(`[notifications] ${channel} manager-decision delivery failed:`, result.error)
-        writeAuditLog(args.tenantId, {
+        emitAudit(args.tenantId, {
           action: 'notification.webhook_failed',
           entityType: 'candidate',
           entityId: args.candidateId,
@@ -325,9 +325,9 @@ export async function dispatchManagerDecisionNotification(args: ManagerDecisionA
             candidateId: args.candidateId,
             roleId: args.roleId,
           },
-        }).catch(() => {})
+        })
       } else {
-        writeAuditLog(args.tenantId, {
+        emitAudit(args.tenantId, {
           action: 'notification.approval_sent',
           entityType: 'candidate',
           entityId: args.candidateId,
@@ -338,7 +338,7 @@ export async function dispatchManagerDecisionNotification(args: ManagerDecisionA
             roleId: args.roleId,
             managerName: args.managerName,
           },
-        }).catch(() => {})
+        })
       }
     }
   } catch (err) {
@@ -375,18 +375,18 @@ export async function testWebhookDelivery(tenantId: string): Promise<Notificatio
 
   // Audit failures only
   if (slackUrl && !slack.ok) {
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'notification.webhook_failed',
       entityType: 'settings',
       metadata: { channel: 'slack', error: slack.error, test: true },
-    }).catch(() => {})
+    })
   }
   if (teamsUrl && !teams.ok) {
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'notification.webhook_failed',
       entityType: 'settings',
       metadata: { channel: 'teams', error: teams.error, test: true },
-    }).catch(() => {})
+    })
   }
 
   return { slack, teams }

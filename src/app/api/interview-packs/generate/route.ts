@@ -16,7 +16,7 @@ import { generateQuestions } from '@/lib/ai/interview'
 import { getOrExtractCvProfile } from '@/lib/ai/cv-profile'
 import { inferLanguage } from '@/lib/ai/interview-helpers'
 import { SUPPORTED_LANGUAGES, isSupportedLanguage, type SupportedLanguage } from '@/lib/ai/language'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 
 export const maxDuration = 300
 
@@ -180,7 +180,7 @@ export async function POST(request: Request) {
       }).where(eq(interviewPacks.id, packId))
     })
 
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'interview_pack.completed',
       entityType: 'interview_pack',
       entityId: packId,
@@ -189,19 +189,19 @@ export async function POST(request: Request) {
         experienceLevel: result.experience_level,
         includesCodeChallenge: !!result.code_challenge,
       },
-    }).catch(() => {})
+    })
 
     return NextResponse.json({ success: true })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     await failPack(tenantId, packId, message)
 
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'interview_pack.failed',
       entityType: 'interview_pack',
       entityId: packId,
       metadata: { error: message },
-    }).catch(() => {})
+    })
 
     console.error(`Interview pack generation failed for ${packId}:`, message)
     // Return generic error to client — full details logged server-side

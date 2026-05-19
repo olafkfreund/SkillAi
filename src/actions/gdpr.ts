@@ -31,7 +31,7 @@ import {
 } from '@/db/schema'
 import { getActionContext } from '@/lib/auth/action-context'
 import { requireRole } from '@/lib/auth/require-role'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 import { deleteCvFile } from '@/lib/cv/store'
 
 // ---------------------------------------------------------------------------
@@ -264,7 +264,7 @@ export async function deleteCandidateForGdpr(
   // now deleted), so no additional file deletion is needed.
 
   // 9. Write tombstone audit entry
-  writeAuditLog(tenantId, {
+  emitAudit(tenantId, {
     action: 'candidate.deleted_gdpr',
     entityType: 'candidate',
     entityId: candidateId,
@@ -273,7 +273,7 @@ export async function deleteCandidateForGdpr(
       deletedAt: new Date().toISOString(),
       deletedBy: ctx.userId,
     },
-  }).catch(() => {})
+  })
 
   // 10. Invalidate candidate list cache
   revalidatePath('/dashboard/candidates')

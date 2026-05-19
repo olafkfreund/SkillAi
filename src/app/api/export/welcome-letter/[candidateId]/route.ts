@@ -13,7 +13,7 @@ import { INTERVIEW_TYPES } from '@/lib/ai/welcome-letter-schemas'
 import { generateWelcomeLetter } from '@/lib/ai/welcome-letter'
 import { WelcomeLetterPDF } from '@/lib/pdf/welcome-letter-pdf'
 import { getOrExtractCvProfile } from '@/lib/ai/cv-profile'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 
 // AI + PDF generation can take up to 60s on first call (cache miss + extraction)
 export const maxDuration = 60
@@ -159,13 +159,13 @@ export async function GET(
     )
 
     // Fire-and-forget audit log — never blocks the response
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'candidate.welcome_letter_generated',
       entityType: 'candidate',
       entityId: candidateId,
       entityLabel: candidateFullName,
       metadata: { language: lang, interviewType, roleId: roleId ?? null },
-    }).catch(() => { /* audit failures must not break the download */ })
+    })
 
     const slug = slugify(candidate.firstName)
     const filename = `welcome-letter-${slug}-${lang}.pdf`

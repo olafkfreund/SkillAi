@@ -11,7 +11,7 @@
  */
 
 import { auth } from '@/lib/auth'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 import {
   buildCandidatesCsv,
   buildRolesCsv,
@@ -86,7 +86,7 @@ export async function GET(
   const { csv, rowCount } = await builders[entity](tenantId)
 
   // 5. Fire-and-forget audit log
-  void writeAuditLog(tenantId, {
+  emitAudit(tenantId, {
     action: 'tenant.csv_exported',
     entityType: 'tenant',
     entityId: tenantId,

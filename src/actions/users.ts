@@ -9,7 +9,7 @@ import { users } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { requireRole } from '@/lib/auth/require-role'
 import { getActionContext } from '@/lib/auth/action-context'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 import type { UserRole } from '@/lib/auth/types'
 import type { User } from '@/db/schema/users'
 
@@ -149,11 +149,11 @@ export async function changePassword(
       )
   })
 
-  writeAuditLog(session.user.tenantId, {
+  emitAudit(session.user.tenantId, {
     action: 'user.password_changed',
     entityType: 'user',
     entityId: session.user.id,
-  }).catch(() => {})
+  })
 
   return { success: true }
 }
@@ -318,13 +318,13 @@ export async function createUserDirect(
     return { ok: false, error: 'Failed to create user' }
   }
 
-  writeAuditLog(ctx.tenantId, {
+  emitAudit(ctx.tenantId, {
     action: 'user.created',
     entityType: 'user',
     entityId: created.id,
     entityLabel: parsed.data.email,
     metadata: { createdVia: 'manual', role: parsed.data.role },
-  }).catch(() => {})
+  })
 
   revalidatePath('/settings')
 

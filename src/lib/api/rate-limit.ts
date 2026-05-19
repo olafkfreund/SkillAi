@@ -2,7 +2,7 @@ import { db } from '@/db'
 import { sql } from 'drizzle-orm'
 import { getRateLimitConfig } from './rate-limit-config'
 import { cleanupRateLimitWindows } from './janitor'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 
 // Run janitor every 200 requests (lazy, non-blocking)
 let requestsSinceCleanup = 0
@@ -141,32 +141,32 @@ export async function checkRateLimit(
   ])
 
   if (tokenSliding >= config.tokenPerMin) {
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'api.rate_limit_exceeded',
       entityType: 'api_token',
       entityId: tokenId,
       metadata: { limit: 'token', count: tokenSliding, limitValue: config.tokenPerMin },
-    }).catch(() => {})
+    })
     return { ok: false, retryAfter, limit: 'token' }
   }
 
   if (tenantSliding >= config.tenantPerMin) {
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'api.rate_limit_exceeded',
       entityType: 'tenant',
       entityId: tenantId,
       metadata: { limit: 'tenant', count: tenantSliding, limitValue: config.tenantPerMin },
-    }).catch(() => {})
+    })
     return { ok: false, retryAfter, limit: 'tenant' }
   }
 
   if (isWrite && writeSliding >= config.writePerMin) {
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'api.rate_limit_exceeded',
       entityType: 'tenant',
       entityId: tenantId,
       metadata: { limit: 'write', count: writeSliding, limitValue: config.writePerMin },
-    }).catch(() => {})
+    })
     return { ok: false, retryAfter, limit: 'write' }
   }
 
