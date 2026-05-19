@@ -203,6 +203,30 @@ If using the NixOS module with `tokenFile`, the wrapper script reads the token a
 launch and you can omit `SKILLAI_TOKEN` from the env block (the wrapper sets it).
 You can still set `SKILLAI_URL` here to override the module default.
 
+## Claude Code configuration
+
+Claude Code supports SkillAi via either the HTTP transport (no bridge — talks
+directly to `/api/mcp`) or the stdio bridge (this binary). HTTP is the simpler
+default; pick stdio if you specifically want this binary in the path.
+
+The fastest setup uses the `claude` CLI:
+
+```bash
+# HTTP transport (no bridge install required)
+claude mcp add --transport http --scope user skillai \
+  http://localhost:3000/api/mcp \
+  --header "Authorization: Bearer skl_your_token_here"
+
+# Stdio transport (uses this binary)
+claude mcp add --transport stdio --scope user skillai skillai-mcp \
+  -e SKILLAI_URL=http://localhost:3000 \
+  -e SKILLAI_TOKEN=skl_your_token_here
+```
+
+Verify with `claude mcp list`. See the in-app help article
+*"Connecting SkillAi to Claude Code (MCP server)"* for the project `.mcp.json`
+pattern, env-var substitution, and troubleshooting.
+
 ---
 
 ## Token generation

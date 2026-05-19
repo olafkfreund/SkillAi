@@ -20,6 +20,9 @@ beforeEach(() => {
   vi.clearAllMocks()
   delete process.env.ANTHROPIC_API_KEY
   delete process.env.GOOGLE_AI_API_KEY
+  // resolveGoogleKey reads GEMINI_API_KEY first, then GOOGLE_AI_API_KEY.
+  // Container env may set either — clear both for deterministic tests.
+  delete process.env.GEMINI_API_KEY
 })
 
 describe('resolveAnthropicKey', () => {

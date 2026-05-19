@@ -5,6 +5,12 @@ services:
       target: migrator
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-skillai}:${POSTGRES_PASSWORD:-skillai}@db:5432/${POSTGRES_DB:-skillai}
+    # Host's resolver is Tailscale MagicDNS (100.100.100.100) which isn't
+    # reachable from the bridge netns. Pin explicit upstreams so the embedded
+    # Docker resolver can forward queries.
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     depends_on:
       db:
         condition: service_healthy
@@ -27,8 +33,15 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       BRAVE_SEARCH_API_KEY: ${BRAVE_SEARCH_API_KEY}
       GITHUB_TOKEN: ${GITHUB_TOKEN}
+    # Host's resolver is Tailscale MagicDNS (100.100.100.100) which isn't
+    # reachable from the bridge netns. Pin explicit upstreams so the embedded
+    # Docker resolver can forward queries (api.anthropic.com, etc.).
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     healthcheck:
-      test: ['CMD-SHELL', 'curl -sf http://localhost:3000/api/health || exit 1']
+      # node:22-alpine doesn't ship curl. wget is BusyBox-built-in.
+      test: ['CMD-SHELL', 'wget -q --spider http://localhost:3000/api/health || exit 1']
       interval: 30s
       timeout: 10s
       retries: 3

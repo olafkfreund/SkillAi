@@ -44,6 +44,9 @@ vi.mock('@/lib/parsers/transcript', () => ({
       { speaker: 'Alice', timestamp: 5000, text: 'I love it.' },
     ],
   }),
+  // Pass-through stubs — the upload route now calls these before persistence.
+  sanitizeText: vi.fn((text: string) => text),
+  sanitizeCues: vi.fn((cues: unknown[]) => cues),
 }))
 
 // ── Background trigger mock ───────────────────────────────────────────────────

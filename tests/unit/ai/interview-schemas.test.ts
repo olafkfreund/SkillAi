@@ -44,9 +44,11 @@ describe('CvProfileSchema', () => {
     expect(CvProfileSchema.safeParse(bad).success).toBe(false)
   })
 
-  it('rejects companies array exceeding 5', () => {
-    const bad = { ...VALID_PROFILE, companies: Array(6).fill(VALID_PROFILE.companies[0]) }
-    expect(CvProfileSchema.safeParse(bad).success).toBe(false)
+  it('truncates companies array to 5 (lenient: AI sometimes returns more)', () => {
+    const input = { ...VALID_PROFILE, companies: Array(6).fill(VALID_PROFILE.companies[0]) }
+    const result = CvProfileSchema.safeParse(input)
+    expect(result.success).toBe(true)
+    expect(result.success && result.data.companies).toHaveLength(5)
   })
 
   it('accepts profile without experience_level (optional)', () => {
@@ -61,9 +63,14 @@ describe('InterviewPackSchema', () => {
     expect(InterviewPackSchema.safeParse(VALID_PACK).success).toBe(true)
   })
 
-  it('rejects fewer than 6 questions', () => {
-    const bad = { ...VALID_PACK, questions: Array(5).fill(VALID_QUESTION) }
+  it('rejects fewer than 5 questions', () => {
+    const bad = { ...VALID_PACK, questions: Array(4).fill(VALID_QUESTION) }
     expect(InterviewPackSchema.safeParse(bad).success).toBe(false)
+  })
+
+  it('accepts 5 questions (the minimum)', () => {
+    const ok = { ...VALID_PACK, questions: Array(5).fill(VALID_QUESTION) }
+    expect(InterviewPackSchema.safeParse(ok).success).toBe(true)
   })
 
   it('rejects invalid question_type', () => {
@@ -72,13 +79,20 @@ describe('InterviewPackSchema', () => {
     expect(InterviewPackSchema.safeParse(bad).success).toBe(false)
   })
 
-  it('rejects follow_ups exceeding 2 items', () => {
-    const badQ = {
+  it('truncates follow_ups to 3 (lenient: AI sometimes returns more)', () => {
+    const richQ = {
       ...VALID_QUESTION,
-      follow_ups: [{ question: 'A' }, { question: 'B' }, { question: 'C' }],
+      follow_ups: [
+        { question: 'A' },
+        { question: 'B' },
+        { question: 'C' },
+        { question: 'D' },
+      ],
     }
-    const bad = { ...VALID_PACK, questions: Array(6).fill(badQ) }
-    expect(InterviewPackSchema.safeParse(bad).success).toBe(false)
+    const input = { ...VALID_PACK, questions: Array(6).fill(richQ) }
+    const result = InterviewPackSchema.safeParse(input)
+    expect(result.success).toBe(true)
+    expect(result.success && result.data.questions[0].follow_ups).toHaveLength(3)
   })
 
   it('accepts pack with optional code_challenge', () => {

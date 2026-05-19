@@ -11,7 +11,7 @@ tags: ["integrations", "mcp", "claude-desktop", "ai", "api"]
 
 SkillAi exposes a built-in MCP (Model Context Protocol) server at `/api/mcp`. Once connected, you can ask claude-desktop things like "show me my top candidates for the Acme platform-engineer role" and it will read SkillAi data — and, with explicit confirmation, change candidate statuses, add notes, or trigger a rescore — all without leaving the chat.
 
-This article assumes claude-desktop 0.10 or newer.
+This article assumes claude-desktop 0.10 or newer. If you use Claude Code instead (or as well), see *"Connecting SkillAi to Claude Code (MCP server)"* — the same token works for both.
 
 ## What MCP is, in one paragraph
 

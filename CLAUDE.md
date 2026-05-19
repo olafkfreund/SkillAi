@@ -30,6 +30,37 @@ When asked to work on this codebase:
    - For tasks execution: @~/.agent-os/instructions/execute-tasks.md
 3. **Always**, adhere to the standards in the files listed above
 
+## Project Structure
+
+- `/src/` - Next.js App Router, UI components, API routes, and Drizzle ORM schema (in `/src/db/`).
+- `/docs/` - Product documentation, screenshots, MCP tools list, and setup guides.
+- `/skillai-mcp/` - Standalone MCP stdio bridge allowing Claude Desktop to connect to the `/api/mcp` endpoint over HTTPS.
+- `/tests/` - Vitest test suite.
+- `/public/` - Static assets.
+- `/uploads/` - Local storage volume for uploaded CVs and tenant logos.
+- `/docker/` - Docker compose definitions and scripts.
+- `/scripts/` - Assorted helper and development scripts.
+
+## Claude MCP Integration Steps
+
+SkillAI runs an internal MCP server accessible directly over HTTP or via a stdio bridge (`skillai-mcp`). To integrate with Claude Code:
+
+1. Mint a token in the SkillAI web UI at `/settings/api-tokens`.
+2. Connect Claude Code directly to the HTTP endpoint using the `claude` CLI:
+   ```bash path=null start=null
+   claude mcp add --transport http --scope user skillai \
+     http://localhost:3000/api/mcp \
+     --header "Authorization: Bearer skl_prod_your_token_here"
+   ```
+3. Alternatively, to use the stdio bridge via the `skillai-mcp` binary:
+   ```bash path=null start=null
+   claude mcp add --transport stdio --scope user skillai skillai-mcp \
+     -e SKILLAI_URL=http://localhost:3000 \
+     -e SKILLAI_TOKEN=skl_prod_your_token_here
+   ```
+
+For `claude-desktop`, add the configuration to `claude_desktop_config.json` specifying the `skillai-mcp` command and passing the `SKILLAI_URL` and `SKILLAI_TOKEN` in the env block.
+
 ## Key Architecture Rules
 
 - **Multi-tenancy:** Every DB table has `tenant_id UUID NOT NULL`. RLS enforced via `SET app.tenant_id` at request start. Never query without tenant context.

@@ -62,6 +62,11 @@ vi.mock('@/db/schema/candidates', () => ({
 
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn((a, b) => ({ _eq: [a, b] })),
+  // Schema files use `sql\`'{}'::text[]\`` for array column defaults; stub it.
+  sql: Object.assign(
+    vi.fn(() => ({ _sql: true })),
+    { raw: vi.fn(() => ({ _sql: 'raw' })) }
+  ),
 }))
 
 vi.mock('@/lib/audit', () => ({

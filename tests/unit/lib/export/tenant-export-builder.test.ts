@@ -461,38 +461,49 @@ describe('buildTenantExportZip', () => {
       createdAt:      new Date('2026-01-01T00:00:00Z'),
     }
 
-    // Return the role row for the first two select calls (first batch + empty
-    // second batch to stop pagination). All other calls return [].
-    let selectCount = 0
+    // Return the role row only when the export builder queries the `roles`
+    // table — earlier index-based attempts depended on iteration order, which
+    // changed when more tables were added. The schema mocks tag every table
+    // with `_brand`; we read that off `from(table)` to route reliably.
     mockTx.select = vi.fn(() => {
-      selectCount++
-      // Calls arrive in table order; roles is one of the later tables.
-      // The exact slot varies with table count, so we return the row on any
-      // call that produces a non-empty batch and let the rest be empty.
-      // For this test, return the row on the first call only (batch 1),
-      // then empty (pagination stops). This ensures roles.json has data.
-      if (selectCount === 1) return makeChain([ROLE_ROW])
-      return makeChain([])
+      const chain: Record<string, unknown> = {}
+      let rows: unknown[] = []
+      chain.from = vi.fn((table: unknown) => {
+        const brand = (table as { _brand?: string } | null)?._brand
+        rows = brand === 'roles' ? [ROLE_ROW] : []
+        return chain
+      })
+      chain.where = vi.fn(() => chain)
+      chain.orderBy = vi.fn(() => chain)
+      chain.limit = vi.fn(() => chain)
+      chain.offset = vi.fn(() => Promise.resolve(rows))
+      // Awaiting the chain itself (without .offset) must also resolve to rows
+      const thenable = {
+        then: (resolve: (v: unknown) => unknown) =>
+          Promise.resolve(rows).then(resolve),
+      }
+      chain.then = thenable.then
+      return chain
     })
 
     const { buildTenantExportZip } = await import('@/lib/export/tenant-export-builder')
     const archive = await buildTenantExportZip({ tenantId: TENANT_ID })
     const buffer  = await collectStream(archive)
 
-    // Structural validity
+    // Structural validity — ZIP magic
     expect(buffer[0]).toBe(0x50)
     expect(buffer[1]).toBe(0x4b)
 
-    // The customerRoleId value must appear somewhere in the ZIP bytes (either
-    // compressed or uncompressed depending on the archiver settings — for small
-    // payloads archiver typically uses STORE for the first entry).
-    // We check the key name appears in the raw buffer since archiver stores JSON
-    // without compression by default for small entries.
-    const bufStr = buffer.toString('binary')
-    // Either the key name 'customerRoleId' or the value 'EXT-REGR-001' must
-    // be present — proving the field was not silently dropped from the export.
-    const keyPresent   = buffer.includes(Buffer.from('customerRoleId'))
-    const valuePresent = buffer.includes(Buffer.from('EXT-REGR-001'))
-    expect(keyPresent || valuePresent).toBe(true)
+    // Extract roles.json from the ZIP and assert customerRoleId survived
+    // serialisation. archiver compresses entries with level 6 so we can't
+    // grep raw bytes; load the archive via JSZip and read the entry.
+    const JSZip = (await import('jszip')).default
+    const zip = await JSZip.loadAsync(buffer)
+    const rolesEntry = zip.file('roles.json')
+    expect(rolesEntry).not.toBeNull()
+    const rolesJson = await rolesEntry!.async('string')
+    const rolesArr = JSON.parse(rolesJson) as Array<{ customerRoleId?: string }>
+    expect(rolesArr).toHaveLength(1)
+    expect(rolesArr[0].customerRoleId).toBe('EXT-REGR-001')
   })
 })

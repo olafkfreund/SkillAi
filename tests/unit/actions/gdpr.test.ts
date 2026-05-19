@@ -92,6 +92,7 @@ vi.mock('@/db/schema', () => ({
   interviewTranscripts: {},
   transcriptAnalyses: {},
   candidateRoleApprovals: {},
+  roleSubmissions: {},
 }))
 
 // Drizzle eq/and — just pass through for our simple assertions
