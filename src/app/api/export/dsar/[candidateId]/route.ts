@@ -11,7 +11,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { buildDsarZip } from '@/lib/gdpr/dsar-builder'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 
 export async function GET(
   _req: Request,
@@ -39,7 +39,7 @@ export async function GET(
     const archive = await buildDsarZip(candidateId, tenantId)
 
     // 4. Non-fatal audit log (fire-and-forget)
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'candidate.dsar_exported',
       entityType: 'candidate',
       entityId: candidateId,
@@ -48,7 +48,7 @@ export async function GET(
         exportedAt: new Date().toISOString(),
         exportedBy: session.user.id,
       },
-    }).catch(() => {})
+    })
 
     // 5. Wrap archiver in a ReadableStream for the Response body
     const date = new Date().toISOString().slice(0, 10)

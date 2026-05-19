@@ -8,7 +8,7 @@ import { tenantSettings, users } from '@/db/schema'
 import { requireRole } from '@/lib/auth/require-role'
 import { encrypt } from '@/lib/crypto'
 import { getActionContext } from '@/lib/auth/action-context'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 import { isSupportedLanguage } from '@/lib/ai/language'
 import { getSenderForTenant } from '@/lib/email/sender'
 import { testWebhookDelivery, type NotificationTestResult } from '@/lib/notifications/dispatcher'
@@ -85,11 +85,11 @@ export async function saveApiKey(
   // Emit targeted audit event for OAuth credential writes
   const oauthMeta = OAUTH_KEY_META[key]
   if (oauthMeta) {
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'settings.oauth_credentials_updated',
       entityType: 'settings',
       metadata: { provider: oauthMeta.provider, field: oauthMeta.field },
-    }).catch(() => {})
+    })
   }
 
   revalidatePath('/dashboard/settings')
@@ -122,11 +122,11 @@ export async function removeApiKey(
   // Emit targeted audit event for OAuth credential removals
   const oauthMeta = OAUTH_KEY_META[key]
   if (oauthMeta) {
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'settings.oauth_credentials_removed',
       entityType: 'settings',
       metadata: { provider: oauthMeta.provider, field: oauthMeta.field },
-    }).catch(() => {})
+    })
   }
 
   revalidatePath('/dashboard/settings')
@@ -288,11 +288,11 @@ export async function saveTrustedHosts(
   })
 
   if (added.length > 0 || removed.length > 0) {
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'settings.trusted_hosts_updated',
       entityType: 'settings',
       metadata: { added, removed },
-    }).catch(() => {})
+    })
   }
 
   revalidatePath('/dashboard/settings')
@@ -360,11 +360,11 @@ export async function saveDefaultPackLanguage(
   })
 
   if (previous !== language) {
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'settings.default_pack_language_updated',
       entityType: 'settings',
       metadata: { setting: DEFAULT_PACK_LANGUAGE_KEY, previous, current: language },
-    }).catch(() => {})
+    })
   }
 
   revalidatePath('/dashboard/settings')
@@ -443,11 +443,11 @@ export async function saveSmtpSetting(
       })
   })
 
-  writeAuditLog(tenantId, {
+  emitAudit(tenantId, {
     action: 'settings.smtp_updated',
     entityType: 'settings',
     metadata: { key },
-  }).catch(() => {})
+  })
 
   revalidatePath('/dashboard/settings')
   return { success: true }
@@ -602,11 +602,11 @@ export async function saveNotificationSetting(
       })
   })
 
-  writeAuditLog(tenantId, {
+  emitAudit(tenantId, {
     action: 'settings.notification_updated',
     entityType: 'settings',
     metadata: { key },
-  }).catch(() => {})
+  })
 
   revalidatePath('/dashboard/settings')
   return { success: true }
@@ -636,11 +636,11 @@ export async function removeNotificationSetting(
       .where(and(eq(tenantSettings.tenantId, tenantId), eq(tenantSettings.key, key)))
   })
 
-  writeAuditLog(tenantId, {
+  emitAudit(tenantId, {
     action: 'settings.notification_updated',
     entityType: 'settings',
     metadata: { key, removed: true },
-  }).catch(() => {})
+  })
 
   revalidatePath('/dashboard/settings')
   return { success: true }

@@ -17,7 +17,7 @@ import { eq, and } from 'drizzle-orm'
 import { db, withTenant } from '@/db'
 import { users, userInvitations } from '@/db/schema'
 import { listTenantUsers } from '@/actions/users'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 import { runTool } from '../context'
 import type { McpContext } from '../context'
 import { jsonResult } from './candidates'
@@ -78,7 +78,7 @@ export function registerUserTools(server: McpServer, ctx: McpContext): void {
             .set({ role: args.role as UserRole })
             .where(and(eq(users.id, args.userId), eq(users.tenantId, ctx.tenantId)))
         })
-        void writeAuditLog(ctx.tenantId, {
+        emitAudit(ctx.tenantId, {
           action: 'user.role_changed',
           entityType: 'user',
           entityId: args.userId,
@@ -121,7 +121,7 @@ export function registerUserTools(server: McpServer, ctx: McpContext): void {
           .returning({ id: userInvitations.id })
         const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3001'
         const inviteUrl = `${baseUrl}/invite/${token}`
-        void writeAuditLog(ctx.tenantId, {
+        emitAudit(ctx.tenantId, {
           action: 'user.invited',
           entityType: 'user_invitation',
           entityId: inserted.id,
@@ -152,7 +152,7 @@ export function registerUserTools(server: McpServer, ctx: McpContext): void {
             .set({ isActive: false })
             .where(and(eq(users.id, args.userId), eq(users.tenantId, ctx.tenantId)))
         })
-        void writeAuditLog(ctx.tenantId, {
+        emitAudit(ctx.tenantId, {
           action: 'user.deactivated',
           entityType: 'user',
           entityId: args.userId,

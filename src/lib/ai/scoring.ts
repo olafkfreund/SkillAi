@@ -17,7 +17,7 @@ import { db, withTenant } from '@/db'
 import { candidates, roles, scores, customerFrameworks, tenantSettings } from '@/db/schema'
 import { scoreCandidateWithClaude } from './claude'
 import { scoreCandidateWithGemini } from './gemini'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 import { dispatchHighScoreNotification } from '@/lib/notifications/dispatcher'
 
 export async function triggerScoring(
@@ -139,7 +139,7 @@ When scoring experience_level, assess specifically whether the candidate's senio
       overallScore: result.overall_score,
     }).catch(() => {})
 
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'score.completed',
       entityType: 'score',
       entityId: candidateId,
@@ -148,7 +148,7 @@ When scoring experience_level, assess specifically whether the candidate's senio
         overallScore: result.overall_score,
         model: useGemini ? 'gemini' : 'claude',
       },
-    }).catch(() => {})
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     await withTenant(tenantId, async (tx) => {
@@ -158,12 +158,12 @@ When scoring experience_level, assess specifically whether the candidate's senio
         .where(and(eq(scores.candidateId, candidateId), eq(scores.roleId, roleId)))
     })
 
-    writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'score.failed',
       entityType: 'score',
       entityId: candidateId,
       metadata: { roleId, error: message },
-    }).catch(() => {})
+    })
 
     console.error(`Scoring failed for candidate ${candidateId}:`, message)
   }

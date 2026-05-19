@@ -1,6 +1,6 @@
 import { validateApiToken } from '@/lib/api-tokens/validate'
 import { checkRateLimit } from '@/lib/api/rate-limit'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 import type { ApiTokenScope } from '@/db/schema/api-tokens'
 
 // Re-export for convenience
@@ -89,12 +89,12 @@ export function withApiAuth<TParams = Record<string, string>>(
       if (!rateLimitResult.ok) {
         const { retryAfter } = rateLimitResult
         // Audit rate limit exceeded
-        writeAuditLog(tenantId, {
+        emitAudit(tenantId, {
           action: 'api.rate_limit_exceeded',
           entityType: 'api_token',
           entityId: tokenId,
           metadata: { limit: rateLimitResult.limit, retryAfter },
-        }).catch(() => {})
+        })
 
         return new Response(
           JSON.stringify({ error: 'rate_limit_exceeded', code: 'rate_limited' }),

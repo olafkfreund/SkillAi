@@ -16,7 +16,7 @@ import { auth } from '@/lib/auth'
 import { withTenant } from '@/db'
 import { auditLogs } from '@/db/schema'
 import { buildTenantExportZip } from '@/lib/export/tenant-export-builder'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 
 const RATE_LIMIT_SECONDS = 60
 
@@ -107,7 +107,7 @@ export async function GET(req: Request): Promise<Response> {
         })
         archive.on('end', () => {
           // Fire-and-forget audit after stream completes
-          writeAuditLog(tenantId, {
+          emitAudit(tenantId, {
             action: 'tenant.exported',
             entityType: 'tenant',
             entityId: tenantId,
@@ -117,7 +117,7 @@ export async function GET(req: Request): Promise<Response> {
               exportedBy: session.user.id,
               includedFiles: includeFiles,
             },
-          }).catch(() => {})
+          })
           controller.close()
         })
         archive.on('error', (err: Error) => {

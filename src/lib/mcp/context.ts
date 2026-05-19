@@ -10,7 +10,7 @@
  */
 
 import { runWithActionContext } from '@/lib/auth/action-context'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 import type { ApiTokenScope } from '@/db/schema/api-tokens'
 import type { UserRole } from '@/lib/auth/types'
 
@@ -88,7 +88,7 @@ export async function runTool<T>(
   }
 
   // Audit before running so we have a trace even if the handler throws
-  void writeAuditLog(ctx.tenantId, {
+  emitAudit(ctx.tenantId, {
     action: isWrite ? 'mcp.confirmed_action' : 'mcp.tool_called',
     entityType: 'mcp_tool',
     entityLabel: toolName,

@@ -22,7 +22,7 @@ import { db } from '@/db'
 import { users } from '@/db/schema'
 import { validateApiToken } from '@/lib/api-tokens/validate'
 import { checkRateLimit } from '@/lib/api/rate-limit'
-import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 import { buildMcpServer } from '@/lib/mcp/server'
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
 import type { ApiTokenScope } from '@/db/schema/api-tokens'
@@ -114,7 +114,7 @@ async function handle(req: Request): Promise<Response> {
   const isWrite = isLikelyWrite(parsedBody)
   const rateLimit = await checkRateLimit(tenantId, tokenId, isWrite)
   if (!rateLimit.ok) {
-    void writeAuditLog(tenantId, {
+    emitAudit(tenantId, {
       action: 'api.rate_limit_exceeded',
       entityType: 'api_token',
       entityId: tokenId,
