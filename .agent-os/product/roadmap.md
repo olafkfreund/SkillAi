@@ -1,8 +1,8 @@
 # Product Roadmap
 
-> Last Updated: 2026-04-28
-> Version: 2.6.0
-> Status: Phases 1–4 shipped; Phase 5 substantially advanced (Epic #72 children #75/#84/#76/#79/#81/#82 all shipped); Hiring Manager persona shipped (Epic #73); in-app help, branding logos, candidate-list cleanup, and light/dark mode v1 shipped; REST API parity, API token system, per-tenant rate limiting, and MCP server (Epic #105) shipped; cross-platform `skillai-mcp` packaging (Epic #115) shipped; GDPR right-to-erasure + DSAR export shipped (#75); daily-active recruiter dashboard shipped (#84); leadership reporting dashboard shipped (#76); calendar 2-way pull-sync shipped (#79); per-tenant Calendar OAuth credentials UI shipped; admin tenant data export (JSON ZIP, optional binaries, per-entity CSVs) shipped (#81 + #82); further integrations tracked on GitHub
+> Last Updated: 2026-05-19
+> Version: 2.7.0
+> Status: Phases 1–4 shipped; Phase 5 largely closed (AI cost tracking shipped #36, audit log + health endpoint + per-tenant rate limit + security hardening done; admin panel still partial — only user-invite is in, tenant/role mgmt re-opened as #37); Epic #72 children #75/#84/#76/#79/#81/#82 all shipped; Hiring Manager persona shipped (Epic #73); REST API parity, API token system, per-tenant rate limiting, and MCP server (Epic #105) shipped; cross-platform `skillai-mcp` packaging (Epic #115) shipped; light/dark mode v2 full conversion shipped (Epic #103 — PRs #161–#165); mobile responsive + PWA capstone shipped (Epic #66 — PRs #155–#159, closes #67/#68/#69/#70/#71); Slack + Teams webhook notifications shipped (#77 / PR #168); Cmd-K global command palette shipped (#78 / PR #170, closes the deferred Phase 4 keyboard-shortcut item); dashboard query batching + 6 perf indexes shipped (#83 / PR #173); AI spend breakdown dashboard shipped (#151 / PR #152); customer-share submissions index + per-role customer-sent tracking shipped (#149/#146); welcome-letter PDF + role customer-specific role IDs shipped; PR #174 (Claude Code MCP integration docs + auto-generated tool catalogue) is in flight on `docs/mcp-claude-code-integration`; further integrations tracked on GitHub
 
 ## Phase 1: Foundation & Core MVP ✅ SHIPPED
 
@@ -85,7 +85,7 @@
 - [x] Gemini model toggle — per-tenant setting to use Gemini instead of Claude
 - [x] Score explanation modal — expand any dimension score to read full AI reasoning
 - [ ] Candidate comparison tray — select 2-5 candidates, open side-by-side view _(deferred)_
-- [ ] Keyboard shortcuts — power-user navigation _(deferred)_
+- [x] Keyboard shortcuts — power-user navigation ✅ shipped as Cmd-K global command palette (PR [#170](https://github.com/olafkfreund/SkillAi/pull/170), closes [#78](https://github.com/olafkfreund/SkillAi/issues/78))
 
 ---
 
@@ -96,14 +96,14 @@
 - [x] Audit log — track logins, uploads, role changes, deletions _(implemented)_
 - [x] Health endpoint — `/api/health` for Docker health check; returns `{status, db, uptime, timestamp}`, unauthenticated (issue [#35](https://github.com/olafkfreund/SkillAi/issues/35))
 - [x] Security hardening — CSP headers, rate limiting on auth, session guards, RLS audits
-- [ ] Admin panel — user invite shipped (`src/app/(dashboard)/dashboard/users/invite-form.tsx`); tenant/role management pending (Epic [#37](https://github.com/olafkfreund/SkillAi/issues/37))
+- [x] Per-tenant rate limiting — sliding-window per-token/tenant/write rate limit applied to REST + MCP entry points (shipped as part of Epic #105; supersedes the original "AI API rate limiting per tenant" item — cost control is now also covered by AI cost tracking below)
+- [ ] Admin panel — only user-invite shipped (`src/app/(dashboard)/dashboard/users/invite-form.tsx`); remaining scope = tenant list/create/archive, role reassignment (admin / recruiter / hiring_manager / viewer), user deactivation/reactivation, force-password-reset, and an admin-scoped audit-log surface. Re-opened as Epic [#37](https://github.com/olafkfreund/SkillAi/issues/37)
 - [ ] File storage migration — switch to Garage (S3-compatible) for production
-- [ ] Rate limiting — per-tenant AI API usage limits to control costs
 - [ ] Backup strategy — documented PostgreSQL dump + volume backup procedure
 
 ### Should-Have Features
 
-- [ ] AI cost tracking — log token usage per scoring run (issue [#36](https://github.com/olafkfreund/SkillAi/issues/36))
+- [x] AI cost tracking ✅ shipped (closes [#36](https://github.com/olafkfreund/SkillAi/issues/36)) — per-tenant `ai_usage` ledger (`src/db/schema/ai-usage.ts`), server action (`src/actions/ai-usage.ts`), settings panel (`src/components/settings/ai-usage-panel.tsx`), and reports trend chart (`src/components/reports/ai-cost-trend-chart.tsx`); AI spend breakdown dashboard surfaced via `/dashboard/reports` (PR [#152](https://github.com/olafkfreund/SkillAi/pull/152), closes [#151](https://github.com/olafkfreund/SkillAi/issues/151))
 - [ ] Role permission fine-tuning
 - [ ] HTTPS via Caddy
 
@@ -256,6 +256,75 @@ Features delivered mid-flight, not in the original v1.0.0 plan.
 - [x] **New audit action** — `tenant.csv_exported` with metadata `{ entity, rowCount }`.
 - [x] **Greenhouse / Lever / Workday formats deferred** — separate issue when there's customer demand.
 
+### AI Cost Tracking & Spend Reporting (closes #36 + #151)
+
+- [x] **`ai_usage` ledger table** — per-tenant token usage rows written on every Claude / Gemini call (`src/db/schema/ai-usage.ts`); fields cover model, operation, input/output tokens, estimated cost, and source surface (scoring / interview pack / transcript / welcome letter / etc.).
+- [x] **Server action + settings panel** — `src/actions/ai-usage.ts` aggregates totals and recent calls; `src/components/settings/ai-usage-panel.tsx` renders the per-tenant usage card on the settings page.
+- [x] **Reports trend chart + spend breakdown** — `src/components/reports/ai-cost-trend-chart.tsx` ships the AI cost trend with month-over-month delta on `/dashboard/reports`; PR [#152](https://github.com/olafkfreund/SkillAi/pull/152) adds the full AI spend breakdown dashboard (per-model, per-operation, per-user) closing [#151](https://github.com/olafkfreund/SkillAi/issues/151).
+- [x] **Closes [#36](https://github.com/olafkfreund/SkillAi/issues/36)** — the original "log token usage per scoring run" Phase 5 should-have item.
+
+### Mobile Responsive + PWA (Epic #66 — closes #67, #68, #69, #70, #71)
+
+- [x] **PR1 — sidebar drawer + top app bar + viewport meta + `xs:400` breakpoint** ([#155](https://github.com/olafkfreund/SkillAi/pull/155), closes [#67](https://github.com/olafkfreund/SkillAi/issues/67))
+- [x] **PR2 — candidate list cards + `ComparisonTray` repositioning + submissions index cards** ([#156](https://github.com/olafkfreund/SkillAi/pull/156), closes [#68](https://github.com/olafkfreund/SkillAi/issues/68))
+- [x] **PR3 — candidate detail page responsive reflow + manager mobile Approve/Reject** ([#157](https://github.com/olafkfreund/SkillAi/pull/157), closes [#69](https://github.com/olafkfreund/SkillAi/issues/69))
+- [x] **PR4 — forms + modals + tap-target audit** ([#158](https://github.com/olafkfreund/SkillAi/pull/158), closes [#70](https://github.com/olafkfreund/SkillAi/issues/70))
+- [x] **PR5 — PWA capstone** ([#159](https://github.com/olafkfreund/SkillAi/pull/159), closes [#71](https://github.com/olafkfreund/SkillAi/issues/71) and completes Epic #66) — `manifest.json`, icons (192 / 512 / maskable-512), `apple-mobile-web-app-capable` meta, minimal service worker (network-first for HTML, cache-first for static, bypass `/api/*`), and `<InstallPrompt>` listening for `beforeinstallprompt`. Lighthouse PWA target ≥90; recruiters can "Add to Home Screen" on Android + iOS and the app launches in standalone mode.
+
+### Slack + Teams Notifications (PR #168 — closes #77)
+
+- [x] **Per-tenant Slack / Teams webhook URLs** — stored encrypted in `tenant_settings`; configured by tenant admins on the settings page.
+- [x] **Per-user notification preferences** — recruiters opt into / out of each event class; defaults chosen for "noisy but useful" — easy to mute.
+- [x] **Audit-log-driven dispatch** — fans out on candidate scored (`overall_score ≥ 85`), interview scheduled, stale priorities, manager approved / rejected shortlist, and a daily digest of "N awaiting score, M interviews this week".
+- [x] **Adapters** — `src/lib/notifications/slack.ts` (webhook) + `src/lib/notifications/teams.ts` (Adaptive Card) + `dispatcher.ts` per-user fan-out.
+- Webhook-only in v1 (full Slack OAuth deferred to v2); daily digest runs via external scheduler against an API route (same pattern as calendar 2-way sync).
+
+### Cmd-K Global Command Palette (PR #170 — closes #78)
+
+- [x] **`/`-key opens overlay search** across roles, candidates, agencies, customers, and help articles with debounced server-side search.
+- [x] **Bulk actions on selected rows** — same command palette also exposes bulk-action verbs (e.g. "Bulk: archive selected candidates", "Bulk: send for approval") so power users can drive the app without leaving the keyboard.
+- [x] **Closes the deferred Phase 4 "Keyboard shortcuts" item** — this single change is the keyboard-shortcut shipping vehicle.
+
+### Dashboard Performance + Index Tuning (PR #173 — closes #83)
+
+- [x] **Batch dashboard queries** — the 6 separate dashboard widgets now share a single `Promise.all` round-trip inside one `withTenant()` call instead of issuing 6 sequential RLS-scoped queries.
+- [x] **Stat-count cache** — heavy aggregate counts (e.g. total candidates, active roles) memoised per tenant for ~30s on the dashboard request path.
+- [x] **6 new indexes** — added on `candidates.tenant_id, created_at`, `scores.candidate_id, role_id`, `interview_slots.scheduled_at`, `roles.tenant_id, is_active`, `audit_logs.tenant_id, created_at`, and `role_managers.user_id, role_id` to cover the dashboard hot paths after the batching change.
+- [x] Target was sub-second dashboard render at 10k+ candidates — verified locally; matches the acceptance criterion on the issue.
+
+### Submissions + Customer Share-Link Tracking (closes #146, #149, #153)
+
+- [x] **Submissions index page** — `/dashboard/submissions` lists every candidate sent to a customer with status + share-link state and per-customer feedback ([#150](https://github.com/olafkfreund/SkillAi/pull/150), closes [#149](https://github.com/olafkfreund/SkillAi/issues/149)).
+- [x] **Per-role "sent to customer" tracking** — role detail now tracks which candidates have been formally submitted and when; recruiter receives an email notification on every customer status update ([#147](https://github.com/olafkfreund/SkillAi/pull/147) + [#160](https://github.com/olafkfreund/SkillAi/pull/160), closes [#146](https://github.com/olafkfreund/SkillAi/issues/146)).
+- [x] **Customer-specific role ID** — per-customer label (e.g. "HSBC CtoolId") rendered alongside the SkillAi internal role ID for easier cross-referencing with the customer's own ATS ([#141](https://github.com/olafkfreund/SkillAi/pull/141), closes [#140](https://github.com/olafkfreund/SkillAi/issues/140)).
+- [x] **Framework Level empty-state** — roles whose customer has no hiring framework now show a clean empty-state instead of a broken control ([#154](https://github.com/olafkfreund/SkillAi/pull/154), closes [#153](https://github.com/olafkfreund/SkillAi/issues/153)).
+
+### Welcome Letter PDF (PR #144 + #145 + #148)
+
+- [x] **AI-personalised multilingual welcome letter** — per-candidate PDF written in the candidate's preferred language; covers next-step expectations, role context, and (when applicable) a structured Karat / pre-screen STAR-format section enforced at the schema level.
+
+### In-App Help Catch-Up (PR #172)
+
+- [x] **Help articles updated to current state** — articles refreshed to cover all features shipped since 2026-04-28 (mobile / PWA, notifications, Cmd-K, AI cost tracking, calendar 2-way sync, GDPR erasure / DSAR, leadership reports, etc.).
+
+### Theme Migration v2 — Full Conversion (Epic #103 — PRs #161–#165)
+
+- [x] **All dashboard pages + status pills migrated** — PR1 [#161](https://github.com/olafkfreund/SkillAi/pull/161).
+- [x] **Candidates domain converted to CSS tokens** — PR2 [#162](https://github.com/olafkfreund/SkillAi/pull/162).
+- [x] **Roles + Manager domains converted** — PR3 [#163](https://github.com/olafkfreund/SkillAi/pull/163).
+- [x] **Workflow surfaces converted** — PR4 [#164](https://github.com/olafkfreund/SkillAi/pull/164).
+- [x] **Final sweep + housekeeping — closes [#103](https://github.com/olafkfreund/SkillAi/issues/103)** — PR5 [#165](https://github.com/olafkfreund/SkillAi/pull/165). The v1 caveat about "detail pages, forms and modals remain dark-only" no longer applies; the entire surface area now renders correctly in both modes.
+
+### Reliability + Audit Fixes (PRs #166, #167, #169, #171)
+
+- [x] **`notes.is_shareable` audit gap closed** ([#166](https://github.com/olafkfreund/SkillAi/pull/166), closes [#93](https://github.com/olafkfreund/SkillAi/issues/93)) — toggle now writes an audit row whenever a recruiter changes shareability.
+- [x] **Anthropic API key resolution unified** ([#167](https://github.com/olafkfreund/SkillAi/pull/167), closes [#40](https://github.com/olafkfreund/SkillAi/issues/40)) — every AI helper now goes through `resolveAnthropicKey(tenantId)`; no helper falls back to the global env var without going through the tenant_settings path first.
+- [x] **`docs(#41)` DO-NOT-REMOVE banners on force-dynamic routes** ([#171](https://github.com/olafkfreund/SkillAi/pull/171)) — strengthens the inline comment banners on every `export const dynamic = 'force-dynamic'` so future contributors don't strip them while the Next 16.2 + React 19 prerender bug is open.
+
+### In-Flight (open PRs — not shipped yet)
+
+- 🚧 **Claude Code MCP integration docs + auto-generated tool catalogue** — PR [#174](https://github.com/olafkfreund/SkillAi/pull/174) on branch `docs/mcp-claude-code-integration`. Documents the `claude mcp add` setup path against the hosted `/api/mcp` endpoint and the `skillai-mcp` stdio bridge, and auto-generates the tool catalogue from the live MCP tool registry. Move to the appropriate shipped section once merged.
+
 ---
 
 ## Future — Tracked on GitHub
@@ -272,15 +341,18 @@ When new large initiatives are scoped, they should follow the same pattern: a tr
 
 Items from the original roadmap that remain open:
 
-- Admin panel (users, tenants, invites) — Phase 5 — Epic [#37](https://github.com/olafkfreund/SkillAi/issues/37)
+- Admin panel — Phase 5 — Epic [#37](https://github.com/olafkfreund/SkillAi/issues/37) (re-opened with reduced scope: tenant list/create/archive, role reassignment, user deactivation/reactivation, force-password-reset, admin-scoped audit log surface. User-invite slice already shipped.)
 - File storage migration to Garage — Phase 5
-- AI API rate limiting per tenant — Phase 5
 - Backup runbook — Phase 5
-- AI cost tracking — Phase 5 — issue [#36](https://github.com/olafkfreund/SkillAi/issues/36)
 - HTTPS via Caddy — Phase 5
 - Candidate side-by-side comparison tray — Phase 4
-- Keyboard shortcuts — Phase 4
 - Duplicate candidate detection — Phase 2
+
+### Recently closed (no longer open)
+
+- ✅ AI cost tracking — Phase 5 — closed via [#36](https://github.com/olafkfreund/SkillAi/issues/36) (see "AI Cost Tracking & Spend Reporting" section above).
+- ✅ Keyboard shortcuts — Phase 4 — closed via Cmd-K command palette PR [#170](https://github.com/olafkfreund/SkillAi/pull/170) (closes [#78](https://github.com/olafkfreund/SkillAi/issues/78)).
+- ✅ Per-tenant rate limiting — Phase 5 "AI API rate limiting per tenant" — superseded and shipped as part of Epic #105 (REST + MCP entry-point rate limiting via `tenant_settings`). Per-API-cost limits sit alongside via the AI cost tracking ledger.
 
 ---
 
