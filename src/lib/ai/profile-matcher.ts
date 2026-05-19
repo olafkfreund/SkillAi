@@ -84,24 +84,29 @@ Rules:
 /**
  * Verify a batch of candidate URLs against a CV. Returns one verdict per URL.
  * Empty input → empty array (no API call).
+ *
+ * tenantId is required — this function must always run in a tenant context.
+ * The only caller (enrichCandidate in src/actions/enrichment.ts) derives
+ * tenantId from getActionContext(), which throws 'Not authenticated' before
+ * this function is reached if context is absent. There is no background-job
+ * or cron path that calls this function without a tenantId.
+ *
+ * If you add a new call site, you MUST pass a valid tenantId so the correct
+ * per-tenant API key is used. Passing undefined would otherwise silently fall
+ * through to a shared env key, crossing tenant API-key boundaries.
  */
 export async function verifyProfilesAgainstCv(
   cvSignals: CvSignals,
   candidates: ProfileCandidate[],
-  tenantId?: string,
+  tenantId: string,
   candidateId?: string,
 ): Promise<MatchVerdict[]> {
   if (candidates.length === 0) return []
 
-  let apiKey: string
-  if (tenantId) {
-    apiKey = await resolveAnthropicKey(tenantId)
-  } else {
-    console.warn('[profile-matcher] no tenantId — falling back to env API key')
-    const envKey = process.env.ANTHROPIC_API_KEY
-    if (!envKey) throw new Error('No Anthropic API key configured')
-    apiKey = envKey
-  }
+  // resolveAnthropicKey resolves the per-tenant key from DB first, then falls
+  // back to the ANTHROPIC_API_KEY env var if the tenant has not set one.
+  // Both paths are tenant-scoped — there is no shared-key bypass here.
+  const apiKey = await resolveAnthropicKey(tenantId)
   const anthropic = new Anthropic({ apiKey, maxRetries: 3, timeout: 60_000 })
 
   const cvBlock = [
