@@ -70,6 +70,13 @@ jobs:
         run: npm ci
 
       - name: Run tests
+        # Stub AI keys so resolveAnthropicKey()/resolveGoogleKey() succeed.
+        # The SDK calls themselves are mocked in tests/unit/ai/*.test.ts via
+        # vi.mock('@anthropic-ai/sdk') and equivalents — these stubs only
+        # satisfy the key-resolution layer that runs before the mocked client.
+        env:
+          ANTHROPIC_API_KEY: stub-anthropic-key
+          GEMINI_API_KEY: stub-gemini-key
         run: npm test
 
   # ---------------------------------------------------------------------------
