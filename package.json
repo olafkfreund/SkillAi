@@ -16,7 +16,8 @@
     "test:watch": "NODE_ENV=test vitest",
     "test:coverage": "NODE_ENV=test vitest run --coverage",
     "test:e2e": "NODE_ENV=test playwright test",
-    "docs:mcp-tools": "npx tsx scripts/generate-mcp-tools-doc.ts"
+    "docs:mcp-tools": "npx tsx scripts/generate-mcp-tools-doc.ts",
+    "mcp:smoke": "npx tsx scripts/mcp-smoke.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",
