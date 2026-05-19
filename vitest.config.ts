@@ -6,7 +6,9 @@ import { resolve } from 'path'
 // NODE_ENV=production for the running app, which would otherwise propagate to
 // vitest workers and cause React 19 to load `cjs/react.production.js` — which
 // does not export `React.act`, breaking @testing-library/react.
-process.env.NODE_ENV = 'test'
+// The cast bypasses the strict-mode read-only typing on NodeJS.ProcessEnv while
+// keeping the assignment at runtime where it is valid.
+;(process.env as Record<string, string>)['NODE_ENV'] = 'test'
 
 export default defineConfig({
   plugins: [react()],

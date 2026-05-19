@@ -9,7 +9,7 @@ if (typeof (Promise as unknown as { try?: unknown }).try !== 'function') {
   ;(Promise as unknown as { try: typeof Promise.try }).try = function tryPolyfill<T, A extends unknown[]>(
     fn: (...args: A) => T | PromiseLike<T>,
     ...args: A
-  ): Promise<T> {
-    return new Promise<T>((resolve) => resolve(fn(...args)))
+  ): Promise<Awaited<T>> {
+    return new Promise<Awaited<T>>((resolve) => resolve(fn(...args) as Awaited<T>))
   }
 }

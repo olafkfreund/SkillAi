@@ -263,8 +263,9 @@ describe('runCalendarSync', () => {
   })
 
   it('3. reschedule detected — event start changed → slot updated + audit fired', async () => {
-    const newStart = new Date('2026-05-02T14:00:00Z')
-    const newEnd = new Date('2026-05-02T15:30:00Z')
+    // Use a date 7 days in the future so the past-event skip (event.start < now-1d) never fires
+    const newStart = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    const newEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 90 * 60 * 1000)
     // Event snapshot has a different start than the slot
     mockListGoogleEvents.mockResolvedValue({
       events: [makeSnapshot({

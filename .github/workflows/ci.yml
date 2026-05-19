@@ -1,0 +1,140 @@
+# ci.yml
+#
+# Continuous integration gate for pull requests targeting core-mvp-foundation.
+#
+# Runs three jobs in parallel where possible:
+#   1. test      — vitest unit + integration tests (excludes DB integration tests
+#                  that require RUN_DB_INTEGRATION_TESTS=true and a live Postgres)
+#   2. typecheck — tsc --noEmit across the whole project (src + tests)
+#   3. build     — next build with stub env vars to catch compile-time errors
+#                  (depends on test + typecheck so we don't waste build minutes
+#                  on a branch that's already red)
+#
+# Why stub env vars for build:
+#   next.config.ts uses `output: 'standalone'` and all routes carry
+#   `export const dynamic = 'force-dynamic'` so no static prerendering runs.
+#   The postgres pool is created at module scope but connections are lazy —
+#   no TCP connection is attempted until a query executes. AUTH_SECRET and
+#   ENCRYPTION_KEY are only validated at request time, not build time.
+#   Therefore a syntactically-valid placeholder is sufficient for `next build`.
+#
+# Why not lint:
+#   ESLint is currently not enforced in the project's CI (no eslint config
+#   produces zero warnings on the codebase today). Lint is deferred to a
+#   follow-up PR that establishes a clean baseline before gating it.
+#
+# Why not e2e:
+#   Playwright e2e tests (test:e2e) require a running Postgres + Next.js server
+#   and are therefore not suitable for this PR-gate workflow. They will be
+#   addressed in a dedicated e2e-in-CI spec.
+
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - core-mvp-foundation
+  push:
+    branches:
+      - core-mvp-foundation
+
+# Cancel in-progress runs for the same PR or branch so stale runs
+# don't consume runners after a force-push.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. test — vitest run (NODE_ENV=test is set in the npm script)
+  # ---------------------------------------------------------------------------
+  test:
+    name: Tests (vitest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Setup Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        # NODE_ENV must NOT be 'production' here — that causes npm ci to omit
+        # devDependencies (including vitest). Unset it explicitly.
+        env:
+          NODE_ENV: test
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+  # ---------------------------------------------------------------------------
+  # 2. typecheck — tsc --noEmit across src/ + tests/
+  # ---------------------------------------------------------------------------
+  typecheck:
+    name: Typecheck (tsc)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Setup Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        env:
+          NODE_ENV: test
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+  # ---------------------------------------------------------------------------
+  # 3. build — next build with stub env vars
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build (next build)
+    runs-on: ubuntu-latest
+    needs:
+      - test
+      - typecheck
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Setup Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        # Build only needs prod + peer deps, but NODE_ENV=test ensures a
+        # consistent install regardless of the host environment variable.
+        env:
+          NODE_ENV: test
+        run: npm ci
+
+      - name: Build
+        # DATABASE_URL: stub connection string — pool is created lazily; no
+        #   TCP connection is made during build because all routes are force-dynamic.
+        # AUTH_SECRET: Auth.js v5 requires a value at runtime; during build
+        #   no request handlers execute, so any non-empty string is sufficient.
+        # ENCRYPTION_KEY: used only in request-time crypto helpers; not
+        #   evaluated during static analysis.
+        # NEXT_TELEMETRY_DISABLED: suppress telemetry pings from CI runners.
+        env:
+          DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci_stub'
+          AUTH_SECRET: 'ci-stub-secret-must-be-at-least-32-chars-x'
+          ENCRYPTION_KEY: 'ci-stub-encryption-key-placeholder'
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: npm run build
