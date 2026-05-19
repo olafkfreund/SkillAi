@@ -9,6 +9,7 @@
  *  - throws when Claude returns no tool_use block
  *  - throws when tool input fails Zod validation
  *  - returned array length matches input candidate count
+ *  - tenantId is forwarded to resolveAnthropicKey (multi-tenant safety regression)
  *
  * Error messages are not asserted — only the throw is verified — so the
  * helper's wording can change without breaking these tests.
@@ -23,9 +24,18 @@ const { mockCreate } = vi.hoisted(() => ({
 
 // Anthropic SDK — default export is a class with `messages.create`.
 vi.mock('@anthropic-ai/sdk', () => ({
-  default: class {
+  default: class MockAnthropic {
+    apiKey: string
+    constructor(opts: { apiKey: string }) { this.apiKey = opts.apiKey }
     messages = { create: mockCreate }
   },
+}))
+
+// resolveAnthropicKey — mocked so tests don't need a DB.
+// Returns a deterministic key per tenantId so we can assert the correct
+// per-tenant key reached the Anthropic constructor (multi-tenant safety).
+vi.mock('@/lib/ai/keys', () => ({
+  resolveAnthropicKey: vi.fn(async (tenantId: string) => `test-key-for-${tenantId}`),
 }))
 
 // ── Module under test (imported AFTER mocks) ─────────────────────────────────
@@ -34,6 +44,9 @@ import {
   type CvSignals,
   type ProfileCandidate,
 } from '@/lib/ai/profile-matcher'
+import { resolveAnthropicKey } from '@/lib/ai/keys'
+
+const TENANT_ID = 'tenant-abc-123'
 
 const CV_SIGNALS: CvSignals = {
   fullName: 'Jane Doe',
@@ -83,7 +96,7 @@ describe('verifyProfilesAgainstCv()', () => {
   })
 
   it('returns [] without calling Anthropic when candidates list is empty', async () => {
-    const result = await verifyProfilesAgainstCv(CV_SIGNALS, [])
+    const result = await verifyProfilesAgainstCv(CV_SIGNALS, [], TENANT_ID)
 
     expect(result).toEqual([])
     expect(mockCreate).not.toHaveBeenCalled()
@@ -103,7 +116,7 @@ describe('verifyProfilesAgainstCv()', () => {
       }),
     )
 
-    const result = await verifyProfilesAgainstCv(CV_SIGNALS, [STRONG_MATCH_CANDIDATE])
+    const result = await verifyProfilesAgainstCv(CV_SIGNALS, [STRONG_MATCH_CANDIDATE], TENANT_ID)
 
     expect(result).toHaveLength(1)
     expect(result[0].confidence).toBeGreaterThanOrEqual(85)
@@ -127,7 +140,7 @@ describe('verifyProfilesAgainstCv()', () => {
       STRONG_MATCH_CANDIDATE,
       WEAK_MATCH_CANDIDATE,
       THIRD_CANDIDATE,
-    ])
+    ], TENANT_ID)
 
     expect(mockCreate).toHaveBeenCalledOnce()
     const callArgs = mockCreate.mock.calls[0][0]
@@ -153,7 +166,7 @@ describe('verifyProfilesAgainstCv()', () => {
     })
 
     await expect(
-      verifyProfilesAgainstCv(CV_SIGNALS, [STRONG_MATCH_CANDIDATE]),
+      verifyProfilesAgainstCv(CV_SIGNALS, [STRONG_MATCH_CANDIDATE], TENANT_ID),
     ).rejects.toThrow()
   })
 
@@ -172,7 +185,7 @@ describe('verifyProfilesAgainstCv()', () => {
     )
 
     await expect(
-      verifyProfilesAgainstCv(CV_SIGNALS, [STRONG_MATCH_CANDIDATE]),
+      verifyProfilesAgainstCv(CV_SIGNALS, [STRONG_MATCH_CANDIDATE], TENANT_ID),
     ).rejects.toThrow()
   })
 
@@ -188,8 +201,32 @@ describe('verifyProfilesAgainstCv()', () => {
     )
 
     const inputs = [STRONG_MATCH_CANDIDATE, WEAK_MATCH_CANDIDATE, THIRD_CANDIDATE]
-    const result = await verifyProfilesAgainstCv(CV_SIGNALS, inputs)
+    const result = await verifyProfilesAgainstCv(CV_SIGNALS, inputs, TENANT_ID)
 
     expect(result).toHaveLength(inputs.length)
+  })
+
+  /**
+   * Regression test: multi-tenant safety.
+   *
+   * Asserts that resolveAnthropicKey is called with the tenantId that was
+   * passed in, and that the resolved key (tenant-scoped) reaches the Anthropic
+   * constructor. This would have caught the original bug where tenantId was
+   * optional and the function silently fell back to the shared env key.
+   */
+  it('forwards tenantId to resolveAnthropicKey and uses the returned key (multi-tenant safety)', async () => {
+    mockCreate.mockResolvedValueOnce(
+      mockClaudeToolUseResponse({
+        verdicts: [
+          { url: STRONG_MATCH_CANDIDATE.url, confidence: 88, category: 'high', reason: 'name+company' },
+        ],
+      }),
+    )
+
+    const specificTenantId = 'tenant-xyz-789'
+    await verifyProfilesAgainstCv(CV_SIGNALS, [STRONG_MATCH_CANDIDATE], specificTenantId)
+
+    // resolveAnthropicKey should have been called with the exact tenantId
+    expect(resolveAnthropicKey).toHaveBeenCalledWith(specificTenantId)
   })
 })

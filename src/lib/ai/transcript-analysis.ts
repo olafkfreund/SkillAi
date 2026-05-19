@@ -99,7 +99,7 @@ export async function analyzeTranscriptWithClaude(
   if (input.tenantId) {
     apiKey = await resolveAnthropicKey(input.tenantId)
   } else {
-    console.warn('[profile-matcher] no tenantId — falling back to env API key')
+    console.warn('[transcript-analysis] no tenantId — falling back to env API key')
     const envKey = process.env.ANTHROPIC_API_KEY
     if (!envKey) throw new Error('No Anthropic API key configured')
     apiKey = envKey
