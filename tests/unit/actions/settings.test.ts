@@ -20,6 +20,9 @@
  *                             auth guard; invalid key guard.
  *   removeNotificationSetting — happy path, invalid key guard.
  *   getNotificationSettings — returns defaults when non-admin; reads db when admin.
+ *   updateHrSkillSettings   — admin succeeds (upsert + audit); recruiter/viewer
+ *                             rejected; invalid profile rejected by Zod.
+ *   getHrSkillSettings      — returns defaults when no rows; reads db when rows exist.
  *
  * Mocks:
  *   @/db                              — db (direct), withTenant
@@ -171,6 +174,10 @@ function adminCtx() {
 
 function recruiterCtx() {
   return { tenantId: TENANT_ID, userId: USER_ID, userRole: 'recruiter' as const }
+}
+
+function viewerCtx() {
+  return { tenantId: TENANT_ID, userId: USER_ID, userRole: 'viewer' as const }
 }
 
 function makeSettingFormData(key: string, value: string): FormData {
@@ -855,5 +862,169 @@ describe('getNotificationSettings', () => {
     const result = await getNotificationSettings()
 
     expect(result.notify_score_threshold).toBe(85)
+  })
+})
+
+// ── updateHrSkillSettings ──────────────────────────────────────────────────────
+
+describe('updateHrSkillSettings', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetActionContext.mockResolvedValue(adminCtx())
+    selectFactory = () => makeSelectChain([])
+  })
+
+  it('returns Unauthorized when no action context', async () => {
+    mockGetActionContext.mockResolvedValue(null)
+    const { updateHrSkillSettings } = await import('@/actions/settings')
+
+    const result = await updateHrSkillSettings(true, 'recruiter-eu-uk')
+
+    expect(result.success).toBe(false)
+    expect((result as { success: false; error: string }).error).toMatch(/unauthorized/i)
+  })
+
+  it('returns Forbidden when user is recruiter', async () => {
+    mockGetActionContext.mockResolvedValue(recruiterCtx())
+    const { updateHrSkillSettings } = await import('@/actions/settings')
+
+    const result = await updateHrSkillSettings(true, 'recruiter-eu-uk')
+
+    expect(result.success).toBe(false)
+    expect((result as { success: false; error: string }).error).toMatch(/admin/i)
+  })
+
+  it('returns Forbidden when user is viewer', async () => {
+    mockGetActionContext.mockResolvedValue(viewerCtx())
+    const { updateHrSkillSettings } = await import('@/actions/settings')
+
+    const result = await updateHrSkillSettings(true, 'recruiter-eu-uk')
+
+    expect(result.success).toBe(false)
+    expect((result as { success: false; error: string }).error).toMatch(/admin/i)
+  })
+
+  it('returns error when profile value is invalid (Zod guard)', async () => {
+    const { updateHrSkillSettings } = await import('@/actions/settings')
+
+    // Cast to bypass TypeScript — tests the runtime Zod guard
+    const result = await updateHrSkillSettings(true, 'not-a-valid-profile' as never)
+
+    expect(result.success).toBe(false)
+  })
+
+  it('upserts enabled=true + profile as plain-text rows on happy path', async () => {
+    const { updateHrSkillSettings } = await import('@/actions/settings')
+
+    const result = await updateHrSkillSettings(true, 'talent-acquisition')
+
+    expect(result.success).toBe(true)
+    expect(mockEncrypt).not.toHaveBeenCalled()
+    // Two upserts: one for enabled key, one for profile key
+    expect(mockInsertValues).toHaveBeenCalledTimes(2)
+    const calls = mockInsertValues.mock.calls as Array<[Record<string, unknown>]>
+    const enabledCall = calls.find(([a]) => a.key === 'hr_skill_enabled')
+    const profileCall  = calls.find(([a]) => a.key === 'hr_skill_profile')
+    expect(enabledCall).toBeDefined()
+    expect(enabledCall![0].value).toBe('true')
+    expect(profileCall).toBeDefined()
+    expect(profileCall![0].value).toBe('talent-acquisition')
+  })
+
+  it('stores enabled=false correctly', async () => {
+    const { updateHrSkillSettings } = await import('@/actions/settings')
+
+    const result = await updateHrSkillSettings(false, 'people-analytics')
+
+    expect(result.success).toBe(true)
+    const calls = mockInsertValues.mock.calls as Array<[Record<string, unknown>]>
+    const enabledCall = calls.find(([a]) => a.key === 'hr_skill_enabled')
+    expect(enabledCall![0].value).toBe('false')
+  })
+
+  it('emits settings.hr_skill_toggled audit with correct metadata', async () => {
+    const { updateHrSkillSettings } = await import('@/actions/settings')
+
+    await updateHrSkillSettings(true, 'people-analytics')
+
+    expect(mockEmitAudit).toHaveBeenCalledWith(
+      TENANT_ID,
+      expect.objectContaining({
+        action: 'settings.hr_skill_toggled',
+        entityType: 'settings',
+        metadata: expect.objectContaining({ enabled: true, profile: 'people-analytics' }),
+      })
+    )
+  })
+
+  it('emits audit with enabled=false in metadata', async () => {
+    const { updateHrSkillSettings } = await import('@/actions/settings')
+
+    await updateHrSkillSettings(false, 'recruiter-eu-uk')
+
+    expect(mockEmitAudit).toHaveBeenCalledWith(
+      TENANT_ID,
+      expect.objectContaining({
+        action: 'settings.hr_skill_toggled',
+        metadata: expect.objectContaining({ enabled: false }),
+      })
+    )
+  })
+})
+
+// ── getHrSkillSettings ─────────────────────────────────────────────────────────
+
+describe('getHrSkillSettings', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns default values when no rows exist in DB', async () => {
+    selectFactory = () => makeSelectChain([])
+    const { getHrSkillSettings } = await import('@/actions/settings')
+
+    const result = await getHrSkillSettings(TENANT_ID)
+
+    expect(result.enabled).toBe(false)
+    expect(result.profile).toBe('recruiter-eu-uk')
+  })
+
+  it('reads enabled=true from DB', async () => {
+    selectFactory = () =>
+      makeSelectChain([
+        { key: 'hr_skill_enabled', value: 'true' },
+        { key: 'hr_skill_profile', value: 'talent-acquisition' },
+      ])
+    const { getHrSkillSettings } = await import('@/actions/settings')
+
+    const result = await getHrSkillSettings(TENANT_ID)
+
+    expect(result.enabled).toBe(true)
+    expect(result.profile).toBe('talent-acquisition')
+  })
+
+  it('reads people-analytics profile from DB', async () => {
+    selectFactory = () =>
+      makeSelectChain([
+        { key: 'hr_skill_enabled', value: 'false' },
+        { key: 'hr_skill_profile', value: 'people-analytics' },
+      ])
+    const { getHrSkillSettings } = await import('@/actions/settings')
+
+    const result = await getHrSkillSettings(TENANT_ID)
+
+    expect(result.profile).toBe('people-analytics')
+  })
+
+  it('falls back to recruiter-eu-uk when stored profile value is unrecognised', async () => {
+    selectFactory = () =>
+      makeSelectChain([
+        { key: 'hr_skill_profile', value: 'unknown-profile-value' },
+      ])
+    const { getHrSkillSettings } = await import('@/actions/settings')
+
+    const result = await getHrSkillSettings(TENANT_ID)
+
+    expect(result.profile).toBe('recruiter-eu-uk')
   })
 })

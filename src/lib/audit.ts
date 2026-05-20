@@ -60,6 +60,7 @@ export type AuditAction =
   | 'notification.approval_sent'
   | 'notification.webhook_failed'
   | 'settings.notification_updated'
+  | 'settings.hr_skill_toggled'
 
 type AuditEntry = {
   action: AuditAction
