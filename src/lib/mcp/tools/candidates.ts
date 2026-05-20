@@ -27,7 +27,7 @@ import type { CandidateStatus, AvailabilityStatus } from '@/db/schema/candidates
 export const ListCandidatesInput = {
   search: z.string().optional().describe('Optional case-insensitive substring match on first or last name'),
   agencyId: z.string().uuid().optional(),
-  status: z.enum(['new', 'shortlisted', 'interviewing', 'offered', 'rejected', 'hired']).optional(),
+  status: z.enum(['new', 'shortlisted', 'interviewing', 'offered', 'rejected', 'rejected_by_customer', 'hired']).optional(),
   availabilityStatus: z.enum(['available', 'on_project', 'unavailable']).optional(),
   limit: z.number().int().min(1).max(200).optional().default(50),
   offset: z.number().int().min(0).optional().default(0),
@@ -43,7 +43,7 @@ export const FindByEmailInput = {
 
 export const UpdateStatusInput = {
   candidateId: z.string().uuid(),
-  status: z.enum(['new', 'shortlisted', 'interviewing', 'offered', 'rejected', 'hired']),
+  status: z.enum(['new', 'shortlisted', 'interviewing', 'offered', 'rejected', 'rejected_by_customer', 'hired']),
   confirmed: z.literal(true).describe('Must be true. Write tools require explicit confirmation.'),
 }
 
@@ -233,7 +233,7 @@ export function registerCandidateTools(server: McpServer, ctx: McpContext): void
       title: 'Update candidate pipeline status',
       description:
         'Move a candidate to a new pipeline stage (new / shortlisted / interviewing / offered / ' +
-        'hired / rejected). Requires write scope and confirmed: true.',
+        'hired / rejected / rejected_by_customer). Requires write scope and confirmed: true.',
       inputSchema: UpdateStatusInput,
     },
     async (args) =>

@@ -28,6 +28,7 @@ export const candidateStatusEnum = pgEnum('candidate_status', [
   'interviewing',
   'offered',
   'rejected',
+  'rejected_by_customer',
   'hired',
 ])
 

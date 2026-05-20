@@ -4,7 +4,7 @@ import { registerRoute } from '@/lib/api/openapi'
 import { updateCandidateStatus } from '@/actions/candidates'
 
 export const CandidateStatusBodySchema = z.object({
-  status: z.enum(['new', 'shortlisted', 'interviewing', 'offered', 'hired', 'rejected']),
+  status: z.enum(['new', 'shortlisted', 'interviewing', 'offered', 'hired', 'rejected', 'rejected_by_customer']),
 })
 
 registerRoute('POST', '/api/candidates/{candidateId}/status', {

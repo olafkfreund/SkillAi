@@ -36,7 +36,7 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
 
   // Validate status is a known enum value
   const validStatuses: CandidateStatus[] = [
-    'new', 'shortlisted', 'interviewing', 'offered', 'rejected', 'hired',
+    'new', 'shortlisted', 'interviewing', 'offered', 'rejected', 'rejected_by_customer', 'hired',
   ]
   const statusFilter = status && validStatuses.includes(status as CandidateStatus)
     ? (status as CandidateStatus)

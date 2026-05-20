@@ -11,6 +11,7 @@ const STATUS_OPTIONS: Array<{ value: CandidateStatus; label: string }> = [
   { value: 'interviewing', label: 'Interviewing' },
   { value: 'offered', label: 'Offered' },
   { value: 'rejected', label: 'Rejected' },
+  { value: 'rejected_by_customer', label: 'Rejected by Customer' },
   { value: 'hired', label: 'Hired' },
 ]
 
@@ -20,6 +21,7 @@ const STATUS_BADGE: Record<CandidateStatus, string> = {
   interviewing: 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700',
   offered: 'bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300 border-violet-300 dark:border-violet-700',
   rejected: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-300 dark:border-red-800',
+  rejected_by_customer: 'bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-800',
   hired: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
 }
 

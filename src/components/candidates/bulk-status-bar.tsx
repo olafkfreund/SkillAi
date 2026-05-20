@@ -13,6 +13,7 @@ const STATUS_OPTIONS: Array<{ value: CandidateStatus; label: string }> = [
   { value: 'interviewing', label: 'Interviewing' },
   { value: 'offered', label: 'Offered' },
   { value: 'rejected', label: 'Rejected' },
+  { value: 'rejected_by_customer', label: 'Rejected by Customer' },
   { value: 'hired', label: 'Hired' },
 ]
 

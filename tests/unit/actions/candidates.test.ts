@@ -497,6 +497,15 @@ describe('bulkUpdateCandidateStatus', () => {
     expect(result.updated).toBeGreaterThanOrEqual(0)
     expect(mockUpdateSet).toHaveBeenCalledWith({ status: 'shortlisted' })
   })
+
+  it('accepts rejected_by_customer as a valid status', async () => {
+    const { bulkUpdateCandidateStatus } = await import('@/actions/candidates')
+
+    const result = await bulkUpdateCandidateStatus([CANDIDATE_ID], 'rejected_by_customer')
+
+    expect(result.success).toBe(true)
+    expect(mockUpdateSet).toHaveBeenCalledWith({ status: 'rejected_by_customer' })
+  })
 })
 
 // ── updateCandidateAvailability ───────────────────────────────────────────────
