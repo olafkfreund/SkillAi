@@ -60,6 +60,8 @@ function makeSelectChain(rows: unknown[]) {
 }
 
 let selectCallCount = 0
+const mockExecute = vi.fn().mockResolvedValue(undefined)
+
 const mockTx = {
   select: vi.fn(() => {
     selectCallCount++
@@ -71,6 +73,7 @@ const mockTx = {
   }),
   delete: vi.fn(() => mockDeleteChain),
   update: vi.fn(() => mockUpdateChain),
+  execute: mockExecute,
 }
 
 vi.mock('@/db', () => ({
@@ -84,6 +87,7 @@ vi.mock('@/db/schema', () => ({
   candidateEnrichments: {},
   cvProfiles: {},
   auditLogs: {},
+  aiUsage: {},
   sentEmails: {},
   interviewPacks: {},
   interviewQuestions: {},
@@ -95,10 +99,19 @@ vi.mock('@/db/schema', () => ({
   roleSubmissions: {},
 }))
 
-// Drizzle eq/and — just pass through for our simple assertions
+// Drizzle eq/and/sql — just pass through for our simple assertions
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn(() => ({ type: 'eq' })),
   and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
+  // sql tagged-template — return a token that tx.execute can receive
+  sql: Object.assign(
+    (strings: TemplateStringsArray, ...values: unknown[]) => ({
+      type: 'sql',
+      strings,
+      values,
+    }),
+    { raw: (s: string) => ({ type: 'sql-raw', s }) }
+  ),
 }))
 
 const mockGetActionContext = vi.fn()
@@ -137,10 +150,11 @@ describe('deleteCandidateForGdpr', () => {
     vi.clearAllMocks()
     selectCallCount = 0
 
-    // Re-wire delete/update chains after clearAllMocks() resets them
+    // Re-wire delete/update/execute chains after clearAllMocks() resets them
     mockDeleteChain.where.mockResolvedValue(undefined)
     mockUpdateChain.set.mockReturnValue(mockSetChain)
     mockSetChain.where.mockResolvedValue(undefined)
+    mockExecute.mockResolvedValue(undefined)
 
     // Default: admin context
     mockGetActionContext.mockResolvedValue(adminContext())
@@ -365,5 +379,59 @@ describe('deleteCandidateForGdpr', () => {
 
     expect(result.ok).toBe(false)
     expect((result as { ok: false; error: string }).error).toMatch(/not found/i)
+  })
+
+  // ── ai_usage PII redaction ────────────────────────────────────────────────
+
+  it('calls tx.execute to redact ai_usage rows (Article 17 PII gap)', async () => {
+    const { deleteCandidateForGdpr } = await import('@/actions/gdpr')
+
+    await deleteCandidateForGdpr({
+      candidateId: CANDIDATE_ID,
+      typedConfirmation: 'Jane Doe',
+    })
+
+    // tx.execute must be called for the ai_usage UPDATE
+    expect(mockTx.execute).toHaveBeenCalled()
+  })
+
+  it('ai_usage redaction SQL references candidateId and candidateName', async () => {
+    const { deleteCandidateForGdpr } = await import('@/actions/gdpr')
+
+    await deleteCandidateForGdpr({
+      candidateId: CANDIDATE_ID,
+      typedConfirmation: 'Jane Doe',
+    })
+
+    // Inspect the sql template that was passed to tx.execute.
+    // The sql tagged-template mock returns { type, strings, values }.
+    const callArg = mockTx.execute.mock.calls[0]?.[0] as
+      | { type: string; strings: string[]; values: unknown[] }
+      | undefined
+
+    expect(callArg).toBeDefined()
+    // The combined SQL string must reference the relevant columns
+    const rawSql = callArg!.strings.join('?')
+    expect(rawSql).toMatch(/metadata->>'candidateId'/i)
+    expect(rawSql).toMatch(/metadata->>'candidateName'/i)
+    // The values must include CANDIDATE_ID and the candidate's full name
+    expect(callArg!.values).toContain(CANDIDATE_ID)
+    expect(callArg!.values).toContain(`${CANDIDATE_ROW.firstName} ${CANDIDATE_ROW.lastName}`)
+  })
+
+  it('ai_usage row count is preserved — execute does NOT delete rows', async () => {
+    // We verify that no DELETE is called on aiUsage; only execute (UPDATE) is used.
+    const { deleteCandidateForGdpr } = await import('@/actions/gdpr')
+
+    await deleteCandidateForGdpr({
+      candidateId: CANDIDATE_ID,
+      typedConfirmation: 'Jane Doe',
+    })
+
+    // tx.delete is only called for candidate child tables — never for ai_usage
+    const deleteCalls = mockTx.delete.mock.calls as unknown[][]
+    const { aiUsage: aiUsageTable } = await import('@/db/schema')
+    const deletedAiUsage = deleteCalls.some((args) => args[0] === aiUsageTable)
+    expect(deletedAiUsage).toBe(false)
   })
 })
