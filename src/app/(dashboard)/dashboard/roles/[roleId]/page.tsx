@@ -20,6 +20,7 @@ import { SentToCustomerPanel } from '@/components/roles/sent-to-customer-panel'
 import { DownloadCvsButton } from '@/components/roles/download-cvs-button'
 import { PriorityKeywordsPanel } from '@/components/roles/priority-keywords-panel'
 import { isScoreOutdatedAgainstPriorities } from '@/lib/scores/staleness'
+import { isRoleExpired } from '@/lib/roles/expiry'
 import { ManagerAssignmentDialog } from '@/components/roles/manager-assignment-dialog'
 import { SendForApprovalButton } from '@/components/roles/send-for-approval-button'
 import { ShortlistStatusPill } from '@/components/manager/shortlist-status-pill'
@@ -97,8 +98,8 @@ export default async function RoleDetailPage({ params }: Props) {
     ? customer.portalBaseUrl.replace(/\/$/, '') + (role.customerPortalPath.startsWith('/') ? '' : '/') + role.customerPortalPath
     : customer?.portalBaseUrl || null
 
-  // Compute expired state for banner
-  const isExpired = role.isActive && role.cutoffDate && new Date(role.cutoffDate) < new Date(new Date().setHours(0, 0, 0, 0))
+  // Compute expired state for banner — uses shared helper (DEC-008: no auto-archive)
+  const isExpired = role.isActive && isRoleExpired(role.cutoffDate)
 
   // Fetch scored candidates for this role
   const scoredCandidates = await withTenant(tenantId, async (tx) =>
