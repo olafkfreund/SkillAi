@@ -122,6 +122,17 @@ kubectl apply -k "${TMP_OVERLAY}"
 rm -rf "${TMP_OVERLAY}" "${TMP_BASE}"
 
 # ---------------------------------------------------------------------------
+# Shred the rendered cleartext secret so it does not outlive the deploy.
+# The file contains raw API keys and DB credentials — leaving it on disk
+# after apply is a credential-leak waiting to happen.
+# ---------------------------------------------------------------------------
+if [[ -f "${SECRET_FILE}" ]]; then
+  log "Shredding rendered secret file ..."
+  shred -u "${SECRET_FILE}" 2>/dev/null || rm -f "${SECRET_FILE}"
+  log "Secret file removed."
+fi
+
+# ---------------------------------------------------------------------------
 # Step 4 — Wait for migrate job
 # The migrate Job is defined in k8s/base/migrate-job.yaml.
 # It runs before the main deployment and exits when all migrations are applied.

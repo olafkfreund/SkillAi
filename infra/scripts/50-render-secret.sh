@@ -99,24 +99,26 @@ if [[ ! -f "${TEMPLATE}" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Base64-encode values (k8s Secrets use base64)
+# Render: the template uses stringData: so kubectl base64-encodes values on
+# apply. Do NOT base64-encode here — that would cause double-encoding and
+# store garbage in the cluster Secret.
+# Each sentinel matches exactly the placeholder in secret.template.yaml.
 # ---------------------------------------------------------------------------
-b64() { printf '%s' "$1" | base64 | tr -d '\n'; }
-
 log "Rendering ${OUTPUT} ..."
 
 sed \
-  -e "s|__DATABASE_URL__|$(b64 "${DATABASE_URL}")|g" \
-  -e "s|__ENCRYPTION_KEY__|$(b64 "${ENCRYPTION_KEY}")|g" \
-  -e "s|__AUTH_SECRET__|$(b64 "${AUTH_SECRET}")|g" \
-  -e "s|__NEXTAUTH_URL__|$(b64 "${NEXTAUTH_URL}")|g" \
-  -e "s|__APP_URL__|$(b64 "${APP_URL}")|g" \
-  -e "s|__NEXT_PUBLIC_APP_URL__|$(b64 "${NEXT_PUBLIC_APP_URL}")|g" \
-  -e "s|__ANTHROPIC_API_KEY__|$(b64 "${ANTHROPIC_API_KEY}")|g" \
-  -e "s|__GEMINI_API_KEY__|$(b64 "${GEMINI_API_KEY:-}")|g" \
-  -e "s|__OPENAI_API_KEY__|$(b64 "${OPENAI_API_KEY:-}")|g" \
-  -e "s|__BRAVE_SEARCH_API_KEY__|$(b64 "${BRAVE_SEARCH_API_KEY:-}")|g" \
-  -e "s|__CRON_SECRET__|$(b64 "${CRON_SECRET:-}")|g" \
+  -e "s|__DATABASE_URL__|${DATABASE_URL}|g" \
+  -e "s|__ENCRYPTION_KEY__|${ENCRYPTION_KEY}|g" \
+  -e "s|__AUTH_SECRET__|${AUTH_SECRET}|g" \
+  -e "s|__NEXTAUTH_URL__|${NEXTAUTH_URL}|g" \
+  -e "s|__APP_URL__|${APP_URL}|g" \
+  -e "s|__NEXT_PUBLIC_APP_URL__|${NEXT_PUBLIC_APP_URL}|g" \
+  -e "s|__ANTHROPIC_API_KEY__|${ANTHROPIC_API_KEY}|g" \
+  -e "s|__GEMINI_API_KEY__|${GEMINI_API_KEY:-}|g" \
+  -e "s|__OPENAI_API_KEY__|${OPENAI_API_KEY:-}|g" \
+  -e "s|__BRAVE_SEARCH_API_KEY__|${BRAVE_SEARCH_API_KEY:-}|g" \
+  -e "s|__GITHUB_TOKEN__|${GITHUB_TOKEN:-}|g" \
+  -e "s|__CRON_SECRET__|${CRON_SECRET:-}|g" \
   "${TEMPLATE}" > "${OUTPUT}"
 
 # Prepend the auto-generated warning
@@ -128,6 +130,18 @@ TMP="$(mktemp)"
   cat "${OUTPUT}"
 } > "${TMP}"
 mv "${TMP}" "${OUTPUT}"
+
+# ---------------------------------------------------------------------------
+# Validation: fail loudly if any sentinel was not substituted.
+# This catches template/script drift before a bad secret reaches the cluster.
+# ---------------------------------------------------------------------------
+if grep -q '__[A-Z_]*__' "${OUTPUT}"; then
+  echo "[render-secret] ERROR: Unsubstituted sentinels remain in ${OUTPUT}:"
+  grep -o '__[A-Z_]*__' "${OUTPUT}" | sort -u | sed 's/^/  /'
+  rm -f "${OUTPUT}"
+  exit 1
+fi
+log "Validation passed — no unsubstituted sentinels."
 
 log "Secret rendered to ${OUTPUT}"
 log "This file is gitignored — do not commit it."
