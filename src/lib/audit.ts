@@ -21,7 +21,7 @@ export type AuditAction =
   | 'interview_slot.rescheduled_external' | 'interview_slot.cancelled_external'
   | 'calendar.sync_completed' | 'calendar.sync_failed'
   | 'note.created' | 'note.deleted'
-  | 'user.invited' | 'user.role_changed' | 'user.deactivated'
+  | 'user.invited' | 'user.role_changed' | 'user.deactivated' | 'user.reactivated'
   | 'user.created'
   | 'user.password_changed'
   | 'user.email_changed'

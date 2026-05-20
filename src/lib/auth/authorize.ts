@@ -33,6 +33,13 @@ export async function authorizeUser(
 
   if (!user) return null
 
+  // Sign-in guard: deactivated users (users.isActive = false) cannot sign in.
+  // The admin user-management UI toggles this flag via deactivateUser /
+  // reactivateUser in src/actions/users.ts. Returning null here makes the
+  // credentials provider report "invalid credentials" — same path as a wrong
+  // password — which is the desired UX (no enumeration of active accounts).
+  if (user.isActive === false) return null
+
   const valid = await bcrypt.compare(password, user.passwordHash)
   if (!valid) return null
 
