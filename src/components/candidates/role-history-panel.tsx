@@ -20,7 +20,7 @@ type Props = {
 function scoreBadgeClass(score: number): string {
   if (score >= 75) return 'bg-emerald-100 dark:bg-green-900 text-emerald-700 dark:text-green-300 border-emerald-300 dark:border-green-700'
   if (score >= 50) return 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700'
-  return 'bg-zinc-100 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg-muted)] border-zinc-300 dark:border-[var(--color-border)]'
+  return 'bg-zinc-200 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg-muted)] border-zinc-400 dark:border-[var(--color-border)]'
 }
 
 function DimensionPill({ label, score }: { label: string; score: number | null }) {
@@ -30,7 +30,7 @@ function DimensionPill({ label, score }: { label: string; score: number | null }
       ? 'bg-emerald-100 dark:bg-green-900/50 text-emerald-700 dark:text-green-300'
       : score >= 50
         ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
-        : 'bg-zinc-100 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg-muted)]'
+        : 'bg-zinc-200 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg-muted)]'
   return (
     <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium ${colorClass}`}>
       {label} {score}

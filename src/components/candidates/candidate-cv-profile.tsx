@@ -61,7 +61,7 @@ function categorizeSkill(skill: string): 'languages' | 'frameworks' | 'tools' | 
 
 // ── Experience level badge styles ───────────────────────────────────────────
 const LEVEL_STYLES: Record<string, string> = {
-  junior: 'bg-zinc-100 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg)] border-zinc-300 dark:border-[var(--color-border)]',
+  junior: 'bg-zinc-200 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg)] border-zinc-400 dark:border-[var(--color-border)]',
   mid: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800',
   senior: 'bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300 border-violet-300 dark:border-violet-800',
   lead: 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800',
@@ -328,7 +328,7 @@ function SkillChip({ skill, category }: { skill: string; category: 'languages' |
     languages: 'bg-blue-100 dark:bg-blue-950/50 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300',
     frameworks: 'bg-violet-100 dark:bg-violet-950/50 border-violet-300 dark:border-violet-800 text-violet-700 dark:text-violet-300',
     tools: 'bg-emerald-100 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300',
-    other: 'bg-zinc-100 dark:bg-[var(--color-bg-input)] border-zinc-300 dark:border-[var(--color-border)] text-zinc-700 dark:text-[var(--color-fg)]',
+    other: 'bg-zinc-200 dark:bg-[var(--color-bg-input)] border-zinc-400 dark:border-[var(--color-border)] text-zinc-800 dark:text-[var(--color-fg)]',
   }[category]
   return (
     <span className={`inline-flex items-center rounded-full border text-xs px-2.5 py-1 ${styles}`}>

@@ -15,7 +15,7 @@ const STATUS_OPTIONS: Array<{ value: CandidateStatus; label: string }> = [
 ]
 
 const STATUS_BADGE: Record<CandidateStatus, string> = {
-  new: 'bg-zinc-100 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg)] border-zinc-300 dark:border-[var(--color-border)]',
+  new: 'bg-zinc-200 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg)] border-zinc-400 dark:border-[var(--color-border)]',
   shortlisted: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700',
   interviewing: 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700',
   offered: 'bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300 border-violet-300 dark:border-violet-700',

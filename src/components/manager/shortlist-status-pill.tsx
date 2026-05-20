@@ -30,8 +30,8 @@ export function ShortlistStatusPill({
   if (!sentAt) {
     return (
       <span
-        className="inline-flex items-center rounded-full border border-zinc-300 dark:border-[var(--color-border)]
-                   bg-zinc-100 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg-muted)] text-xs font-medium px-3 py-1"
+        className="inline-flex items-center rounded-full border border-zinc-400 dark:border-[var(--color-border)]
+                   bg-zinc-200 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg-muted)] text-xs font-medium px-3 py-1"
         aria-label="Shortlist not yet sent for approval"
       >
         Not sent for approval
@@ -47,7 +47,7 @@ export function ShortlistStatusPill({
   // Colour logic
   let colourClasses: string
   if (total === 0) {
-    colourClasses = 'border-zinc-300 dark:border-[var(--color-border)] bg-zinc-100 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg-muted)]'
+    colourClasses = 'border-zinc-400 dark:border-[var(--color-border)] bg-zinc-200 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg-muted)]'
   } else if (allApproved) {
     colourClasses = 'border-emerald-300 dark:border-emerald-800 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
   } else if (allRejected) {

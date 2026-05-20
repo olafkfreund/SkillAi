@@ -11,7 +11,7 @@ function ScorePill({ label, score }: ScorePillProps) {
   const color =
     score >= 75 ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800' :
     score >= 50 ? 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-800' :
-    'bg-zinc-100 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg-muted)] border-zinc-300 dark:border-[var(--color-border)]'
+    'bg-zinc-200 dark:bg-[var(--color-bg-input)] text-zinc-700 dark:text-[var(--color-fg-muted)] border-zinc-400 dark:border-[var(--color-border)]'
   return (
     <span className={`inline-flex items-center gap-1 text-xs border rounded px-1.5 py-0.5 ${color}`}>
       <span className="text-[var(--color-fg-subtle)]">{label}</span>
