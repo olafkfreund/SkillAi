@@ -41,6 +41,9 @@ export async function getSubmissionsForRole(
       .select({
         id: roleSubmissions.id,
         roleId: roleSubmissions.roleId,
+        roleTitle: roles.title,
+        customerId: roles.customerId,
+        customerName: customers.name,
         candidateId: roleSubmissions.candidateId,
         sentAt: roleSubmissions.sentAt,
         sentByUserId: roleSubmissions.sentByUserId,
@@ -61,6 +64,8 @@ export async function getSubmissionsForRole(
       })
       .from(roleSubmissions)
       .innerJoin(candidates, eq(roleSubmissions.candidateId, candidates.id))
+      .innerJoin(roles, eq(roleSubmissions.roleId, roles.id))
+      .leftJoin(customers, eq(roles.customerId, customers.id))
       .leftJoin(agencies, eq(candidates.agencyId, agencies.id))
       .leftJoin(
         scores,
@@ -82,11 +87,9 @@ export async function getSubmissionsForRole(
   return rows.map((r) => ({
     id: r.id,
     roleId: r.roleId,
-    // Per-role loader: the caller already knows the role title from page
-    // context, so we leave these `null`. The tenant-wide loader populates
-    // them.
-    roleTitle: null,
-    customerName: null,
+    roleTitle: r.roleTitle,
+    customerId: r.customerId ?? null,
+    customerName: r.customerName ?? null,
     candidateId: r.candidateId,
     sentAt: r.sentAt,
     sentByUserId: r.sentByUserId,
@@ -258,6 +261,8 @@ export async function getAllSubmissionsForTenant(opts: {
           id: roleSubmissions.id,
           roleId: roleSubmissions.roleId,
           roleTitle: roles.title,
+          customerId: roles.customerId,
+          customerName: customers.name,
           candidateId: roleSubmissions.candidateId,
           sentAt: roleSubmissions.sentAt,
           sentByUserId: roleSubmissions.sentByUserId,
@@ -275,7 +280,6 @@ export async function getAllSubmissionsForTenant(opts: {
           scoreOverall: scores.overallScore,
           submitterName: users.name,
           submitterEmail: users.email,
-          customerName: customers.name,
         })
         .from(roleSubmissions)
         .innerJoin(candidates, eq(roleSubmissions.candidateId, candidates.id))
@@ -345,6 +349,7 @@ export async function getAllSubmissionsForTenant(opts: {
       id: r.id,
       roleId: r.roleId,
       roleTitle: r.roleTitle,
+      customerId: r.customerId ?? null,
       customerName: r.customerName ?? null,
       candidateId: r.candidateId,
       sentAt: r.sentAt,
