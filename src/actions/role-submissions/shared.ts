@@ -12,19 +12,8 @@ export type ActionResult<T = void> =
 export type SubmissionWithDetails = {
   id: string
   roleId: string
-  /**
-   * Role title — populated by the tenant-wide loader
-   * (`getAllSubmissionsForTenant`) which JOINs `roles`. The per-role loader
-   * (`getSubmissionsForRole`) leaves this `null` because the caller already
-   * knows the role title from the page context.
-   */
-  roleTitle: string | null
-  /**
-   * Customer name — populated by the tenant-wide loader
-   * (`getAllSubmissionsForTenant`) which JOINs `customers` via
-   * `roles.customer_id`. `null` when the role has no linked customer, OR
-   * when the loader doesn't join customers (per-role loader).
-   */
+  roleTitle: string
+  customerId: string | null
   customerName: string | null
   candidateId: string
   sentAt: Date
