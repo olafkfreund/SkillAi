@@ -93,7 +93,41 @@ infra/scripts/00-preflight.sh
 
 What to look for: "All preflight checks PASSED." If any check fails, fix the tool or env var before continuing.
 
-### 2.2 Terraform — provision AWS infrastructure
+### 2.2 Bootstrap Terraform remote state (run ONCE, ever)
+
+Before the first Terraform apply you must provision the S3 bucket and DynamoDB lock table that Terraform will use to store and lock its state. This is a chicken-and-egg problem: Terraform cannot manage its own state backend, so we use a one-shot bootstrap script.
+
+```bash
+infra/scripts/05-state-bootstrap.sh
+```
+
+What it does:
+
+- Creates an S3 bucket named `skillai-terraform-state-<account-id>-<region>`.
+- Enables versioning + SSE-KMS encryption on the bucket.
+- Blocks all public access on the bucket.
+- Creates a DynamoDB table named `skillai-terraform-lock` with PAY_PER_REQUEST billing.
+- Writes `infra/terraform/backend.tf` with the resolved bucket/key/region values.
+
+The script is **idempotent** — re-running it on an already-bootstrapped environment is safe.
+
+After the script completes, commit `infra/terraform/backend.tf` if it is not already in the repo.
+
+**Subsequent operators** (team members joining later, or CI runners) do NOT run this script. They just run `terraform init`, which reads `backend.tf` and fetches state from the existing S3 bucket automatically.
+
+**Migrating from a local `terraform.tfstate`**: If you previously ran Terraform with local state, run:
+
+```bash
+cd infra/terraform && terraform init -migrate-state
+```
+
+Terraform will prompt you to copy the local state to S3. After the migration completes, delete the local copy:
+
+```bash
+rm -f infra/terraform/terraform.tfstate infra/terraform/terraform.tfstate.backup
+```
+
+### 2.3 Terraform — provision AWS infrastructure
 
 ```bash
 infra/scripts/10-terraform-apply.sh
