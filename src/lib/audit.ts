@@ -51,6 +51,8 @@ export type AuditAction =
   | 'settings.oauth_credentials_removed'
   | 'candidate.deleted_gdpr'
   | 'candidate.dsar_exported'
+  | 'candidate.compliance_updated'
+  | 'candidate.rtw_verified'
   | 'tenant.exported'
   | 'tenant.csv_exported'
   | 'candidate.welcome_letter_generated'
