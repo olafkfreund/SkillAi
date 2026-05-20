@@ -30,6 +30,11 @@ export AWS_REGION="eu-west-2"         # London — matches EU/UK data residency 
 # export TF_VAR_db_allocated_storage="20"          # default 20 GB gp3
 # export TF_VAR_project_name="skillai"             # default; must match ECR repo name
 
+# REQUIRED — lock the EKS public API endpoint to your operator IP(s).
+# Get your current IP:  curl -s ifconfig.me
+# Then set the value below (JSON list of CIDR strings).
+# export TF_VAR_allowed_operator_cidrs='["X.X.X.X/32"]'  # YOUR operator IP, lock down the EKS API endpoint
+
 # ==========================================================================
 # App secrets — COPY VERBATIM FROM .env.local
 #
