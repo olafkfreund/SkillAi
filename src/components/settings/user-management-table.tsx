@@ -1,17 +1,9 @@
 'use client'
 
-import { useTransition } from 'react'
-import { updateUserRole } from '@/actions/users'
 import { UserDeactivateButton } from '@/components/users/user-deactivate-button'
+import { UserRoleSelector } from '@/components/users/user-role-selector'
 import type { User } from '@/db/schema/users'
 import type { UserRole } from '@/lib/auth/types'
-
-const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
-  { value: 'admin', label: 'Admin' },
-  { value: 'recruiter', label: 'Recruiter' },
-  { value: 'hiring_manager', label: 'Hiring Manager' },
-  { value: 'viewer', label: 'Viewer' },
-]
 
 const ROLE_BADGE: Record<UserRole, string> = {
   admin: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700',
@@ -26,14 +18,6 @@ type Props = {
 }
 
 export function UserManagementTable({ users, currentUserId }: Props) {
-  const [pending, startTransition] = useTransition()
-
-  function handleRoleChange(userId: string, role: UserRole) {
-    startTransition(async () => {
-      await updateUserRole(userId, role)
-    })
-  }
-
   return (
     <div className="rounded-xl border border-[var(--color-border)] overflow-hidden">
       <table className="w-full text-sm">
@@ -83,21 +67,13 @@ export function UserManagementTable({ users, currentUserId }: Props) {
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <select
-                      defaultValue={user.role}
-                      disabled={isSelf || isInactive || pending}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
-                      className="text-xs rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)]
-                                 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500
-                                 disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {ROLE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="flex items-start gap-2">
+                    <UserRoleSelector
+                      userId={user.id}
+                      currentRole={user.role}
+                      isSelf={isSelf}
+                      isInactive={isInactive}
+                    />
                     <UserDeactivateButton
                       userId={user.id}
                       userEmail={user.email}
