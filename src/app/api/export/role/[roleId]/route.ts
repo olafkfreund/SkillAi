@@ -6,6 +6,7 @@ import { renderToBuffer } from '@react-pdf/renderer'
 import { withTenant } from '@/db'
 import { roles, customers } from '@/db/schema'
 import { RolePDF } from '@/lib/pdf'
+import { contentDispositionHeader } from '@/lib/http/content-disposition'
 
 export async function GET(
   _req: Request,
@@ -55,7 +56,7 @@ export async function GET(
   return new NextResponse(buffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="role-${role.title.replace(/\s+/g, '-')}.pdf"`,
+      'Content-Disposition': contentDispositionHeader('inline', `role-${role.title}.pdf`),
     },
   })
 }

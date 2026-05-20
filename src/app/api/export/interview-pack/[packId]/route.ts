@@ -6,6 +6,7 @@ import { renderToBuffer } from '@react-pdf/renderer'
 import { withTenant } from '@/db'
 import { interviewPacks, interviewQuestions, codeChallenges, candidates, roles } from '@/db/schema'
 import { InterviewPackPDF } from '@/lib/pdf'
+import { contentDispositionHeader } from '@/lib/http/content-disposition'
 
 export async function GET(
   _req: Request,
@@ -64,7 +65,10 @@ export async function GET(
   return new NextResponse(buffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="interview-pack-${candidateName.replace(/\s+/g, '-')}.pdf"`,
+      'Content-Disposition': contentDispositionHeader(
+        'attachment',
+        `interview-pack-${candidateName}.pdf`
+      ),
     },
   })
 }

@@ -19,6 +19,7 @@ import {
 import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
 import { CandidatePDF } from '@/lib/pdf'
 import { getLogoAbsolutePath } from '@/lib/branding/store'
+import { contentDispositionHeader } from '@/lib/http/content-disposition'
 
 type Audience = 'internal' | 'customer'
 
@@ -263,7 +264,7 @@ export async function GET(
       // `inline` lets the browser display the PDF in a new tab (via the
       // button's target="_blank"). The filename is still honoured when
       // the user hits "Save" in the PDF viewer.
-      'Content-Disposition': `inline; filename="${filename}"`,
+      'Content-Disposition': contentDispositionHeader('inline', filename),
     },
   })
   } catch (err) {
