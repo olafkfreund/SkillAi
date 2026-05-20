@@ -76,3 +76,14 @@ variable "force_destroy" {
   type        = bool
   default     = false
 }
+
+variable "allowed_operator_cidrs" {
+  description = "CIDR blocks allowed to reach the EKS public API endpoint. Set in .envrc via TF_VAR_allowed_operator_cidrs='[\"X.X.X.X/32\"]'."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = length(var.allowed_operator_cidrs) > 0
+    error_message = "allowed_operator_cidrs must not be empty. Set TF_VAR_allowed_operator_cidrs='[\"X.X.X.X/32\"]' in your .envrc (get your IP: curl -s ifconfig.me)."
+  }
+}

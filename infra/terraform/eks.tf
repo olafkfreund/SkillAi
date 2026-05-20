@@ -17,7 +17,8 @@ module "eks" {
   # Allow operator's laptop to reach the API server.
   # For a hardened deployment, set to false and access via AWS VPN or
   # a bastion host in the public subnet.
-  cluster_endpoint_public_access = true
+  cluster_endpoint_public_access       = true
+  cluster_endpoint_public_access_cidrs = var.allowed_operator_cidrs
 
   # OIDC issuer — required for IRSA (IAM Roles for Service Accounts).
   # The EKS module creates the OIDC provider automatically when this is true.

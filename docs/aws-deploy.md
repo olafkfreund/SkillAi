@@ -65,6 +65,7 @@ Fill in `.envrc`:
 - `ENCRYPTION_KEY` — copy **verbatim** from your local `.env.local`
 - `AUTH_SECRET` — copy **verbatim** from your local `.env.local`
 - `ANTHROPIC_API_KEY` — your Anthropic API key
+- `TF_VAR_allowed_operator_cidrs` — **required**; restricts the EKS public API endpoint to your operator IP(s). Get your IP with `curl -s ifconfig.me`, then set: `export TF_VAR_allowed_operator_cidrs='["X.X.X.X/32"]'`. Terraform will refuse to apply if this variable is empty.
 - Leave `NEXTAUTH_URL`, `APP_URL`, `NEXT_PUBLIC_APP_URL` blank for now — set them after step 2.3
 
 Activate:
