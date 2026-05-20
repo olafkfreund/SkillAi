@@ -70,3 +70,8 @@ output "eks_cloudwatch_log_group_arn" {
   description = "ARN of the CloudWatch log group receiving EKS control plane logs. Use this to grant read access to observability tooling or to configure metric filters."
   value       = aws_cloudwatch_log_group.eks.arn
 }
+
+output "eks_secrets_kms_key_arn" {
+  description = "ARN of the KMS key used for EKS envelope encryption of Kubernetes Secrets. Required if you need to grant additional IAM principals permission to decrypt secrets."
+  value       = aws_kms_key.eks_secrets.arn
+}

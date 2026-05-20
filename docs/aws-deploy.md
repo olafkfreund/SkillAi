@@ -154,6 +154,21 @@ infra/scripts/10-terraform-apply.sh
 ```
 Re-run the script — Terraform is idempotent. Resources already created are detected and skipped; the apply continues from where it left off.
 
+> **Envelope encryption note**: The Terraform config enables KMS envelope encryption for
+> Kubernetes Secrets in etcd (`cluster_encryption_config`). Because this cluster has not
+> been provisioned yet, the key is applied at creation time — no migration is needed.
+>
+> If you ever enable this on an **existing** cluster (one that was provisioned without the
+> setting), every pre-existing Secret must be re-saved so the API server re-encrypts its
+> data key under the new KMS CMK:
+>
+> ```bash
+> kubectl get secrets -A -o yaml | kubectl replace -f -
+> ```
+>
+> Run this immediately after `terraform apply` on an existing cluster before relying on
+> envelope encryption to protect any secrets.
+
 ### 2.3 Configure kubeconfig
 
 ```bash
