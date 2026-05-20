@@ -64,6 +64,8 @@ infra/terraform/.terraform/
 infra/terraform/terraform.tfstate
 infra/terraform/terraform.tfstate.*
 infra/terraform/tfplan
+# Temporary lifecycle override written by destroy.sh — never commit
+infra/terraform/override_prevent_destroy.tf.json
 
 # Rendered k8s secrets — produced locally by 50-render-secret.sh; never committed
 # Only the committed template (secret.template.yaml) is allowed in git.

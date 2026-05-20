@@ -2,22 +2,56 @@
 # infra/scripts/destroy.sh
 # Tear down ALL AWS resources created by this project.
 #
+# IMPORTANT — DELETION SAFETY (issue #247)
+# =========================================
+# Both the RDS instance and the EFS filesystem now have:
+#   - deletion_protection = true   (RDS — blocks AWS-level deletion)
+#   - lifecycle { prevent_destroy = true }  (Terraform — blocks plan/apply destroy)
+#
+# DEFAULT BEHAVIOUR (safe path)
+# --------------------------------
+# terraform destroy will be blocked by prevent_destroy.  This script performs a
+# two-phase destroy:
+#   Phase A: targeted apply that sets skip_final_snapshot=false, which causes RDS
+#            to take a FINAL SNAPSHOT before the instance is deleted.  The snapshot
+#            name includes a timestamp and appears in the AWS RDS console under
+#            "Manual snapshots".  The EFS data is NOT automatically backed up —
+#            run 70-uploads-sync.sh to pull files before proceeding if needed.
+#   Phase B: terraform destroy after the prevent_destroy constraints have been
+#            removed by temporarily overriding the Terraform source.
+#
+# FORCE PATH (data loss — use only for dev/throwaway environments)
+# ----------------------------------------------------------------
+#   FORCE_DESTROY=1 ./destroy.sh
+# or
+#   ./destroy.sh --force
+#
+# When FORCE_DESTROY=1:
+#   - skip_final_snapshot is set to true via -var force_destroy=true
+#   - The script still prompts for confirmation but skips the final snapshot
+#   - lifecycle.prevent_destroy is removed via a temporary override file
+#   - deletion_protection is disabled via a targeted apply before destroy
+#
+# NOTE ON lifecycle.prevent_destroy
+# ----------------------------------
+# Terraform does not allow lifecycle.prevent_destroy to be driven by a variable.
+# This script works around that by writing a temporary override file
+# (override_prevent_destroy.tf.json) that replaces the lifecycle block with
+# prevent_destroy=false, runs the destroy, then removes the override.
+# The override file is gitignored — it must never be committed.
+#
 # WARNING: This is irreversible. It will delete:
 #   - EKS cluster (all workloads, PVCs, etc.)
-#   - RDS instance (ALL candidate data — take a pg_dump first!)
-#   - EFS filesystem (ALL uploaded CVs)
+#   - RDS PostgreSQL instance (ALL candidate data — snapshot taken unless --force)
+#   - EFS filesystem (ALL uploaded CVs — not automatically snapshotted)
 #   - ECR repository (ALL images)
 #   - VPC, subnets, NAT, NLB
-#
-# The script:
-#   1. Prompts for the project name to confirm intent (twice).
-#   2. Empties the ECR repository (Terraform cannot delete a non-empty ECR).
-#   3. Runs terraform destroy.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 TF_DIR="${REPO_ROOT}/infra/terraform"
+OVERRIDE_FILE="${TF_DIR}/override_prevent_destroy.tf.json"
 
 # shellcheck source=/dev/null
 eval "$(direnv export bash 2>/dev/null)" || source "${REPO_ROOT}/.envrc"
@@ -27,11 +61,22 @@ log() { echo "[destroy] $(date -u +%H:%M:%SZ) $*"; }
 PROJECT_NAME="skillai"
 REGION="${AWS_REGION:-eu-west-2}"
 
+# ---------------------------------------------------------------------------
+# Parse flags
+# ---------------------------------------------------------------------------
+FORCE_DESTROY="${FORCE_DESTROY:-0}"
+for arg in "$@"; do
+  case "${arg}" in
+    --force) FORCE_DESTROY=1 ;;
+    *) ;;
+  esac
+done
+
 command -v terraform &>/dev/null || { echo "[destroy] ERROR: terraform not found."; exit 1; }
 command -v aws       &>/dev/null || { echo "[destroy] ERROR: aws-cli not found."; exit 1; }
 
 # ---------------------------------------------------------------------------
-# Cost warning
+# Cost warning + snapshot notice
 # ---------------------------------------------------------------------------
 echo ""
 echo "[destroy] ============================================================"
@@ -48,8 +93,21 @@ echo "[destroy]    - EFS filesystem (ALL uploaded CVs!)"
 echo "[destroy]    - ECR repository and all container images"
 echo "[destroy]    - VPC, NAT Gateway, NLB (billing stops immediately)"
 echo "[destroy]"
-echo "[destroy]  TAKE A BACKUP FIRST if you want to preserve data:"
-echo "[destroy]    pg_dump -U skillai -h <rds-endpoint> skillai > backup.dump"
+
+if [[ "${FORCE_DESTROY}" == "1" ]]; then
+  echo "[destroy]  !! FORCE MODE ACTIVE — final snapshot will be SKIPPED !!"
+  echo "[destroy]  !! All data will be permanently lost. !!"
+else
+  echo "[destroy]  SNAPSHOT: A final RDS snapshot will be taken before deletion."
+  echo "[destroy]    The snapshot will appear in the AWS RDS console under"
+  echo "[destroy]    Manual Snapshots as:  ${PROJECT_NAME}-db-final-<timestamp>"
+  echo "[destroy]    Keep or delete it manually after this script completes."
+  echo "[destroy]"
+  echo "[destroy]  EFS data is NOT automatically snapshotted. If you need to"
+  echo "[destroy]  preserve uploaded CVs, run 70-uploads-sync.sh first."
+fi
+
+echo "[destroy]"
 echo "[destroy] ============================================================"
 echo ""
 
@@ -110,15 +168,95 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 2 — terraform destroy
+# Step 2 — Write a temporary override file to remove lifecycle.prevent_destroy
+#
+# lifecycle.prevent_destroy cannot be controlled by a variable in HCL — the
+# only way to override it is to replace the lifecycle block in a .tf.json
+# override file.  This file is written here, used during destroy, then removed.
+# It is listed in .gitignore and MUST NOT be committed.
+# ---------------------------------------------------------------------------
+cd "${TF_DIR}"
+log "Writing temporary lifecycle override to disable prevent_destroy ..."
+cat > "${OVERRIDE_FILE}" <<'JSON'
+{
+  "resource": {
+    "aws_db_instance": {
+      "main": {
+        "lifecycle": {
+          "prevent_destroy": false
+        }
+      }
+    },
+    "aws_efs_file_system": {
+      "uploads": {
+        "lifecycle": {
+          "prevent_destroy": false
+        }
+      }
+    }
+  }
+}
+JSON
+
+# ---------------------------------------------------------------------------
+# Step 3 — Disable RDS deletion_protection and, if force mode, skip snapshot
+# ---------------------------------------------------------------------------
+if [[ "${FORCE_DESTROY}" == "1" ]]; then
+  FORCE_VARS="-var force_destroy=true"
+  log "Force mode: disabling deletion_protection and skipping final snapshot ..."
+else
+  FORCE_VARS="-var force_destroy=false"
+  log "Disabling RDS deletion_protection (final snapshot will be taken on destroy) ..."
+fi
+
+# Targeted apply — only modifies the RDS instance attribute, does not touch
+# other resources.  Runs non-interactively.
+terraform apply \
+  -target=aws_db_instance.main \
+  ${FORCE_VARS} \
+  -var "deletion_protection=false" \
+  -auto-approve 2>/dev/null || {
+    # Fallback: use AWS CLI to flip deletion protection directly if targeted
+    # apply fails (e.g. state drift).
+    log "WARN: targeted apply failed — attempting AWS CLI fallback to disable deletion_protection."
+    RDS_ID="$(terraform output -raw rds_endpoint 2>/dev/null | cut -d'.' -f1 || echo '')"
+    if [[ -n "${RDS_ID}" ]]; then
+      aws rds modify-db-instance \
+        --db-instance-identifier "${RDS_ID}" \
+        --no-deletion-protection \
+        --apply-immediately \
+        --region "${REGION}" > /dev/null
+      log "deletion_protection disabled via AWS CLI."
+    else
+      log "ERROR: Could not determine RDS identifier. Disable deletion_protection manually"
+      log "       in the AWS console before re-running this script."
+      rm -f "${OVERRIDE_FILE}"
+      exit 1
+    fi
+  }
+
+# ---------------------------------------------------------------------------
+# Step 4 — terraform destroy
 # ---------------------------------------------------------------------------
 log "Running terraform destroy ..."
-cd "${TF_DIR}"
-terraform destroy -auto-approve
+terraform destroy ${FORCE_VARS} -auto-approve
+
+# ---------------------------------------------------------------------------
+# Step 5 — Clean up the override file
+# ---------------------------------------------------------------------------
+log "Removing temporary lifecycle override file ..."
+rm -f "${OVERRIDE_FILE}"
 
 echo ""
 log "Destroy complete. All AWS resources have been deleted."
 log "Billing for EKS, RDS, NLB, and NAT has stopped."
+log ""
+if [[ "${FORCE_DESTROY}" != "1" ]]; then
+  log "REMINDER: The RDS final snapshot '${PROJECT_NAME}-db-final-<timestamp>' still"
+  log "          exists in your AWS account and will incur minimal storage charges."
+  log "          Delete it in the RDS console once you have confirmed data is no"
+  log "          longer needed."
+fi
 log ""
 log "NOTE: Your local .envrc and terraform state files still exist."
 log "      Review and remove them manually if no longer needed."
