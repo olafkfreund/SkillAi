@@ -16,24 +16,42 @@ function parseExpiryFilter(raw: string | undefined): ExpiryFilter {
   return 'all'
 }
 
+// Valid values for the ?archived= query param (undefined = 'exclude').
+// 'exclude' = active roles only (default), 'only' = archived only, 'all' = both
+type ArchivedFilter = 'only' | 'exclude' | 'all'
+
+function parseArchivedFilter(raw: string | undefined): ArchivedFilter {
+  if (raw === 'only' || raw === 'all') return raw
+  return 'exclude'
+}
+
 interface PageProps {
-  searchParams: Promise<{ q?: string; expired?: string }>
+  searchParams: Promise<{ q?: string; expired?: string; archived?: string }>
 }
 
 export default async function RolesPage({ searchParams }: PageProps) {
   const session = await auth()
   const tenantId = session?.user.tenantId
 
-  const { q, expired: expiredParam } = await searchParams
+  const { q, expired: expiredParam, archived: archivedParam } = await searchParams
   const trimmedQ = q?.trim() ?? ''
   const expiryFilter = parseExpiryFilter(expiredParam)
+  const archivedFilter = parseArchivedFilter(archivedParam)
 
   // Today's date string for DB-level expiry comparisons (YYYY-MM-DD).
   const todayStr = new Date().toISOString().split('T')[0]
 
   const allRoles = tenantId
     ? await withTenant(tenantId, async (tx) => {
-        const conditions = [eq(roles.isActive, true)]
+        const conditions = []
+
+        // Archived filter — defaults to 'exclude' (active roles only).
+        if (archivedFilter === 'exclude') {
+          conditions.push(eq(roles.isActive, true))
+        } else if (archivedFilter === 'only') {
+          conditions.push(eq(roles.isActive, false))
+        }
+        // 'all' → no isActive filter applied
 
         if (trimmedQ) {
           conditions.push(
@@ -72,6 +90,7 @@ export default async function RolesPage({ searchParams }: PageProps) {
             rateCurrency: roles.rateCurrency,
             customerRoleId: roles.customerRoleId,
             customerRoleIdLabel: customers.roleIdLabel,
+            isActive: roles.isActive,
           })
           .from(roles)
           .leftJoin(customers, eq(roles.customerId, customers.id))
@@ -83,20 +102,42 @@ export default async function RolesPage({ searchParams }: PageProps) {
   const canCreate = session?.user.role !== 'viewer'
 
   // Build chip href helpers — preserve the search query, swap the expired param.
-  function chipHref(nextExpired: 'all' | 'only' | 'exclude'): string {
+  // When toggling the expired chip, preserve archived; when toggling archived,
+  // preserve expired. 'archived: only' forces expired=all because mixing the
+  // two filters tends to produce empty/confusing results.
+  function expiredChipHref(nextExpired: 'all' | 'only' | 'exclude'): string {
     const params = new URLSearchParams()
     if (trimmedQ) params.set('q', trimmedQ)
     if (nextExpired !== 'all') params.set('expired', nextExpired)
+    if (archivedFilter !== 'exclude') params.set('archived', archivedFilter)
     const qs = params.toString()
     return `/dashboard/roles${qs ? `?${qs}` : ''}`
   }
 
-  const countLabel =
-    expiryFilter === 'only'
-      ? `${allRoles.length} expired role${allRoles.length !== 1 ? 's' : ''}`
-      : expiryFilter === 'exclude'
-        ? `${allRoles.length} active role${allRoles.length !== 1 ? 's' : ''} (non-expired)`
-        : `${allRoles.length} active role${allRoles.length !== 1 ? 's' : ''}`
+  function archivedChipHref(nextArchived: 'all' | 'only' | 'exclude'): string {
+    const params = new URLSearchParams()
+    if (trimmedQ) params.set('q', trimmedQ)
+    if (expiryFilter !== 'all' && nextArchived !== 'only') params.set('expired', expiryFilter)
+    if (nextArchived !== 'exclude') params.set('archived', nextArchived)
+    const qs = params.toString()
+    return `/dashboard/roles${qs ? `?${qs}` : ''}`
+  }
+
+  const countLabel = (() => {
+    if (archivedFilter === 'only') {
+      return `${allRoles.length} archived role${allRoles.length !== 1 ? 's' : ''}`
+    }
+    if (expiryFilter === 'only') {
+      return `${allRoles.length} expired role${allRoles.length !== 1 ? 's' : ''}`
+    }
+    if (expiryFilter === 'exclude') {
+      return `${allRoles.length} active role${allRoles.length !== 1 ? 's' : ''} (non-expired)`
+    }
+    if (archivedFilter === 'all') {
+      return `${allRoles.length} role${allRoles.length !== 1 ? 's' : ''} (active + archived)`
+    }
+    return `${allRoles.length} active role${allRoles.length !== 1 ? 's' : ''}`
+  })()
 
   return (
     <div>
@@ -132,14 +173,14 @@ export default async function RolesPage({ searchParams }: PageProps) {
         </div>
       </form>
 
-      {/* Expiry filter chips */}
+      {/* Filter chips — combined expiry + archived */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         <span className="text-xs text-[var(--color-fg-subtle)]">Show:</span>
         <Link
-          href={chipHref('all')}
+          href={expiredChipHref('all')}
           className={[
             'inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-            expiryFilter === 'all'
+            expiryFilter === 'all' && archivedFilter === 'exclude'
               ? 'bg-blue-600 border-blue-500 text-white'
               : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)] text-[var(--color-fg-muted)] hover:border-blue-500',
           ].join(' ')}
@@ -147,10 +188,10 @@ export default async function RolesPage({ searchParams }: PageProps) {
           All
         </Link>
         <Link
-          href={chipHref('exclude')}
+          href={expiredChipHref('exclude')}
           className={[
             'inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-            expiryFilter === 'exclude'
+            expiryFilter === 'exclude' && archivedFilter === 'exclude'
               ? 'bg-blue-600 border-blue-500 text-white'
               : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)] text-[var(--color-fg-muted)] hover:border-blue-500',
           ].join(' ')}
@@ -158,15 +199,26 @@ export default async function RolesPage({ searchParams }: PageProps) {
           Active only
         </Link>
         <Link
-          href={chipHref('only')}
+          href={expiredChipHref('only')}
           className={[
             'inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-            expiryFilter === 'only'
+            expiryFilter === 'only' && archivedFilter === 'exclude'
               ? 'bg-red-600 border-red-500 text-white'
               : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)] text-[var(--color-fg-muted)] hover:border-red-500',
           ].join(' ')}
         >
           Expired
+        </Link>
+        <Link
+          href={archivedChipHref('only')}
+          className={[
+            'inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+            archivedFilter === 'only'
+              ? 'bg-amber-600 border-amber-500 text-white'
+              : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)] text-[var(--color-fg-muted)] hover:border-amber-500',
+          ].join(' ')}
+        >
+          Archived
         </Link>
       </div>
 
@@ -181,9 +233,13 @@ export default async function RolesPage({ searchParams }: PageProps) {
                         border-[var(--color-border)] bg-[var(--color-bg-app)] px-6 py-16 text-center">
           <BriefcaseIcon className="h-10 w-10 text-[var(--color-fg-subtle)] mb-3" />
           <p className="text-[var(--color-fg-muted)] font-medium">
-            {expiryFilter === 'only' ? 'No expired roles' : 'No roles yet'}
+            {archivedFilter === 'only'
+              ? 'No archived roles'
+              : expiryFilter === 'only'
+                ? 'No expired roles'
+                : 'No roles yet'}
           </p>
-          {canCreate && expiryFilter !== 'only' && (
+          {canCreate && archivedFilter !== 'only' && expiryFilter !== 'only' && (
             <p className="text-[var(--color-fg-subtle)] text-sm mt-1">
               <Link href="/dashboard/roles/new" className="text-blue-400 hover:underline">
                 Create your first role
@@ -206,6 +262,15 @@ export default async function RolesPage({ searchParams }: PageProps) {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="font-semibold text-[var(--color-fg)]">{role.title}</h2>
+
+                    {/* Archived badge — visible when the archived-only or all filter surfaces inactive roles */}
+                    {!role.isActive && (
+                      <span className="inline-flex items-center rounded-full
+                                       bg-amber-100 dark:bg-amber-950 border border-amber-300 dark:border-amber-800
+                                       text-amber-700 dark:text-amber-300 text-xs font-semibold px-2 py-0.5">
+                        ARCHIVED
+                      </span>
+                    )}
 
                     {/* Expiry / countdown badge — uses isRoleExpired from src/lib/roles/expiry.ts */}
                     {expired ? (

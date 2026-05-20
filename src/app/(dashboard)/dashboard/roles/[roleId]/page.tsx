@@ -1,13 +1,14 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { eq, and, desc } from 'drizzle-orm'
-import { ArrowLeftIcon, UsersIcon, PencilIcon, ArchiveIcon, UploadCloudIcon, AlertTriangleIcon } from 'lucide-react'
+import { ArrowLeftIcon, UsersIcon, PencilIcon, ArchiveIcon, UploadCloudIcon, AlertTriangleIcon, ArchiveRestoreIcon } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { withTenant } from '@/db'
 import { roles, scores, candidates, customers, agencies, users } from '@/db/schema'
 import { DownloadPdfButton } from '@/components/export/download-pdf-button'
-import { archiveRole, regenerateRoleTags } from '@/actions/roles'
+import { archiveRole, regenerateRoleTags, unarchiveRole } from '@/actions/roles'
 import { hasRole } from '@/lib/auth/require-role'
+import { RoleDeleteHardButton } from '@/components/roles/role-delete-hard-button'
 import { RoleTagsPanel } from '@/components/roles/role-tags-panel'
 import { RoleMetaBar } from '@/components/roles/role-meta-bar'
 import { RoleContent } from '@/components/roles/role-content'
@@ -39,6 +40,7 @@ export default async function RoleDetailPage({ params }: Props) {
 
   const userRole = (session?.user as { role?: string }).role as string | undefined
   const canEdit = hasRole((userRole ?? 'viewer') as 'admin' | 'recruiter' | 'hiring_manager' | 'viewer', 'recruiter')
+  const isAdmin = userRole === 'admin'
   const isHiringManager = userRole === 'hiring_manager'
   const audience = isHiringManager ? 'manager' : 'recruiter' as const
 
@@ -237,6 +239,25 @@ export default async function RoleDetailPage({ params }: Props) {
                 Archive role
               </button>
             </form>
+          )}
+          {canEdit && !role.isActive && (
+            <form action={async () => {
+              'use server'
+              await unarchiveRole(roleId)
+            }}>
+              <button
+                type="submit"
+                className="flex items-center gap-2 rounded-md bg-[var(--color-bg-input)] text-[var(--color-fg)] text-sm
+                           font-medium px-4 py-2 hover:bg-[var(--color-border)]
+                           border border-[var(--color-border)] transition-colors"
+              >
+                <ArchiveRestoreIcon className="h-4 w-4" />
+                Unarchive role
+              </button>
+            </form>
+          )}
+          {isAdmin && (
+            <RoleDeleteHardButton roleId={roleId} roleTitle={role.title} />
           )}
         </div>
       </div>
