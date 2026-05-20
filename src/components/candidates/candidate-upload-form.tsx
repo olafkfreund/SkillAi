@@ -7,9 +7,11 @@ import { Loader2, Sparkles } from 'lucide-react'
 import { CvDropzone } from '@/components/upload/cv-dropzone'
 import { createCandidate } from '@/actions/candidates'
 import type { CreateCandidateState } from '@/actions/candidates'
+import { ComplianceSection, DEFAULT_COMPLIANCE_FIELDS } from './compliance-section'
+import type { ComplianceFields } from './compliance-section'
 
 type Agency = { id: string; name: string }
-type Props = { roleId: string; agencies: Agency[] }
+type Props = { roleId: string; agencies: Agency[]; audience?: 'recruiter' | 'customer' | 'manager' }
 
 interface ExtractedCandidate {
   firstName?: string
@@ -21,7 +23,7 @@ interface ExtractedCandidate {
   summary?: string
 }
 
-export function CandidateUploadForm({ roleId, agencies }: Props) {
+export function CandidateUploadForm({ roleId, agencies, audience = 'recruiter' }: Props) {
   const router = useRouter()
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -43,6 +45,9 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
     customerRate: '',
     rateCurrency: 'GBP',
   })
+
+  // Compliance fields — recruiter audience only
+  const [complianceFields, setComplianceFields] = useState<ComplianceFields>(DEFAULT_COMPLIANCE_FIELDS)
 
   const [state, action, pending] = useActionState<CreateCandidateState | null, FormData>(
     createCandidate,
@@ -98,6 +103,18 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
     <form
       action={(formData) => {
         if (selectedFile) formData.set('cvFile', selectedFile)
+        // Forward compliance fields — recruiter audience only
+        if (audience === 'recruiter') {
+          formData.set('rightToWorkStatus', complianceFields.rightToWorkStatus)
+          formData.set('rightToWorkDocumentType', complianceFields.rightToWorkDocumentType)
+          formData.set('rightToWorkExpiry', complianceFields.rightToWorkExpiry)
+          formData.set('shareCode', complianceFields.shareCode)
+          formData.set('sponsorshipRequired', String(complianceFields.sponsorshipRequired))
+          formData.set('nationality', complianceFields.nationality)
+          formData.set('noticePeriodDays', complianceFields.noticePeriodDays)
+          formData.set('gdprProcessingConsentAt', complianceFields.gdprProcessingConsentAt)
+          formData.set('gdprProcessingConsentBy', complianceFields.gdprProcessingConsentBy)
+        }
         setSubmitting(true)
         action(formData)
       }}
@@ -363,6 +380,14 @@ export function CandidateUploadForm({ roleId, agencies }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Compliance & Eligibility — recruiter-only collapsible section */}
+      <ComplianceSection
+        audience={audience}
+        disabled={pending || extracting}
+        fields={complianceFields}
+        onChange={setComplianceFields}
+      />
 
       <button
         type="submit"
