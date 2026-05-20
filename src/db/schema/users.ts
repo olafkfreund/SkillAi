@@ -18,6 +18,12 @@ export const users = pgTable(
     isActive: boolean('is_active').notNull().default(true),
     passwordResetRequired: boolean('password_reset_required').notNull().default(false),
     lastPasswordChangeAt: timestamp('last_password_change_at', { withTimezone: true }),
+    // Admin-triggered force password reset (#220):
+    //   - hash = sha256 hex digest of the one-time plaintext token (plaintext is never stored)
+    //   - expiresAt = generation time + 1h
+    // Both fields are cleared once the user completes the reset.
+    passwordResetTokenHash: varchar('password_reset_token_hash', { length: 64 }),
+    passwordResetTokenExpiresAt: timestamp('password_reset_token_expires_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

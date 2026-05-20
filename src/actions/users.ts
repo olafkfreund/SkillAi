@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { eq, and, inArray, isNull, gt, isNotNull, count } from 'drizzle-orm'
+import { randomBytes, createHash } from 'crypto'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { db, withTenant } from '@/db'
@@ -10,6 +11,7 @@ import { auth } from '@/lib/auth'
 import { requireRole } from '@/lib/auth/require-role'
 import { getActionContext } from '@/lib/auth/action-context'
 import { emitAudit } from '@/lib/audit-middleware'
+import { getSenderForTenant } from '@/lib/email/sender'
 import type { UserRole } from '@/lib/auth/types'
 import type { User } from '@/db/schema/users'
 
@@ -623,4 +625,148 @@ export async function createUserDirect(
   revalidatePath('/settings')
 
   return { ok: true, userId: created.id }
+}
+
+// ---------------------------------------------------------------------------
+// Force password reset (admin only) — issue #220 / Epic #37
+//
+// Generates a 32-byte one-time token, stores its sha256 hash + 1h expiry on
+// the target user's row, and either emails the reset link (if SMTP is
+// configured for the tenant) or returns the plaintext link so the admin can
+// share it manually. The plaintext token is never persisted.
+//
+// Admins cannot force-reset their own account — they should use the
+// self-service change-password flow.
+// ---------------------------------------------------------------------------
+
+export type ForcePasswordResetResult =
+  | { ok: true; emailSent: true }
+  | { ok: true; emailSent: false; resetUrl: string }
+  | { ok: false; error: string }
+
+export async function forcePasswordReset(
+  userId: string
+): Promise<ForcePasswordResetResult> {
+  const ctx = await getActionContext()
+  if (!ctx) return { ok: false, error: 'Unauthorized' }
+
+  try {
+    requireRole(ctx.userRole, 'admin')
+  } catch {
+    return { ok: false, error: 'Forbidden: admins only' }
+  }
+
+  if (userId === ctx.userId) {
+    return {
+      ok: false,
+      error: 'You cannot force-reset your own password. Use the change-password flow instead.',
+    }
+  }
+
+  // Look up the target user (must be in the same tenant)
+  const [targetUser] = await withTenant(ctx.tenantId, async (tx) =>
+    tx
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        isActive: users.isActive,
+      })
+      .from(users)
+      .where(
+        and(
+          eq(users.id, userId),
+          eq(users.tenantId, ctx.tenantId)
+        )
+      )
+      .limit(1)
+  )
+
+  if (!targetUser) {
+    return { ok: false, error: 'User not found' }
+  }
+
+  if (!targetUser.isActive) {
+    return { ok: false, error: 'Cannot force-reset password for an inactive user' }
+  }
+
+  // Generate 32-byte token (256 bits of entropy)
+  const plaintextToken = randomBytes(32).toString('hex')
+  const tokenHash = createHash('sha256').update(plaintextToken).digest('hex')
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour from now
+
+  // Persist hash + expiry; ALSO force the user's next sign-in to land on the
+  // change-password page (defence-in-depth in case the user has an active session)
+  await withTenant(ctx.tenantId, async (tx) => {
+    await tx
+      .update(users)
+      .set({
+        passwordResetTokenHash: tokenHash,
+        passwordResetTokenExpiresAt: expiresAt,
+        passwordResetRequired: true,
+      })
+      .where(
+        and(
+          eq(users.id, userId),
+          eq(users.tenantId, ctx.tenantId)
+        )
+      )
+  })
+
+  const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3001'
+  const resetUrl = `${baseUrl}/auth/reset?token=${plaintextToken}`
+
+  // Try to send via SMTP — fall back to returning the link
+  const sender = await getSenderForTenant(ctx.tenantId).catch(() => null)
+  let emailSent = false
+
+  if (sender) {
+    const result = await sender.send({
+      to: targetUser.email,
+      toName: targetUser.name,
+      from: '', // SmtpSender ignores these; uses smtp_from_email from settings
+      fromName: '',
+      subject: 'Reset your SkillAI password',
+      bodyText:
+        `Hi ${targetUser.name},\n\n` +
+        `An administrator on your team has triggered a password reset for your SkillAI account.\n\n` +
+        `Use the link below to set a new password. The link expires in 1 hour.\n\n` +
+        `${resetUrl}\n\n` +
+        `If you did not expect this, contact your administrator.\n`,
+      bodyHtml:
+        `<p>Hi ${escapeHtml(targetUser.name)},</p>` +
+        `<p>An administrator on your team has triggered a password reset for your SkillAI account.</p>` +
+        `<p>Use the link below to set a new password. The link expires in <strong>1 hour</strong>.</p>` +
+        `<p><a href="${resetUrl}">${escapeHtml(resetUrl)}</a></p>` +
+        `<p>If you did not expect this, contact your administrator.</p>`,
+    })
+    emailSent = result.ok
+  }
+
+  emitAudit(ctx.tenantId, {
+    action: 'user.password_reset_forced',
+    entityType: 'user',
+    entityId: userId,
+    entityLabel: targetUser.email,
+    metadata: { targetUserId: userId, emailSent },
+  })
+
+  revalidatePath('/dashboard/users')
+  revalidatePath('/settings')
+
+  if (emailSent) {
+    return { ok: true, emailSent: true }
+  }
+  return { ok: true, emailSent: false, resetUrl }
+}
+
+// Tiny HTML escape — only used in the reset email body. Avoids pulling in a
+// dependency for a one-call site.
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
