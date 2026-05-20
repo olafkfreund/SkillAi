@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { UserDeactivateButton } from '@/components/users/user-deactivate-button'
+import { UserDeleteGdprButton } from '@/components/users/user-delete-gdpr-button'
 import { UserForceResetButton } from '@/components/users/user-force-reset-button'
 import { UserRoleSelector } from '@/components/users/user-role-selector'
 import type { User } from '@/db/schema/users'
@@ -18,7 +20,18 @@ type Props = {
   currentUserId: string
 }
 
-export function UserManagementTable({ users, currentUserId }: Props) {
+export function UserManagementTable({ users: initialUsers, currentUserId }: Props) {
+  // Local state so GDPR-deleted rows disappear immediately without a full page
+  // reload. Role / deactivate / force-reset mutations happen inside their own
+  // extracted button components which trigger `revalidatePath` server-side, so
+  // they don't need to flow through this state.
+  const [userList, setUserList] = useState<User[]>(initialUsers)
+
+  function handleUserDeleted(deletedUserId: string) {
+    setUserList((prev) => prev.filter((u) => u.id !== deletedUserId))
+  }
+
+
   return (
     <div className="rounded-xl border border-[var(--color-border)] overflow-hidden">
       <table className="w-full text-sm">
@@ -42,7 +55,7 @@ export function UserManagementTable({ users, currentUserId }: Props) {
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--color-bg-elevated)]">
-          {users.map((user) => {
+          {userList.map((user) => {
             const isSelf = user.id === currentUserId
             const isInactive = user.isActive === false
             return (
@@ -68,7 +81,7 @@ export function UserManagementTable({ users, currentUserId }: Props) {
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-start gap-2 flex-wrap">
                     <UserRoleSelector
                       userId={user.id}
                       currentRole={user.role}
@@ -85,6 +98,13 @@ export function UserManagementTable({ users, currentUserId }: Props) {
                       userEmail={user.email}
                       isActive={user.isActive !== false}
                       isSelf={isSelf}
+                    />
+                    <UserDeleteGdprButton
+                      userId={user.id}
+                      userEmail={user.email}
+                      userName={user.name}
+                      currentUserId={currentUserId}
+                      onDeleted={handleUserDeleted}
                     />
                   </div>
                 </td>

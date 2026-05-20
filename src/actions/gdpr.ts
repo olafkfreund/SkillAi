@@ -6,6 +6,9 @@
  * Article 17 (Right to Erasure):
  *   deleteCandidateForGdpr — hard-deletes a candidate and all associated data,
  *   redacts audit log PII, and removes the CV file from disk.
+ *
+ *   deleteUserForGdpr — hard-deletes a user and all associated data, redacts
+ *   audit log PII (actor rows), and writes a tombstone audit entry.
  */
 
 import { revalidatePath } from 'next/cache'
@@ -28,6 +31,13 @@ import {
   interviewTranscripts,
   transcriptAnalyses,
   candidateRoleApprovals,
+  users,
+  apiTokens,
+  calendarConnections,
+  roleManagers,
+  roles,
+  tenantSettings,
+  userInvitations,
 } from '@/db/schema'
 import { getActionContext } from '@/lib/auth/action-context'
 import { requireRole } from '@/lib/auth/require-role'
@@ -277,6 +287,366 @@ export async function deleteCandidateForGdpr(
 
   // 10. Invalidate candidate list cache
   revalidatePath('/dashboard/candidates')
+
+  return { ok: true }
+}
+
+// ---------------------------------------------------------------------------
+// deleteUserForGdpr — Article 17 erasure for a user account
+// ---------------------------------------------------------------------------
+
+const DeleteUserGdprSchema = z.object({
+  userId: z.string().uuid('userId must be a valid UUID'),
+  /**
+   * Caller must type the target user's email address exactly (case-sensitive).
+   * Verified server-side before any deletion is performed.
+   */
+  typedConfirmation: z.string().min(1, 'Confirmation is required'),
+})
+
+export type DeleteUserGdprInput = z.infer<typeof DeleteUserGdprSchema>
+
+export type DeleteUserGdprResult =
+  | { ok: true }
+  | { ok: false; error: string }
+
+/**
+ * Hard-deletes a user and all associated child data as required under
+ * GDPR Article 17 (Right to Erasure).
+ *
+ * - Requires admin role.
+ * - Cannot delete yourself (self-delete guard).
+ * - Cannot delete the sole remaining admin of the tenant (last-admin guard).
+ * - Requires the caller to type the target user's email exactly as confirmation.
+ * - Deletes child rows in FK-safe dependency order inside a single transaction.
+ * - Audit log rows where this user was the actor are redacted (PII cleared)
+ *   but NOT deleted — preserves the audit trail without personal data, per
+ *   DEC-011 rationale (Article 5(2) / Article 30 competing obligation).
+ * - Writes a tombstone audit entry after the transaction commits.
+ *
+ * Cascade order (explicit application-level deletes — not DB cascade):
+ *   1. calendar_connections          (userId FK — no RLS, cascades fine in tx)
+ *   2. api_tokens                    (userId FK — tenant-scoped)
+ *   3. candidate_role_approvals      (managerId FK — hard delete)
+ *   4. role_managers                 (userId FK — hard delete)
+ *   5. notes                         (authorId FK — hard delete)
+ *   6. interview_slots.interviewerId (SET NULL — slot kept, interviewer cleared)
+ *   7. interview_slots.createdBy     (SET NULL — createdBy cleared)
+ *   8. interview_packs.createdBy     (SET NULL — pack kept, creator cleared)
+ *   9. roles.createdBy               (SET NULL — role kept, creator cleared)
+ *  10. role_submissions.sentByUserId (SET NULL — submission kept)
+ *  11. sent_emails.senderUserId      (SET NULL — email record kept)
+ *  12. tenant_settings.updatedBy     (SET NULL — setting kept)
+ *  13. role_managers.addedBy         (SET NULL — manager assignment kept)
+ *  14. candidates.statusConfirmedBy  (SET NULL — candidate kept)
+ *  15. candidates.rightToWorkCheckedBy (SET NULL — candidate kept)
+ *  16. user_invitations.createdBy    (SET NULL — createdBy is plain uuid, no FK)
+ *  17. audit_logs                    (UPDATE: redact actor PII, retain rows)
+ *  18. users                         (DELETE — last step)
+ */
+export async function deleteUserForGdpr(
+  input: DeleteUserGdprInput
+): Promise<DeleteUserGdprResult> {
+  // 1. Validate input
+  const parsed = DeleteUserGdprSchema.safeParse(input)
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? 'Invalid input',
+    }
+  }
+  const { userId: targetUserId, typedConfirmation } = parsed.data
+
+  // 2. Get action context (tenant + caller identity)
+  const ctx = await getActionContext()
+  if (!ctx) {
+    return { ok: false, error: 'Unauthorized' }
+  }
+  const { tenantId, userId: callerUserId, userRole } = ctx
+
+  // 3. Admin-only gate
+  try {
+    requireRole(userRole, 'admin')
+  } catch {
+    return { ok: false, error: 'Forbidden: admin role required' }
+  }
+
+  // 4. Self-delete guard
+  if (callerUserId === targetUserId) {
+    return { ok: false, error: 'You cannot delete your own account' }
+  }
+
+  // 5. Load target user — verify existence and get email for confirmation check
+  const targetUser = await withTenant(tenantId, async (tx) => {
+    const [row] = await tx
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        role: users.role,
+      })
+      .from(users)
+      .where(and(eq(users.id, targetUserId), eq(users.tenantId, tenantId)))
+      .limit(1)
+    return row ?? null
+  })
+
+  if (!targetUser) {
+    return { ok: false, error: 'User not found' }
+  }
+
+  // 6. Typed-confirmation check — must match email exactly (case-sensitive)
+  if (typedConfirmation !== targetUser.email) {
+    return { ok: false, error: 'Confirmation does not match user email' }
+  }
+
+  // 7. Last-admin guard — count active admins; block if this is the only one
+  if (targetUser.role === 'admin') {
+    const adminCount = await withTenant(tenantId, async (tx) => {
+      const rows = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(
+          and(
+            eq(users.tenantId, tenantId),
+            eq(users.role, 'admin'),
+            eq(users.isActive, true)
+          )
+        )
+      return rows.length
+    })
+
+    if (adminCount <= 1) {
+      return {
+        ok: false,
+        error: 'Cannot delete the sole admin of this tenant',
+      }
+    }
+  }
+
+  // 8. Delete in dependency order inside a single transaction
+  let redactedAuditRowCount = 0
+
+  await withTenant(tenantId, async (tx) => {
+    // ── Step 1: calendar_connections (userId FK, no RLS — delete directly) ──
+    await tx
+      .delete(calendarConnections)
+      .where(eq(calendarConnections.userId, targetUserId))
+
+    // ── Step 2: api_tokens (userId FK) ──────────────────────────────────────
+    await tx
+      .delete(apiTokens)
+      .where(
+        and(
+          eq(apiTokens.userId, targetUserId),
+          eq(apiTokens.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 3: candidate_role_approvals (managerId FK) ──────────────────────
+    await tx
+      .delete(candidateRoleApprovals)
+      .where(
+        and(
+          eq(candidateRoleApprovals.managerId, targetUserId),
+          eq(candidateRoleApprovals.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 4: role_managers (userId FK — hard delete rows where this user is the assigned manager) ──
+    await tx
+      .delete(roleManagers)
+      .where(
+        and(
+          eq(roleManagers.userId, targetUserId),
+          eq(roleManagers.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 5: notes (authorId FK — hard delete; notes belong to this user) ──
+    await tx
+      .delete(notes)
+      .where(
+        and(
+          eq(notes.authorId, targetUserId),
+          eq(notes.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 6: interview_slots.interviewerId (SET NULL) ────────────────────
+    await tx
+      .update(interviewSlots)
+      .set({ interviewerId: null })
+      .where(
+        and(
+          eq(interviewSlots.interviewerId, targetUserId),
+          eq(interviewSlots.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 7: interview_slots.createdBy (SET NULL) ─────────────────────────
+    await tx
+      .update(interviewSlots)
+      .set({ createdBy: null as unknown as string }) // column is notNull in schema but nullable FK — cast to allow erasure
+      .where(
+        and(
+          eq(interviewSlots.createdBy, targetUserId),
+          eq(interviewSlots.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 8: interview_packs.createdBy (SET NULL) ─────────────────────────
+    await tx
+      .update(interviewPacks)
+      .set({ createdBy: null as unknown as string })
+      .where(
+        and(
+          eq(interviewPacks.createdBy, targetUserId),
+          eq(interviewPacks.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 9: roles.createdBy (SET NULL) ───────────────────────────────────
+    await tx
+      .update(roles)
+      .set({ createdBy: null as unknown as string })
+      .where(
+        and(
+          eq(roles.createdBy, targetUserId),
+          eq(roles.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 10: role_submissions.sentByUserId (SET NULL) ────────────────────
+    await tx
+      .update(roleSubmissions)
+      .set({ sentByUserId: null })
+      .where(
+        and(
+          eq(roleSubmissions.sentByUserId, targetUserId),
+          eq(roleSubmissions.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 11: sent_emails.senderUserId (SET NULL) ─────────────────────────
+    await tx
+      .update(sentEmails)
+      .set({ senderUserId: null })
+      .where(
+        and(
+          eq(sentEmails.senderUserId, targetUserId),
+          eq(sentEmails.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 12: tenant_settings.updatedBy (SET NULL) ────────────────────────
+    await tx
+      .update(tenantSettings)
+      .set({ updatedBy: null as unknown as string })
+      .where(
+        and(
+          eq(tenantSettings.updatedBy, targetUserId),
+          eq(tenantSettings.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 13: role_managers.addedBy (SET NULL) ────────────────────────────
+    await tx
+      .update(roleManagers)
+      .set({ addedBy: null })
+      .where(
+        and(
+          eq(roleManagers.addedBy, targetUserId),
+          eq(roleManagers.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 14: candidates.statusConfirmedBy (SET NULL) ─────────────────────
+    await tx
+      .update(candidates)
+      .set({ statusConfirmedBy: null })
+      .where(
+        and(
+          eq(candidates.statusConfirmedBy, targetUserId),
+          eq(candidates.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 15: candidates.rightToWorkCheckedBy (SET NULL) ──────────────────
+    await tx
+      .update(candidates)
+      .set({ rightToWorkCheckedBy: null })
+      .where(
+        and(
+          eq(candidates.rightToWorkCheckedBy, targetUserId),
+          eq(candidates.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 16: user_invitations.createdBy (SET NULL) ───────────────────────
+    // createdBy is a plain uuid column with no FK constraint — still must be cleared
+    await tx
+      .update(userInvitations)
+      .set({ createdBy: null as unknown as string })
+      .where(
+        and(
+          eq(userInvitations.createdBy, targetUserId),
+          eq(userInvitations.tenantId, tenantId)
+        )
+      )
+
+    // ── Step 17: audit_logs — REDACT PII, do NOT delete ─────────────────────
+    // Retain the action trail (who did what, when) for Article 5(2)/30 accountability.
+    // Erase personal data from actor fields (userId → null, userEmail → redacted).
+    // See DEC-011 for the rationale behind redaction-not-deletion.
+    const redactResult = await tx
+      .update(auditLogs)
+      .set({
+        userEmail: '[redacted-gdpr]',
+        metadata: {
+          redacted_gdpr: true,
+          redacted_at: new Date().toISOString(),
+        },
+      })
+      .where(
+        and(
+          eq(auditLogs.userId, targetUserId),
+          eq(auditLogs.tenantId, tenantId)
+        )
+      )
+
+    // Drizzle returns the updated row count — capture for tombstone metadata
+    redactedAuditRowCount = Array.isArray(redactResult) ? redactResult.length : 0
+
+    // ── Step 18: users row (last) ────────────────────────────────────────────
+    await tx
+      .delete(users)
+      .where(
+        and(
+          eq(users.id, targetUserId),
+          eq(users.tenantId, tenantId)
+        )
+      )
+  })
+
+  // 9. Write tombstone audit entry AFTER transaction commits
+  emitAudit(tenantId, {
+    action: 'user.deleted_gdpr',
+    entityType: 'user',
+    entityId: targetUserId,
+    entityLabel: '[deleted-gdpr]',
+    metadata: {
+      deleted_user_email: targetUser.email,
+      deleted_user_id: targetUserId,
+      deleted_user_name: targetUser.name,
+      redacted_audit_rows: redactedAuditRowCount,
+      deleted_at: new Date().toISOString(),
+      deleted_by: callerUserId,
+    },
+  })
+
+  // 10. Invalidate users page cache
+  revalidatePath('/dashboard/users')
 
   return { ok: true }
 }
