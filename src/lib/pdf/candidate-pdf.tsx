@@ -8,7 +8,6 @@ import {
   StyleSheet,
 } from '@react-pdf/renderer'
 import { base, colors } from './styles'
-import { parseCvBlocks } from './cv-formatter'
 import type { candidates, scores, roles } from '@/db/schema'
 import type { QuestionResponse } from '@/db/schema/transcript-analyses'
 import type { WebHit, GitHubProfile } from '@/db/schema/candidate-enrichments'
@@ -295,36 +294,6 @@ const s = StyleSheet.create({
   ghMetaItem: {
     fontSize: 8,
     color: colors.slate500,
-  },
-
-  // CV text block
-  cvText: {
-    fontSize: 8.5,
-    color: colors.slate700,
-    lineHeight: 1.6,
-  },
-  cvSectionHeading: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: colors.slate900,
-    marginTop: 10,
-    marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  cvSubHeading: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: colors.slate700,
-    marginTop: 6,
-    marginBottom: 2,
-  },
-  cvBullet: {
-    fontSize: 8.5,
-    color: colors.slate700,
-    lineHeight: 1.5,
-    marginLeft: 10,
-    marginBottom: 2,
   },
 
   // Section header row (h2 + optional badge on the same line)
@@ -1156,44 +1125,6 @@ function ComplianceSection({ candidate }: { candidate: Candidate }) {
 }
 
 // ---------------------------------------------------------------------------
-// Section: CV Text
-// ---------------------------------------------------------------------------
-function CvTextSection({ cvText, cvTextFormatted }: { cvText: string; cvTextFormatted?: string | null }) {
-  // Prefer AI-formatted (markdown) version when present; fall back to raw
-  // cv_text. The parser handles both — it auto-detects markdown markers and
-  // otherwise injects section breaks before known CV headings.
-  const blocks = parseCvBlocks(cvTextFormatted ?? cvText)
-
-  if (blocks.length === 0) {
-    return (
-      <View>
-        <Text style={base.h2}>Curriculum Vitae</Text>
-        <Text style={s.cvText}>(no CV text available)</Text>
-      </View>
-    )
-  }
-
-  return (
-    <View>
-      <Text style={base.h2}>Curriculum Vitae</Text>
-      {blocks.map((block, i) => {
-        switch (block.type) {
-          case 'heading':
-            return <Text key={i} style={s.cvSectionHeading}>{block.text}</Text>
-          case 'subheading':
-            return <Text key={i} style={s.cvSubHeading}>{block.text}</Text>
-          case 'bullet':
-            return <Text key={i} style={s.cvBullet}>• {block.text}</Text>
-          case 'paragraph':
-          default:
-            return <Text key={i} style={[s.cvText, { marginBottom: 6 }]}>{block.text}</Text>
-        }
-      })}
-    </View>
-  )
-}
-
-// ---------------------------------------------------------------------------
 // Root component
 // ---------------------------------------------------------------------------
 export function CandidatePDF({
@@ -1278,9 +1209,6 @@ export function CandidatePDF({
             <View style={base.divider} />
           </>
         )}
-
-        {/* ── 7. CV Text ────────────────────────────────────────────── */}
-        <CvTextSection cvText={candidate.cvText} cvTextFormatted={candidate.cvTextFormatted} />
 
         {/* ── Footer (fixed on every page) ──────────────────────────── */}
         <View style={base.footer} fixed>
