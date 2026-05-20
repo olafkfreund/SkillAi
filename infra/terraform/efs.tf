@@ -51,6 +51,10 @@ resource "aws_efs_file_system" "uploads" {
   tags = {
     Name = "${var.project}-uploads"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Mount targets — one per private subnet so pods on any node can reach EFS.

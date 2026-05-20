@@ -114,13 +114,26 @@ resource "aws_db_instance" "main" {
   backup_window           = "03:00-04:00"
   maintenance_window      = "Mon:04:00-Mon:05:00"
 
-  # skip_final_snapshot = true is appropriate for dev/staging. For production
-  # deployments change this to false and provide a final_snapshot_identifier.
-  skip_final_snapshot = true
+  # skip_final_snapshot: set false normally so a named snapshot is created before
+  # the instance is deleted.  Set var.force_destroy=true ONLY via destroy.sh
+  # --force / FORCE_DESTROY=1 to bypass the snapshot when intentionally wiping
+  # the environment (e.g. dev tear-down where data loss is acceptable).
+  skip_final_snapshot = var.force_destroy
 
-  deletion_protection = false # set to true for production
+  # Final snapshot identifier includes a timestamp so each destroy produces a
+  # uniquely named, recoverable snapshot in the AWS console.
+  final_snapshot_identifier = "${var.project}-db-final-${formatdate("YYYYMMDDhhmm", timestamp())}"
+
+  # Prevent accidental deletion via the AWS console or an unguarded
+  # terraform destroy.  The destroy.sh script documents the two-phase
+  # procedure required to remove this protection intentionally.
+  deletion_protection = true
 
   tags = {
     Name = "${var.project}-db"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }

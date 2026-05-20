@@ -63,3 +63,16 @@ variable "vpc_cidr" {
   type        = string
   default     = "10.10.0.0/16"
 }
+
+variable "force_destroy" {
+  description = <<-EOT
+    Set to true ONLY via the destroy.sh --force path or FORCE_DESTROY=1 env var.
+    When true, skip_final_snapshot is set to true so that terraform destroy can
+    proceed without waiting for a final RDS snapshot.  NOTE: lifecycle.prevent_destroy
+    cannot be driven by a variable at the HCL level — the two-phase destroy procedure
+    in infra/scripts/destroy.sh handles removal of the prevent_destroy constraint
+    via targeted overrides.  Never set this to true in normal operations.
+  EOT
+  type        = bool
+  default     = false
+}

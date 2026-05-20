@@ -390,15 +390,51 @@ kubectl logs deployment/cert-manager -n cert-manager --tail=50
 
 ## 7. Tear-Down
 
+### Deletion safety (issue #247)
+
+Both the RDS instance and the EFS filesystem are protected against accidental deletion:
+
+- `deletion_protection = true` on the RDS instance prevents AWS from deleting it via the console or API without first disabling this flag.
+- `lifecycle { prevent_destroy = true }` on both `aws_db_instance.main` and `aws_efs_file_system.uploads` prevents a plain `terraform destroy` from removing them without an explicit override.
+
+### Default path — final snapshot taken
+
 ```bash
 infra/scripts/destroy.sh
 ```
 
-The script prompts twice for confirmation before proceeding. It:
-1. Empties the ECR repository (Terraform cannot delete a non-empty ECR)
-2. Runs `terraform destroy -auto-approve`
+The script prompts twice for confirmation, then proceeds through a two-phase destroy:
 
-**Take a backup first** if you want to preserve data:
+1. Empties the ECR repository (Terraform cannot delete a non-empty ECR repo).
+2. Writes a temporary `override_prevent_destroy.tf.json` file to remove the `prevent_destroy` lifecycle constraints (this file is gitignored and never committed).
+3. Runs a targeted `terraform apply -target=aws_db_instance.main` with `skip_final_snapshot=false` to disable `deletion_protection` while keeping the snapshot behaviour intact.
+4. Runs `terraform destroy`. Before the RDS instance is deleted, AWS automatically creates a **final snapshot** named `skillai-db-final-<YYYYMMDD-hhmm>`. This snapshot is recoverable from the AWS RDS console under Manual Snapshots.
+5. Removes the temporary override file.
+
+The EFS filesystem is **not** automatically snapshotted. If you need to preserve uploaded CVs, run `infra/scripts/70-uploads-sync.sh` to pull files to local disk before starting the destroy.
+
+After destroy completes, a reminder is printed with the snapshot name. Delete it in the RDS console once you have confirmed data is no longer needed (it incurs minimal storage charges while retained).
+
+### Force path — skip snapshot (data loss, dev/throwaway only)
+
+Use this only for non-production environments where data loss is acceptable:
+
+```bash
+FORCE_DESTROY=1 infra/scripts/destroy.sh
+# or
+infra/scripts/destroy.sh --force
+```
+
+When `FORCE_DESTROY=1` is set:
+- `skip_final_snapshot` is set to `true` via `-var force_destroy=true`.
+- No RDS snapshot is created; all database data is permanently deleted.
+- `deletion_protection` is disabled before the destroy.
+- The `prevent_destroy` override is still applied so the destroy can proceed.
+
+### Manual backup before destroy (recommended)
+
+Regardless of which path you take, a manual pg_dump is the safest backup:
+
 ```bash
 # Do NOT inline PGPASSWORD in the command — it gets written verbatim to shell history.
 read -rs PGPASSWORD; export PGPASSWORD
