@@ -99,7 +99,7 @@ What to look for: "All preflight checks PASSED." If any check fails, fix the too
 infra/scripts/10-terraform-apply.sh
 ```
 
-This provisions (in ~15 minutes):
+This provisions (in 18–25 minutes: EKS control plane ~12 min, RDS ~8 min, NAT/EFS/IAM concurrent):
 - VPC `10.10.0.0/16` with 2 public + 2 private subnets across 2 AZs
 - NAT Gateway in eu-west-2a (required for Anthropic/Gemini egress)
 - EKS cluster `skillai` v1.30 with 1x t4g.small managed node
@@ -111,6 +111,13 @@ This provisions (in ~15 minutes):
 The script will show you the plan and prompt `Apply? (y/N)` — review the plan before confirming.
 
 After apply, outputs are printed. Note the values — they are read automatically by subsequent scripts.
+
+#### Recovery from mid-failure
+If the apply is interrupted or times out partway through:
+```bash
+infra/scripts/10-terraform-apply.sh
+```
+Re-run the script — Terraform is idempotent. Resources already created are detected and skipped; the apply continues from where it left off.
 
 ### 2.3 Configure kubeconfig
 
@@ -158,6 +165,13 @@ kubectl get svc ingress-nginx-controller -n ingress-nginx
 dig +short <nlb-hostname>
 ```
 
+#### Recovery from mid-failure
+If the platform install fails partway through:
+```bash
+infra/scripts/30-platform-install.sh
+```
+Re-run the script — both `helm upgrade --install` and `kubectl apply` are idempotent. Cert-manager, NGINX ingress, and EFS CSI driver all converge to the desired state.
+
 ---
 
 ## 3. Build and Deploy the App
@@ -201,6 +215,19 @@ This:
 
 What to look for: "Deployment complete. Application URL: https://..."
 
+#### Recovery from mid-failure
+If the deployment fails partway through:
+```bash
+infra/scripts/80-deploy.sh
+```
+Re-run the script — `kubectl apply -k` is declarative and idempotent. Resources already created are updated in-place; new resources are created.
+
+**Important:** If a previous migrate Job exists and you are re-running, delete the old Job first:
+```bash
+kubectl delete job skillai-migrate -n skillai
+```
+This prevents conflicts. The Job is defined in the kustomization; a fresh apply will create it if needed.
+
 ---
 
 ## 4. Migrate Data (First Deploy Only)
@@ -219,6 +246,31 @@ infra/scripts/60-db-migrate.sh
 
 Default local DB connection (override in `.envrc` if needed):
 - Host: `localhost`, Port: `5433`, DB: `skillai`, User: `skillai`
+
+#### Recovery from mid-failure
+Phase A (schema migrations) can be re-run safely — Drizzle tracks applied migrations via the journal.
+
+Phase B (data restore) is **NOT idempotent on re-run.** If `pg_restore --data-only` fails partway through:
+
+**Option 1 (recommended):** Truncate all tables before re-running:
+```bash
+kubectl run -it --rm psql-helper --image postgres:17 -n skillai -- \
+  psql "postgresql://skillai:${RDS_PASSWORD}@${RDS_ENDPOINT}:5432/skillai" \
+  -c "TRUNCATE candidates, roles, scores, agencies, notes, users, tenants, \
+       candidate_role_approvals, interview_slots, interview_packs, \
+       cv_profiles, candidate_enrichments, sent_emails, transcript_analyses, \
+       interview_transcripts, interview_questions, code_challenges, \
+       candidate_enrichments, audit_logs CASCADE;"
+```
+Then re-run: `infra/scripts/60-db-migrate.sh`
+
+**Option 2:** Drop and re-create the schema:
+```bash
+kubectl run -it --rm psql-helper --image postgres:17 -n skillai -- \
+  psql "postgresql://skillai:${RDS_PASSWORD}@${RDS_ENDPOINT}:5432/skillai" \
+  -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+```
+Then re-run both `60-db-migrate.sh` (Phase A to recreate schema) and Phase B (data restore).
 
 ### 4.2 Sync upload files to EFS
 
@@ -348,10 +400,13 @@ The script prompts twice for confirmation before proceeding. It:
 
 **Take a backup first** if you want to preserve data:
 ```bash
-PGPASSWORD=<rds-password> pg_dump \
-  -h <rds-endpoint> -U skillai -d skillai \
+# Do NOT inline PGPASSWORD in the command — it gets written verbatim to shell history.
+read -rs PGPASSWORD; export PGPASSWORD
+pg_dump -h $(cd infra/terraform && terraform output -raw rds_endpoint) \
+  -U skillai -d skillai \
   --format=custom --compress=9 \
-  > skillai-backup-$(date +%Y%m%d).dump
+  --file=/tmp/skillai-$(date +%Y%m%d-%H%M).dump
+unset PGPASSWORD
 ```
 
 After destroy, billing stops immediately for most resources. NAT Gateway and NLB stop accruing charges as soon as they are deleted. EKS control plane ($73/mo) stops at the end of the current hour.
