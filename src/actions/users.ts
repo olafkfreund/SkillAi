@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { eq, and, inArray, isNull, lt, gt, isNotNull } from 'drizzle-orm'
+import { eq, and, inArray, isNull, gt, isNotNull, count } from 'drizzle-orm'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { db, withTenant } from '@/db'
@@ -283,29 +283,113 @@ export async function listTenantUsers(filters?: UserFilters): Promise<User[]> {
 // Update user role (admin only)
 // ---------------------------------------------------------------------------
 
-export async function updateUserRole(userId: string, role: UserRole): Promise<void> {
+export type UpdateUserRoleResult =
+  | { ok: true }
+  | { ok: false; error: string }
+
+/**
+ * updateUserRole — change a user's product-role within the active tenant.
+ *
+ * Guards (in order):
+ *   1. Auth — session.user.tenantId required.
+ *   2. Admin — caller must have role >= admin.
+ *   3. Self — caller cannot change their own role.
+ *   4. Last-admin — if demoting (newRole !== 'admin') and target is the sole
+ *      admin in the tenant, reject. Prevents locking the tenant out.
+ *
+ * Audit:
+ *   Emits `user.role_changed` with metadata { from, to, targetUserId }.
+ */
+export async function updateUserRole(
+  userId: string,
+  newRole: UserRole
+): Promise<UpdateUserRoleResult> {
   const session = await auth()
-  if (!session?.user.tenantId) return
-
-  requireRole(session.user.role, 'admin')
-
-  if (userId === session.user.id) {
-    throw new Error('You cannot change your own role')
+  if (!session?.user.tenantId || !session.user.id) {
+    return { ok: false, error: 'Unauthorized' }
   }
 
-  await withTenant(session.user.tenantId, async (tx) => {
+  try {
+    requireRole(session.user.role, 'admin')
+  } catch {
+    return { ok: false, error: 'Forbidden: admins only' }
+  }
+
+  if (userId === session.user.id) {
+    return { ok: false, error: 'You cannot change your own role' }
+  }
+
+  const tenantId = session.user.tenantId
+
+  // Fetch target user + current admin count in a single RLS-scoped transaction
+  // so the last-admin guard is consistent with the update we then issue.
+  const result = await withTenant(tenantId, async (tx) => {
+    const [target] = await tx
+      .select({ id: users.id, role: users.role, isActive: users.isActive })
+      .from(users)
+      .where(and(eq(users.id, userId), eq(users.tenantId, tenantId)))
+      .limit(1)
+
+    if (!target) {
+      return { ok: false as const, error: 'User not found' }
+    }
+
+    const oldRole = target.role as UserRole
+
+    // No-op shortcut — same role: skip the write and the audit row.
+    if (oldRole === newRole) {
+      return { ok: true as const, oldRole, changed: false }
+    }
+
+    // Last-admin guard — only fires when demoting an admin to a non-admin role.
+    if (oldRole === 'admin' && newRole !== 'admin') {
+      const [{ value: adminCount }] = await tx
+        .select({ value: count() })
+        .from(users)
+        .where(
+          and(
+            eq(users.tenantId, tenantId),
+            eq(users.role, 'admin'),
+            eq(users.isActive, true)
+          )
+        )
+
+      if (adminCount <= 1) {
+        return {
+          ok: false as const,
+          error: 'Cannot demote the only active admin in this tenant',
+        }
+      }
+    }
+
     await tx
       .update(users)
-      .set({ role })
-      .where(
-        and(
-          eq(users.id, userId),
-          eq(users.tenantId, session.user.tenantId)
-        )
-      )
+      .set({ role: newRole })
+      .where(and(eq(users.id, userId), eq(users.tenantId, tenantId)))
+
+    return { ok: true as const, oldRole, changed: true }
   })
 
+  if (!result.ok) {
+    return { ok: false, error: result.error }
+  }
+
+  if (result.changed) {
+    emitAudit(tenantId, {
+      action: 'user.role_changed',
+      entityType: 'user',
+      entityId: userId,
+      metadata: {
+        from: result.oldRole,
+        to: newRole,
+        targetUserId: userId,
+      },
+    })
+  }
+
+  revalidatePath('/dashboard/users')
   revalidatePath('/settings')
+  return { ok: true }
 }
 
 // ---------------------------------------------------------------------------

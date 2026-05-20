@@ -1,5 +1,5 @@
 /**
- * Unit tests for src/actions/users.ts — deactivate + reactivate.
+ * Unit tests for src/actions/users.ts — deactivate, reactivate, updateUserRole.
  *
  * Actions under test:
  *   deactivateUser  — admin gate, self-deactivate guard, last-admin guard,
@@ -7,6 +7,8 @@
  *                     throws Unauthorized.
  *   reactivateUser  — admin gate, happy path (row updated + audit
  *                     `user.reactivated`), no-session throws Unauthorized.
+ *   updateUserRole  — admin gate, self-demote guard, last-admin guard, happy
+ *                     paths (promote/demote), no-op (same role), missing user.
  *
  * Mocks:
  *   @/db                            — withTenant runs the callback with a
@@ -14,7 +16,7 @@
  *   @/db/schema                     — `users` column stubs (column-name
  *                                     property bag, same shape as other
  *                                     action tests in this dir).
- *   drizzle-orm                     — eq / and pass-throughs.
+ *   drizzle-orm                     — eq / and / count / inArray pass-throughs.
  *   @/lib/auth                      — auth() returns a controlled session.
  *   @/lib/auth/require-role         — real implementation (throws on
  *                                     insufficient role) so the gate is
@@ -103,8 +105,14 @@ vi.mock('@/db/schema', () => ({
 }))
 
 vi.mock('drizzle-orm', () => ({
-  eq:  vi.fn(() => ({ type: 'eq' })),
-  and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
+  eq:      vi.fn((col: unknown, val: unknown) => ({ type: 'eq', col, val })),
+  and:     vi.fn((...args: unknown[]) => ({ type: 'and', args })),
+  count:   vi.fn(() => ({ type: 'count' })),
+  inArray: vi.fn((col: unknown, vals: unknown) => ({ type: 'inArray', col, vals })),
+  isNull:  vi.fn((col: unknown) => ({ type: 'isNull', col })),
+  isNotNull: vi.fn((col: unknown) => ({ type: 'isNotNull', col })),
+  gt:      vi.fn((col: unknown, val: unknown) => ({ type: 'gt', col, val })),
+  lt:      vi.fn((col: unknown, val: unknown) => ({ type: 'lt', col, val })),
 }))
 
 const mockAuth = vi.fn()
@@ -125,8 +133,8 @@ vi.mock('@/lib/audit', () => ({
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
-// bcryptjs is unused by deactivate/reactivate but the actions module imports
-// it for the password helpers — keep the import resolvable.
+// bcryptjs is unused by deactivate/reactivate/updateUserRole but the actions
+// module imports it for the password helpers — keep the import resolvable.
 vi.mock('bcryptjs', () => ({
   default: {
     hash:    vi.fn().mockResolvedValue('$2b$12$hashedpassword'),
@@ -136,7 +144,8 @@ vi.mock('bcryptjs', () => ({
   compare: vi.fn().mockResolvedValue(true),
 }))
 
-// getActionContext is not used by deactivate/reactivate but the module imports it.
+// getActionContext is not used by deactivate/reactivate/updateUserRole but the
+// module imports it.
 vi.mock('@/lib/auth/action-context', () => ({
   getActionContext: vi.fn().mockResolvedValue(null),
 }))
@@ -152,6 +161,12 @@ function setAdminSession() {
 function setRecruiterSession() {
   mockAuth.mockResolvedValue({
     user: { id: ADMIN_ID, tenantId: TENANT_ID, role: 'recruiter' },
+  })
+}
+
+function setViewerSession() {
+  mockAuth.mockResolvedValue({
+    user: { id: ADMIN_ID, tenantId: TENANT_ID, role: 'viewer' },
   })
 }
 
@@ -172,6 +187,14 @@ function makeUser(overrides: Partial<{
     isActive: true,
     ...overrides,
   }
+}
+
+// Helper for updateUserRole tests — wait for the queued microtask that
+// `emitAudit` schedules via `void writeAuditLog(...).catch(...)` so the spy
+// is observable before the assertion runs.
+async function flushMicrotasks() {
+  await Promise.resolve()
+  await Promise.resolve()
 }
 
 // ── deactivateUser ─────────────────────────────────────────────────────────────
@@ -328,5 +351,184 @@ describe('reactivateUser', () => {
     const meta = entry.metadata as Record<string, unknown>
     expect(meta.targetUserId).toBe(TARGET_ID)
     expect(meta.targetEmail).toBe('former@acme.com')
+  })
+})
+
+// ── updateUserRole ────────────────────────────────────────────────────────────
+
+describe('updateUserRole', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    txSelectQueue = []
+    setAdminSession()
+  })
+
+  it('returns Unauthorized when there is no session', async () => {
+    setNoSession()
+    const { updateUserRole } = await import('@/actions/users')
+
+    const result = await updateUserRole(TARGET_ID, 'admin')
+
+    expect(result.ok).toBe(false)
+    expect((result as { ok: false; error: string }).error).toMatch(/unauthorized/i)
+    expect(mockTxUpdateSet).not.toHaveBeenCalled()
+    expect(mockWriteAuditLog).not.toHaveBeenCalled()
+  })
+
+  it('returns Forbidden when caller is a recruiter (non-admin)', async () => {
+    setRecruiterSession()
+    const { updateUserRole } = await import('@/actions/users')
+
+    const result = await updateUserRole(TARGET_ID, 'admin')
+
+    expect(result.ok).toBe(false)
+    expect((result as { ok: false; error: string }).error).toMatch(/admin/i)
+    expect(mockTxUpdateSet).not.toHaveBeenCalled()
+    expect(mockWriteAuditLog).not.toHaveBeenCalled()
+  })
+
+  it('returns Forbidden when caller is a viewer', async () => {
+    setViewerSession()
+    const { updateUserRole } = await import('@/actions/users')
+
+    const result = await updateUserRole(TARGET_ID, 'recruiter')
+
+    expect(result.ok).toBe(false)
+    expect((result as { ok: false; error: string }).error).toMatch(/admin/i)
+    expect(mockTxUpdateSet).not.toHaveBeenCalled()
+    expect(mockWriteAuditLog).not.toHaveBeenCalled()
+  })
+
+  it('rejects self-demote (caller targets their own id)', async () => {
+    const { updateUserRole } = await import('@/actions/users')
+
+    const result = await updateUserRole(ADMIN_ID, 'recruiter')
+
+    expect(result.ok).toBe(false)
+    expect((result as { ok: false; error: string }).error).toMatch(/own role/i)
+    expect(mockTxUpdateSet).not.toHaveBeenCalled()
+    expect(mockWriteAuditLog).not.toHaveBeenCalled()
+  })
+
+  it('rejects when target user is not found in tenant', async () => {
+    txSelectQueue = [[]] // empty — user not found
+    const { updateUserRole } = await import('@/actions/users')
+
+    const result = await updateUserRole(TARGET_ID, 'recruiter')
+
+    expect(result.ok).toBe(false)
+    expect((result as { ok: false; error: string }).error).toMatch(/not found/i)
+    expect(mockTxUpdateSet).not.toHaveBeenCalled()
+    expect(mockWriteAuditLog).not.toHaveBeenCalled()
+  })
+
+  it('happy path: promotes a recruiter to admin, writes DB row + audit', async () => {
+    txSelectQueue = [
+      [makeUser({ id: TARGET_ID, role: 'recruiter' })],
+    ]
+    const { updateUserRole } = await import('@/actions/users')
+
+    const result = await updateUserRole(TARGET_ID, 'admin')
+
+    expect(result.ok).toBe(true)
+    expect(mockTxUpdateSet).toHaveBeenCalledWith({ role: 'admin' })
+    await flushMicrotasks()
+    expect(mockWriteAuditLog).toHaveBeenCalledTimes(1)
+    const [tenantArg, entry] = mockWriteAuditLog.mock.calls[0] as [
+      string,
+      { action: string; entityType: string; entityId: string; metadata: Record<string, unknown> },
+    ]
+    expect(tenantArg).toBe(TENANT_ID)
+    expect(entry.action).toBe('user.role_changed')
+    expect(entry.entityType).toBe('user')
+    expect(entry.entityId).toBe(TARGET_ID)
+    expect(entry.metadata).toEqual({
+      from: 'recruiter',
+      to: 'admin',
+      targetUserId: TARGET_ID,
+    })
+  })
+
+  it('happy path: demotes an admin to recruiter when other admins exist', async () => {
+    txSelectQueue = [
+      [makeUser({ id: TARGET_ID, role: 'admin' })],
+      [{ value: 3 }], // plenty of admins remaining
+    ]
+
+    const { updateUserRole } = await import('@/actions/users')
+
+    const result = await updateUserRole(TARGET_ID, 'recruiter')
+
+    expect(result.ok).toBe(true)
+    expect(mockTxUpdateSet).toHaveBeenCalledWith({ role: 'recruiter' })
+    await flushMicrotasks()
+    expect(mockWriteAuditLog).toHaveBeenCalledTimes(1)
+    const [, entry] = mockWriteAuditLog.mock.calls[0] as [
+      string,
+      { metadata: Record<string, unknown> },
+    ]
+    expect(entry.metadata).toEqual({
+      from: 'admin',
+      to: 'recruiter',
+      targetUserId: TARGET_ID,
+    })
+  })
+
+  it('last-admin guard: rejects demoting the sole active admin', async () => {
+    txSelectQueue = [
+      [makeUser({ id: TARGET_ID, role: 'admin' })],
+      [{ value: 1 }], // target IS the only admin
+    ]
+
+    const { updateUserRole } = await import('@/actions/users')
+
+    const result = await updateUserRole(TARGET_ID, 'recruiter')
+
+    expect(result.ok).toBe(false)
+    expect((result as { ok: false; error: string }).error).toMatch(/only active admin/i)
+    expect(mockTxUpdateSet).not.toHaveBeenCalled()
+    expect(mockWriteAuditLog).not.toHaveBeenCalled()
+  })
+
+  it('last-admin guard: also rejects demote to hiring_manager when sole admin', async () => {
+    txSelectQueue = [
+      [makeUser({ id: TARGET_ID, role: 'admin' })],
+      [{ value: 1 }],
+    ]
+
+    const { updateUserRole } = await import('@/actions/users')
+
+    const result = await updateUserRole(TARGET_ID, 'hiring_manager')
+
+    expect(result.ok).toBe(false)
+    expect((result as { ok: false; error: string }).error).toMatch(/only active admin/i)
+  })
+
+  it('last-admin guard does NOT fire when keeping admin role', async () => {
+    txSelectQueue = [
+      [makeUser({ id: TARGET_ID, role: 'admin' })],
+    ]
+
+    const { updateUserRole } = await import('@/actions/users')
+
+    // newRole === oldRole === 'admin' → no-op short-circuit
+    const result = await updateUserRole(TARGET_ID, 'admin')
+
+    expect(result.ok).toBe(true)
+    expect(mockTxUpdateSet).not.toHaveBeenCalled()
+    expect(mockWriteAuditLog).not.toHaveBeenCalled()
+  })
+
+  it('no-op when target already has the requested role: no DB write, no audit', async () => {
+    txSelectQueue = [
+      [makeUser({ id: TARGET_ID, role: 'recruiter' })],
+    ]
+    const { updateUserRole } = await import('@/actions/users')
+
+    const result = await updateUserRole(TARGET_ID, 'recruiter')
+
+    expect(result.ok).toBe(true)
+    expect(mockTxUpdateSet).not.toHaveBeenCalled()
+    expect(mockWriteAuditLog).not.toHaveBeenCalled()
   })
 })

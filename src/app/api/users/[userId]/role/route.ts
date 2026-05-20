@@ -24,7 +24,12 @@ export const PATCH = withApiAuth<{ userId: string }>(
     if (!parsed.success) {
       return Response.json({ ok: false, error: parsed.error.issues[0]?.message }, { status: 422 })
     }
-    await updateUserRole(userId, parsed.data.role)
+    const result = await updateUserRole(userId, parsed.data.role)
+    if (!result.ok) {
+      // 403 for auth/role/last-admin/self-demote failures; 404 for unknown user.
+      const status = result.error === 'User not found' ? 404 : 403
+      return Response.json({ ok: false, error: result.error }, { status })
+    }
     return Response.json({ ok: true })
   }
 )
