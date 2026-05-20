@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: skillai-app
+  namespace: skillai
+  labels:
+    app.kubernetes.io/name: skillai
+    app.kubernetes.io/component: app
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # 12 MiB request body cap: CV uploads max out at 10 MiB plus form overhead.
+    nginx.ingress.kubernetes.io/proxy-body-size: 12m
+    # 10 min upstream read timeout: covers long-running AI scoring requests.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - __INGRESS_HOST__
+      secretName: skillai-tls
+  rules:
+    - host: __INGRESS_HOST__
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: skillai-app
+                port:
+                  number: 80

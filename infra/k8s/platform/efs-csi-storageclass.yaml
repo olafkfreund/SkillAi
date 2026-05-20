@@ -1,0 +1,17 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: efs-sc
+  labels:
+    app.kubernetes.io/part-of: skillai
+provisioner: efs.csi.aws.com
+parameters:
+  provisioningMode: efs-ap
+  # Substituted by infra/scripts/80-deploy.sh from terraform output.
+  fileSystemId: __EFS_ID__
+  directoryPerms: "0755"
+  uid: "1001"
+  gid: "1001"
+# Retain so a PVC delete never erases candidate CVs / logos.
+reclaimPolicy: Retain
+volumeBindingMode: Immediate

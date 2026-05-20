@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: skillai
+  labels:
+    app.kubernetes.io/name: skillai
+    app.kubernetes.io/part-of: skillai
