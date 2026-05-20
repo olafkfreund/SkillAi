@@ -188,6 +188,10 @@ export async function POST(request: Request) {
         questionCount: result.questions.length,
         experienceLevel: result.experience_level,
         includesCodeChallenge: !!result.code_challenge,
+        // #199 — record which HR skill profile (if any) augmented this AI
+        // call. `null` when toggle is OFF (NOT absent) so future queries can
+        // filter via `WHERE metadata->>'skill_used' IS NOT NULL`.
+        skill_used: skill?.name ?? null,
       },
     })
 
@@ -200,7 +204,8 @@ export async function POST(request: Request) {
       action: 'interview_pack.failed',
       entityType: 'interview_pack',
       entityId: packId,
-      metadata: { error: message },
+      // #199 — same skill_used tag as on interview_pack.completed.
+      metadata: { error: message, skill_used: skill?.name ?? null },
     })
 
     console.error(`Interview pack generation failed for ${packId}:`, message)
