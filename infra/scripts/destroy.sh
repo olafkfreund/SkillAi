@@ -134,6 +134,47 @@ fi
 log "Proceeding with destroy ..."
 
 # ---------------------------------------------------------------------------
+# Resolve cluster name from Terraform state (needed for Phase 1 + post-verify)
+# ---------------------------------------------------------------------------
+CLUSTER_NAME=""
+if [[ -d "${TF_DIR}" ]]; then
+  CLUSTER_NAME="$(cd "${TF_DIR}" && terraform output -raw cluster_name 2>/dev/null || echo "")"
+fi
+if [[ -z "${CLUSTER_NAME}" ]]; then
+  CLUSTER_NAME="${PROJECT_NAME}"
+  log "WARN: could not read cluster_name from Terraform state; defaulting to '${CLUSTER_NAME}'"
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 1: cluster-side teardown — releases NLB + EBS PVCs that Terraform
+#          doesn't track. Must happen BEFORE terraform destroy, otherwise
+#          Terraform fails to delete subnets/VPC because the NLB ENIs are
+#          still live.
+# ---------------------------------------------------------------------------
+echo "==> Phase 1: cluster-side teardown"
+
+# Skip gracefully if kubectl context is not the target cluster
+if kubectl config current-context 2>/dev/null | grep -q "${CLUSTER_NAME}"; then
+  kubectl delete namespace skillai --wait --timeout=180s --ignore-not-found || true
+  helm uninstall ingress-nginx -n ingress-nginx --wait --timeout=180s 2>/dev/null || true
+  helm uninstall cert-manager -n cert-manager --wait --timeout=180s 2>/dev/null || true
+
+  # Wait for NLB ENIs to drain (otherwise Terraform fails to delete subnets)
+  echo "    waiting up to 90s for NLB ENIs to drain..."
+  for _ in $(seq 1 18); do
+    enis=$(aws ec2 describe-network-interfaces \
+      --filters "Name=description,Values=*ELB*${CLUSTER_NAME}*" \
+      --region "${REGION}" \
+      --query 'length(NetworkInterfaces)' --output text 2>/dev/null || echo 0)
+    [[ "${enis}" -eq 0 ]] && break
+    sleep 5
+  done
+  log "cluster-side teardown complete."
+else
+  log "kubectl context does not match ${CLUSTER_NAME}; skipping cluster-side teardown"
+fi
+
+# ---------------------------------------------------------------------------
 # Step 1 — Empty the ECR repository
 # Terraform cannot delete an ECR repo with images in it.
 # ---------------------------------------------------------------------------
@@ -236,8 +277,9 @@ terraform apply \
   }
 
 # ---------------------------------------------------------------------------
-# Step 4 — terraform destroy
+# Step 4 — Phase 2: terraform destroy
 # ---------------------------------------------------------------------------
+echo "==> Phase 2: terraform destroy"
 log "Running terraform destroy ..."
 terraform destroy ${FORCE_VARS} -auto-approve
 
@@ -247,6 +289,29 @@ terraform destroy ${FORCE_VARS} -auto-approve
 log "Removing temporary lifecycle override file ..."
 rm -f "${OVERRIDE_FILE}"
 
+# ---------------------------------------------------------------------------
+# Post-destroy verification — list any orphaned resources that escaped
+# Terraform and may still be accruing charges.
+# ---------------------------------------------------------------------------
+echo ""
+echo "==> Post-destroy verification"
+echo "    Checking for orphaned EBS volumes tagged to cluster '${CLUSTER_NAME}'..."
+aws ec2 describe-volumes \
+  --filters "Name=tag:kubernetes.io/cluster/${CLUSTER_NAME},Values=owned" \
+  --query 'Volumes[*].[VolumeId,State]' \
+  --output table \
+  --region "${REGION}" 2>/dev/null || true
+
+echo ""
+echo "    Checking for orphaned network interfaces matching '${CLUSTER_NAME}'..."
+aws ec2 describe-network-interfaces \
+  --filters "Name=description,Values=*${CLUSTER_NAME}*" \
+  --query 'NetworkInterfaces[*].[NetworkInterfaceId,Status]' \
+  --output table \
+  --region "${REGION}" 2>/dev/null || true
+
+echo ""
+log "If any resources are listed above, they are orphans — delete manually to stop billing."
 echo ""
 log "Destroy complete. All AWS resources have been deleted."
 log "Billing for EKS, RDS, NLB, and NAT has stopped."

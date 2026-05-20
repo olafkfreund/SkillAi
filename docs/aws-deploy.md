@@ -437,17 +437,41 @@ Both the RDS instance and the EFS filesystem are protected against accidental de
 infra/scripts/destroy.sh
 ```
 
-The script prompts twice for confirmation, then proceeds through a two-phase destroy:
+The script prompts twice for confirmation, then runs a **two-phase destroy** that combines cluster-side teardown with the snapshot-preserving Terraform destroy:
+
+### Phase 1 — cluster-side teardown
+
+Before Terraform touches the VPC, the script uses `kubectl` and `helm` to release resources that live inside the cluster but are billed outside it:
+
+1. Deletes the `skillai` namespace (releases EBS PVCs — volumes are freed immediately)
+2. Uninstalls `ingress-nginx` (causes AWS to delete the NLB and release EIPs)
+3. Uninstalls `cert-manager`
+4. Waits up to 90 s for the NLB ENIs to drain — Terraform will fail to delete subnets while ENIs are attached
+
+If the current `kubectl` context does not match the cluster name read from Terraform state, Phase 1 is skipped gracefully and a warning is printed.
+
+### Phase 2 — Terraform destroy (with final snapshot)
+
+After cluster-side resources are released, the script then:
 
 1. Empties the ECR repository (Terraform cannot delete a non-empty ECR repo).
 2. Writes a temporary `override_prevent_destroy.tf.json` file to remove the `prevent_destroy` lifecycle constraints (this file is gitignored and never committed).
 3. Runs a targeted `terraform apply -target=aws_db_instance.main` with `skip_final_snapshot=false` to disable `deletion_protection` while keeping the snapshot behaviour intact.
-4. Runs `terraform destroy`. Before the RDS instance is deleted, AWS automatically creates a **final snapshot** named `skillai-db-final-<YYYYMMDD-hhmm>`. This snapshot is recoverable from the AWS RDS console under Manual Snapshots.
+4. Runs `terraform destroy -auto-approve`. Before the RDS instance is deleted, AWS automatically creates a **final snapshot** named `skillai-db-final-<YYYYMMDD-hhmm>`. This snapshot is recoverable from the AWS RDS console under Manual Snapshots. Terraform also tears down the remaining infrastructure: EKS control plane, EFS, ECR, VPC, subnets, NAT Gateway, and security groups.
 5. Removes the temporary override file.
 
 The EFS filesystem is **not** automatically snapshotted. If you need to preserve uploaded CVs, run `infra/scripts/70-uploads-sync.sh` to pull files to local disk before starting the destroy.
 
 After destroy completes, a reminder is printed with the snapshot name. Delete it in the RDS console once you have confirmed data is no longer needed (it incurs minimal storage charges while retained).
+
+### Post-destroy verification
+
+After `terraform destroy` completes, the script queries AWS for any orphaned resources that escaped Terraform tracking:
+
+- EBS volumes tagged `kubernetes.io/cluster/<name>=owned`
+- Network interfaces whose description contains the cluster name
+
+If any are listed, they must be deleted manually in the AWS Console or via the CLI to stop billing.
 
 ### Force path — skip snapshot (data loss, dev/throwaway only)
 
