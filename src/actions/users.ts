@@ -211,11 +211,25 @@ export async function updateUserRole(userId: string, role: UserRole): Promise<vo
 
 // ---------------------------------------------------------------------------
 // Deactivate user (admin only)
+//
+// Soft-deactivates a user by setting users.isActive = false. This is the
+// counterpart to reactivateUser below. A deactivated user is blocked from
+// signing in by the authorizeUser guard in src/lib/auth/authorize.ts.
+//
+// Guards (all enforced server-side):
+//   - admin role required
+//   - cannot deactivate your own account
+//   - cannot deactivate the sole remaining active admin in the tenant —
+//     keeps at least one admin who can re-enable users / manage the tenant
+//
+// Emits a `user.deactivated` audit row on success.
 // ---------------------------------------------------------------------------
 
 export async function deactivateUser(userId: string): Promise<void> {
   const session = await auth()
-  if (!session?.user.tenantId) return
+  if (!session?.user.tenantId) {
+    throw new Error('Unauthorized')
+  }
 
   requireRole(session.user.role, 'admin')
 
@@ -224,6 +238,42 @@ export async function deactivateUser(userId: string): Promise<void> {
   }
 
   await withTenant(session.user.tenantId, async (tx) => {
+    // Fetch the target so we have the email for audit + can apply the
+    // last-admin guard atomically inside the same RLS-scoped query.
+    const [target] = await tx
+      .select({ id: users.id, email: users.email, role: users.role, isActive: users.isActive })
+      .from(users)
+      .where(
+        and(
+          eq(users.id, userId),
+          eq(users.tenantId, session.user.tenantId)
+        )
+      )
+      .limit(1)
+
+    if (!target) {
+      throw new Error('User not found')
+    }
+
+    // Last-admin guard: if the target is the sole remaining active admin,
+    // refuse the deactivation. Counts active admins inside the tenant.
+    if (target.role === 'admin' && target.isActive) {
+      const activeAdmins = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(
+          and(
+            eq(users.tenantId, session.user.tenantId),
+            eq(users.role, 'admin'),
+            eq(users.isActive, true)
+          )
+        )
+
+      if (activeAdmins.length <= 1) {
+        throw new Error('Cannot deactivate the sole remaining admin')
+      }
+    }
+
     await tx
       .update(users)
       .set({ isActive: false })
@@ -233,9 +283,70 @@ export async function deactivateUser(userId: string): Promise<void> {
           eq(users.tenantId, session.user.tenantId)
         )
       )
+
+    emitAudit(session.user.tenantId, {
+      action: 'user.deactivated',
+      entityType: 'user',
+      entityId: userId,
+      entityLabel: target.email,
+      metadata: { targetUserId: userId, targetEmail: target.email },
+    })
   })
 
-  revalidatePath('/settings')
+  revalidatePath('/dashboard/users')
+}
+
+// ---------------------------------------------------------------------------
+// Reactivate user (admin only)
+//
+// Restores sign-in access for a previously-deactivated user by setting
+// users.isActive = true. Mirror of deactivateUser. Emits `user.reactivated`.
+// ---------------------------------------------------------------------------
+
+export async function reactivateUser(userId: string): Promise<void> {
+  const session = await auth()
+  if (!session?.user.tenantId) {
+    throw new Error('Unauthorized')
+  }
+
+  requireRole(session.user.role, 'admin')
+
+  await withTenant(session.user.tenantId, async (tx) => {
+    const [target] = await tx
+      .select({ id: users.id, email: users.email })
+      .from(users)
+      .where(
+        and(
+          eq(users.id, userId),
+          eq(users.tenantId, session.user.tenantId)
+        )
+      )
+      .limit(1)
+
+    if (!target) {
+      throw new Error('User not found')
+    }
+
+    await tx
+      .update(users)
+      .set({ isActive: true })
+      .where(
+        and(
+          eq(users.id, userId),
+          eq(users.tenantId, session.user.tenantId)
+        )
+      )
+
+    emitAudit(session.user.tenantId, {
+      action: 'user.reactivated',
+      entityType: 'user',
+      entityId: userId,
+      entityLabel: target.email,
+      metadata: { targetUserId: userId, targetEmail: target.email },
+    })
+  })
+
+  revalidatePath('/dashboard/users')
 }
 
 // ---------------------------------------------------------------------------

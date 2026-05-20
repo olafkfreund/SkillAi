@@ -17,13 +17,19 @@ vi.mock('@/db', () => ({
   withTenant: vi.fn(),
 }))
 
-// Mock the DB query used inside authorizeUser
+// Mock the DB query used inside authorizeUser. Mirrors the real
+// implementation's guards in lock-step:
+//   1. user not found  → null
+//   2. user deactivated (isActive === false) → null
+//   3. wrong password  → null
+//   4. happy path      → safe user object (no passwordHash)
 vi.mock('@/lib/auth/authorize', async () => {
   const bcrypt = await import('bcryptjs')
   return {
     authorizeUser: async (email: string, password: string) => {
       const user = await mockFindUser(email)
       if (!user) return null
+      if (user.isActive === false) return null
       const valid = await bcrypt.compare(password, user.passwordHash)
       if (!valid) return null
       return {
@@ -87,5 +93,15 @@ describe('authorizeUser()', () => {
 
     const result = await authorizeUser('alice@acme.com', 'correct-pass')
     expect(result).not.toHaveProperty('passwordHash')
+  })
+
+  it('returns null when the user has been deactivated (isActive=false)', async () => {
+    // Deactivated user with a correct password must NOT be allowed to sign in.
+    // The credentials provider treats null the same as bad credentials, so the
+    // sign-in form simply reports "invalid credentials" — no account enumeration.
+    mockFindUser.mockResolvedValue({ ...FAKE_USER, isActive: false })
+
+    const result = await authorizeUser('alice@acme.com', 'correct-pass')
+    expect(result).toBeNull()
   })
 })

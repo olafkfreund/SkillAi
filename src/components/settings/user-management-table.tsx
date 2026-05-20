@@ -1,7 +1,8 @@
 'use client'
 
 import { useTransition } from 'react'
-import { updateUserRole, deactivateUser } from '@/actions/users'
+import { updateUserRole } from '@/actions/users'
+import { UserDeactivateButton } from '@/components/users/user-deactivate-button'
 import type { User } from '@/db/schema/users'
 import type { UserRole } from '@/lib/auth/types'
 
@@ -30,12 +31,6 @@ export function UserManagementTable({ users, currentUserId }: Props) {
   function handleRoleChange(userId: string, role: UserRole) {
     startTransition(async () => {
       await updateUserRole(userId, role)
-    })
-  }
-
-  function handleDeactivate(userId: string) {
-    startTransition(async () => {
-      await deactivateUser(userId)
     })
   }
 
@@ -103,16 +98,12 @@ export function UserManagementTable({ users, currentUserId }: Props) {
                         </option>
                       ))}
                     </select>
-                    <button
-                      type="button"
-                      disabled={isSelf || isInactive || pending}
-                      onClick={() => handleDeactivate(user.id)}
-                      className="text-xs px-2 py-1 rounded-md border border-red-800 text-red-400
-                                 hover:bg-red-950 disabled:opacity-40 disabled:cursor-not-allowed
-                                 transition-colors"
-                    >
-                      Deactivate
-                    </button>
+                    <UserDeactivateButton
+                      userId={user.id}
+                      userEmail={user.email}
+                      isActive={user.isActive !== false}
+                      isSelf={isSelf}
+                    />
                   </div>
                 </td>
               </tr>
