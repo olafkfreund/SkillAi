@@ -46,30 +46,30 @@ describe('loadHrSkill', () => {
 
   it('returns name + content for the talent-acquisition profile', () => {
     const result = loadHrSkill('talent-acquisition')
-    expect(result.name).toBe('talent-acquisition')
-    expect(result.content.length).toBeGreaterThan(100)
-    expect(result.content).toContain('# Talent Acquisition')
+    expect(result!.name).toBe('talent-acquisition')
+    expect(result!.content.length).toBeGreaterThan(100)
+    expect(result!.content).toContain('# Talent Acquisition')
   })
 
   it('returns name + content for the people-analytics profile', () => {
     const result = loadHrSkill('people-analytics')
-    expect(result.name).toBe('people-analytics')
-    expect(result.content.length).toBeGreaterThan(100)
-    expect(result.content).toContain('# People Analytics')
+    expect(result!.name).toBe('people-analytics')
+    expect(result!.content.length).toBeGreaterThan(100)
+    expect(result!.content).toContain('# People Analytics')
   })
 
   it('combines talent-acquisition + eu-uk-supplement for recruiter-eu-uk', () => {
     const result = loadHrSkill('recruiter-eu-uk')
-    expect(result.name).toBe('recruiter-eu-uk')
+    expect(result!.name).toBe('recruiter-eu-uk')
     // Both source files' headings show up in the combined content.
-    expect(result.content).toContain('# Talent Acquisition')
-    expect(result.content).toContain('# EU/UK Right-to-Work Supplement')
+    expect(result!.content).toContain('# Talent Acquisition')
+    expect(result!.content).toContain('# EU/UK Right-to-Work Supplement')
     // Separator between the two files.
-    expect(result.content).toContain('\n\n---\n\n')
+    expect(result!.content).toContain('\n\n---\n\n')
     // Reasonable combined size: >500 B (lower than concatenated mock content)
     // and <50 KB (so we never serialise an absurd system prompt).
-    expect(result.content.length).toBeGreaterThan(500)
-    expect(result.content.length).toBeLessThan(50_000)
+    expect(result!.content.length).toBeGreaterThan(500)
+    expect(result!.content.length).toBeLessThan(50_000)
   })
 
   it('caches per-profile and does not re-read fs on a second call', async () => {

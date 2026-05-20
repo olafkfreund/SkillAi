@@ -25,45 +25,57 @@ export type LoadedHrSkill = { name: string; content: string }
 // mutated after first write.
 const cache = new Map<SkillProfile, LoadedHrSkill>()
 
-// `import.meta.dirname` is the canonical accessor under Node ≥ 20 ESM and
-// modern bundlers; `__dirname` is the CJS fallback. Vitest and Next.js both
-// resolve one or the other depending on transform.
-function dirOfThisFile(): string {
-  const importMetaDir = typeof import.meta !== 'undefined' ? import.meta.dirname : undefined
-  return importMetaDir ?? __dirname
-}
+// Anchor reads to `process.cwd()` rather than `import.meta.dirname` / `__dirname`.
+// Next.js + turbopack rewrite both to opaque tokens like `/ROOT/...` for compiled
+// server bundles, which then ENOENT at runtime. This is the same pattern used by
+// the help-article loader at src/lib/help/loader.ts:61 — `process.cwd()` resolves
+// to the project root in dev (the bind-mount root in Docker) and to the
+// standalone server root in production.
+const SKILLS_DIR = path.join(process.cwd(), 'src', 'lib', 'ai', 'skills')
 
 function readSkillFile(filename: string): string {
-  return fs.readFileSync(path.join(dirOfThisFile(), filename), 'utf-8')
+  return fs.readFileSync(path.join(SKILLS_DIR, filename), 'utf-8')
 }
 
-export function loadHrSkill(profile: SkillProfile): LoadedHrSkill {
+export function loadHrSkill(profile: SkillProfile): LoadedHrSkill | null {
   const cached = cache.get(profile)
   if (cached) return cached
 
   let loaded: LoadedHrSkill
-  switch (profile) {
-    case 'talent-acquisition':
-      loaded = { name: 'talent-acquisition', content: readSkillFile('talent-acquisition.md') }
-      break
-    case 'people-analytics':
-      loaded = { name: 'people-analytics', content: readSkillFile('people-analytics.md') }
-      break
-    case 'recruiter-eu-uk': {
-      const ta = readSkillFile('talent-acquisition.md')
-      const supplement = readSkillFile('eu-uk-supplement.md')
-      loaded = {
-        name: 'recruiter-eu-uk',
-        content: `${ta}\n\n---\n\n${supplement}`,
+  try {
+    switch (profile) {
+      case 'talent-acquisition':
+        loaded = { name: 'talent-acquisition', content: readSkillFile('talent-acquisition.md') }
+        break
+      case 'people-analytics':
+        loaded = { name: 'people-analytics', content: readSkillFile('people-analytics.md') }
+        break
+      case 'recruiter-eu-uk': {
+        const ta = readSkillFile('talent-acquisition.md')
+        const supplement = readSkillFile('eu-uk-supplement.md')
+        loaded = {
+          name: 'recruiter-eu-uk',
+          content: `${ta}\n\n---\n\n${supplement}`,
+        }
+        break
       }
-      break
+      default: {
+        // Exhaustiveness check — TS will error if a new SkillProfile member is
+        // added without updating this switch.
+        const _exhaustive: never = profile
+        throw new Error(`Unknown HR skill profile: ${String(_exhaustive)}`)
+      }
     }
-    default: {
-      // Exhaustiveness check — TS will error if a new SkillProfile member is
-      // added without updating this switch.
-      const _exhaustive: never = profile
-      throw new Error(`Unknown HR skill profile: ${String(_exhaustive)}`)
-    }
+  } catch (err) {
+    // Fail-safe: a missing skill file or unexpected error must NEVER kill a
+    // scoring / interview / transcript-analysis call. Log it and degrade
+    // gracefully — the system array shape becomes byte-identical to the
+    // toggle-OFF path, which is the expected fallback per Phase 2 design.
+    console.warn(
+      `[hr-skill] loadHrSkill(${profile}) failed; degrading to toggle-OFF behaviour:`,
+      err instanceof Error ? err.message : err
+    )
+    return null
   }
 
   cache.set(profile, loaded)
