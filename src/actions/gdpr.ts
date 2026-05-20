@@ -12,7 +12,7 @@
  */
 
 import { revalidatePath } from 'next/cache'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { withTenant } from '@/db'
 import {
@@ -23,6 +23,7 @@ import {
   candidateEnrichments,
   cvProfiles,
   auditLogs,
+  aiUsage,
   sentEmails,
   interviewPacks,
   interviewQuestions,
@@ -72,6 +73,9 @@ export type DeleteCandidateGdprResult =
  * - Deletes child rows in FK-safe dependency order inside a transaction.
  * - Redacts (does NOT delete) existing audit_logs rows for this candidate so
  *   the audit trail is preserved without PII.
+ * - Redacts (does NOT delete) ai_usage rows whose metadata references the
+ *   candidate by candidateId or candidateName — preserves cost-tracking
+ *   aggregates while removing PII (DEC-011).
  * - Removes the CV file from disk after the transaction commits.
  * - Writes a tombstone audit entry.
  */
@@ -230,6 +234,33 @@ export async function deleteCandidateForGdpr(
       .delete(scores)
       .where(eq(scores.candidateId, candidateId))
 
+    // ---- Redact ai_usage.metadata rows — RETAIN rows but strip PII ----------
+    // ai_usage rows are cost-tracking records whose aggregates (token counts,
+    // cost, model, operation) remain useful after erasure.  However, several
+    // callers write the candidate's full name or UUID into metadata:
+    //   • candidateName  — cv_scoring_claude, cv_scoring_gemini, role_fit
+    //   • candidateId    — profile_match, synechron_extract, cv_reformat,
+    //                      cv_profile_extract, personal_site_summary,
+    //                      welcome_letter_generate
+    //   • transcriptId   — transcript_analysis (FK to a now-deleted row)
+    // We replace the entire metadata object with a minimal redaction marker,
+    // preserving only the operation label which has no PII.
+    // Same redaction-not-deletion principle as audit_logs (DEC-011).
+    const candidateFullName = `${candidateRow.firstName} ${candidateRow.lastName}`
+    await tx.execute(sql`
+      UPDATE ai_usage
+      SET metadata = jsonb_build_object(
+        'redacted_gdpr', true,
+        'redacted_at', NOW()::text,
+        'operation', metadata->>'operation'
+      )
+      WHERE tenant_id = ${tenantId}::uuid
+        AND (
+          metadata->>'candidateId'   = ${candidateId}
+          OR metadata->>'candidateName' = ${candidateFullName}
+        )
+    `)
+
     // ---- Redact audit_log rows — RETAIN rows but strip PII -----------------
     await tx
       .update(auditLogs)
@@ -342,6 +373,7 @@ export type DeleteUserGdprResult =
  *  15. candidates.rightToWorkCheckedBy (SET NULL — candidate kept)
  *  16. user_invitations.createdBy    (SET NULL — createdBy is plain uuid, no FK)
  *  17. audit_logs                    (UPDATE: redact actor PII, retain rows)
+ * 17b. ai_usage                      (UPDATE: NULL user_id FK, mark redacted)
  *  18. users                         (DELETE — last step)
  */
 export async function deleteUserForGdpr(
@@ -617,6 +649,19 @@ export async function deleteUserForGdpr(
 
     // Drizzle returns the updated row count — capture for tombstone metadata
     redactedAuditRowCount = Array.isArray(redactResult) ? redactResult.length : 0
+
+    // ── Step 17b: ai_usage — NULL the user_id FK, mark row as redacted ──────
+    // ai_usage.user_id is nullable (background jobs log with userId = null).
+    // Clearing it removes the direct identity link while keeping the cost row
+    // intact for per-tenant analytics.  Same redaction-not-deletion principle
+    // as audit_logs above (DEC-011).
+    await tx.execute(sql`
+      UPDATE ai_usage
+      SET user_id = NULL,
+          metadata = COALESCE(metadata, '{}'::jsonb) || '{"user_redacted_gdpr": true}'::jsonb
+      WHERE tenant_id = ${tenantId}::uuid
+        AND user_id = ${targetUserId}::uuid
+    `)
 
     // ── Step 18: users row (last) ────────────────────────────────────────────
     await tx

@@ -44,6 +44,7 @@ const mockDeleteChain = { where: vi.fn().mockResolvedValue(undefined) }
 const mockUpdateChain = { set: vi.fn() }
 const mockSetChain = { where: vi.fn().mockResolvedValue([]) } // return array so length works
 mockUpdateChain.set.mockReturnValue(mockSetChain)
+const mockExecute = vi.fn().mockResolvedValue(undefined)
 
 /**
  * makeSelectChain — returns a Drizzle-compatible query builder mock.
@@ -87,6 +88,7 @@ const mockTx = {
   }),
   delete: vi.fn(() => mockDeleteChain),
   update: vi.fn(() => mockUpdateChain),
+  execute: mockExecute,
 }
 
 vi.mock('@/db', () => ({
@@ -112,6 +114,7 @@ vi.mock('@/db/schema', () => ({
   // user cascade tables
   users: {},
   auditLogs: {},
+  aiUsage: {},
   apiTokens: {},
   calendarConnections: {},
   roleManagers: {},
@@ -123,6 +126,15 @@ vi.mock('@/db/schema', () => ({
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn(() => ({ type: 'eq' })),
   and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
+  // sql tagged-template — return a token that tx.execute can receive
+  sql: Object.assign(
+    (strings: TemplateStringsArray, ...values: unknown[]) => ({
+      type: 'sql',
+      strings,
+      values,
+    }),
+    { raw: (s: string) => ({ type: 'sql-raw', s }) }
+  ),
 }))
 
 const mockGetActionContext = vi.fn()
@@ -178,6 +190,7 @@ describe('deleteUserForGdpr', () => {
     mockDeleteChain.where.mockResolvedValue(undefined)
     mockUpdateChain.set.mockReturnValue(mockSetChain)
     mockSetChain.where.mockResolvedValue([])
+    mockExecute.mockResolvedValue(undefined)
 
     // Default: admin caller, recruiter target, 2 admins exist
     mockGetActionContext.mockResolvedValue(adminContext())
@@ -477,5 +490,77 @@ describe('deleteUserForGdpr', () => {
 
     // Expect more than 1 update call: at minimum audit redaction + several SET NULL
     expect(mockTx.update.mock.calls.length).toBeGreaterThan(1)
+  })
+
+  // ── ai_usage PII redaction ────────────────────────────────────────────────
+
+  it('calls tx.execute to redact ai_usage user_id reference (Article 17 PII gap)', async () => {
+    resetMockTx(TARGET_USER, 2)
+    const { deleteUserForGdpr } = await import('@/actions/gdpr')
+
+    await deleteUserForGdpr({
+      userId: TARGET_USER_ID,
+      typedConfirmation: TARGET_USER.email,
+    })
+
+    // tx.execute must be called for the ai_usage UPDATE
+    expect(mockTx.execute).toHaveBeenCalled()
+  })
+
+  it('ai_usage redaction SQL NULLs user_id and sets user_redacted_gdpr flag', async () => {
+    resetMockTx(TARGET_USER, 2)
+    const { deleteUserForGdpr } = await import('@/actions/gdpr')
+
+    await deleteUserForGdpr({
+      userId: TARGET_USER_ID,
+      typedConfirmation: TARGET_USER.email,
+    })
+
+    const callArg = mockTx.execute.mock.calls[0]?.[0] as
+      | { type: string; strings: string[]; values: unknown[] }
+      | undefined
+
+    expect(callArg).toBeDefined()
+    const rawSql = callArg!.strings.join('?')
+    // The UPDATE must set user_id to NULL and add the redaction marker
+    expect(rawSql).toMatch(/user_id\s*=\s*NULL/i)
+    expect(rawSql).toMatch(/user_redacted_gdpr/i)
+    // The WHERE clause must reference the target user's UUID
+    expect(callArg!.values).toContain(TARGET_USER_ID)
+  })
+
+  it('after ai_usage redaction no row has user_id = deleted user (verified via execute call)', async () => {
+    // Confirms the UPDATE targets the right tenant + user combination.
+    resetMockTx(TARGET_USER, 2)
+    const { deleteUserForGdpr } = await import('@/actions/gdpr')
+
+    await deleteUserForGdpr({
+      userId: TARGET_USER_ID,
+      typedConfirmation: TARGET_USER.email,
+    })
+
+    const callArg = mockTx.execute.mock.calls[0]?.[0] as
+      | { type: string; values: unknown[] }
+      | undefined
+
+    // Both tenantId and targetUserId must appear as bound parameters
+    expect(callArg!.values).toContain(TENANT_ID)
+    expect(callArg!.values).toContain(TARGET_USER_ID)
+  })
+
+  it('ai_usage rows are NOT deleted — only updated (row count preserved)', async () => {
+    resetMockTx(TARGET_USER, 2)
+    const { deleteUserForGdpr } = await import('@/actions/gdpr')
+
+    await deleteUserForGdpr({
+      userId: TARGET_USER_ID,
+      typedConfirmation: TARGET_USER.email,
+    })
+
+    // tx.delete must NOT be called with the aiUsage table object
+    const deleteCalls = mockTx.delete.mock.calls as unknown[][]
+    const { aiUsage: aiUsageTable } = await import('@/db/schema')
+    const deletedAiUsage = deleteCalls.some((args) => args[0] === aiUsageTable)
+    expect(deletedAiUsage).toBe(false)
   })
 })
