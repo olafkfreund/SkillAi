@@ -320,6 +320,23 @@ const UpdateCandidateSchema = z.object({
   rateCurrency: z.string().max(3).toUpperCase().optional().or(z.literal('')),
   availabilityStatus: z.enum(['available', 'on_project', 'unavailable']).optional(),
   availableFrom: z.string().optional().or(z.literal('')),
+  // ── Compliance fields — accepted here, persistence added by #194 ──
+  rightToWorkStatus: z
+    .enum(['checked', 'pending', 'fail', 'exempted', 'not_required', ''])
+    .optional(),
+  rightToWorkDocumentType: z
+    .enum([
+      'passport_uk', 'passport_eu', 'passport_other', 'brp', 'share_code',
+      'visa', 'settled_status', 'presettled_status', 'other', '',
+    ])
+    .optional(),
+  rightToWorkExpiry: z.string().optional().or(z.literal('')),
+  shareCode: z.string().max(20).optional().or(z.literal('')),
+  sponsorshipRequired: z.enum(['true', 'false', '']).optional(),
+  nationality: z.string().max(100).optional().or(z.literal('')),
+  noticePeriodDays: z.coerce.number().int().min(0).max(365).optional().or(z.literal('')),
+  gdprProcessingConsentAt: z.string().optional().or(z.literal('')),
+  gdprProcessingConsentBy: z.enum(['candidate', 'recruiter', 'agency', '']).optional(),
 })
 
 export type UpdateCandidateState = {
@@ -359,6 +376,16 @@ export async function updateCandidateDetails(
     rateCurrency: formData.get('rateCurrency') || undefined,
     availabilityStatus: formData.get('availabilityStatus') || undefined,
     availableFrom: formData.get('availableFrom') || undefined,
+    // Compliance fields (parsed + validated; persistence added by #194)
+    rightToWorkStatus: formData.get('rightToWorkStatus') || undefined,
+    rightToWorkDocumentType: formData.get('rightToWorkDocumentType') || undefined,
+    rightToWorkExpiry: formData.get('rightToWorkExpiry') || undefined,
+    shareCode: formData.get('shareCode') || undefined,
+    sponsorshipRequired: formData.get('sponsorshipRequired') || undefined,
+    nationality: formData.get('nationality') || undefined,
+    noticePeriodDays: formData.get('noticePeriodDays') || undefined,
+    gdprProcessingConsentAt: formData.get('gdprProcessingConsentAt') || undefined,
+    gdprProcessingConsentBy: formData.get('gdprProcessingConsentBy') || undefined,
   })
 
   if (!parsed.success) {

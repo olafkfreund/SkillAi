@@ -4,6 +4,9 @@ import { useState, useActionState } from 'react'
 import { Loader2, PencilIcon, ChevronDownIcon } from 'lucide-react'
 import { updateCandidateDetails } from '@/actions/candidates'
 import type { UpdateCandidateState } from '@/actions/candidates'
+import { ComplianceSection, DEFAULT_COMPLIANCE_FIELDS } from './compliance-section'
+import type { ComplianceFields } from './compliance-section'
+import type { RightToWorkStatus, RightToWorkDocumentType, GdprProcessingConsentBy } from '@/db/schema/candidates'
 
 interface CandidateDetails {
   id: string
@@ -21,6 +24,16 @@ interface CandidateDetails {
   rateCurrency: string | null
   availabilityStatus?: 'available' | 'on_project' | 'unavailable' | null
   availableFrom?: string | null
+  // Compliance fields — optional; populated when #191 migration is applied
+  rightToWorkStatus?: RightToWorkStatus | null
+  rightToWorkDocumentType?: RightToWorkDocumentType | null
+  rightToWorkExpiry?: string | null
+  shareCode?: string | null
+  sponsorshipRequired?: boolean | null
+  nationality?: string | null
+  noticePeriodDays?: number | null
+  gdprProcessingConsentAt?: string | null
+  gdprProcessingConsentBy?: GdprProcessingConsentBy | null
 }
 
 interface Agency {
@@ -61,6 +74,20 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
     availableFrom: candidate.availableFrom ?? '',
   })
 
+  // Compliance fields — recruiter audience only
+  const [complianceFields, setComplianceFields] = useState<ComplianceFields>({
+    ...DEFAULT_COMPLIANCE_FIELDS,
+    rightToWorkStatus: (candidate.rightToWorkStatus ?? '') as ComplianceFields['rightToWorkStatus'],
+    rightToWorkDocumentType: (candidate.rightToWorkDocumentType ?? '') as ComplianceFields['rightToWorkDocumentType'],
+    rightToWorkExpiry: candidate.rightToWorkExpiry ?? '',
+    shareCode: candidate.shareCode ?? '',
+    sponsorshipRequired: candidate.sponsorshipRequired ?? false,
+    nationality: candidate.nationality ?? '',
+    noticePeriodDays: candidate.noticePeriodDays != null ? String(candidate.noticePeriodDays) : '',
+    gdprProcessingConsentAt: candidate.gdprProcessingConsentAt ?? '',
+    gdprProcessingConsentBy: (candidate.gdprProcessingConsentBy ?? '') as ComplianceFields['gdprProcessingConsentBy'],
+  })
+
   const fieldErrors = state && !state.success ? state.fieldErrors : {}
 
   return (
@@ -87,6 +114,18 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
             fd.set('email', fields.email)
             fd.set('phone', fields.phone)
             fd.set('agencyId', fields.agencyId)
+            // Forward compliance fields — recruiter audience only
+            if (audience === 'recruiter') {
+              fd.set('rightToWorkStatus', complianceFields.rightToWorkStatus)
+              fd.set('rightToWorkDocumentType', complianceFields.rightToWorkDocumentType)
+              fd.set('rightToWorkExpiry', complianceFields.rightToWorkExpiry)
+              fd.set('shareCode', complianceFields.shareCode)
+              fd.set('sponsorshipRequired', String(complianceFields.sponsorshipRequired))
+              fd.set('nationality', complianceFields.nationality)
+              fd.set('noticePeriodDays', complianceFields.noticePeriodDays)
+              fd.set('gdprProcessingConsentAt', complianceFields.gdprProcessingConsentAt)
+              fd.set('gdprProcessingConsentBy', complianceFields.gdprProcessingConsentBy)
+            }
             action(fd)
           }}
           className="mt-5 space-y-4"
@@ -374,6 +413,14 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
               </div>
             </div>
           </div>
+
+          {/* Compliance & Eligibility — recruiter-only collapsible section */}
+          <ComplianceSection
+            audience={audience}
+            disabled={pending}
+            fields={complianceFields}
+            onChange={setComplianceFields}
+          />
 
           <div className="flex items-center gap-3 pt-1">
             <button
