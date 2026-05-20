@@ -65,3 +65,8 @@ output "kubeconfig_command" {
   description = "Shell command to update the local kubeconfig for this cluster."
   value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
 }
+
+output "eks_cloudwatch_log_group_arn" {
+  description = "ARN of the CloudWatch log group receiving EKS control plane logs. Use this to grant read access to observability tooling or to configure metric filters."
+  value       = aws_cloudwatch_log_group.eks.arn
+}

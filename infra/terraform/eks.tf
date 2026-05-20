@@ -1,4 +1,32 @@
 # ---------------------------------------------------------------------------
+# Common tags — reused by EKS-adjacent resources (e.g. CloudWatch log group).
+# The provider default_tags block covers all aws_ resources automatically;
+# this locals map is used explicitly where a resource-level tags argument is
+# required (e.g. aws_cloudwatch_log_group).
+# ---------------------------------------------------------------------------
+
+locals {
+  common_tags = {
+    Project     = var.project
+    ManagedBy   = "terraform"
+    Environment = "production"
+  }
+}
+
+# ---------------------------------------------------------------------------
+# CloudWatch log group for EKS control plane logs.
+# Created BEFORE the cluster so the retention policy is in place from day 1.
+# Without this resource EKS auto-creates the group with infinite retention,
+# which accumulates unbounded CloudWatch Logs storage costs.
+# ---------------------------------------------------------------------------
+
+resource "aws_cloudwatch_log_group" "eks" {
+  name              = "/aws/eks/${var.project}/cluster"
+  retention_in_days = 90
+  tags              = local.common_tags
+}
+
+# ---------------------------------------------------------------------------
 # EKS Cluster — using the community EKS module (terraform-aws-modules/eks)
 # Module version pinned to ~> 20.0 for stability; 20.x is the LTS-equivalent
 # line for aws provider v5 compatibility.
@@ -23,6 +51,14 @@ module "eks" {
   # OIDC issuer — required for IRSA (IAM Roles for Service Accounts).
   # The EKS module creates the OIDC provider automatically when this is true.
   enable_irsa = true
+
+  # ---------------------------------------------------------------------------
+  # Control plane logging — all five log types enabled for security/audit
+  # visibility. Logs land in the CloudWatch log group provisioned above.
+  # EKS does not start writing until the group exists, so depends_on ensures
+  # the group (and its retention policy) are in place before cluster creation.
+  # ---------------------------------------------------------------------------
+  cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
   # ---------------------------------------------------------------------------
   # Cluster add-ons — managed by EKS so AWS handles version compatibility.
@@ -75,6 +111,8 @@ module "eks" {
   tags = {
     Name = var.project
   }
+
+  depends_on = [aws_cloudwatch_log_group.eks]
 }
 
 # ---------------------------------------------------------------------------

@@ -345,6 +345,17 @@ What "healthy" looks like:
 
 Also prints `kubectl get all,certificate,ingress -n skillai`. All pods should be `Running`, the certificate should show `Ready=True`.
 
+To confirm EKS control plane audit logging is active, check that log streams are appearing in the CloudWatch Logs group `/aws/eks/skillai/cluster`:
+
+```bash
+aws logs describe-log-streams \
+  --log-group-name /aws/eks/skillai/cluster \
+  --region eu-west-2 \
+  --query 'logStreams[*].logStreamName'
+```
+
+You should see streams for each enabled log type (e.g. `kube-apiserver-audit-*`, `authenticator-*`). Logs are retained for 90 days.
+
 ### Manual end-to-end checks
 
 After `90-verify.sh` passes, confirm these manually:
