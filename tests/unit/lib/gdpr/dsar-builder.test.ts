@@ -195,6 +195,55 @@ describe('buildDsarZip', () => {
     // Should produce a ZIP with ERROR.txt
     expect(buffer.includes(Buffer.from('ERROR.txt'))).toBe(true)
   })
+
+  it('candidate.json includes all compliance fields when candidate has them populated', async () => {
+    // Override the candidate fixture with all compliance fields set
+    const complianceCandidate = {
+      ...mockCandidate,
+      rightToWorkStatus: 'checked',
+      rightToWorkDocumentType: 'passport_uk',
+      rightToWorkExpiry: '2030-06-30',
+      rightToWorkCheckedAt: new Date('2025-03-15T10:00:00Z'),
+      rightToWorkCheckedBy: null,
+      shareCode: 'ABC-DEF-GHI',
+      sponsorshipRequired: false,
+      nationality: 'British',
+      noticePeriodDays: 30,
+      gdprProcessingConsentAt: new Date('2025-01-02T09:00:00Z'),
+      gdprProcessingConsentBy: 'candidate',
+    }
+
+    let callCount = 0
+    mockTx.select = vi.fn(() => {
+      callCount++
+      if (callCount === 1) return makeChain([complianceCandidate])
+      return makeChain([])
+    })
+
+    const { buildDsarZip } = await import('@/lib/gdpr/dsar-builder')
+    const archive = await buildDsarZip(CANDIDATE_ID, TENANT_ID)
+    const zipBuffer = await collectStream(archive)
+
+    // Extract candidate.json from the compressed ZIP using JSZip
+    const JSZip = (await import('jszip')).default
+    const zip = await JSZip.loadAsync(zipBuffer)
+    const candidateEntry = zip.file('candidate.json')
+    expect(candidateEntry).not.toBeNull()
+
+    const candidateJson = JSON.parse(await candidateEntry!.async('text'))
+
+    // Verify all compliance fields are present in the exported JSON
+    expect(candidateJson.rightToWorkStatus).toBe('checked')
+    expect(candidateJson.rightToWorkDocumentType).toBe('passport_uk')
+    expect(candidateJson.rightToWorkExpiry).toBe('2030-06-30')
+    expect(candidateJson.shareCode).toBe('ABC-DEF-GHI')
+    expect(candidateJson.sponsorshipRequired).toBe(false)
+    expect(candidateJson.nationality).toBe('British')
+    expect(candidateJson.noticePeriodDays).toBe(30)
+    expect(candidateJson.gdprProcessingConsentBy).toBe('candidate')
+    // gdprProcessingConsentAt is a Date so serialises to ISO string
+    expect(typeof candidateJson.gdprProcessingConsentAt).toBe('string')
+  })
 })
 
 // ---------------------------------------------------------------------------

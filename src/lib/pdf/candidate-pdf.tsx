@@ -433,6 +433,20 @@ function statusLabel(status: Candidate['status']): string {
   return map[status]
 }
 
+/** Returns true when at least one compliance field is populated on the candidate. */
+function hasComplianceData(c: Candidate): boolean {
+  return !!(
+    c.rightToWorkStatus ||
+    c.rightToWorkDocumentType ||
+    c.rightToWorkExpiry ||
+    c.rightToWorkCheckedAt ||
+    c.shareCode ||
+    c.nationality ||
+    c.noticePeriodDays !== null ||
+    c.gdprProcessingConsentAt
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
@@ -966,6 +980,158 @@ function EnrichmentSection({ enrichment }: { enrichment: EnrichmentData }) {
 }
 
 // ---------------------------------------------------------------------------
+// Section: Compliance & Eligibility (internal / recruiter only)
+// Never rendered for customer audience — gated at the call-site.
+// ---------------------------------------------------------------------------
+function ComplianceSection({ candidate }: { candidate: Candidate }) {
+  // Only render when at least one compliance field is populated
+  if (!hasComplianceData(candidate)) return null
+
+  // Human-readable labels for enum values
+  function rtwStatusLabel(v: string | null): string {
+    if (!v) return '—'
+    const map: Record<string, string> = {
+      checked: 'Checked',
+      pending: 'Pending',
+      fail: 'Fail',
+      exempted: 'Exempted',
+      not_required: 'Not Required',
+    }
+    return map[v] ?? v
+  }
+
+  function rtwDocLabel(v: string | null): string {
+    if (!v) return '—'
+    const map: Record<string, string> = {
+      passport_uk: 'UK Passport',
+      passport_eu: 'EU Passport',
+      passport_other: 'Other Passport',
+      brp: 'BRP',
+      share_code: 'Share Code',
+      visa: 'Visa',
+      settled_status: 'Settled Status',
+      presettled_status: 'Pre-Settled Status',
+      other: 'Other',
+    }
+    return map[v] ?? v
+  }
+
+  function consentByLabel(v: string | null): string {
+    if (!v) return '—'
+    const map: Record<string, string> = {
+      candidate: 'Candidate',
+      recruiter: 'Recruiter',
+      agency: 'Agency',
+    }
+    return map[v] ?? v
+  }
+
+  // Reusable row: label + value
+  function FieldRow({ label, value }: { label: string; value: string }) {
+    return (
+      <View style={{ flexDirection: 'row', marginBottom: 4 }}>
+        <Text
+          style={{
+            fontSize: 8,
+            fontFamily: 'Helvetica-Bold',
+            color: colors.slate500,
+            width: 160,
+          }}
+        >
+          {label}
+        </Text>
+        <Text style={{ fontSize: 9, color: colors.slate700, flex: 1 }}>{value}</Text>
+      </View>
+    )
+  }
+
+  // Right-to-work status badge color
+  function rtwStatusColors(v: string | null): { bg: string; text: string } {
+    switch (v) {
+      case 'checked': return { bg: colors.green50, text: colors.green700 }
+      case 'fail': return { bg: colors.red50, text: colors.red700 }
+      case 'pending': return { bg: colors.amber50, text: colors.amber700 }
+      default: return { bg: colors.slate100, text: colors.slate500 }
+    }
+  }
+
+  const rtwC = rtwStatusColors(candidate.rightToWorkStatus ?? null)
+
+  return (
+    <View>
+      <View style={s.sectionHeaderRow}>
+        <Text style={[base.h2, { marginTop: 0, marginBottom: 0 }]}>
+          Compliance &amp; Eligibility
+        </Text>
+        {candidate.rightToWorkStatus && (
+          <View
+            style={[
+              base.badge,
+              { backgroundColor: rtwC.bg },
+            ]}
+          >
+            <Text style={{ color: rtwC.text, fontSize: 8, fontFamily: 'Helvetica-Bold' }}>
+              RIGHT TO WORK: {rtwStatusLabel(candidate.rightToWorkStatus).toUpperCase()}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <View style={[base.card, { marginTop: 6 }]}>
+        {/* Right to Work */}
+        {candidate.rightToWorkStatus && (
+          <FieldRow label="Right to Work Status" value={rtwStatusLabel(candidate.rightToWorkStatus)} />
+        )}
+        {candidate.rightToWorkDocumentType && (
+          <FieldRow label="Document Type" value={rtwDocLabel(candidate.rightToWorkDocumentType)} />
+        )}
+        {candidate.rightToWorkExpiry && (
+          <FieldRow label="Document Expiry" value={candidate.rightToWorkExpiry} />
+        )}
+        {candidate.rightToWorkCheckedAt && (
+          <FieldRow label="Check Date" value={fmt(candidate.rightToWorkCheckedAt)} />
+        )}
+        {candidate.shareCode && (
+          <FieldRow label="Share Code" value={candidate.shareCode} />
+        )}
+
+        {/* Sponsorship & Nationality */}
+        <FieldRow
+          label="Sponsorship Required"
+          value={candidate.sponsorshipRequired ? 'Yes' : 'No'}
+        />
+        {candidate.nationality && (
+          <FieldRow label="Nationality" value={candidate.nationality} />
+        )}
+
+        {/* Notice period */}
+        {candidate.noticePeriodDays !== null && candidate.noticePeriodDays !== undefined && (
+          <FieldRow
+            label="Notice Period"
+            value={
+              candidate.noticePeriodDays === 0
+                ? 'Immediate'
+                : `${candidate.noticePeriodDays} day${candidate.noticePeriodDays === 1 ? '' : 's'}`
+            }
+          />
+        )}
+
+        {/* GDPR consent */}
+        {candidate.gdprProcessingConsentAt && (
+          <FieldRow label="GDPR Consent Date" value={fmt(candidate.gdprProcessingConsentAt)} />
+        )}
+        {candidate.gdprProcessingConsentBy && (
+          <FieldRow
+            label="GDPR Consent Provided By"
+            value={consentByLabel(candidate.gdprProcessingConsentBy)}
+          />
+        )}
+      </View>
+    </View>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Section: CV Text
 // ---------------------------------------------------------------------------
 function CvTextSection({ cvText, cvTextFormatted }: { cvText: string; cvTextFormatted?: string | null }) {
@@ -1054,6 +1220,14 @@ export function CandidatePDF({
         {!isCustomer && notes.length > 0 && (
           <>
             <NotesSection notes={notes} />
+            <View style={base.divider} />
+          </>
+        )}
+
+        {/* ── 5b. Compliance & Eligibility (internal only) ─────────── */}
+        {!isCustomer && hasComplianceData(candidate) && (
+          <>
+            <ComplianceSection candidate={candidate} />
             <View style={base.divider} />
           </>
         )}
