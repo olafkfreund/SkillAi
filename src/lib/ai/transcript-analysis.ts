@@ -28,6 +28,7 @@ import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 import { resolveAnthropicKey } from './keys'
 import { loadHrSkill } from '@/lib/ai/skills'
 import { getHrSkillSettings } from '@/actions/settings'
+import { emitAudit } from '@/lib/audit-middleware'
 
 // Soft cap on transcript size sent to Claude. claude-sonnet-4-6 supports
 // 200K tokens (~800K chars) but very large requests are unreliable and
@@ -244,6 +245,16 @@ export async function triggerTranscriptAnalysis(
       .where(eq(interviewTranscripts.id, transcriptId))
   })
 
+  // #212 — record which HR skill profile (if any) augmented this AI call so
+  // the `skill_used` audit query covers all three surfaces (scoring,
+  // interview-pack, transcript-analysis). Loaded here at the orchestrator
+  // level — `analyzeTranscriptWithClaude` also resolves the skill for the AI
+  // call itself; both paths read the same per-tenant toggle.
+  const hrSkillSettings = await getHrSkillSettings(tenantId)
+  const skill = hrSkillSettings.enabled ? loadHrSkill(hrSkillSettings.profile) : null
+
+  const startedAt = Date.now()
+
   try {
     // Fetch transcript record
     const [transcript] = await withTenant(tenantId, async (tx) =>
@@ -335,6 +346,21 @@ export async function triggerTranscriptAnalysis(
         .set({ analysisStatus: 'complete', errorMessage: null, updatedAt: new Date() })
         .where(eq(interviewTranscripts.id, transcriptId))
     })
+
+    emitAudit(tenantId, {
+      action: 'transcript_analysis.completed',
+      entityType: 'transcript',
+      entityId: transcriptId,
+      metadata: {
+        durationMs: Date.now() - startedAt,
+        model: 'claude',
+        overallScore: result.overall_score,
+        // #212 — `null` (NOT absent) when toggle is OFF so future queries can
+        // use the simple `WHERE metadata->>'skill_used' IS NOT NULL` filter,
+        // matching the score.completed / interview_pack.completed shape.
+        skill_used: skill?.name ?? null,
+      },
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     // Include type/cause/stack in the server log for diagnosis
@@ -350,6 +376,16 @@ export async function triggerTranscriptAnalysis(
         .update(interviewTranscripts)
         .set({ analysisStatus: 'failed', errorMessage: message, updatedAt: new Date() })
         .where(eq(interviewTranscripts.id, transcriptId))
+    })
+
+    emitAudit(tenantId, {
+      action: 'transcript_analysis.failed',
+      entityType: 'transcript',
+      entityId: transcriptId,
+      // #212 — same skill_used tag as on transcript_analysis.completed so
+      // failure rows are attributable to skill-on or skill-off runs in the
+      // A/B analysis.
+      metadata: { error: message, skill_used: skill?.name ?? null },
     })
   }
 }
