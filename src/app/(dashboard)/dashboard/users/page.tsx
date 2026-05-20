@@ -3,10 +3,12 @@ import { auth } from '@/lib/auth'
 import { listTenantUsers } from '@/actions/users'
 import { listPendingInvitations } from '@/actions/invitations'
 import { UserManagementTable } from '@/components/settings/user-management-table'
+import { UserFilters } from '@/components/settings/user-filters'
 import { InviteForm } from './invite-form'
 import { RevokeButton } from './revoke-button'
 import { CopyUrlButton } from './copy-url-button'
 import type { UserRole } from '@/lib/auth/types'
+import type { UserFilters as UserFilterParams, UserStatusFilter, UserLastLoginFilter } from '@/actions/users'
 
 export const metadata = { title: 'Team Management — SkillAI' }
 
@@ -19,13 +21,71 @@ const ROLE_BADGE: Record<UserRole, string> = {
 
 const BASE_URL = process.env.NEXTAUTH_URL ?? 'http://localhost:3001'
 
-export default async function UsersPage() {
+const VALID_ROLES = new Set<UserRole>(['admin', 'recruiter', 'hiring_manager', 'viewer'])
+const VALID_STATUSES = new Set<UserStatusFilter>(['active', 'deactivated', 'all'])
+const VALID_LAST_LOGINS = new Set<UserLastLoginFilter>(['any', '7d', '30d', 'never'])
+
+interface PageProps {
+  searchParams: Promise<{
+    role?: string
+    status?: string
+    lastLogin?: string
+    pendingInvite?: string
+  }>
+}
+
+export default async function UsersPage({ searchParams }: PageProps) {
   const session = await auth()
   const isAdmin = session?.user.role === 'admin'
 
+  const {
+    role: roleParam,
+    status: statusParam,
+    lastLogin: lastLoginParam,
+    pendingInvite: pendingInviteParam,
+  } = await searchParams
+
+  // Parse + validate each filter param — ignore unknown values
+  const parsedRoles = roleParam
+    ? (roleParam.split(',').filter((r) => VALID_ROLES.has(r as UserRole)) as UserRole[])
+    : undefined
+
+  const parsedStatus: UserStatusFilter =
+    statusParam && VALID_STATUSES.has(statusParam as UserStatusFilter)
+      ? (statusParam as UserStatusFilter)
+      : 'all'
+
+  const parsedLastLogin: UserLastLoginFilter =
+    lastLoginParam && VALID_LAST_LOGINS.has(lastLoginParam as UserLastLoginFilter)
+      ? (lastLoginParam as UserLastLoginFilter)
+      : 'any'
+
+  const parsedPendingInvite = pendingInviteParam === '1'
+
+  const filters: UserFilterParams = {
+    roles: parsedRoles && parsedRoles.length > 0 ? parsedRoles : undefined,
+    status: parsedStatus,
+    lastLogin: parsedLastLogin,
+    pendingInviteOnly: parsedPendingInvite,
+  }
+
   const [tenantUsers, pendingInvitations] = isAdmin
-    ? await Promise.all([listTenantUsers(), listPendingInvitations()])
+    ? await Promise.all([listTenantUsers(filters), listPendingInvitations()])
     : [[], []]
+
+  // Build currentFilters for the client component (URL-param shape)
+  const currentFilters = {
+    roles: parsedRoles && parsedRoles.length > 0 ? parsedRoles.join(',') : undefined,
+    status: parsedStatus,
+    lastLogin: parsedLastLogin,
+    pendingInvite: parsedPendingInvite ? '1' : undefined,
+  }
+
+  const hasActiveFilters =
+    !!currentFilters.roles ||
+    currentFilters.status !== 'all' ||
+    currentFilters.lastLogin !== 'any' ||
+    !!currentFilters.pendingInvite
 
   return (
     <div className="max-w-4xl">
@@ -124,9 +184,21 @@ export default async function UsersPage() {
             <p className="text-xs text-[var(--color-fg-subtle)] mb-4">
               You cannot change your own role or deactivate your own account.
             </p>
+
+            {/* Filter toolbar */}
+            <div className="mb-4">
+              <UserFilters currentFilters={currentFilters} />
+            </div>
+
             {tenantUsers.length === 0 ? (
               <div className="rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] px-5 py-4">
-                <p className="text-sm text-[var(--color-fg-subtle)]">No users found.</p>
+                {hasActiveFilters ? (
+                  <p className="text-sm text-[var(--color-fg-subtle)]">
+                    No users match the current filters.
+                  </p>
+                ) : (
+                  <p className="text-sm text-[var(--color-fg-subtle)]">No users found.</p>
+                )}
               </div>
             ) : (
               <UserManagementTable

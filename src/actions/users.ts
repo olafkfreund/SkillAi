@@ -1,17 +1,31 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray, isNull, lt, gt, isNotNull } from 'drizzle-orm'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
-import { withTenant } from '@/db'
-import { users } from '@/db/schema'
+import { db, withTenant } from '@/db'
+import { users, userInvitations } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { requireRole } from '@/lib/auth/require-role'
 import { getActionContext } from '@/lib/auth/action-context'
 import { emitAudit } from '@/lib/audit-middleware'
 import type { UserRole } from '@/lib/auth/types'
 import type { User } from '@/db/schema/users'
+
+// ---------------------------------------------------------------------------
+// Filter types for listTenantUsers
+// ---------------------------------------------------------------------------
+
+export type UserStatusFilter = 'active' | 'deactivated' | 'all'
+export type UserLastLoginFilter = 'any' | '7d' | '30d' | 'never'
+
+export interface UserFilters {
+  roles?: UserRole[]
+  status?: UserStatusFilter
+  lastLogin?: UserLastLoginFilter
+  pendingInviteOnly?: boolean
+}
 
 // ---------------------------------------------------------------------------
 // Update profile
@@ -159,10 +173,10 @@ export async function changePassword(
 }
 
 // ---------------------------------------------------------------------------
-// List tenant users (admin only)
+// List tenant users (admin only) — supports optional filter params
 // ---------------------------------------------------------------------------
 
-export async function listTenantUsers(): Promise<User[]> {
+export async function listTenantUsers(filters?: UserFilters): Promise<User[]> {
   const ctx = await getActionContext()
   if (!ctx) return []
   const { tenantId, userRole } = ctx
@@ -171,13 +185,98 @@ export async function listTenantUsers(): Promise<User[]> {
     return []
   }
 
-  return withTenant(tenantId, async (tx) =>
+  // Build base query conditions
+  const conditions: ReturnType<typeof eq>[] = [eq(users.tenantId, tenantId)]
+
+  // Status filter: active / deactivated / all (default: all)
+  const statusFilter = filters?.status ?? 'all'
+  if (statusFilter === 'active') {
+    conditions.push(eq(users.isActive, true))
+  } else if (statusFilter === 'deactivated') {
+    conditions.push(eq(users.isActive, false))
+  }
+
+  // Role filter: multi-select (admin | recruiter | hiring_manager | viewer)
+  const roleFilter = filters?.roles
+  if (roleFilter && roleFilter.length > 0) {
+    conditions.push(inArray(users.role, roleFilter))
+  }
+
+  // Fetch matching users
+  let results = await withTenant(tenantId, async (tx) =>
     tx
       .select()
       .from(users)
-      .where(eq(users.tenantId, tenantId))
+      .where(and(...conditions))
       .orderBy(users.createdAt)
   )
+
+  // Pending invite only: keep users who have at least one un-redeemed, non-expired invitation.
+  // This is a separate check against userInvitations (no RLS) keyed by user email.
+  if (filters?.pendingInviteOnly) {
+    const now = new Date()
+    const pendingRows = await db
+      .select({ email: userInvitations.email })
+      .from(userInvitations)
+      .where(
+        and(
+          eq(userInvitations.tenantId, tenantId),
+          isNull(userInvitations.usedAt),
+          gt(userInvitations.expiresAt, now)
+        )
+      )
+    const pendingEmails = new Set(pendingRows.map((r) => r.email).filter(Boolean) as string[])
+    results = results.filter((u) => pendingEmails.has(u.email))
+  }
+
+  // Last login filter — derived from audit_logs (most recent action per userId).
+  // "never" = user has no audit_log rows at all (no activity recorded).
+  // "7d"/"30d" = at least one audit row with createdAt within the window.
+  // "any" = no restriction.
+  const lastLoginFilter = filters?.lastLogin ?? 'any'
+  if (lastLoginFilter !== 'any') {
+    const { auditLogs } = await import('@/db/schema')
+
+    // Collect user ids that have *any* audit activity within the tenant
+    const activityRows = await withTenant(tenantId, async (tx) =>
+      tx
+        .selectDistinct({ userId: auditLogs.userId })
+        .from(auditLogs)
+        .where(
+          and(
+            eq(auditLogs.tenantId, tenantId),
+            isNotNull(auditLogs.userId)
+          )
+        )
+    )
+    const activeUserIds = new Set(activityRows.map((r) => r.userId).filter(Boolean) as string[])
+
+    if (lastLoginFilter === 'never') {
+      // Keep users with NO activity at all
+      results = results.filter((u) => !activeUserIds.has(u.id))
+    } else {
+      // "7d" or "30d": check for activity within the window
+      const days = lastLoginFilter === '7d' ? 7 : 30
+      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+
+      const recentRows = await withTenant(tenantId, async (tx) =>
+        tx
+          .selectDistinct({ userId: auditLogs.userId })
+          .from(auditLogs)
+          .where(
+            and(
+              eq(auditLogs.tenantId, tenantId),
+              isNotNull(auditLogs.userId),
+              gt(auditLogs.createdAt, cutoff)
+            )
+          )
+      )
+      const recentUserIds = new Set(recentRows.map((r) => r.userId).filter(Boolean) as string[])
+      results = results.filter((u) => recentUserIds.has(u.id))
+    }
+  }
+
+  return results
 }
 
 // ---------------------------------------------------------------------------
