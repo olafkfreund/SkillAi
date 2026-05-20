@@ -1,0 +1,85 @@
+# SkillAi AWS deployment — local-only secrets
+# Copy to .envrc, fill in, and `direnv allow` to activate.
+# NEVER commit .envrc — it lives in .gitignore.
+#
+# Quick start:
+#   cp .envrc.example .envrc
+#   # Edit .envrc with your values
+#   direnv allow
+#   infra/scripts/00-preflight.sh
+
+# ==========================================================================
+# AWS credentials
+# ==========================================================================
+# Option A — Named profile (recommended; keeps creds out of env)
+export AWS_PROFILE="skillai"          # matches a profile in ~/.aws/credentials
+
+# Option B — Explicit keys (uncomment and fill if not using profiles)
+# export AWS_ACCESS_KEY_ID=""
+# export AWS_SECRET_ACCESS_KEY=""
+# export AWS_SESSION_TOKEN=""         # only needed for assumed roles
+
+export AWS_REGION="eu-west-2"         # London — matches EU/UK data residency requirement
+
+# ==========================================================================
+# Terraform variable overrides
+# Uncomment to change from the defaults in infra/terraform/variables.tf
+# ==========================================================================
+# export TF_VAR_node_instance_type="t4g.small"    # default; bump to t4g.medium if OOM
+# export TF_VAR_db_instance_class="db.t4g.micro"  # default; bump to db.t4g.small for more RAM
+# export TF_VAR_db_allocated_storage="20"          # default 20 GB gp3
+# export TF_VAR_project_name="skillai"             # default; must match ECR repo name
+
+# ==========================================================================
+# App secrets — COPY VERBATIM FROM .env.local
+#
+# DO NOT generate fresh values for these.  See runbook for why:
+#   docs/aws-deploy.md#critical-encryption-key-constraint
+#
+# The ENCRYPTION_KEY encrypts tenant API keys in the database.
+# The AUTH_SECRET signs all session JWTs.
+# Changing either value on an existing dataset breaks the app.
+# ==========================================================================
+export ENCRYPTION_KEY=""              # AES-256-GCM key from .env.local — copy exactly
+export AUTH_SECRET=""                 # NextAuth JWT signing key from .env.local — copy exactly
+
+# Set these AFTER running 30-platform-install.sh (which prints the NLB IP)
+# Format: https://<nlb-ip>.nip.io
+export NEXTAUTH_URL=""                # e.g. https://1.2.3.4.nip.io
+export APP_URL=""                     # same as NEXTAUTH_URL
+export NEXT_PUBLIC_APP_URL=""         # same as NEXTAUTH_URL
+
+# ==========================================================================
+# AI API keys
+# ==========================================================================
+export ANTHROPIC_API_KEY=""           # Required — used for CV scoring, interview packs, etc.
+export GEMINI_API_KEY=""              # Optional — for the Gemini model toggle in settings
+export OPENAI_API_KEY=""              # Optional — used for text-embedding-3-small embeddings
+
+# ==========================================================================
+# Optional integrations
+# ==========================================================================
+export BRAVE_SEARCH_API_KEY=""        # Optional — candidate enrichment feature
+export GITHUB_TOKEN=""                # Optional — GitHub integration
+export CRON_SECRET=""                 # Required if using calendar sync cron endpoint
+                                      # Generate: openssl rand -hex 32
+
+# ==========================================================================
+# Sourced automatically after `terraform apply`
+# Terraform outputs are consumed directly by the infra scripts.
+# You do NOT need to set these manually — they are read via `terraform output`.
+# Shown here as documentation only.
+# ==========================================================================
+# export TF_OUT_RDS_ENDPOINT=""       # e.g. skillai-db.xxxx.eu-west-2.rds.amazonaws.com
+# export TF_OUT_ECR_URL=""            # e.g. 123456789.dkr.ecr.eu-west-2.amazonaws.com/skillai
+# export TF_OUT_EFS_ID=""             # e.g. fs-0abcdef1234567890
+
+# ==========================================================================
+# Local DB connection (used by 60-db-migrate.sh Phase B — data dump)
+# Defaults work for the standard docker-compose dev setup.
+# ==========================================================================
+export LOCAL_DB_HOST="localhost"
+export LOCAL_DB_PORT="5433"           # docker-compose maps 5433 → container 5432
+export LOCAL_DB_NAME="skillai"
+export LOCAL_DB_USER="skillai"
+export LOCAL_DB_PASSWORD=""           # set to the local DB password if auth is enabled
