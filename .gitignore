@@ -64,4 +64,6 @@ infra/terraform/terraform.tfstate.backup
 infra/terraform/.terraform/
 
 # Rendered k8s secrets — produced locally by 50-render-secret.sh; never committed
-infra/k8s/base/secret.yaml
+# Only the committed template (secret.template.yaml) is allowed in git.
+/infra/k8s/base/secret.yaml
+/infra/k8s/**/secret.yaml

@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: skillai
+
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - migrate-job.yaml
+  - service.yaml
+  - ingress.yaml
+  - pvc.yaml
+
+# NOTE: secret.template.yaml is intentionally NOT in resources.
+# The deploy script renders secret.yaml from .envrc and applies it directly.

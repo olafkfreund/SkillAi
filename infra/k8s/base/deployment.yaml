@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skillai-app
+  namespace: skillai
+  labels:
+    app.kubernetes.io/name: skillai
+    app.kubernetes.io/component: app
+spec:
+  replicas: 1
+  # Single-replica + RWO-equivalent semantics on a single-node EKS: Recreate avoids
+  # two pods trying to mount the same EFS access point during rollover.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: skillai
+      app.kubernetes.io/component: app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: skillai
+        app.kubernetes.io/component: app
+    spec:
+      # nextjs:nodejs (1001:1001) — matches the Dockerfile runner stage.
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        runAsNonRoot: true
+      containers:
+        - name: app
+          # Tag pinned by overlay (kustomize images: transform).
+          image: skillai:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: skillai-secrets
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+            - name: tmp
+              mountPath: /tmp
+            - name: next-cache
+              mountPath: /app/.next/cache
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 800m
+              memory: 1.5Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: skillai-uploads
+        - name: tmp
+          emptyDir: {}
+        - name: next-cache
+          emptyDir: {}

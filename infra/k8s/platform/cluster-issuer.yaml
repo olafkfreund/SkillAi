@@ -1,0 +1,39 @@
+# cert-manager ClusterIssuers for SkillAi. Apply AFTER cert-manager itself is
+# installed (via helm in 30-bootstrap-cluster.sh).
+#
+# Use letsencrypt-staging while iterating on DNS / ingress to avoid Let's Encrypt
+# production rate limits, then switch the ingress annotation to letsencrypt-prod.
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  labels:
+    app.kubernetes.io/part-of: skillai
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: olaf@freundcloud.com
+    privateKeySecretRef:
+      name: letsencrypt-staging-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  labels:
+    app.kubernetes.io/part-of: skillai
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: olaf@freundcloud.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx

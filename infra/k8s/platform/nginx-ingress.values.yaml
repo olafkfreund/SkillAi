@@ -1,0 +1,26 @@
+# Helm values for ingress-nginx (chart: ingress-nginx/ingress-nginx).
+# Installed by infra/scripts/30-bootstrap-cluster.sh:
+#   helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+#     -n ingress-nginx --create-namespace \
+#     -f infra/k8s/platform/nginx-ingress.values.yaml
+controller:
+  replicaCount: 1
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: "external"
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 90Mi
+  # Match cluster-issuer expectations.
+  ingressClassResource:
+    name: nginx
+    enabled: true
+    default: false
+  watchIngressWithoutClass: false
+  # Internal tool — minimal admission webhook footprint is fine.
+  admissionWebhooks:
+    enabled: true
