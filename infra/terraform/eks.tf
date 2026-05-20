@@ -48,6 +48,16 @@ module "eks" {
   cluster_endpoint_public_access       = true
   cluster_endpoint_public_access_cidrs = var.allowed_operator_cidrs
 
+  # ---------------------------------------------------------------------------
+  # Envelope encryption — encrypt K8s Secrets in etcd with a customer-managed
+  # KMS key (defined in kms.tf).  The module accepts a map; the EKS API only
+  # supports a single encryption config entry today.
+  # ---------------------------------------------------------------------------
+  cluster_encryption_config = {
+    resources        = ["secrets"]
+    provider_key_arn = aws_kms_key.eks_secrets.arn
+  }
+
   # OIDC issuer — required for IRSA (IAM Roles for Service Accounts).
   # The EKS module creates the OIDC provider automatically when this is true.
   enable_irsa = true
