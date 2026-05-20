@@ -54,3 +54,14 @@ test-results/
 # drizzle studio
 .drizzle/
 .env
+
+# direnv — contains real AWS credentials and app secrets; NEVER commit
+.envrc
+
+# Terraform local state — may contain RDS password and other secrets
+infra/terraform/terraform.tfstate
+infra/terraform/terraform.tfstate.backup
+infra/terraform/.terraform/
+
+# Rendered k8s secrets — produced locally by 50-render-secret.sh; never committed
+infra/k8s/base/secret.yaml
