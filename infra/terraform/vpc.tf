@@ -2,6 +2,30 @@
 # VPC
 # ---------------------------------------------------------------------------
 
+# Dynamically resolve the two AZs for the configured region.
+# Filters to opt-in-not-required AZs only so local zones / Wavelength zones
+# are excluded; keeps the lookup predictable across all standard regions.
+data "aws_availability_zones" "available" {
+  state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
+}
+
+# Guard: fail fast if the region has fewer than 2 standard AZs.
+# All production AWS regions have ≥3, but this catches mis-configured or
+# restricted accounts before any subnet resources are created.
+resource "terraform_data" "az_count_check" {
+  lifecycle {
+    precondition {
+      condition     = length(data.aws_availability_zones.available.names) >= 2
+      error_message = "Region ${var.aws_region} has fewer than 2 available AZs; at least 2 are required for VPC subnet layout."
+    }
+  }
+}
+
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
@@ -26,14 +50,14 @@ resource "aws_internet_gateway" "main" {
 }
 
 # ---------------------------------------------------------------------------
-# Public subnets — eu-west-2a and eu-west-2b
+# Public subnets
 # EKS tags allow the controller to provision external load balancers here.
 # ---------------------------------------------------------------------------
 
 resource "aws_subnet" "public_a" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.10.0.0/24"
-  availability_zone       = "${var.aws_region}a"
+  availability_zone       = data.aws_availability_zones.available.names[0]
   map_public_ip_on_launch = true
 
   tags = {
@@ -46,7 +70,7 @@ resource "aws_subnet" "public_a" {
 resource "aws_subnet" "public_b" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.10.1.0/24"
-  availability_zone       = "${var.aws_region}b"
+  availability_zone       = data.aws_availability_zones.available.names[1]
   map_public_ip_on_launch = true
 
   tags = {
@@ -57,14 +81,14 @@ resource "aws_subnet" "public_b" {
 }
 
 # ---------------------------------------------------------------------------
-# Private subnets — eu-west-2a and eu-west-2b
+# Private subnets
 # EKS nodes and RDS live here; internal-LB tag for future internal services.
 # ---------------------------------------------------------------------------
 
 resource "aws_subnet" "private_a" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.10.10.0/24"
-  availability_zone = "${var.aws_region}a"
+  availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
     Name                                   = "${var.project}-private-a"
@@ -76,7 +100,7 @@ resource "aws_subnet" "private_a" {
 resource "aws_subnet" "private_b" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.10.11.0/24"
-  availability_zone = "${var.aws_region}b"
+  availability_zone = data.aws_availability_zones.available.names[1]
 
   tags = {
     Name                                   = "${var.project}-private-b"
@@ -86,7 +110,7 @@ resource "aws_subnet" "private_b" {
 }
 
 # ---------------------------------------------------------------------------
-# NAT Gateway — single, in eu-west-2a (cost optimisation).
+# NAT Gateway — single, in first AZ (cost optimisation).
 # Cost note: ~$32/mo regardless of traffic. Required for nodes in private
 # subnets to pull ECR images, reach api.anthropic.com, and other egress.
 # To eliminate NAT cost you would need VPC endpoints for every AWS service
