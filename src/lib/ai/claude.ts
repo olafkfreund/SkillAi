@@ -11,6 +11,8 @@ import { resolveAnthropicKey } from './keys'
 import { CandidateScoreSchema, type CandidateScore } from './schema'
 import { formatManagerPriorities } from './priorities'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
+import { loadHrSkill } from '@/lib/skills'
+import { getHrSkillSettings } from '@/lib/skills/tenant-toggle'
 
 const SCORING_TOOL: Anthropic.Tool = {
   name: 'submit_candidate_score',
@@ -86,17 +88,37 @@ type ScoringInput = {
 export async function scoreCandidateWithClaude(input: ScoringInput): Promise<CandidateScore> {
   const apiKey = await resolveAnthropicKey(input.tenantId)
   const anthropic = new Anthropic({ apiKey, timeout: 120_000, maxRetries: 3 })
+
+  // HR skill block — gated by per-tenant `hr_skill_enabled` (issue #198).
+  // When OFF, this resolves to `null` and the system array is byte-identical
+  // to pre-#197 behaviour (single existing block). When ON, the skill is
+  // appended AFTER the existing teaching block so the prompt prefix stays
+  // stable across candidates and the ephemeral prompt cache remains hot.
+  const hrSettings = await getHrSkillSettings(input.tenantId)
+  const hrSkill = hrSettings.enabled ? loadHrSkill(hrSettings.profile) : null
+
+  const systemBlocks: Anthropic.TextBlockParam[] = [
+    {
+      type: 'text',
+      text: 'You are an expert recruiter scoring candidates against job roles. Evaluate candidates objectively on technical skills, experience level, cultural fit, and communication. Provide specific reasoning tied to CV evidence.',
+      cache_control: { type: 'ephemeral' },
+    },
+    ...(hrSkill
+      ? [
+          {
+            type: 'text' as const,
+            text: `HR_POLICY:\n${hrSkill.content}`,
+            cache_control: { type: 'ephemeral' as const },
+          },
+        ]
+      : []),
+  ]
+
   const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2048,
-    system: [
-      {
-        type: 'text',
-        text: 'You are an expert recruiter scoring candidates against job roles. Evaluate candidates objectively on technical skills, experience level, cultural fit, and communication. Provide specific reasoning tied to CV evidence.',
-        cache_control: { type: 'ephemeral' },
-      },
-    ],
+    system: systemBlocks,
     tools: [SCORING_TOOL],
     tool_choice: { type: 'any' },
     messages: [
