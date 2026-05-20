@@ -18,6 +18,8 @@ import { formatManagerPriorities } from './priorities'
 import { formatLanguageDirective, TOOL_LANGUAGE_REINFORCEMENT, type SupportedLanguage } from './language'
 import { resolveAnthropicKey } from './keys'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
+import { loadHrSkill } from '@/lib/skills'
+import { getHrSkillSettings } from '@/lib/skills/tenant-toggle'
 
 export { inferExperienceLevel, inferLanguage }
 
@@ -183,17 +185,38 @@ export async function generateQuestions(
 
   const apiKey = await resolveAnthropicKey(tenantId ?? '')
   const anthropic = new Anthropic({ apiKey, timeout: 240_000, maxRetries: 3 })
+
+  // HR skill block — gated by per-tenant `hr_skill_enabled` (issue #198).
+  // Empty tenantId (legacy call sites that don't pass one) gets defaults,
+  // i.e. fail-closed → no block. When the toggle is ON the skill is
+  // appended AFTER the existing teaching block so the prompt prefix stays
+  // stable across candidates within a role and the ephemeral prompt cache
+  // remains hot. See `claude.ts` for the same pattern.
+  const hrSettings = await getHrSkillSettings(tenantId ?? '')
+  const hrSkill = hrSettings.enabled ? loadHrSkill(hrSettings.profile) : null
+
+  const systemBlocks: Anthropic.TextBlockParam[] = [
+    {
+      type: 'text',
+      text: 'You are an expert technical interviewer creating personalised interview packs. Generate structured interview questions that are directly tied to the candidate\'s CV and the role requirements. Every question must reference specific CV details.',
+      cache_control: { type: 'ephemeral' },
+    },
+    ...(hrSkill
+      ? [
+          {
+            type: 'text' as const,
+            text: `HR_POLICY:\n${hrSkill.content}`,
+            cache_control: { type: 'ephemeral' as const },
+          },
+        ]
+      : []),
+  ]
+
   const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 12000,
-    system: [
-      {
-        type: 'text',
-        text: 'You are an expert technical interviewer creating personalised interview packs. Generate structured interview questions that are directly tied to the candidate\'s CV and the role requirements. Every question must reference specific CV details.',
-        cache_control: { type: 'ephemeral' },
-      },
-    ],
+    system: systemBlocks,
     tools: [QUESTION_TOOL],
     tool_choice: { type: 'any' },
     messages: [

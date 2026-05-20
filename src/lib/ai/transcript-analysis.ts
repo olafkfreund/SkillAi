@@ -26,6 +26,8 @@ import {
 } from './language'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 import { resolveAnthropicKey } from './keys'
+import { loadHrSkill } from '@/lib/skills'
+import { getHrSkillSettings } from '@/lib/skills/tenant-toggle'
 
 // Soft cap on transcript size sent to Claude. claude-sonnet-4-6 supports
 // 200K tokens (~800K chars) but very large requests are unreliable and
@@ -151,12 +153,34 @@ Numeric scores are language-agnostic. Reasoning text and the summary must be in 
   )
   const languageDirective = formatLanguageDirective(detectedLanguage)
 
+  // HR skill block — gated by per-tenant `hr_skill_enabled` (issue #198).
+  // Unlike `claude.ts` / `interview.ts`, this call site historically has
+  // no top-level `system` field — the "teaching" block lives inline as
+  // the first cached user-content text. To preserve byte-identical
+  // behaviour when the toggle is OFF we ONLY add `system: [...]` to the
+  // request shape when the skill is ON. The skill block goes BEFORE the
+  // existing role-context user block so it inherits the cache prefix
+  // (system blocks are always processed before user content).
+  const hrSettings = await getHrSkillSettings(input.tenantId ?? '')
+  const hrSkill = hrSettings.enabled ? loadHrSkill(hrSettings.profile) : null
+
   const startedAt = Date.now()
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 4096,
     tools: [TRANSCRIPT_ANALYSIS_TOOL],
     tool_choice: { type: 'any' },
+    ...(hrSkill
+      ? {
+          system: [
+            {
+              type: 'text' as const,
+              text: `HR_POLICY:\n${hrSkill.content}`,
+              cache_control: { type: 'ephemeral' as const },
+            },
+          ],
+        }
+      : {}),
     messages: [
       {
         role: 'user',
