@@ -127,6 +127,17 @@ vi.mock('@anthropic-ai/sdk', () => ({
   },
 }))
 
+// Skill injection (Epic #190 Phase 2) gates on these. Default to toggle OFF so
+// the system array is unchanged from the pre-feature shape — same as the
+// `byte-identical when settings.enabled = false` guarantee asserted by the
+// skill-injection test.
+vi.mock('@/actions/settings', () => ({
+  getHrSkillSettings: vi.fn(async () => ({ enabled: false, profile: 'recruiter-eu-uk' })),
+}))
+vi.mock('@/lib/ai/skills', () => ({
+  loadHrSkill: vi.fn(() => null),
+}))
+
 describe('analyzeTranscriptWithClaude()', () => {
   let analyzeTranscriptWithClaude: typeof import('@/lib/ai/transcript-analysis').analyzeTranscriptWithClaude
 

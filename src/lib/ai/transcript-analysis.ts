@@ -26,8 +26,8 @@ import {
 } from './language'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
 import { resolveAnthropicKey } from './keys'
-import { loadHrSkill } from '@/lib/skills'
-import { getHrSkillSettings } from '@/lib/skills/tenant-toggle'
+import { loadHrSkill } from '@/lib/ai/skills'
+import { getHrSkillSettings } from '@/actions/settings'
 
 // Soft cap on transcript size sent to Claude. claude-sonnet-4-6 supports
 // 200K tokens (~800K chars) but very large requests are unreliable and
