@@ -61,23 +61,59 @@ module "eks" {
   cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
   # ---------------------------------------------------------------------------
-  # Cluster add-ons — managed by EKS so AWS handles version compatibility.
-  # aws-ebs-csi-driver: required for any PersistentVolume backed by gp3.
-  # vpc-cni / kube-proxy / coredns: the standard three.
+  # Cluster add-ons — pinned to explicit versions for deterministic applies.
+  # Silent auto-updates on every `terraform apply` are prevented by using
+  # addon_version instead of most_recent = true (issue #249).
+  #
+  # To discover the current latest stable version for each addon, run:
+  #   aws eks describe-addon-versions \
+  #     --kubernetes-version 1.30 \
+  #     --addon-name vpc-cni \
+  #     --query 'addons[0].addonVersions[0].addonVersion' \
+  #     --output text
+  #
+  #   aws eks describe-addon-versions \
+  #     --kubernetes-version 1.30 \
+  #     --addon-name kube-proxy \
+  #     --query 'addons[0].addonVersions[0].addonVersion' \
+  #     --output text
+  #
+  #   aws eks describe-addon-versions \
+  #     --kubernetes-version 1.30 \
+  #     --addon-name coredns \
+  #     --query 'addons[0].addonVersions[0].addonVersion' \
+  #     --output text
+  #
+  #   aws eks describe-addon-versions \
+  #     --kubernetes-version 1.30 \
+  #     --addon-name aws-ebs-csi-driver \
+  #     --query 'addons[0].addonVersions[0].addonVersion' \
+  #     --output text
+  #
+  # Replace the TODO placeholders below with the output of those commands
+  # before applying. Bump versions intentionally when upgrading the cluster.
   # ---------------------------------------------------------------------------
   cluster_addons = {
     vpc-cni = {
-      most_recent = true
+      addon_version               = "# TODO: pin to current latest stable, see commands above"
+      resolve_conflicts_on_create = "OVERWRITE"
+      resolve_conflicts_on_update = "PRESERVE"
     }
     kube-proxy = {
-      most_recent = true
+      addon_version               = "# TODO: pin to current latest stable, see commands above"
+      resolve_conflicts_on_create = "OVERWRITE"
+      resolve_conflicts_on_update = "PRESERVE"
     }
     coredns = {
-      most_recent = true
+      addon_version               = "# TODO: pin to current latest stable, see commands above"
+      resolve_conflicts_on_create = "OVERWRITE"
+      resolve_conflicts_on_update = "PRESERVE"
     }
     aws-ebs-csi-driver = {
-      most_recent              = true
-      service_account_role_arn = module.ebs_csi_irsa_role.iam_role_arn
+      addon_version               = "# TODO: pin to current latest stable, see commands above"
+      resolve_conflicts_on_create = "OVERWRITE"
+      resolve_conflicts_on_update = "PRESERVE"
+      service_account_role_arn    = module.ebs_csi_irsa_role.iam_role_arn
     }
   }
 
