@@ -24,6 +24,7 @@ export type AuditAction =
   | 'user.invited' | 'user.role_changed' | 'user.deactivated' | 'user.reactivated'
   | 'user.created'
   | 'user.password_changed'
+  | 'user.password_reset_forced'
   | 'user.email_changed'
   | 'settings.trusted_hosts_updated'
   | 'settings.default_pack_language_updated'

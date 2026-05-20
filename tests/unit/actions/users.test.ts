@@ -1,28 +1,33 @@
 /**
- * Unit tests for src/actions/users.ts — deactivate, reactivate, updateUserRole.
+ * Unit tests for src/actions/users.ts — deactivate, reactivate, updateUserRole,
+ * and forcePasswordReset (issue #220).
  *
  * Actions under test:
- *   deactivateUser  — admin gate, self-deactivate guard, last-admin guard,
- *                     happy path (row updated + audit emitted), no-session
- *                     throws Unauthorized.
- *   reactivateUser  — admin gate, happy path (row updated + audit
- *                     `user.reactivated`), no-session throws Unauthorized.
- *   updateUserRole  — admin gate, self-demote guard, last-admin guard, happy
- *                     paths (promote/demote), no-op (same role), missing user.
+ *   deactivateUser     — admin gate, self-deactivate guard, last-admin guard,
+ *                        happy path (row updated + audit emitted), no-session
+ *                        throws Unauthorized.
+ *   reactivateUser     — admin gate, happy path (row updated + audit
+ *                        `user.reactivated`), no-session throws Unauthorized.
+ *   updateUserRole     — admin gate, self-demote guard, last-admin guard, happy
+ *                        paths (promote/demote), no-op (same role), missing user.
+ *   forcePasswordReset — admin-only force-reset flow: generates a 32-byte token,
+ *                        stores its sha256 hash + 1h expiry, sends via SMTP if
+ *                        configured, otherwise returns the plaintext link;
+ *                        emits user.password_reset_forced audit; rejects
+ *                        self-reset and inactive users.
  *
  * Mocks:
  *   @/db                            — withTenant runs the callback with a
  *                                     stub tx that records select / update.
- *   @/db/schema                     — `users` column stubs (column-name
- *                                     property bag, same shape as other
- *                                     action tests in this dir).
+ *   @/db/schema                     — `users` column stubs.
  *   drizzle-orm                     — eq / and / count / inArray pass-throughs.
  *   @/lib/auth                      — auth() returns a controlled session.
- *   @/lib/auth/require-role         — real implementation (throws on
- *                                     insufficient role) so the gate is
- *                                     exercised honestly.
- *   @/lib/audit                     — writeAuditLog spy (emitAudit
- *                                     delegates here).
+ *   @/lib/auth/action-context       — getActionContext returns controlled ctx.
+ *   @/lib/auth/require-role         — real implementation.
+ *   @/lib/audit                     — writeAuditLog spy (emitAudit delegates here).
+ *   @/lib/audit-middleware          — emitAudit spy (forcePasswordReset uses
+ *                                     this directly instead of writeAuditLog).
+ *   @/lib/email/sender              — getSenderForTenant + send spies.
  *   next/cache                      — revalidatePath silenced.
  */
 
@@ -30,18 +35,25 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const TENANT_ID  = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
-const ADMIN_ID   = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
-const TARGET_ID  = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
-const OTHER_ID   = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
+const TENANT_ID    = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+const ADMIN_ID     = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+const TARGET_ID    = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+const OTHER_ID     = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
+const TARGET_EMAIL = 'target@example.com'
 
 // ── tx mock state — reset per test ─────────────────────────────────────────────
 
 // rows[0] = first select (target lookup); rows[1] = second select (admin
 // count); etc. Tests push the expected sequence before invoking the action.
+// Tests for forcePasswordReset use the simpler `selectResult` static below
+// which is auto-queued by the tx select() implementation.
 let txSelectQueue: unknown[][] = []
+let selectResult: unknown[] = []
 const mockTxUpdateSet = vi.fn()
 const mockTxUpdateWhere = vi.fn()
+// Aliases exposed for forcePasswordReset tests that read `mockUpdateSet`.
+const mockUpdateSet = mockTxUpdateSet
+const mockUpdateWhere = mockTxUpdateWhere
 
 // Each call to tx.select() returns a chain that resolves to the next
 // queued row set. The chain supports .from / .where / .limit so it
@@ -62,7 +74,12 @@ function makeTxSelectChain(rows: unknown[]) {
 function makeTx() {
   return {
     select: vi.fn(() => {
-      const rows = txSelectQueue.shift() ?? []
+      // If the queue has rows, use them (deactivate / reactivate /
+      // updateUserRole tests). Otherwise fall back to the static
+      // `selectResult` used by the forcePasswordReset tests.
+      const rows = txSelectQueue.length > 0
+        ? (txSelectQueue.shift() ?? [])
+        : selectResult
       return makeTxSelectChain(rows)
     }),
     update: vi.fn(() => ({
@@ -93,48 +110,75 @@ vi.mock('@/db', () => ({
 
 vi.mock('@/db/schema', () => ({
   users: {
-    id:                    'id',
-    tenantId:              'tenant_id',
-    email:                 'email',
-    name:                  'name',
-    role:                  'role',
-    passwordHash:          'password_hash',
-    isActive:              'is_active',
-    passwordResetRequired: 'password_reset_required',
+    id:                          'id',
+    tenantId:                    'tenant_id',
+    email:                       'email',
+    name:                        'name',
+    role:                        'role',
+    passwordHash:                'password_hash',
+    isActive:                    'is_active',
+    passwordResetRequired:       'password_reset_required',
+    lastPasswordChangeAt:        'last_password_change_at',
+    passwordResetTokenHash:      'password_reset_token_hash',
+    passwordResetTokenExpiresAt: 'password_reset_token_expires_at',
   },
 }))
 
 vi.mock('drizzle-orm', () => ({
-  eq:      vi.fn((col: unknown, val: unknown) => ({ type: 'eq', col, val })),
-  and:     vi.fn((...args: unknown[]) => ({ type: 'and', args })),
-  count:   vi.fn(() => ({ type: 'count' })),
-  inArray: vi.fn((col: unknown, vals: unknown) => ({ type: 'inArray', col, vals })),
-  isNull:  vi.fn((col: unknown) => ({ type: 'isNull', col })),
+  eq:        vi.fn((col: unknown, val: unknown) => ({ type: 'eq', col, val })),
+  and:       vi.fn((...args: unknown[]) => ({ type: 'and', args })),
+  count:     vi.fn(() => ({ type: 'count' })),
+  inArray:   vi.fn((col: unknown, vals: unknown) => ({ type: 'inArray', col, vals })),
+  isNull:    vi.fn((col: unknown) => ({ type: 'isNull', col })),
   isNotNull: vi.fn((col: unknown) => ({ type: 'isNotNull', col })),
-  gt:      vi.fn((col: unknown, val: unknown) => ({ type: 'gt', col, val })),
-  lt:      vi.fn((col: unknown, val: unknown) => ({ type: 'lt', col, val })),
+  gt:        vi.fn((col: unknown, val: unknown) => ({ type: 'gt', col, val })),
+  lt:        vi.fn((col: unknown, val: unknown) => ({ type: 'lt', col, val })),
 }))
 
+// auth() is mocked at module scope above (resolves to null by default).
+// Re-export a stable mock fn here so existing helper functions can override it.
 const mockAuth = vi.fn()
 vi.mock('@/lib/auth', () => ({
   auth: () => mockAuth(),
 }))
 
-vi.mock('@/lib/auth/require-role', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/auth/require-role')>()
-  return { requireRole: actual.requireRole }
-})
-
-// writeAuditLog is what emitAudit delegates to — spy on it directly.
+// writeAuditLog is what emitAudit delegates to for deactivate/reactivate/
+// updateUserRole — spy on it directly.
 const mockWriteAuditLog = vi.fn().mockResolvedValue(undefined)
 vi.mock('@/lib/audit', () => ({
   writeAuditLog: (...args: unknown[]) => mockWriteAuditLog(...args),
 }))
 
+// emitAudit (in @/lib/audit-middleware) delegates to writeAuditLog. Tests
+// that previously asserted on `mockEmitAudit` here observe the same calls via
+// `mockWriteAuditLog` because emitAudit forwards every call. The alias below
+// keeps the existing test assertions readable.
+const mockEmitAudit = mockWriteAuditLog
+
+// getActionContext — used by forcePasswordReset.
+const mockGetActionContext = vi.fn()
+vi.mock('@/lib/auth/action-context', () => ({
+  getActionContext: () => mockGetActionContext(),
+}))
+
+// Email sender — used by forcePasswordReset (SMTP path + link fallback).
+const mockSenderSend = vi.fn()
+const mockGetSenderForTenant = vi.fn()
+vi.mock('@/lib/email/sender', () => ({
+  getSenderForTenant: (...args: unknown[]) => mockGetSenderForTenant(...args),
+}))
+
+// requireRole — use real logic so the role gate behaves correctly.
+vi.mock('@/lib/auth/require-role', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/auth/require-role')>()
+  return { requireRole: actual.requireRole }
+})
+
+// next/cache — silence revalidatePath.
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
-// bcryptjs is unused by deactivate/reactivate/updateUserRole but the actions
-// module imports it for the password helpers — keep the import resolvable.
+// bcryptjs — silenced; the actions module imports it for password helpers but
+// none of the tests exercise the real implementation.
 vi.mock('bcryptjs', () => ({
   default: {
     hash:    vi.fn().mockResolvedValue('$2b$12$hashedpassword'),
@@ -142,12 +186,6 @@ vi.mock('bcryptjs', () => ({
   },
   hash:    vi.fn().mockResolvedValue('$2b$12$hashedpassword'),
   compare: vi.fn().mockResolvedValue(true),
-}))
-
-// getActionContext is not used by deactivate/reactivate/updateUserRole but the
-// module imports it.
-vi.mock('@/lib/auth/action-context', () => ({
-  getActionContext: vi.fn().mockResolvedValue(null),
 }))
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -530,5 +568,226 @@ describe('updateUserRole', () => {
     expect(result.ok).toBe(true)
     expect(mockTxUpdateSet).not.toHaveBeenCalled()
     expect(mockWriteAuditLog).not.toHaveBeenCalled()
+  })
+})
+
+// ── forcePasswordReset ────────────────────────────────────────────────────────
+
+function asAdmin() {
+  mockGetActionContext.mockResolvedValue({
+    tenantId: TENANT_ID, userId: ADMIN_ID, userRole: 'admin',
+  })
+}
+
+function asRecruiter() {
+  mockGetActionContext.mockResolvedValue({
+    tenantId: TENANT_ID, userId: ADMIN_ID, userRole: 'recruiter',
+  })
+}
+
+function noContext() {
+  mockGetActionContext.mockResolvedValue(null)
+}
+
+function targetUserActive() {
+  selectResult = [{
+    id: TARGET_ID,
+    email: TARGET_EMAIL,
+    name: 'Target User',
+    isActive: true,
+  }]
+}
+
+function targetUserInactive() {
+  selectResult = [{
+    id: TARGET_ID,
+    email: TARGET_EMAIL,
+    name: 'Target User',
+    isActive: false,
+  }]
+}
+
+function targetUserNotFound() {
+  selectResult = []
+}
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+describe('forcePasswordReset', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    asAdmin()
+    targetUserActive()
+    // Default: SMTP available, send succeeds
+    mockSenderSend.mockResolvedValue({ ok: true })
+    mockGetSenderForTenant.mockResolvedValue({ send: mockSenderSend })
+  })
+
+  it('returns Unauthorized when no action context', async () => {
+    noContext()
+    const { forcePasswordReset } = await import('@/actions/users')
+
+    const result = await forcePasswordReset(TARGET_ID)
+
+    expect(result).toEqual({ ok: false, error: 'Unauthorized' })
+    expect(mockUpdateSet).not.toHaveBeenCalled()
+    expect(mockEmitAudit).not.toHaveBeenCalled()
+  })
+
+  it('returns Forbidden when caller is not admin', async () => {
+    asRecruiter()
+    const { forcePasswordReset } = await import('@/actions/users')
+
+    const result = await forcePasswordReset(TARGET_ID)
+
+    expect(result).toEqual({ ok: false, error: 'Forbidden: admins only' })
+    expect(mockUpdateSet).not.toHaveBeenCalled()
+  })
+
+  it('rejects self-reset attempts', async () => {
+    const { forcePasswordReset } = await import('@/actions/users')
+
+    const result = await forcePasswordReset(ADMIN_ID)
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error).toMatch(/own password/i)
+    }
+    expect(mockUpdateSet).not.toHaveBeenCalled()
+  })
+
+  it('returns "User not found" when target does not exist', async () => {
+    targetUserNotFound()
+    const { forcePasswordReset } = await import('@/actions/users')
+
+    const result = await forcePasswordReset(TARGET_ID)
+
+    expect(result).toEqual({ ok: false, error: 'User not found' })
+    expect(mockUpdateSet).not.toHaveBeenCalled()
+  })
+
+  it('rejects inactive users', async () => {
+    targetUserInactive()
+    const { forcePasswordReset } = await import('@/actions/users')
+
+    const result = await forcePasswordReset(TARGET_ID)
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error).toMatch(/inactive/i)
+    }
+    expect(mockUpdateSet).not.toHaveBeenCalled()
+  })
+
+  it('happy path with SMTP: persists token hash + expiry, sends email, emits audit', async () => {
+    const beforeNow = Date.now()
+    const { forcePasswordReset } = await import('@/actions/users')
+
+    const result = await forcePasswordReset(TARGET_ID)
+
+    expect(result).toEqual({ ok: true, emailSent: true })
+
+    // Token + expiry persisted
+    expect(mockUpdateSet).toHaveBeenCalledOnce()
+    const setArg = mockUpdateSet.mock.calls[0]?.[0] as {
+      passwordResetTokenHash: string
+      passwordResetTokenExpiresAt: Date
+      passwordResetRequired: boolean
+    }
+    expect(setArg.passwordResetTokenHash).toMatch(/^[0-9a-f]{64}$/)
+    expect(setArg.passwordResetRequired).toBe(true)
+    expect(setArg.passwordResetTokenExpiresAt).toBeInstanceOf(Date)
+    const expiryMs = setArg.passwordResetTokenExpiresAt.getTime()
+    // 1 hour from now, give or take a few seconds for test scheduling
+    expect(expiryMs).toBeGreaterThan(beforeNow + 60 * 60 * 1000 - 5_000)
+    expect(expiryMs).toBeLessThan(beforeNow + 60 * 60 * 1000 + 5_000)
+
+    // Email actually attempted
+    expect(mockSenderSend).toHaveBeenCalledOnce()
+    const sendArg = mockSenderSend.mock.calls[0]?.[0] as {
+      to: string
+      subject: string
+      bodyText: string
+      bodyHtml: string
+    }
+    expect(sendArg.to).toBe(TARGET_EMAIL)
+    expect(sendArg.subject).toMatch(/reset/i)
+    expect(sendArg.bodyText).toContain('/auth/reset?token=')
+    expect(sendArg.bodyHtml).toContain('/auth/reset?token=')
+
+    // Audit emitted with correct metadata
+    expect(mockEmitAudit).toHaveBeenCalledOnce()
+    const auditArgs = mockEmitAudit.mock.calls[0] as [string, {
+      action: string
+      entityType: string
+      entityId: string
+      entityLabel: string
+      metadata: { targetUserId: string; emailSent: boolean }
+    }]
+    expect(auditArgs[0]).toBe(TENANT_ID)
+    expect(auditArgs[1].action).toBe('user.password_reset_forced')
+    expect(auditArgs[1].entityType).toBe('user')
+    expect(auditArgs[1].entityId).toBe(TARGET_ID)
+    expect(auditArgs[1].entityLabel).toBe(TARGET_EMAIL)
+    expect(auditArgs[1].metadata).toEqual({ targetUserId: TARGET_ID, emailSent: true })
+  })
+
+  it('happy path WITHOUT SMTP: returns plaintext link, audit records emailSent=false', async () => {
+    mockGetSenderForTenant.mockResolvedValue(null)
+    const { forcePasswordReset } = await import('@/actions/users')
+
+    const result = await forcePasswordReset(TARGET_ID)
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.emailSent).toBe(false)
+      if (result.emailSent === false) {
+        expect(result.resetUrl).toMatch(/\/auth\/reset\?token=[0-9a-f]{64}$/)
+      }
+    }
+
+    expect(mockSenderSend).not.toHaveBeenCalled()
+    expect(mockEmitAudit).toHaveBeenCalledOnce()
+    const auditArgs = mockEmitAudit.mock.calls[0] as [string, {
+      metadata: { emailSent: boolean }
+    }]
+    expect(auditArgs[1].metadata.emailSent).toBe(false)
+  })
+
+  it('SMTP send failure is treated as link-fallback (emailSent=false in audit)', async () => {
+    mockSenderSend.mockResolvedValue({ ok: false, error: 'Connection refused' })
+    const { forcePasswordReset } = await import('@/actions/users')
+
+    const result = await forcePasswordReset(TARGET_ID)
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.emailSent).toBe(false)
+    }
+
+    const auditArgs = mockEmitAudit.mock.calls[0] as [string, {
+      metadata: { emailSent: boolean }
+    }]
+    expect(auditArgs[1].metadata.emailSent).toBe(false)
+  })
+
+  it('persisted token hash is sha256(plaintext) — never the plaintext itself', async () => {
+    mockGetSenderForTenant.mockResolvedValue(null)
+    const { forcePasswordReset } = await import('@/actions/users')
+
+    const result = await forcePasswordReset(TARGET_ID)
+    expect(result.ok).toBe(true)
+    if (!result.ok || result.emailSent) throw new Error('expected link-fallback')
+
+    const plaintext = result.resetUrl.split('token=')[1] ?? ''
+    expect(plaintext).toMatch(/^[0-9a-f]{64}$/)
+
+    const setArg = mockUpdateSet.mock.calls[0]?.[0] as { passwordResetTokenHash: string }
+    // The stored value must differ from the plaintext (it's a hash, not the token)
+    expect(setArg.passwordResetTokenHash).not.toBe(plaintext)
+    // Verify it's the expected sha256 — recomputed here to assert format
+    const { createHash } = await import('crypto')
+    const expectedHash = createHash('sha256').update(plaintext).digest('hex')
+    expect(setArg.passwordResetTokenHash).toBe(expectedHash)
   })
 })

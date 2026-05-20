@@ -1,6 +1,7 @@
 'use client'
 
 import { UserDeactivateButton } from '@/components/users/user-deactivate-button'
+import { UserForceResetButton } from '@/components/users/user-force-reset-button'
 import { UserRoleSelector } from '@/components/users/user-role-selector'
 import type { User } from '@/db/schema/users'
 import type { UserRole } from '@/lib/auth/types'
@@ -73,6 +74,11 @@ export function UserManagementTable({ users, currentUserId }: Props) {
                       currentRole={user.role}
                       isSelf={isSelf}
                       isInactive={isInactive}
+                    />
+                    <UserForceResetButton
+                      userId={user.id}
+                      userEmail={user.email}
+                      disabled={isSelf || isInactive}
                     />
                     <UserDeactivateButton
                       userId={user.id}

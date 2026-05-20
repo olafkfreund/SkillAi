@@ -218,6 +218,13 @@
       "when": 1776949200000,
       "tag": "0030_hr_skill_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1779580800000,
+      "tag": "0031_password_reset_token",
+      "breakpoints": true
     }
   ]
 }
