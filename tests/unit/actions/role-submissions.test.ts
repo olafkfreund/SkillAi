@@ -90,7 +90,8 @@ function makeSelectChain(rows: unknown[]) {
   c.innerJoin = vi.fn(() => c)
   c.where     = vi.fn(() => c)
   c.orderBy   = vi.fn(() => c)
-  c.limit     = vi.fn(() => Promise.resolve(rows))
+  c.limit     = vi.fn(() => c)
+  c.offset    = vi.fn(() => Promise.resolve(rows))
   return c
 }
 
@@ -218,6 +219,16 @@ vi.mock('drizzle-orm', () => ({
   eq:      vi.fn(() => ({ type: 'eq' })),
   and:     vi.fn((...args: unknown[]) => ({ type: 'and', args })),
   inArray: vi.fn(() => ({ type: 'inArray' })),
+  // Used by getAllSubmissionsForTenant and getRecentSubmissionsForTenant
+  // for filtering + sorting + count aggregation.
+  asc:     vi.fn((col: unknown) => ({ type: 'asc', col })),
+  desc:    vi.fn((col: unknown) => ({ type: 'desc', col })),
+  lt:      vi.fn(() => ({ type: 'lt' })),
+  gte:     vi.fn(() => ({ type: 'gte' })),
+  lte:     vi.fn(() => ({ type: 'lte' })),
+  ilike:   vi.fn(() => ({ type: 'ilike' })),
+  or:      vi.fn((...args: unknown[]) => ({ type: 'or', args })),
+  count:   vi.fn(() => ({ type: 'count' })),
   sql:     vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
     type: 'sql', strings, values,
   })),
@@ -884,5 +895,104 @@ describe('getSubmissionByToken', () => {
     const result = await getSubmissionByToken(SHARE_TOKEN)
 
     expect(result).toBeNull()
+  })
+})
+
+// ── getAllSubmissionsForTenant (tenant-wide list) ─────────────────────────────
+
+describe('getAllSubmissionsForTenant', () => {
+  beforeEach(resetState)
+
+  const buildJoinedRow = (overrides: Record<string, unknown> = {}) => ({
+    id: SUBMISSION_ID,
+    roleId: ROLE_ID,
+    roleTitle: 'Senior TypeScript Engineer',
+    candidateId: CANDIDATE_ID,
+    sentAt: new Date('2026-05-01T10:00:00Z'),
+    sentByUserId: USER_ID,
+    status: 'submitted',
+    statusUpdatedAt: new Date('2026-05-01T10:00:00Z'),
+    notes: null,
+    createdAt: new Date('2026-05-01T10:00:00Z'),
+    shareToken: null,
+    shareTokenCreatedAt: null,
+    candidateFirstName: 'Jane',
+    candidateLastName: 'Doe',
+    agencyId: null,
+    agencyName: null,
+    agencyLogoPath: null,
+    scoreOverall: 85,
+    submitterName: 'Recruiter R',
+    submitterEmail: 'r@example.com',
+    customerName: 'ClientCo',
+    ...overrides,
+  })
+
+  it('returns empty result when unauthenticated', async () => {
+    mockGetActionContext.mockResolvedValue(null)
+    const { getAllSubmissionsForTenant } = await import('@/actions/role-submissions')
+
+    const result = await getAllSubmissionsForTenant({})
+
+    expect(result.rows).toEqual([])
+    expect(result.totalCount).toBe(0)
+  })
+
+  it('returns empty result when role is below recruiter', async () => {
+    mockGetActionContext.mockResolvedValue({
+      tenantId: TENANT_ID, userId: USER_ID, userRole: 'viewer' as const,
+    })
+    const { getAllSubmissionsForTenant } = await import('@/actions/role-submissions')
+
+    const result = await getAllSubmissionsForTenant({})
+
+    expect(result.rows).toEqual([])
+    expect(result.totalCount).toBe(0)
+  })
+
+  it('projects roleTitle and customerName onto each row', async () => {
+    // Two parallel withTenant calls: paginated rows + count
+    withTenantResults = [
+      [buildJoinedRow()],
+      [{ total: 1 }],
+    ]
+    const { getAllSubmissionsForTenant } = await import('@/actions/role-submissions')
+
+    const result = await getAllSubmissionsForTenant({})
+
+    expect(result.totalCount).toBe(1)
+    expect(result.rows).toHaveLength(1)
+    expect(result.rows[0].roleTitle).toBe('Senior TypeScript Engineer')
+    expect(result.rows[0].customerName).toBe('ClientCo')
+    expect(result.rows[0].candidate.firstName).toBe('Jane')
+    expect(result.rows[0].candidate.lastName).toBe('Doe')
+  })
+
+  it('returns customerName as null when the role has no linked customer', async () => {
+    // The LEFT JOIN on customers returns NULL for customerName when
+    // roles.customer_id is null.
+    withTenantResults = [
+      [buildJoinedRow({ customerName: null })],
+      [{ total: 1 }],
+    ]
+    const { getAllSubmissionsForTenant } = await import('@/actions/role-submissions')
+
+    const result = await getAllSubmissionsForTenant({})
+
+    expect(result.rows[0].roleTitle).toBe('Senior TypeScript Engineer')
+    expect(result.rows[0].customerName).toBeNull()
+  })
+
+  it('returns empty rows + zero count when there are no submissions', async () => {
+    withTenantResults = [
+      [],
+      [{ total: 0 }],
+    ]
+    const { getAllSubmissionsForTenant } = await import('@/actions/role-submissions')
+
+    const result = await getAllSubmissionsForTenant({})
+
+    expect(result.rows).toEqual([])
+    expect(result.totalCount).toBe(0)
   })
 })

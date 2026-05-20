@@ -82,6 +82,11 @@ export async function getSubmissionsForRole(
   return rows.map((r) => ({
     id: r.id,
     roleId: r.roleId,
+    // Per-role loader: the caller already knows the role title from page
+    // context, so we leave these `null`. The tenant-wide loader populates
+    // them.
+    roleTitle: null,
+    customerName: null,
     candidateId: r.candidateId,
     sentAt: r.sentAt,
     sentByUserId: r.sentByUserId,
@@ -252,6 +257,7 @@ export async function getAllSubmissionsForTenant(opts: {
         .select({
           id: roleSubmissions.id,
           roleId: roleSubmissions.roleId,
+          roleTitle: roles.title,
           candidateId: roleSubmissions.candidateId,
           sentAt: roleSubmissions.sentAt,
           sentByUserId: roleSubmissions.sentByUserId,
@@ -269,6 +275,7 @@ export async function getAllSubmissionsForTenant(opts: {
           scoreOverall: scores.overallScore,
           submitterName: users.name,
           submitterEmail: users.email,
+          customerName: customers.name,
         })
         .from(roleSubmissions)
         .innerJoin(candidates, eq(roleSubmissions.candidateId, candidates.id))
@@ -337,6 +344,8 @@ export async function getAllSubmissionsForTenant(opts: {
     rows: rows.map((r) => ({
       id: r.id,
       roleId: r.roleId,
+      roleTitle: r.roleTitle,
+      customerName: r.customerName ?? null,
       candidateId: r.candidateId,
       sentAt: r.sentAt,
       sentByUserId: r.sentByUserId,
