@@ -2,6 +2,7 @@
 
 import { useState, useActionState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useEffect } from 'react'
 import { Loader2, Sparkles, UploadCloud, X } from 'lucide-react'
 import { createRole } from '@/actions/roles'
@@ -574,9 +575,9 @@ export function RoleForm({ customers = [], frameworks = {}, customerRoleIdLabels
             {pending && <Loader2 className="h-4 w-4 animate-spin" />}
             {pending ? 'Creating…' : 'Create role'}
           </button>
-          <a href="/dashboard/roles" className="text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]">
+          <Link href="/dashboard/roles" className="text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]">
             Cancel
-          </a>
+          </Link>
         </div>
       </form>
     </div>

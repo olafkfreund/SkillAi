@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
+import Link from 'next/link'
 import { CheckCircleIcon, EyeIcon, EyeOffIcon, KeyIcon, Loader2Icon, TrashIcon } from 'lucide-react'
 import { saveApiKey, removeApiKey } from '@/actions/settings'
 import type { SettingsState } from '@/actions/settings'
@@ -178,12 +179,12 @@ export function OAuthCredentialsForm({ configuredKeys }: Props) {
         <p className="text-xs text-[var(--color-fg-subtle)]">
           Per-tenant OAuth credentials override the deployment-level env vars. Leave blank to use the
           env-var fallback (if configured).{' '}
-          <a
+          <Link
             href="/dashboard/help/settings-oauth-credentials"
             className="text-blue-400 hover:text-blue-300 underline underline-offset-2"
           >
             See setup guide →
-          </a>
+          </Link>
         </p>
       </div>
 

@@ -61,10 +61,11 @@ const labelCls = 'block text-xs font-medium text-[var(--color-fg-muted)] mb-1'
 const helpCls = 'mt-1 text-xs text-[var(--color-fg-subtle)]'
 
 export function ComplianceSection({ audience, disabled = false, fields, onChange }: ComplianceSectionProps) {
+  // Hooks must be called unconditionally before any early return (Rules of Hooks)
+  const [open, setOpen] = useState(false)
+
   // Gate: only recruiter sees compliance data
   if (audience !== 'recruiter') return null
-
-  const [open, setOpen] = useState(false)
 
   function set<K extends keyof ComplianceFields>(key: K, value: ComplianceFields[K]) {
     onChange({ ...fields, [key]: value })

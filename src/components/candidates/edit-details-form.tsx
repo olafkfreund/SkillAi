@@ -48,7 +48,7 @@ interface EditDetailsFormProps {
 }
 
 export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }: EditDetailsFormProps) {
-  if (audience === 'manager') return null
+  // Hooks must be called unconditionally before any early return (Rules of Hooks)
   const [isOpen, setIsOpen] = useState(false)
 
   const boundAction = updateCandidateDetails.bind(null, candidate.id)
@@ -87,6 +87,8 @@ export function EditDetailsForm({ candidate, agencies, audience = 'recruiter' }:
     gdprProcessingConsentAt: candidate.gdprProcessingConsentAt ?? '',
     gdprProcessingConsentBy: (candidate.gdprProcessingConsentBy ?? '') as ComplianceFields['gdprProcessingConsentBy'],
   })
+
+  if (audience === 'manager') return null
 
   const fieldErrors = state && !state.success ? state.fieldErrors : {}
 

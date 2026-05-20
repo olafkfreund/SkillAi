@@ -12,6 +12,7 @@
  */
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 interface BackupsPanelProps {
   lastExportAt: Date | null
@@ -58,12 +59,12 @@ export function BackupsPanel({ lastExportAt }: BackupsPanelProps) {
       <p className="text-sm text-[var(--color-fg-muted)] mb-4">
         Download a snapshot of all data for your tenant. Includes JSON for every
         table. Optionally include binary file attachments (CVs, logos).{' '}
-        <a
+        <Link
           className="underline"
           href="/dashboard/help/settings-backups-data-export"
         >
           See the help article
-        </a>
+        </Link>
         .
       </p>
       <div className="flex flex-col gap-3">
