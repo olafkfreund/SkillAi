@@ -17,6 +17,8 @@ import { getOrExtractCvProfile } from '@/lib/ai/cv-profile'
 import { inferLanguage } from '@/lib/ai/interview-helpers'
 import { SUPPORTED_LANGUAGES, isSupportedLanguage, type SupportedLanguage } from '@/lib/ai/language'
 import { emitAudit } from '@/lib/audit-middleware'
+import { getHrSkillSettings } from '@/actions/settings'
+import { loadHrSkill } from '@/lib/ai/skills'
 
 export const maxDuration = 300
 
@@ -93,6 +95,11 @@ export async function POST(request: Request) {
       })
       .where(eq(interviewPacks.id, packId))
   )
+
+  // #199 — resolve HR skill outside the try/catch so both the completion and
+  // failure audit rows can reference `skill?.name` in their metadata.
+  const hrSkillSettings = await getHrSkillSettings(tenantId)
+  const skill = hrSkillSettings.enabled ? loadHrSkill(hrSkillSettings.profile) : null
 
   try {
     const [candidate] = await withTenant(tenantId, async (tx) =>
