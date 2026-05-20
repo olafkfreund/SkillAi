@@ -52,6 +52,12 @@ const mockUpdateSet      = vi.fn()
 const mockUpdateWhere    = vi.fn()
 const mockUpdateReturning = vi.fn()
 
+// Sequence of row arrays returned by successive tx.select() chains within a
+// single withTenant() invocation. updateCandidateDetails calls select() once
+// to fetch the previous compliance row before issuing its update; tests can
+// queue the expected previous-state shape here. Falls back to [] when empty.
+const txSelectRowQueue: unknown[][] = []
+
 // ── Module mocks ──────────────────────────────────────────────────────────────
 
 vi.mock('@/db', () => ({
@@ -61,7 +67,10 @@ vi.mock('@/db', () => ({
   withTenant: vi.fn().mockImplementation(
     async (_tenantId: string, fn: (tx: unknown) => unknown) => {
       const tx = {
-        select: vi.fn(() => makeSelectChain([])),
+        select: vi.fn(() => {
+          const next = txSelectRowQueue.shift() ?? []
+          return makeSelectChain(next)
+        }),
         insert: vi.fn(() => ({
           values: (...args: unknown[]) => {
             mockInsertValues(...args)
@@ -102,6 +111,18 @@ vi.mock('@/db/schema', () => ({
     agencyId:   'agency_id',
     isInternal: 'is_internal',
     embedding:  'embedding',
+    // Compliance columns (Epic #190 / issue #194)
+    rightToWorkStatus:        'right_to_work_status',
+    rightToWorkDocumentType:  'right_to_work_document_type',
+    rightToWorkExpiry:        'right_to_work_expiry',
+    rightToWorkCheckedAt:     'right_to_work_checked_at',
+    rightToWorkCheckedBy:     'right_to_work_checked_by',
+    shareCode:                'share_code',
+    sponsorshipRequired:      'sponsorship_required',
+    nationality:              'nationality',
+    noticePeriodDays:         'notice_period_days',
+    gdprProcessingConsentAt:  'gdpr_processing_consent_at',
+    gdprProcessingConsentBy:  'gdpr_processing_consent_by',
   },
   scores: {
     id:          'id',
@@ -134,6 +155,11 @@ vi.mock('@/lib/auth/action-context', () => ({
 const mockWriteAuditLog = vi.fn().mockResolvedValue(undefined)
 vi.mock('@/lib/audit', () => ({
   writeAuditLog: mockWriteAuditLog,
+}))
+
+const mockEmitAudit = vi.fn()
+vi.mock('@/lib/audit-middleware', () => ({
+  emitAudit: (...args: unknown[]) => mockEmitAudit(...args),
 }))
 
 const mockTriggerScoring = vi.fn().mockResolvedValue(undefined)
@@ -533,5 +559,355 @@ describe('updateCandidateAvailability', () => {
     const setCall = mockUpdateSet.mock.calls[0][0] as Record<string, unknown>
     expect(setCall.availabilityStatus).toBe('on_project')
     expect(setCall.availableFrom).toBe('2026-09-01')
+  })
+})
+
+// ── updateCandidateDetails — compliance fields (Epic #190 / issue #194) ──────
+
+describe('updateCandidateDetails — compliance fields', () => {
+  /**
+   * Build a FormData carrying the always-required (firstName / lastName)
+   * fields plus any extra string fields the caller wants. Compliance fields
+   * are only attached when explicitly passed — letting tests assert the
+   * "field absent vs field present and empty" distinction the action relies
+   * on to know whether to write a column.
+   */
+  function complianceFormData(extras: Record<string, string> = {}): FormData {
+    const fd = new FormData()
+    fd.set('firstName', 'Jane')
+    fd.set('lastName', 'Doe')
+    for (const [k, v] of Object.entries(extras)) fd.set(k, v)
+    return fd
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    txSelectRowQueue.length = 0
+    mockGetActionContext.mockResolvedValue(recruiterCtx())
+  })
+
+  // ── Auth + role gates ─────────────────────────────────────────────────────
+
+  it('returns Unauthorized when action context is missing', async () => {
+    mockGetActionContext.mockResolvedValue(null)
+    const { updateCandidateDetails } = await import('@/actions/candidates')
+
+    const result = await updateCandidateDetails(
+      CANDIDATE_ID,
+      null,
+      complianceFormData({ rightToWorkStatus: 'checked' })
+    )
+
+    expect(result.success).toBe(false)
+    expect(result.error).toMatch(/unauthorized/i)
+    expect(mockUpdateSet).not.toHaveBeenCalled()
+    expect(mockEmitAudit).not.toHaveBeenCalled()
+  })
+
+  it('rejects viewer role with Forbidden', async () => {
+    mockGetActionContext.mockResolvedValue({
+      tenantId: TENANT_ID,
+      userId: USER_ID,
+      userRole: 'viewer' as const,
+    })
+    const { updateCandidateDetails } = await import('@/actions/candidates')
+
+    const result = await updateCandidateDetails(
+      CANDIDATE_ID,
+      null,
+      complianceFormData({ rightToWorkStatus: 'checked' })
+    )
+
+    expect(result.success).toBe(false)
+    expect(result.error).toMatch(/forbidden/i)
+    expect(mockUpdateSet).not.toHaveBeenCalled()
+  })
+
+  it('rejects hiring_manager role with Forbidden', async () => {
+    mockGetActionContext.mockResolvedValue({
+      tenantId: TENANT_ID,
+      userId: USER_ID,
+      userRole: 'hiring_manager' as const,
+    })
+    const { updateCandidateDetails } = await import('@/actions/candidates')
+
+    const result = await updateCandidateDetails(
+      CANDIDATE_ID,
+      null,
+      complianceFormData({ rightToWorkStatus: 'checked' })
+    )
+
+    expect(result.success).toBe(false)
+    expect(result.error).toMatch(/forbidden/i)
+    expect(mockUpdateSet).not.toHaveBeenCalled()
+  })
+
+  it('accepts admin role (broader than recruiter)', async () => {
+    mockGetActionContext.mockResolvedValue({
+      tenantId: TENANT_ID,
+      userId: USER_ID,
+      userRole: 'admin' as const,
+    })
+    // previous compliance row: no values set
+    txSelectRowQueue.push([{
+      rightToWorkStatus: null,
+      rightToWorkDocumentType: null,
+      rightToWorkExpiry: null,
+      rightToWorkCheckedAt: null,
+      rightToWorkCheckedBy: null,
+      shareCode: null,
+      sponsorshipRequired: false,
+      nationality: null,
+      noticePeriodDays: null,
+      gdprProcessingConsentAt: null,
+      gdprProcessingConsentBy: null,
+    }])
+    const { updateCandidateDetails } = await import('@/actions/candidates')
+
+    const result = await updateCandidateDetails(
+      CANDIDATE_ID,
+      null,
+      complianceFormData({ nationality: 'British' })
+    )
+
+    expect(result.success).toBe(true)
+    expect(mockUpdateSet).toHaveBeenCalled()
+  })
+
+  // ── Happy path — compliance persistence + general audit ───────────────────
+
+  it('persists compliance fields and writes candidate.compliance_updated audit', async () => {
+    txSelectRowQueue.push([{
+      rightToWorkStatus: null,
+      rightToWorkDocumentType: null,
+      rightToWorkExpiry: null,
+      rightToWorkCheckedAt: null,
+      rightToWorkCheckedBy: null,
+      shareCode: null,
+      sponsorshipRequired: false,
+      nationality: null,
+      noticePeriodDays: null,
+      gdprProcessingConsentAt: null,
+      gdprProcessingConsentBy: null,
+    }])
+    const { updateCandidateDetails } = await import('@/actions/candidates')
+
+    const result = await updateCandidateDetails(
+      CANDIDATE_ID,
+      null,
+      complianceFormData({
+        rightToWorkStatus: 'pending',
+        rightToWorkDocumentType: 'brp',
+        nationality: 'British',
+        sponsorshipRequired: 'true',
+        noticePeriodDays: '30',
+      })
+    )
+
+    expect(result.success).toBe(true)
+
+    // Fields persisted via the update().set() call
+    const setCall = mockUpdateSet.mock.calls[0][0] as Record<string, unknown>
+    expect(setCall.rightToWorkStatus).toBe('pending')
+    expect(setCall.rightToWorkDocumentType).toBe('brp')
+    expect(setCall.nationality).toBe('British')
+    expect(setCall.sponsorshipRequired).toBe(true)
+    expect(setCall.noticePeriodDays).toBe(30)
+    // No rtw_checked_at stamp because status is 'pending', not 'checked'
+    expect(setCall.rightToWorkCheckedAt).toBeUndefined()
+
+    // candidate.compliance_updated audit emitted with fields_changed list
+    const complianceAuditCall = mockEmitAudit.mock.calls.find(
+      (c) => (c[1] as { action: string }).action === 'candidate.compliance_updated'
+    )
+    expect(complianceAuditCall).toBeDefined()
+    const meta = (complianceAuditCall![1] as { metadata: { fields_changed: string[] } }).metadata
+    expect(meta.fields_changed).toEqual(expect.arrayContaining([
+      'rightToWorkStatus',
+      'rightToWorkDocumentType',
+      'nationality',
+      'sponsorshipRequired',
+      'noticePeriodDays',
+    ]))
+    // No rtw_verified audit because we never transitioned to 'checked'
+    const rtwVerifiedCall = mockEmitAudit.mock.calls.find(
+      (c) => (c[1] as { action: string }).action === 'candidate.rtw_verified'
+    )
+    expect(rtwVerifiedCall).toBeUndefined()
+  })
+
+  // ── rtw_verified audit transitions ────────────────────────────────────────
+
+  it('emits candidate.rtw_verified when status transitions from pending → checked', async () => {
+    txSelectRowQueue.push([{
+      rightToWorkStatus: 'pending',
+      rightToWorkDocumentType: null,
+      rightToWorkExpiry: null,
+      rightToWorkCheckedAt: null,
+      rightToWorkCheckedBy: null,
+      shareCode: null,
+      sponsorshipRequired: false,
+      nationality: null,
+      noticePeriodDays: null,
+      gdprProcessingConsentAt: null,
+      gdprProcessingConsentBy: null,
+    }])
+    const { updateCandidateDetails } = await import('@/actions/candidates')
+
+    const result = await updateCandidateDetails(
+      CANDIDATE_ID,
+      null,
+      complianceFormData({ rightToWorkStatus: 'checked' })
+    )
+
+    expect(result.success).toBe(true)
+
+    // Auto-stamped checked_at / checked_by
+    const setCall = mockUpdateSet.mock.calls[0][0] as Record<string, unknown>
+    expect(setCall.rightToWorkStatus).toBe('checked')
+    expect(setCall.rightToWorkCheckedAt).toBeInstanceOf(Date)
+    expect(setCall.rightToWorkCheckedBy).toBe(USER_ID)
+
+    // Both audit rows emitted
+    const auditActions = mockEmitAudit.mock.calls.map(
+      (c) => (c[1] as { action: string }).action
+    )
+    expect(auditActions).toContain('candidate.compliance_updated')
+    expect(auditActions).toContain('candidate.rtw_verified')
+
+    // rtw_verified metadata carries the verifier user id
+    const rtwAudit = mockEmitAudit.mock.calls.find(
+      (c) => (c[1] as { action: string }).action === 'candidate.rtw_verified'
+    )
+    expect((rtwAudit![1] as { metadata: { verified_by: string } }).metadata.verified_by).toBe(USER_ID)
+  })
+
+  it('does NOT emit rtw_verified when status was already checked (no transition)', async () => {
+    const existingCheckedAt = new Date('2026-04-01T10:00:00Z')
+    txSelectRowQueue.push([{
+      rightToWorkStatus: 'checked',
+      rightToWorkDocumentType: 'passport_uk',
+      rightToWorkExpiry: null,
+      rightToWorkCheckedAt: existingCheckedAt,
+      rightToWorkCheckedBy: USER_ID,
+      shareCode: null,
+      sponsorshipRequired: false,
+      nationality: null,
+      noticePeriodDays: null,
+      gdprProcessingConsentAt: null,
+      gdprProcessingConsentBy: null,
+    }])
+    const { updateCandidateDetails } = await import('@/actions/candidates')
+
+    // Re-save with same checked status — no transition.
+    const result = await updateCandidateDetails(
+      CANDIDATE_ID,
+      null,
+      complianceFormData({ rightToWorkStatus: 'checked' })
+    )
+
+    expect(result.success).toBe(true)
+
+    // The action should NOT touch checked_at/by — preserves the original
+    // verification timestamp + actor across no-op re-saves.
+    const setCall = mockUpdateSet.mock.calls[0][0] as Record<string, unknown>
+    expect(setCall.rightToWorkCheckedAt).toBeUndefined()
+    expect(setCall.rightToWorkCheckedBy).toBeUndefined()
+
+    // No compliance_updated audit either (status didn't actually change),
+    // and definitely no rtw_verified.
+    const auditActions = mockEmitAudit.mock.calls.map(
+      (c) => (c[1] as { action: string }).action
+    )
+    expect(auditActions).not.toContain('candidate.rtw_verified')
+    expect(auditActions).not.toContain('candidate.compliance_updated')
+  })
+
+  // ── GDPR consent timestamp transitions ────────────────────────────────────
+
+  it('auto-sets gdpr_processing_consent_at on first consent record', async () => {
+    txSelectRowQueue.push([{
+      rightToWorkStatus: null,
+      rightToWorkDocumentType: null,
+      rightToWorkExpiry: null,
+      rightToWorkCheckedAt: null,
+      rightToWorkCheckedBy: null,
+      shareCode: null,
+      sponsorshipRequired: false,
+      nationality: null,
+      noticePeriodDays: null,
+      gdprProcessingConsentAt: null,            // ← previously unset
+      gdprProcessingConsentBy: null,
+    }])
+    const { updateCandidateDetails } = await import('@/actions/candidates')
+
+    const result = await updateCandidateDetails(
+      CANDIDATE_ID,
+      null,
+      complianceFormData({ gdprProcessingConsentBy: 'candidate' })
+    )
+
+    expect(result.success).toBe(true)
+    const setCall = mockUpdateSet.mock.calls[0][0] as Record<string, unknown>
+    expect(setCall.gdprProcessingConsentBy).toBe('candidate')
+    expect(setCall.gdprProcessingConsentAt).toBeInstanceOf(Date)
+
+    // Audit recorded with gdprProcessingConsentBy in fields_changed
+    const complianceAudit = mockEmitAudit.mock.calls.find(
+      (c) => (c[1] as { action: string }).action === 'candidate.compliance_updated'
+    )
+    expect(complianceAudit).toBeDefined()
+    const meta = (complianceAudit![1] as { metadata: { fields_changed: string[] } }).metadata
+    expect(meta.fields_changed).toContain('gdprProcessingConsentBy')
+  })
+
+  it('preserves gdpr_processing_consent_at when consent_by is already set', async () => {
+    const existingConsentAt = new Date('2026-04-01T10:00:00Z')
+    txSelectRowQueue.push([{
+      rightToWorkStatus: null,
+      rightToWorkDocumentType: null,
+      rightToWorkExpiry: null,
+      rightToWorkCheckedAt: null,
+      rightToWorkCheckedBy: null,
+      shareCode: null,
+      sponsorshipRequired: false,
+      nationality: null,
+      noticePeriodDays: null,
+      gdprProcessingConsentAt: existingConsentAt,
+      gdprProcessingConsentBy: 'candidate',   // ← already recorded
+    }])
+    const { updateCandidateDetails } = await import('@/actions/candidates')
+
+    // Re-save with a different consent source — should NOT clobber the
+    // original consent_at timestamp. Consent was already recorded; we are
+    // only updating who/which entity provided it.
+    const result = await updateCandidateDetails(
+      CANDIDATE_ID,
+      null,
+      complianceFormData({ gdprProcessingConsentBy: 'agency' })
+    )
+
+    expect(result.success).toBe(true)
+    const setCall = mockUpdateSet.mock.calls[0][0] as Record<string, unknown>
+    expect(setCall.gdprProcessingConsentBy).toBe('agency')
+    // gdprProcessingConsentAt must NOT be in the update — preserved.
+    expect(setCall.gdprProcessingConsentAt).toBeUndefined()
+  })
+
+  // ── No-op behaviour ───────────────────────────────────────────────────────
+
+  it('does NOT emit compliance audits when form carries no compliance fields', async () => {
+    // No previous-state queue entry needed — the action won't query if no
+    // compliance fields are present in FormData.
+    const { updateCandidateDetails } = await import('@/actions/candidates')
+
+    const result = await updateCandidateDetails(
+      CANDIDATE_ID,
+      null,
+      complianceFormData()                       // only firstName + lastName
+    )
+
+    expect(result.success).toBe(true)
+    expect(mockEmitAudit).not.toHaveBeenCalled()
   })
 })

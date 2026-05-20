@@ -12,6 +12,7 @@ import { ParseError } from '@/lib/parsers'
 import { triggerScoring } from '@/lib/ai/scoring'
 import { requireRole } from '@/lib/auth/require-role'
 import { writeAuditLog } from '@/lib/audit'
+import { emitAudit } from '@/lib/audit-middleware'
 import { getActionContext } from '@/lib/auth/action-context'
 import { validateCvFile, parseCvBuffer, persistCvFile } from '@/lib/cv/store'
 import { ensureInternalAgency } from '@/lib/tenants/ensure-internal-agency'
@@ -305,6 +306,32 @@ export async function bulkUpdateCandidateStatus(
 // updateCandidateDetails — edit name / contact info for a candidate
 // ---------------------------------------------------------------------------
 
+// EU/UK right-to-work + compliance values accepted on the candidate edit form.
+// Mirrors the pgEnum variants in src/db/schema/candidates.ts.
+const RTW_STATUS_VALUES = [
+  'checked', 'pending', 'fail', 'exempted', 'not_required',
+] as const
+const RTW_DOC_TYPE_VALUES = [
+  'passport_uk', 'passport_eu', 'passport_other', 'brp', 'share_code',
+  'visa', 'settled_status', 'presettled_status', 'other',
+] as const
+const GDPR_CONSENT_BY_VALUES = ['candidate', 'recruiter', 'agency'] as const
+
+// Names of compliance fields persisted by updateCandidateDetails. Used to
+// detect "any compliance field changed" for the audit metadata and to drive
+// the rtw_verified transition check.
+const COMPLIANCE_FIELDS = [
+  'rightToWorkStatus',
+  'rightToWorkDocumentType',
+  'rightToWorkExpiry',
+  'shareCode',
+  'sponsorshipRequired',
+  'nationality',
+  'noticePeriodDays',
+  'gdprProcessingConsentBy',
+] as const
+type ComplianceField = (typeof COMPLIANCE_FIELDS)[number]
+
 const UpdateCandidateSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
@@ -320,23 +347,17 @@ const UpdateCandidateSchema = z.object({
   rateCurrency: z.string().max(3).toUpperCase().optional().or(z.literal('')),
   availabilityStatus: z.enum(['available', 'on_project', 'unavailable']).optional(),
   availableFrom: z.string().optional().or(z.literal('')),
-  // ── Compliance fields — accepted here, persistence added by #194 ──
-  rightToWorkStatus: z
-    .enum(['checked', 'pending', 'fail', 'exempted', 'not_required', ''])
-    .optional(),
-  rightToWorkDocumentType: z
-    .enum([
-      'passport_uk', 'passport_eu', 'passport_other', 'brp', 'share_code',
-      'visa', 'settled_status', 'presettled_status', 'other', '',
-    ])
-    .optional(),
+
+  // Compliance fields (Epic #190 / issue #194). All optional — only persisted
+  // when present in the FormData. Empty strings are treated as "clear".
+  rightToWorkStatus: z.enum(RTW_STATUS_VALUES).optional().or(z.literal('')),
+  rightToWorkDocumentType: z.enum(RTW_DOC_TYPE_VALUES).optional().or(z.literal('')),
   rightToWorkExpiry: z.string().optional().or(z.literal('')),
   shareCode: z.string().max(20).optional().or(z.literal('')),
   sponsorshipRequired: z.enum(['true', 'false', '']).optional(),
   nationality: z.string().max(100).optional().or(z.literal('')),
-  noticePeriodDays: z.coerce.number().int().min(0).max(365).optional().or(z.literal('')),
-  gdprProcessingConsentAt: z.string().optional().or(z.literal('')),
-  gdprProcessingConsentBy: z.enum(['candidate', 'recruiter', 'agency', '']).optional(),
+  noticePeriodDays: z.coerce.number().int().min(0).optional().or(z.literal('')),
+  gdprProcessingConsentBy: z.enum(GDPR_CONSENT_BY_VALUES).optional().or(z.literal('')),
 })
 
 export type UpdateCandidateState = {
@@ -352,7 +373,7 @@ export async function updateCandidateDetails(
 ): Promise<UpdateCandidateState> {
   const ctx = await getActionContext()
   if (!ctx) return { success: false, error: 'Unauthorized' }
-  const { tenantId, userRole } = ctx
+  const { tenantId, userId, userRole } = ctx
 
   try {
     requireRole(userRole ?? undefined, 'recruiter')
@@ -361,6 +382,9 @@ export async function updateCandidateDetails(
   }
 
   const rawAgencyId = formData.get('agencyId')
+  // Compliance fields use formData.has() so that "field absent" (no form
+  // section rendered) is distinguishable from "field present and empty"
+  // (explicit clear). Used below to decide whether to write the column.
   const parsed = UpdateCandidateSchema.safeParse({
     firstName: formData.get('firstName'),
     lastName: formData.get('lastName'),
@@ -376,7 +400,6 @@ export async function updateCandidateDetails(
     rateCurrency: formData.get('rateCurrency') || undefined,
     availabilityStatus: formData.get('availabilityStatus') || undefined,
     availableFrom: formData.get('availableFrom') || undefined,
-    // Compliance fields (parsed + validated; persistence added by #194)
     rightToWorkStatus: formData.get('rightToWorkStatus') || undefined,
     rightToWorkDocumentType: formData.get('rightToWorkDocumentType') || undefined,
     rightToWorkExpiry: formData.get('rightToWorkExpiry') || undefined,
@@ -384,7 +407,6 @@ export async function updateCandidateDetails(
     sponsorshipRequired: formData.get('sponsorshipRequired') || undefined,
     nationality: formData.get('nationality') || undefined,
     noticePeriodDays: formData.get('noticePeriodDays') || undefined,
-    gdprProcessingConsentAt: formData.get('gdprProcessingConsentAt') || undefined,
     gdprProcessingConsentBy: formData.get('gdprProcessingConsentBy') || undefined,
   })
 
@@ -408,6 +430,158 @@ export async function updateCandidateDetails(
       }
     : {}
 
+  // ── Compliance: build the update partial + detect transitions ──────────────
+  //
+  // For each compliance field, only write it if the form actually carried the
+  // key. "Field absent" (e.g. an old form without the compliance section)
+  // should NOT clobber existing values to null. "Field present and empty"
+  // (the user actively cleared the input) is interpreted as a clear and
+  // persisted as null.
+  const has = (k: string) => formData.has(k)
+  const compliancePresent =
+    has('rightToWorkStatus') ||
+    has('rightToWorkDocumentType') ||
+    has('rightToWorkExpiry') ||
+    has('shareCode') ||
+    has('sponsorshipRequired') ||
+    has('nationality') ||
+    has('noticePeriodDays') ||
+    has('gdprProcessingConsentBy')
+
+  // Build candidate update + diff metadata, reading the existing row first
+  // so we can detect transitions (rtw → 'checked', gdpr_consent_by first set).
+  type ComplianceUpdate = Partial<{
+    rightToWorkStatus: 'checked' | 'pending' | 'fail' | 'exempted' | 'not_required' | null
+    rightToWorkDocumentType:
+      | 'passport_uk' | 'passport_eu' | 'passport_other' | 'brp' | 'share_code'
+      | 'visa' | 'settled_status' | 'presettled_status' | 'other' | null
+    rightToWorkExpiry: string | null
+    rightToWorkCheckedAt: Date | null
+    rightToWorkCheckedBy: string | null
+    shareCode: string | null
+    sponsorshipRequired: boolean
+    nationality: string | null
+    noticePeriodDays: number | null
+    gdprProcessingConsentAt: Date | null
+    gdprProcessingConsentBy: 'candidate' | 'recruiter' | 'agency' | null
+  }>
+
+  let complianceUpdate: ComplianceUpdate = {}
+  let rtwTransitionedToChecked = false
+  let fieldsChanged: ComplianceField[] = []
+
+  if (compliancePresent) {
+    const previous = await withTenant(tenantId, async (tx) =>
+      tx
+        .select({
+          rightToWorkStatus: candidates.rightToWorkStatus,
+          rightToWorkDocumentType: candidates.rightToWorkDocumentType,
+          rightToWorkExpiry: candidates.rightToWorkExpiry,
+          rightToWorkCheckedAt: candidates.rightToWorkCheckedAt,
+          rightToWorkCheckedBy: candidates.rightToWorkCheckedBy,
+          shareCode: candidates.shareCode,
+          sponsorshipRequired: candidates.sponsorshipRequired,
+          nationality: candidates.nationality,
+          noticePeriodDays: candidates.noticePeriodDays,
+          gdprProcessingConsentAt: candidates.gdprProcessingConsentAt,
+          gdprProcessingConsentBy: candidates.gdprProcessingConsentBy,
+        })
+        .from(candidates)
+        .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
+        .limit(1)
+    )
+
+    const prev = previous[0] ?? null
+
+    // Resolve next values for each compliance field, only when present.
+    const nextRtwStatus = has('rightToWorkStatus')
+      ? (parsed.data.rightToWorkStatus || null)
+      : undefined
+    const nextRtwDoc = has('rightToWorkDocumentType')
+      ? (parsed.data.rightToWorkDocumentType || null)
+      : undefined
+    const nextRtwExpiry = has('rightToWorkExpiry')
+      ? (parsed.data.rightToWorkExpiry || null)
+      : undefined
+    const nextShareCode = has('shareCode')
+      ? (parsed.data.shareCode || null)
+      : undefined
+    const nextSponsorshipRequired = has('sponsorshipRequired')
+      ? (parsed.data.sponsorshipRequired === 'true')
+      : undefined
+    const nextNationality = has('nationality')
+      ? (parsed.data.nationality || null)
+      : undefined
+    const nextNoticePeriodDays = has('noticePeriodDays')
+      ? (typeof parsed.data.noticePeriodDays === 'number'
+          ? parsed.data.noticePeriodDays
+          : null)
+      : undefined
+    const nextGdprConsentBy = has('gdprProcessingConsentBy')
+      ? (parsed.data.gdprProcessingConsentBy || null)
+      : undefined
+
+    // Stamp into the update only if the field is being touched.
+    if (nextRtwStatus !== undefined) complianceUpdate.rightToWorkStatus = nextRtwStatus as ComplianceUpdate['rightToWorkStatus']
+    if (nextRtwDoc !== undefined) complianceUpdate.rightToWorkDocumentType = nextRtwDoc as ComplianceUpdate['rightToWorkDocumentType']
+    if (nextRtwExpiry !== undefined) complianceUpdate.rightToWorkExpiry = nextRtwExpiry
+    if (nextShareCode !== undefined) complianceUpdate.shareCode = nextShareCode
+    if (nextSponsorshipRequired !== undefined) complianceUpdate.sponsorshipRequired = nextSponsorshipRequired
+    if (nextNationality !== undefined) complianceUpdate.nationality = nextNationality
+    if (nextNoticePeriodDays !== undefined) complianceUpdate.noticePeriodDays = nextNoticePeriodDays
+    if (nextGdprConsentBy !== undefined) complianceUpdate.gdprProcessingConsentBy = nextGdprConsentBy as ComplianceUpdate['gdprProcessingConsentBy']
+
+    // ── Transition: rtw status -> 'checked'
+    //   Auto-stamp rightToWorkCheckedAt + rightToWorkCheckedBy.
+    //   Only on TRANSITION (prev !== 'checked' && next === 'checked') —
+    //   re-saving an already-checked status is a no-op so the original
+    //   verification timestamp + actor are preserved.
+    if (
+      nextRtwStatus === 'checked' &&
+      prev?.rightToWorkStatus !== 'checked'
+    ) {
+      complianceUpdate.rightToWorkCheckedAt = new Date()
+      complianceUpdate.rightToWorkCheckedBy = userId || null
+      rtwTransitionedToChecked = true
+    }
+
+    // ── Transition: gdpr_processing_consent_by first set
+    //   Auto-stamp gdpr_processing_consent_at iff prev was null and next is
+    //   a real value. If consent was already recorded, the original
+    //   timestamp is preserved (we don't reset it on edits to other fields
+    //   or re-saves of the same consent_by value).
+    if (
+      nextGdprConsentBy &&
+      prev?.gdprProcessingConsentBy == null
+    ) {
+      complianceUpdate.gdprProcessingConsentAt = new Date()
+    }
+
+    // ── Diff: which compliance fields actually changed?
+    //   `sponsorshipRequired` is NOT NULL with default false; everything
+    //   else is nullable. Compare against the previous value in a
+    //   coerced-equal way so undefined-vs-null and number/string are fine.
+    const changed: ComplianceField[] = []
+    const fieldPairs: Array<[ComplianceField, unknown, unknown]> = [
+      ['rightToWorkStatus', nextRtwStatus, prev?.rightToWorkStatus ?? null],
+      ['rightToWorkDocumentType', nextRtwDoc, prev?.rightToWorkDocumentType ?? null],
+      ['rightToWorkExpiry', nextRtwExpiry, prev?.rightToWorkExpiry ?? null],
+      ['shareCode', nextShareCode, prev?.shareCode ?? null],
+      ['sponsorshipRequired', nextSponsorshipRequired, prev?.sponsorshipRequired ?? false],
+      ['nationality', nextNationality, prev?.nationality ?? null],
+      ['noticePeriodDays', nextNoticePeriodDays, prev?.noticePeriodDays ?? null],
+      ['gdprProcessingConsentBy', nextGdprConsentBy, prev?.gdprProcessingConsentBy ?? null],
+    ]
+    for (const [field, next, was] of fieldPairs) {
+      if (next === undefined) continue          // field not touched on this form
+      // Strict-equal handles enums, booleans, and string compares. Numbers
+      // come back as numeric or null from Drizzle; coerce both sides via JSON
+      // shape to keep the comparison robust.
+      if (next !== was) changed.push(field)
+    }
+    fieldsChanged = changed
+  }
+
   await withTenant(tenantId, async (tx) => {
     await tx
       .update(candidates)
@@ -427,9 +601,32 @@ export async function updateCandidateDetails(
         customerRate: typeof parsed.data.customerRate === 'number' ? String(parsed.data.customerRate) : null,
         rateCurrency: parsed.data.rateCurrency || null,
         ...availabilityUpdate,
+        ...complianceUpdate,
       })
       .where(and(eq(candidates.id, candidateId), eq(candidates.tenantId, tenantId)))
   })
+
+  // ── Audit: compliance changes ────────────────────────────────────────────
+  // Emit candidate.compliance_updated whenever at least one tracked
+  // compliance field actually changed. Emit candidate.rtw_verified
+  // additionally on a status → 'checked' transition. Both are fire-and-forget
+  // through emitAudit (PR #180) — failures are non-fatal to the action.
+  if (fieldsChanged.length > 0) {
+    emitAudit(tenantId, {
+      action: 'candidate.compliance_updated',
+      entityType: 'candidate',
+      entityId: candidateId,
+      metadata: { fields_changed: fieldsChanged },
+    })
+  }
+  if (rtwTransitionedToChecked) {
+    emitAudit(tenantId, {
+      action: 'candidate.rtw_verified',
+      entityType: 'candidate',
+      entityId: candidateId,
+      metadata: { verified_by: userId || null },
+    })
+  }
 
   revalidatePath(`/dashboard/candidates/${candidateId}`)
   return { success: true }
