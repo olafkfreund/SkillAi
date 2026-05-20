@@ -19,6 +19,8 @@ import { scoreCandidateWithClaude } from './claude'
 import { scoreCandidateWithGemini } from './gemini'
 import { emitAudit } from '@/lib/audit-middleware'
 import { dispatchHighScoreNotification } from '@/lib/notifications/dispatcher'
+import { getHrSkillSettings } from '@/actions/settings'
+import { loadHrSkill } from './skills'
 
 export async function triggerScoring(
   candidateId: string,
@@ -32,6 +34,18 @@ export async function triggerScoring(
       .set({ scoreStatus: 'processing', updatedAt: new Date() })
       .where(and(eq(scores.candidateId, candidateId), eq(scores.roleId, roleId)))
   })
+
+  // Pre-req for #197 (skill injection into Claude system array) and #199
+  // (skill_used audit metadata). Resolve the per-tenant HR skill toggle and,
+  // when enabled, materialise the skill content so downstream code can pass
+  // it to the AI client. The injection itself lands with #197 — here we only
+  // load the skill so its name is available for audit enrichment on both
+  // the completion and failure rows below.
+  const hrSkillSettings = await getHrSkillSettings(tenantId)
+  const skill = hrSkillSettings.enabled ? loadHrSkill(hrSkillSettings.profile) : null
+  if (skill) {
+    console.log(`[scoring] HR skill loaded: ${skill.name} (${skill.content.length} chars)`)
+  }
 
   try {
     // Fetch candidate and role

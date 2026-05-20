@@ -389,6 +389,96 @@ export async function getDefaultPackLanguage(tenantId: string): Promise<string> 
 }
 
 // ---------------------------------------------------------------------------
+// HR Skill settings (per-tenant AI Behaviour toggle + skill profile selector)
+// Stored as plain-text key-value rows in tenant_settings (not encrypted — not
+// a secret). Default: enabled=false, profile='recruiter-eu-uk'.
+// ---------------------------------------------------------------------------
+
+const HR_SKILL_ENABLED_KEY = 'hr_skill_enabled'
+const HR_SKILL_PROFILE_KEY = 'hr_skill_profile'
+
+import { HR_SKILL_PROFILES, type HrSkillProfile } from '@/lib/ai/skills/profiles'
+
+const HrSkillSettingsSchema = z.object({
+  enabled: z.boolean(),
+  profile: z.enum(HR_SKILL_PROFILES),
+})
+
+export type HrSkillSettingsState =
+  | { success: true }
+  | { success: false; error: string }
+
+export type HrSkillSettingsRecord = {
+  enabled: boolean
+  profile: HrSkillProfile
+}
+
+export async function updateHrSkillSettings(
+  enabled: boolean,
+  profile: HrSkillProfile
+): Promise<HrSkillSettingsState> {
+  const ctx = await getActionContext()
+  if (!ctx) return { success: false, error: 'Unauthorized' }
+  const { tenantId, userId, userRole } = ctx
+
+  try { requireRole(userRole ?? undefined, 'admin') } catch {
+    return { success: false, error: 'Only admins can manage AI behaviour settings' }
+  }
+
+  const parsed = HrSkillSettingsSchema.safeParse({ enabled, profile })
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
+
+  await withTenant(tenantId, async (tx) => {
+    await tx
+      .insert(tenantSettings)
+      .values({ tenantId, key: HR_SKILL_ENABLED_KEY, value: String(parsed.data.enabled), updatedBy: userId })
+      .onConflictDoUpdate({
+        target: [tenantSettings.tenantId, tenantSettings.key],
+        set: { value: String(parsed.data.enabled), updatedBy: userId, updatedAt: new Date() },
+      })
+    await tx
+      .insert(tenantSettings)
+      .values({ tenantId, key: HR_SKILL_PROFILE_KEY, value: parsed.data.profile, updatedBy: userId })
+      .onConflictDoUpdate({
+        target: [tenantSettings.tenantId, tenantSettings.key],
+        set: { value: parsed.data.profile, updatedBy: userId, updatedAt: new Date() },
+      })
+  })
+
+  emitAudit(tenantId, {
+    action: 'settings.hr_skill_toggled',
+    entityType: 'settings',
+    metadata: { enabled: parsed.data.enabled, profile: parsed.data.profile },
+  })
+
+  revalidatePath('/dashboard/settings')
+  return { success: true }
+}
+
+export async function getHrSkillSettings(tenantId: string): Promise<HrSkillSettingsRecord> {
+  const rows = await withTenant(tenantId, async (tx) =>
+    tx
+      .select({ key: tenantSettings.key, value: tenantSettings.value })
+      .from(tenantSettings)
+      .where(
+        and(
+          eq(tenantSettings.tenantId, tenantId),
+          inArray(tenantSettings.key, [HR_SKILL_ENABLED_KEY, HR_SKILL_PROFILE_KEY])
+        )
+      )
+  )
+  const m = new Map(rows.map((r) => [r.key, r.value]))
+  const rawProfile = m.get(HR_SKILL_PROFILE_KEY)
+  const profile: HrSkillProfile = HR_SKILL_PROFILES.includes(rawProfile as HrSkillProfile)
+    ? (rawProfile as HrSkillProfile)
+    : 'recruiter-eu-uk'
+  return {
+    enabled: (m.get(HR_SKILL_ENABLED_KEY) ?? 'false') === 'true',
+    profile,
+  }
+}
+
+// ---------------------------------------------------------------------------
 // SMTP settings
 // ---------------------------------------------------------------------------
 

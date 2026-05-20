@@ -11,6 +11,7 @@ import {
   getDefaultPackLanguage,
   getSmtpSettings,
   getNotificationSettings,
+  getHrSkillSettings,
 } from '@/actions/settings'
 import { listTenantUsers } from '@/actions/users'
 import { listApiTokens } from '@/actions/api-tokens'
@@ -32,6 +33,7 @@ import { EmailTemplatesPanel } from '@/components/settings/email-templates-panel
 import { OAuthCredentialsForm } from '@/components/settings/oauth-credentials-form'
 import { BackupsPanel } from '@/components/settings/backups-panel'
 import { CsvExportPanel } from '@/components/settings/csv-export-panel'
+import { AiBehaviourPanel } from '@/components/settings/ai-behaviour-panel'
 
 export default async function SettingsPage() {
   const session = await auth()
@@ -47,6 +49,7 @@ export default async function SettingsPage() {
   const smtpSettings = isAdmin ? await getSmtpSettings(tenantId) : null
   const notificationSettings = isAdmin ? await getNotificationSettings() : null
   const emailTemplates = isAdmin ? await listEmailTemplates() : []
+  const hrSkillSettings = isAdmin ? await getHrSkillSettings(tenantId) : null
 
   // Last manual tenant export timestamp — admin only
   const lastExportAt: Date | null = isAdmin
@@ -215,6 +218,13 @@ export default async function SettingsPage() {
             </p>
             <OAuthCredentialsForm configuredKeys={configuredKeys} />
           </div>
+
+          {/* AI Behaviour (HR Skill toggle) */}
+          {hrSkillSettings && (
+            <div>
+              <AiBehaviourPanel initial={hrSkillSettings} />
+            </div>
+          )}
 
           {/* Backups & Data Export */}
           <div>
