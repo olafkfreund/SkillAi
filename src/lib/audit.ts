@@ -63,6 +63,8 @@ export type AuditAction =
   | 'settings.notification_updated'
   | 'settings.hr_skill_toggled'
   | 'transcript_analysis.completed' | 'transcript_analysis.failed'
+  | 'audit.exported_csv'
+  | 'user.deleted_gdpr'
 
 type AuditEntry = {
   action: AuditAction
