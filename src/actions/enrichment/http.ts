@@ -35,7 +35,7 @@ export async function readCappedText(res: Response): Promise<string> {
   const decoder = new TextDecoder('utf-8', { fatal: false })
   let received = 0
   let out = ''
-  // eslint-disable-next-line no-constant-condition
+   
   while (true) {
     const { done, value } = await reader.read()
     if (done) break

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { BrainCircuitIcon } from 'lucide-react'
 import { updateHrSkillSettings } from '@/actions/settings'
 import type { HrSkillSettingsRecord } from '@/actions/settings'
@@ -56,12 +57,12 @@ export function AiBehaviourPanel({ initial }: AiBehaviourPanelProps) {
         When enabled, Claude scoring, interview generation, and transcript analysis use
         HR-policy-aware reasoning. The skill profile determines which guidance pack is
         loaded.{' '}
-        <a
+        <Link
           href="/dashboard/help/ai-behaviour"
           className="text-blue-400 hover:text-blue-300 underline underline-offset-2"
         >
           Learn more →
-        </a>
+        </Link>
       </p>
 
       <div className="space-y-5">

@@ -466,7 +466,7 @@ export async function updateCandidateDetails(
     gdprProcessingConsentBy: 'candidate' | 'recruiter' | 'agency' | null
   }>
 
-  let complianceUpdate: ComplianceUpdate = {}
+  const complianceUpdate: ComplianceUpdate = {}
   let rtwTransitionedToChecked = false
   let fieldsChanged: ComplianceField[] = []
 

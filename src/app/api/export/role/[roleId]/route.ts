@@ -50,6 +50,7 @@ export async function GET(
       customerName,
       customerRoleId: role.customerRoleId,
       customerRoleIdLabel,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- react-pdf renderToBuffer expects any-typed element
     }) as any
   )
 

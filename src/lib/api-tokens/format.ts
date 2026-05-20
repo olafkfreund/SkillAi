@@ -1,4 +1,5 @@
 import { hash } from '@node-rs/argon2'
+import { randomFillSync } from 'crypto'
 
 /**
  * Token format: skl_<env>_<24-char-base62>
@@ -17,8 +18,6 @@ const SECRET_LENGTH = 24
 function generateBase62(length: number): string {
   const bytes = new Uint8Array(length)
   // Use Node.js crypto for server-side secure random
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { randomFillSync } = require('crypto') as typeof import('crypto')
   randomFillSync(bytes)
   return Array.from(bytes)
     .map((b) => BASE62_CHARS[b % 62])

@@ -2,11 +2,15 @@
 #
 # Continuous integration gate for pull requests targeting core-mvp-foundation.
 #
-# Runs three jobs in parallel where possible:
-#   1. test      — vitest unit + integration tests (excludes DB integration tests
+# Runs four jobs in parallel where possible:
+#   1. lint      — ESLint with --max-warnings=99999 (errors block, warnings allowed)
+#                  Baseline established in PR #178 ci/eslint-baseline:
+#                    • 0 errors required; warnings are non-blocking for v1
+#                    • Re-evaluate warning gate once warning count is <50
+#   2. test      — vitest unit + integration tests (excludes DB integration tests
 #                  that require RUN_DB_INTEGRATION_TESTS=true and a live Postgres)
-#   2. typecheck — tsc --noEmit across the whole project (src + tests)
-#   3. build     — next build with stub env vars to catch compile-time errors
+#   3. typecheck — tsc --noEmit across the whole project (src + tests)
+#   4. build     — next build with stub env vars to catch compile-time errors
 #                  (depends on test + typecheck so we don't waste build minutes
 #                  on a branch that's already red)
 #
@@ -17,11 +21,6 @@
 #   no TCP connection is attempted until a query executes. AUTH_SECRET and
 #   ENCRYPTION_KEY are only validated at request time, not build time.
 #   Therefore a syntactically-valid placeholder is sufficient for `next build`.
-#
-# Why not lint:
-#   ESLint is currently not enforced in the project's CI (no eslint config
-#   produces zero warnings on the codebase today). Lint is deferred to a
-#   follow-up PR that establishes a clean baseline before gating it.
 #
 # Why not e2e:
 #   Playwright e2e tests (test:e2e) require a running Postgres + Next.js server
@@ -46,7 +45,39 @@ concurrency:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # 1. test — vitest run (NODE_ENV=test is set in the npm script)
+  # 1. lint — ESLint (errors block CI; warnings are non-blocking)
+  #
+  # --max-warnings=99999 allows any number of warnings through while still
+  # exiting non-zero on any error.  The warning count will be reduced in
+  # follow-up cleanup PRs; keeping this generous cap avoids churn in the
+  # short term.
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint (ESLint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Setup Node 22
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        env:
+          NODE_ENV: test
+        run: npm ci
+
+      - name: Lint
+        # Exit non-zero on any error; warnings are allowed (--max-warnings=99999).
+        # ESLint exits 1 when there are errors regardless of --max-warnings.
+        run: npx eslint . --max-warnings=99999
+
+  # ---------------------------------------------------------------------------
+  # 2. test — vitest run (NODE_ENV=test is set in the npm script)
   # ---------------------------------------------------------------------------
   test:
     name: Tests (vitest)
@@ -111,6 +142,7 @@ jobs:
     name: Build (next build)
     runs-on: ubuntu-latest
     needs:
+      - lint
       - test
       - typecheck
 

@@ -873,7 +873,7 @@ function TranscriptAnalysesSection({
                         </View>
                       </View>
                       {qr.transcriptExcerpt && (
-                        <Text style={s.qExcerpt}>"{qr.transcriptExcerpt}"</Text>
+                        <Text style={s.qExcerpt}>&ldquo;{qr.transcriptExcerpt}&rdquo;</Text>
                       )}
                       {qr.notes && (
                         <Text style={s.qNotes}>{qr.notes}</Text>
@@ -976,67 +976,69 @@ function EnrichmentSection({ enrichment }: { enrichment: EnrichmentData }) {
 // Section: Compliance & Eligibility (internal / recruiter only)
 // Never rendered for customer audience — gated at the call-site.
 // ---------------------------------------------------------------------------
+
+// Helper functions hoisted to module scope to avoid react-hooks/static-components
+// (components defined inside render bodies are re-created on every render)
+function complianceRtwStatusLabel(v: string | null): string {
+  if (!v) return '—'
+  const map: Record<string, string> = {
+    checked: 'Checked',
+    pending: 'Pending',
+    fail: 'Fail',
+    exempted: 'Exempted',
+    not_required: 'Not Required',
+  }
+  return map[v] ?? v
+}
+
+function complianceRtwDocLabel(v: string | null): string {
+  if (!v) return '—'
+  const map: Record<string, string> = {
+    passport_uk: 'UK Passport',
+    passport_eu: 'EU Passport',
+    passport_other: 'Other Passport',
+    brp: 'BRP',
+    share_code: 'Share Code',
+    visa: 'Visa',
+    settled_status: 'Settled Status',
+    presettled_status: 'Pre-Settled Status',
+    other: 'Other',
+  }
+  return map[v] ?? v
+}
+
+function complianceConsentByLabel(v: string | null): string {
+  if (!v) return '—'
+  const map: Record<string, string> = {
+    candidate: 'Candidate',
+    recruiter: 'Recruiter',
+    agency: 'Agency',
+  }
+  return map[v] ?? v
+}
+
+// Reusable label+value row for the compliance section
+function ComplianceFieldRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={{ flexDirection: 'row', marginBottom: 4 }}>
+      <Text
+        style={{
+          fontSize: 8,
+          fontFamily: 'Helvetica-Bold',
+          color: colors.slate500,
+          width: 160,
+        }}
+      >
+        {label}
+      </Text>
+      <Text style={{ fontSize: 9, color: colors.slate700, flex: 1 }}>{value}</Text>
+    </View>
+  )
+}
+
 function ComplianceSection({ candidate }: { candidate: Candidate }) {
   // Only render when at least one compliance field is populated
   if (!hasComplianceData(candidate)) return null
-
-  // Human-readable labels for enum values
-  function rtwStatusLabel(v: string | null): string {
-    if (!v) return '—'
-    const map: Record<string, string> = {
-      checked: 'Checked',
-      pending: 'Pending',
-      fail: 'Fail',
-      exempted: 'Exempted',
-      not_required: 'Not Required',
-    }
-    return map[v] ?? v
-  }
-
-  function rtwDocLabel(v: string | null): string {
-    if (!v) return '—'
-    const map: Record<string, string> = {
-      passport_uk: 'UK Passport',
-      passport_eu: 'EU Passport',
-      passport_other: 'Other Passport',
-      brp: 'BRP',
-      share_code: 'Share Code',
-      visa: 'Visa',
-      settled_status: 'Settled Status',
-      presettled_status: 'Pre-Settled Status',
-      other: 'Other',
-    }
-    return map[v] ?? v
-  }
-
-  function consentByLabel(v: string | null): string {
-    if (!v) return '—'
-    const map: Record<string, string> = {
-      candidate: 'Candidate',
-      recruiter: 'Recruiter',
-      agency: 'Agency',
-    }
-    return map[v] ?? v
-  }
-
-  // Reusable row: label + value
-  function FieldRow({ label, value }: { label: string; value: string }) {
-    return (
-      <View style={{ flexDirection: 'row', marginBottom: 4 }}>
-        <Text
-          style={{
-            fontSize: 8,
-            fontFamily: 'Helvetica-Bold',
-            color: colors.slate500,
-            width: 160,
-          }}
-        >
-          {label}
-        </Text>
-        <Text style={{ fontSize: 9, color: colors.slate700, flex: 1 }}>{value}</Text>
-      </View>
-    )
-  }
 
   // Right-to-work status badge color
   function rtwStatusColors(v: string | null): { bg: string; text: string } {
@@ -1064,7 +1066,7 @@ function ComplianceSection({ candidate }: { candidate: Candidate }) {
             ]}
           >
             <Text style={{ color: rtwC.text, fontSize: 8, fontFamily: 'Helvetica-Bold' }}>
-              RIGHT TO WORK: {rtwStatusLabel(candidate.rightToWorkStatus).toUpperCase()}
+              RIGHT TO WORK: {complianceRtwStatusLabel(candidate.rightToWorkStatus).toUpperCase()}
             </Text>
           </View>
         )}
@@ -1073,33 +1075,33 @@ function ComplianceSection({ candidate }: { candidate: Candidate }) {
       <View style={[base.card, { marginTop: 6 }]}>
         {/* Right to Work */}
         {candidate.rightToWorkStatus && (
-          <FieldRow label="Right to Work Status" value={rtwStatusLabel(candidate.rightToWorkStatus)} />
+          <ComplianceFieldRow label="Right to Work Status" value={complianceRtwStatusLabel(candidate.rightToWorkStatus)} />
         )}
         {candidate.rightToWorkDocumentType && (
-          <FieldRow label="Document Type" value={rtwDocLabel(candidate.rightToWorkDocumentType)} />
+          <ComplianceFieldRow label="Document Type" value={complianceRtwDocLabel(candidate.rightToWorkDocumentType)} />
         )}
         {candidate.rightToWorkExpiry && (
-          <FieldRow label="Document Expiry" value={candidate.rightToWorkExpiry} />
+          <ComplianceFieldRow label="Document Expiry" value={candidate.rightToWorkExpiry} />
         )}
         {candidate.rightToWorkCheckedAt && (
-          <FieldRow label="Check Date" value={fmt(candidate.rightToWorkCheckedAt)} />
+          <ComplianceFieldRow label="Check Date" value={fmt(candidate.rightToWorkCheckedAt)} />
         )}
         {candidate.shareCode && (
-          <FieldRow label="Share Code" value={candidate.shareCode} />
+          <ComplianceFieldRow label="Share Code" value={candidate.shareCode} />
         )}
 
         {/* Sponsorship & Nationality */}
-        <FieldRow
+        <ComplianceFieldRow
           label="Sponsorship Required"
           value={candidate.sponsorshipRequired ? 'Yes' : 'No'}
         />
         {candidate.nationality && (
-          <FieldRow label="Nationality" value={candidate.nationality} />
+          <ComplianceFieldRow label="Nationality" value={candidate.nationality} />
         )}
 
         {/* Notice period */}
         {candidate.noticePeriodDays !== null && candidate.noticePeriodDays !== undefined && (
-          <FieldRow
+          <ComplianceFieldRow
             label="Notice Period"
             value={
               candidate.noticePeriodDays === 0
@@ -1111,12 +1113,12 @@ function ComplianceSection({ candidate }: { candidate: Candidate }) {
 
         {/* GDPR consent */}
         {candidate.gdprProcessingConsentAt && (
-          <FieldRow label="GDPR Consent Date" value={fmt(candidate.gdprProcessingConsentAt)} />
+          <ComplianceFieldRow label="GDPR Consent Date" value={fmt(candidate.gdprProcessingConsentAt)} />
         )}
         {candidate.gdprProcessingConsentBy && (
-          <FieldRow
+          <ComplianceFieldRow
             label="GDPR Consent Provided By"
-            value={consentByLabel(candidate.gdprProcessingConsentBy)}
+            value={complianceConsentByLabel(candidate.gdprProcessingConsentBy)}
           />
         )}
       </View>
