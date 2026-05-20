@@ -2,14 +2,8 @@ import Link from 'next/link'
 import { SubmissionStatusPill } from '@/components/roles/submission-status-pill'
 import type { SubmissionWithDetails } from '@/actions/role-submissions'
 
-// Page-level extended type: getAllSubmissionsForTenant joins roleTitle + customerName
-// onto SubmissionWithDetails. We re-declare the minimal shape the card needs so this
-// component doesn't have to import the page-private SubmissionRow typedef.
 type SubmissionCardProps = {
-  submission: SubmissionWithDetails & {
-    roleTitle: string
-    customerName: string | null
-  }
+  submission: SubmissionWithDetails
   timeAgo: (date: Date) => string
 }
 
@@ -21,9 +15,10 @@ export function SubmissionCard({ submission, timeAgo }: SubmissionCardProps) {
     (candidate.lastName[0] ?? '')
   ).toUpperCase()
 
+  const roleTitle = submission.roleTitle ?? '—'
   const roleLine = submission.customerName
-    ? `${submission.roleTitle} · ${submission.customerName}`
-    : submission.roleTitle
+    ? `${roleTitle} · ${submission.customerName}`
+    : roleTitle
 
   return (
     <div

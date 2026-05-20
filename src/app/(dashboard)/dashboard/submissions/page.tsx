@@ -6,22 +6,11 @@ import { auth } from '@/lib/auth'
 import { hasRole } from '@/lib/auth/require-role'
 import { withTenant } from '@/db'
 import { roles, customers, agencies } from '@/db/schema'
-import {
-  getAllSubmissionsForTenant,
-  type SubmissionWithDetails,
-} from '@/actions/role-submissions'
+import { getAllSubmissionsForTenant } from '@/actions/role-submissions'
 import { SubmissionFilters } from '@/components/submissions/submission-filters'
 import { SubmissionStatusPill } from '@/components/roles/submission-status-pill'
 import { SubmissionCard } from '@/components/submissions/submission-card'
 import type { SubmissionStatus } from '@/db/schema/role-submissions'
-
-// Agent A extends SubmissionWithDetails with roleTitle and customerName for the
-// tenant-wide loader. We declare the extended shape here so the page is
-// self-documenting about what it expects.
-type SubmissionRow = SubmissionWithDetails & {
-  roleTitle: string
-  customerName: string | null
-}
 
 export const metadata = { title: 'Submissions — SkillAI' }
 
@@ -169,8 +158,7 @@ export default async function SubmissionsPage({ searchParams }: PageProps) {
     }),
   ])
 
-  // Cast to the extended row shape Agent A exports (includes roleTitle + customerName)
-  const allSubmissions = submissionsResult.rows as SubmissionRow[]
+  const allSubmissions = submissionsResult.rows
   const totalCount = submissionsResult.totalCount
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
@@ -360,7 +348,9 @@ export default async function SubmissionsPage({ searchParams }: PageProps) {
                           href={`/dashboard/roles/${sub.roleId}`}
                           className="text-blue-400 hover:text-blue-300 hover:underline"
                         >
-                          {sub.roleTitle}
+                          {sub.roleTitle ?? (
+                            <span className="text-[var(--color-fg-subtle)]">—</span>
+                          )}
                         </Link>
                       </td>
 
