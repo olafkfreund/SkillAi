@@ -8,6 +8,7 @@ import {
   boolean,
   timestamp,
   numeric,
+  integer,
   index,
   date,
   jsonb,
@@ -40,6 +41,41 @@ export const availabilityStatusEnum = pgEnum('availability_status', [
 ])
 
 export type AvailabilityStatus = (typeof availabilityStatusEnum.enumValues)[number]
+
+// EU/UK right-to-work check status
+export const rightToWorkStatusEnum = pgEnum('right_to_work_status', [
+  'checked',
+  'pending',
+  'fail',
+  'exempted',
+  'not_required',
+])
+
+export type RightToWorkStatus = (typeof rightToWorkStatusEnum.enumValues)[number]
+
+// Acceptable right-to-work document types
+export const rightToWorkDocumentTypeEnum = pgEnum('right_to_work_document_type', [
+  'passport_uk',
+  'passport_eu',
+  'passport_other',
+  'brp',
+  'share_code',
+  'visa',
+  'settled_status',
+  'presettled_status',
+  'other',
+])
+
+export type RightToWorkDocumentType = (typeof rightToWorkDocumentTypeEnum.enumValues)[number]
+
+// Who provided GDPR processing consent
+export const gdprProcessingConsentByEnum = pgEnum('gdpr_processing_consent_by', [
+  'candidate',
+  'recruiter',
+  'agency',
+])
+
+export type GdprProcessingConsentBy = (typeof gdprProcessingConsentByEnum.enumValues)[number]
 
 export const candidates = pgTable(
   'candidates',
@@ -78,6 +114,19 @@ export const candidates = pgTable(
     synechronCvData: jsonb('synechron_cv_data'),
     synechronCandidateId: varchar('synechron_candidate_id', { length: 64 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+
+    // EU/UK right-to-work + compliance fields (all nullable — non-destructive addition)
+    rightToWorkStatus: rightToWorkStatusEnum('right_to_work_status'),
+    rightToWorkDocumentType: rightToWorkDocumentTypeEnum('right_to_work_document_type'),
+    rightToWorkExpiry: date('right_to_work_expiry'),
+    rightToWorkCheckedAt: timestamp('right_to_work_checked_at', { withTimezone: true }),
+    rightToWorkCheckedBy: uuid('right_to_work_checked_by').references(() => users.id),
+    shareCode: varchar('share_code', { length: 20 }),
+    sponsorshipRequired: boolean('sponsorship_required').notNull().default(false),
+    nationality: varchar('nationality', { length: 100 }),
+    noticePeriodDays: integer('notice_period_days'),
+    gdprProcessingConsentAt: timestamp('gdpr_processing_consent_at', { withTimezone: true }),
+    gdprProcessingConsentBy: gdprProcessingConsentByEnum('gdpr_processing_consent_by'),
   },
   (t) => [
     index('idx_candidates_tenant').on(t.tenantId),
