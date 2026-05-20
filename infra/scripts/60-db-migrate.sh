@@ -58,39 +58,95 @@ log "RDS endpoint : ${RDS_ENDPOINT}:${RDS_PORT}/${RDS_DATABASE}"
 log "Image tag    : ${IMAGE_TAG}"
 
 # ---------------------------------------------------------------------------
-# Phase A — Schema migrations via kubectl run (one-shot pod)
+# Ensure namespace exists (idempotent) before creating the Secret or trap.
+# NOTE: a separate ordering bug exists where the namespace may not yet exist
+# at this point in first-ever deploys — fixing that is out of scope here.
+# ---------------------------------------------------------------------------
+kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
+
+# ---------------------------------------------------------------------------
+# Store DB credentials in a transient k8s Secret.
+# The EXIT trap below guarantees cleanup even on failure.
+# ---------------------------------------------------------------------------
+kubectl create secret generic skillai-migrate-creds \
+  --namespace="${NAMESPACE}" \
+  --from-literal=PGPASSWORD="${RDS_PASSWORD}" \
+  --from-literal=DATABASE_URL="${RDS_URL}" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# Cleanup trap — runs on EXIT regardless of success or failure.
+# shellcheck disable=SC2064
+trap "kubectl delete secret skillai-migrate-creds -n ${NAMESPACE} --ignore-not-found" EXIT
+
+# ---------------------------------------------------------------------------
+# Phase A — Schema migrations via pod manifests (one-shot pods)
 # ---------------------------------------------------------------------------
 log "-------------------------------------------------------"
 log " Phase A: Running Drizzle schema migrations against RDS"
 log "-------------------------------------------------------"
 
 # Ensure pgvector extension exists before Drizzle touches the schema.
-# We run a tiny psql-client pod to execute the extension creation.
+# Credentials are injected via envFrom referencing the Secret — no plaintext
+# values in the manifest or in kubectl flags.
 log "Ensuring pgvector extension on RDS ..."
-kubectl run skillai-pgvector-init \
-  --rm -i \
-  --restart=Never \
-  --image=postgres:17-alpine \
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: skillai-pgvector-init
+  namespace: ${NAMESPACE}
+spec:
+  restartPolicy: Never
+  containers:
+  - name: skillai-pgvector-init
+    image: postgres:17-alpine
+    command:
+    - psql
+    - --host=${RDS_ENDPOINT}
+    - --port=${RDS_PORT}
+    - --username=${RDS_USERNAME}
+    - --dbname=${RDS_DATABASE}
+    - --command=CREATE EXTENSION IF NOT EXISTS vector;
+    envFrom:
+    - secretRef:
+        name: skillai-migrate-creds
+EOF
+
+kubectl wait pod/skillai-pgvector-init \
   --namespace="${NAMESPACE}" \
-  --env="PGPASSWORD=${RDS_PASSWORD}" \
-  --command -- \
-  psql \
-    --host="${RDS_ENDPOINT}" \
-    --port="${RDS_PORT}" \
-    --username="${RDS_USERNAME}" \
-    --dbname="${RDS_DATABASE}" \
-    --command="CREATE EXTENSION IF NOT EXISTS vector;" \
-  || true   # idempotent — extension may already exist
+  --for=condition=Ready \
+  --timeout=120s \
+  || true   # pod may complete before Ready fires; check logs below
+
+# Stream logs then delete (idempotent — extension may already exist)
+kubectl logs -n "${NAMESPACE}" skillai-pgvector-init --follow || true
+kubectl delete pod/skillai-pgvector-init --namespace="${NAMESPACE}" --ignore-not-found
 
 log "Running Drizzle migrations ..."
-kubectl run skillai-migrate \
-  --rm -i \
-  --restart=Never \
-  --image="${IMAGE_TAG}" \
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: skillai-migrate
+  namespace: ${NAMESPACE}
+spec:
+  restartPolicy: Never
+  containers:
+  - name: skillai-migrate
+    image: ${IMAGE_TAG}
+    command: ["node", "/app/scripts/migrate.mjs"]
+    envFrom:
+    - secretRef:
+        name: skillai-migrate-creds
+EOF
+
+kubectl wait pod/skillai-migrate \
   --namespace="${NAMESPACE}" \
-  --env="DATABASE_URL=${RDS_URL}" \
-  --command -- \
-  node /app/scripts/migrate.mjs
+  --for=condition=Ready \
+  --timeout=120s
+
+kubectl logs -n "${NAMESPACE}" skillai-migrate --follow
+kubectl delete pod/skillai-migrate --namespace="${NAMESPACE}" --ignore-not-found
 
 log "Phase A complete — schema migrations applied."
 
@@ -140,7 +196,8 @@ log "Dump complete: ${DUMP_FILE} (${DUMP_SIZE})"
 # ---------------------------------------------------------------------------
 log "Spinning up psql client pod in namespace=${NAMESPACE} ..."
 
-# Write a temp pod manifest and apply it
+# Credentials come from the skillai-migrate-creds Secret via envFrom — no
+# plaintext values in the manifest.
 BASTION_POD="skillai-db-restore"
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -154,9 +211,9 @@ spec:
   - name: psql
     image: postgres:17-alpine
     command: ["sh", "-c", "while true; do sleep 3600; done"]
-    env:
-    - name: PGPASSWORD
-      value: "${RDS_PASSWORD}"
+    envFrom:
+    - secretRef:
+        name: skillai-migrate-creds
 EOF
 
 log "Waiting for bastion pod to be running ..."
