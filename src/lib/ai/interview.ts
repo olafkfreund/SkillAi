@@ -18,8 +18,8 @@ import { formatManagerPriorities } from './priorities'
 import { formatLanguageDirective, TOOL_LANGUAGE_REINFORCEMENT, type SupportedLanguage } from './language'
 import { resolveAnthropicKey } from './keys'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
-import { loadHrSkill } from '@/lib/skills'
-import { getHrSkillSettings } from '@/lib/skills/tenant-toggle'
+import { loadHrSkill } from '@/lib/ai/skills'
+import { getHrSkillSettings } from '@/actions/settings'
 
 export { inferExperienceLevel, inferLanguage }
 

@@ -36,11 +36,11 @@ vi.mock('@/lib/ai/keys', () => ({
 const mockGetHrSkillSettings = vi.hoisted(() => vi.fn())
 const mockLoadHrSkill = vi.hoisted(() => vi.fn())
 
-vi.mock('@/lib/skills/tenant-toggle', () => ({
+vi.mock('@/actions/settings', () => ({
   getHrSkillSettings: mockGetHrSkillSettings,
 }))
 
-vi.mock('@/lib/skills', () => ({
+vi.mock('@/lib/ai/skills', () => ({
   loadHrSkill: mockLoadHrSkill,
 }))
 

@@ -11,8 +11,8 @@ import { resolveAnthropicKey } from './keys'
 import { CandidateScoreSchema, type CandidateScore } from './schema'
 import { formatManagerPriorities } from './priorities'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
-import { loadHrSkill } from '@/lib/skills'
-import { getHrSkillSettings } from '@/lib/skills/tenant-toggle'
+import { loadHrSkill } from '@/lib/ai/skills'
+import { getHrSkillSettings } from '@/actions/settings'
 
 const SCORING_TOOL: Anthropic.Tool = {
   name: 'submit_candidate_score',
