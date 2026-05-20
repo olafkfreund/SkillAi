@@ -61,6 +61,7 @@ export type AuditAction =
   | 'notification.webhook_failed'
   | 'settings.notification_updated'
   | 'settings.hr_skill_toggled'
+  | 'transcript_analysis.completed' | 'transcript_analysis.failed'
 
 type AuditEntry = {
   action: AuditAction
