@@ -254,7 +254,7 @@ export async function updateSynechronCandidateId(
 // ---------------------------------------------------------------------------
 
 const VALID_STATUSES: CandidateStatus[] = [
-  'new', 'shortlisted', 'interviewing', 'offered', 'hired', 'rejected',
+  'new', 'shortlisted', 'interviewing', 'offered', 'hired', 'rejected', 'rejected_by_customer',
 ]
 
 export async function bulkUpdateCandidateStatus(

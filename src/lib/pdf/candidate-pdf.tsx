@@ -410,6 +410,8 @@ function statusColors(status: Candidate['status']): { bg: string; text: string }
     case 'interviewing': return { bg: colors.amber50, text: colors.amber700 }
     case 'offered': return { bg: colors.green50, text: colors.green700 }
     case 'rejected': return { bg: colors.red50, text: colors.red700 }
+    // rejected_by_customer is an internal status — caller gates rendering on !isCustomer
+    case 'rejected_by_customer': return { bg: colors.amber50, text: colors.amber700 }
     default: return { bg: colors.slate100, text: colors.slate500 }
   }
 }
@@ -421,6 +423,7 @@ function statusLabel(status: Candidate['status']): string {
     interviewing: 'Interviewing',
     offered: 'Offered',
     rejected: 'Rejected',
+    rejected_by_customer: 'Rejected by Customer',
     hired: 'Hired',
   }
   return map[status]
