@@ -161,6 +161,11 @@ When scoring experience_level, assess specifically whether the candidate's senio
         roleId,
         overallScore: result.overall_score,
         model: useGemini ? 'gemini' : 'claude',
+        // #199 — record which HR skill profile (if any) augmented this AI call
+        // so we can A/B compare skill-augmented vs unaugmented scoring runs.
+        // `null` (not absent) when toggle is OFF so future queries can use the
+        // simple `WHERE metadata->>'skill_used' IS NOT NULL` filter.
+        skill_used: skill?.name ?? null,
       },
     })
   } catch (err) {
@@ -176,7 +181,9 @@ When scoring experience_level, assess specifically whether the candidate's senio
       action: 'score.failed',
       entityType: 'score',
       entityId: candidateId,
-      metadata: { roleId, error: message },
+      // #199 — same skill_used tag as on score.completed so failure rows are
+      // attributable to skill-on or skill-off runs in the A/B analysis.
+      metadata: { roleId, error: message, skill_used: skill?.name ?? null },
     })
 
     console.error(`Scoring failed for candidate ${candidateId}:`, message)
