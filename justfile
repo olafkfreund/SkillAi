@@ -204,7 +204,7 @@ stop:
     echo "To restart: just start"
 
 # Bring EKS node group + RDS back up (~5-8 min total)
-start:
+start: _assert-context
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -311,7 +311,7 @@ start:
 # ---------------------------------------------------------------------------
 
 # Show node group, RDS, deployment, ingress, and /api/health in one view
-status:
+status: _assert-context
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -439,6 +439,31 @@ cost-estimate:
     echo "  Reference: plan purrfect-percolating-mango.md for line-item breakdown."
 
 # ---------------------------------------------------------------------------
+# === Private helpers ===
+# ---------------------------------------------------------------------------
+
+# Assert kubectl context matches expected EKS cluster ARN (prevents fat-finger cluster ops)
+[private]
+_assert-context:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    : "${AWS_REGION:?AWS_REGION must be set (source .envrc)}"
+    account=$(aws sts get-caller-identity --query Account --output text 2>/dev/null) || {
+        echo "ERROR: aws sts get-caller-identity failed — is AWS_PROFILE / .envrc set?" >&2
+        exit 1
+    }
+    expected="arn:aws:eks:${AWS_REGION}:${account}:cluster/${CLUSTER_NAME:-skillai}"
+    actual=$(kubectl config current-context 2>/dev/null) || {
+        echo "ERROR: no current kubectl context — run 'just kubeconfig' first" >&2
+        exit 1
+    }
+    if [[ "$actual" != "$expected" ]]; then
+        echo "ERROR: kubectl context is '$actual', expected '$expected'" >&2
+        echo "Run: aws eks update-kubeconfig --region $AWS_REGION --name ${CLUSTER_NAME:-skillai}" >&2
+        exit 1
+    fi
+
+# ---------------------------------------------------------------------------
 # === Quality of life ===
 # ---------------------------------------------------------------------------
 
@@ -447,15 +472,15 @@ verify:
     bash infra/scripts/90-verify.sh
 
 # Follow live application logs from the Kubernetes deployment (last 100 lines)
-logs:
+logs: _assert-context
     kubectl logs deployment/{{ k8s_deploy }} -n {{ k8s_ns }} --tail=100 -f
 
 # Open an interactive shell in the running app pod
-shell:
+shell: _assert-context
     kubectl exec -it deployment/{{ k8s_deploy }} -n {{ k8s_ns }} -- sh
 
 # Forward local :3000 → cluster :80 to test without going through ingress
-port-forward:
+port-forward: _assert-context
     kubectl port-forward -n {{ k8s_ns }} svc/{{ k8s_deploy }} 3000:80
 
 # ---------------------------------------------------------------------------
