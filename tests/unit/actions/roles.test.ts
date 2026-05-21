@@ -29,6 +29,9 @@ vi.mock('next/navigation', () => ({ redirect: vi.fn() }))
 vi.mock('next/server', () => ({ after: vi.fn((fn: () => void) => fn?.()) }))
 vi.mock('@/lib/ai/role-tags', () => ({ extractRoleTags: vi.fn().mockResolvedValue([]) }))
 
+const mockTriggerAutoMatch = vi.fn().mockResolvedValue(undefined)
+vi.mock('@/actions/auto-match', () => ({ triggerAutoMatch: mockTriggerAutoMatch }))
+
 const mockWriteAuditLog = vi.fn().mockResolvedValue(undefined)
 vi.mock('@/lib/audit', () => ({ writeAuditLog: mockWriteAuditLog }))
 
@@ -236,6 +239,49 @@ describe('createRole — customerRoleId', () => {
 
     expect(result.success).toBe(false)
     expect((result as { success: false; error: string }).error).toMatch(/unauthorized/i)
+  })
+})
+
+// Auto-match wiring (epic #267 / issue #270) — verifies the second after()
+// block in createRole fires triggerAutoMatch as a background task.
+describe('createRole — auto-match wiring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    withTenantCallCount = 0
+    existingRoleRows = []
+    mockGetActionContext.mockResolvedValue(recruiterCtx())
+    mockTriggerAutoMatch.mockResolvedValue(undefined)
+  })
+
+  it('fires triggerAutoMatch with the new role id and tenant id', async () => {
+    const { createRole } = await import('@/actions/roles')
+
+    const result = await createRole(null, baseFormData())
+
+    expect(result.success).toBe(true)
+    expect(mockTriggerAutoMatch).toHaveBeenCalledTimes(1)
+    expect(mockTriggerAutoMatch).toHaveBeenCalledWith(ROLE_ID, TENANT_ID)
+  })
+
+  it('does not fire triggerAutoMatch when validation fails', async () => {
+    const { createRole } = await import('@/actions/roles')
+    // missing description fails the Zod schema
+    const fd = baseFormData({ description: '' })
+
+    const result = await createRole(null, fd)
+
+    expect(result.success).toBe(false)
+    expect(mockTriggerAutoMatch).not.toHaveBeenCalled()
+  })
+
+  it('does not propagate triggerAutoMatch failures to the caller', async () => {
+    mockTriggerAutoMatch.mockRejectedValue(new Error('auto-match exploded'))
+    const { createRole } = await import('@/actions/roles')
+
+    const result = await createRole(null, baseFormData())
+
+    // The caller sees success; the background failure is logged but not surfaced.
+    expect(result.success).toBe(true)
   })
 })
 

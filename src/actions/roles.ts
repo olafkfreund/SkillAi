@@ -24,6 +24,7 @@ import { requireRole } from '@/lib/auth/require-role'
 import { writeAuditLog } from '@/lib/audit'
 import { extractRoleTags } from '@/lib/ai/role-tags'
 import { getActionContext } from '@/lib/auth/action-context'
+import { triggerAutoMatch } from '@/actions/auto-match'
 
 // Preprocess priorityKeywords: form sends a JSON-stringified array via FormData.
 // Accepts an actual array (programmatic call) OR a JSON string (FormData);
@@ -149,6 +150,19 @@ export async function createRole(
 
   after(async () => {
     await _saveRoleTags(role.id, tenantId, parsed.data.title, parsed.data.description, parsed.data.requirements)
+  })
+
+  // Auto-match epic #267 / issue #270: kick off the archive pre-filter +
+  // top-3 Claude scoring as a background job so the recruiter sees suggested
+  // candidates on the role detail page without manual action. Self-audits
+  // (role.auto_match_started / _completed / _failed) and never throws —
+  // outer catch is a safety net only.
+  after(async () => {
+    try {
+      await triggerAutoMatch(role.id, tenantId)
+    } catch (err) {
+      console.error(`[auto-match] background failure for role ${role.id}:`, err)
+    }
   })
 
   // Audit: role created
