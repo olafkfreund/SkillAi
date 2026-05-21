@@ -12,6 +12,7 @@ import { resolveGoogleKey } from './keys'
 import { CandidateScoreSchema, type CandidateScore } from './schema'
 import { formatManagerPriorities } from './priorities'
 import { logAiUsage, geminiUsageToInput } from './usage-logger'
+import type { AiOperation } from '@/db/schema/ai-usage'
 
 const GEMINI_MODEL = 'models/gemini-2.0-flash'
 
@@ -78,6 +79,9 @@ type ScoringInput = {
   frameworkContext?: string
   budgetContext?: string
   priorityKeywords?: readonly string[]
+  // Optional operation tag for ai_usage. Defaults to 'cv_scoring_gemini'.
+  // Used by auto-match (#269) to tag scoring runs as 'auto_match_scoring'.
+  operation?: AiOperation
 }
 
 export async function scoreCandidateWithGemini(input: ScoringInput): Promise<CandidateScore> {
@@ -125,7 +129,7 @@ Return an overall_score (0-100) plus a brief summary (2-4 sentences).`
     logAiUsage({
       tenantId: input.tenantId,
       userId: null,
-      operation: 'cv_scoring_gemini',
+      operation: input.operation ?? 'cv_scoring_gemini',
       model: GEMINI_MODEL,
       usage: geminiUsageToInput(usageMeta),
       durationMs: Date.now() - startedAt,
