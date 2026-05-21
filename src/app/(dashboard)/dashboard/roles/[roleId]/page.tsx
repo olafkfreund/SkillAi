@@ -15,6 +15,7 @@ import { RoleContent } from '@/components/roles/role-content'
 import { SelectableRoleCandidateList } from '@/components/roles/selectable-role-candidate-list'
 import type { RoleCandidateRow } from '@/components/roles/selectable-role-candidate-list'
 import { SuggestCandidatesPanel } from '@/components/roles/suggest-candidates-panel'
+import { ArchiveMatchesPanel } from '@/components/roles/archive-matches-panel'
 import { AddCandidatePanel } from '@/components/roles/add-candidate-panel'
 import { ShortlistSummaryPanel } from '@/components/roles/shortlist-summary-panel'
 import { SentToCustomerPanel } from '@/components/roles/sent-to-customer-panel'
@@ -344,6 +345,13 @@ export default async function RoleDetailPage({ params }: Props) {
         </h2>
         <RoleContent text={role.requirements} />
       </div>
+
+      {/* Auto-match top archive candidates (epic #267) — recruiter-only because
+          it surfaces rates + rejection-derived signals. Customer / manager
+          audiences never see this panel. */}
+      {audience === 'recruiter' && (
+        <ArchiveMatchesPanel roleId={roleId} />
+      )}
 
       {/* Auto-suggest matching candidates from archive */}
       <SuggestCandidatesPanel
