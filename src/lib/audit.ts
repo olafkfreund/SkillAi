@@ -13,6 +13,7 @@ export type AuditAction =
   | 'candidate.profile_confirmed'
   | 'candidate.profile_dismissed'
   | 'role.created' | 'role.updated' | 'role.archived' | 'role.unarchived' | 'role.deleted_hard'
+  | 'role.auto_match_started' | 'role.auto_match_completed' | 'role.auto_match_failed'
   | 'score.completed' | 'score.failed' | 'score.removed'
   | 'interview_pack.created' | 'interview_pack.completed' | 'interview_pack.failed'
   | 'interview_pack.deleted' | 'interview_pack.retried'
