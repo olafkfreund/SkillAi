@@ -74,5 +74,6 @@ export const AI_OPERATIONS = [
   'embedding',
   'personal_site_summary',
   'welcome_letter_generate',
+  'auto_match_scoring',
 ] as const
 export type AiOperation = (typeof AI_OPERATIONS)[number]

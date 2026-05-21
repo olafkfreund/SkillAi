@@ -11,6 +11,7 @@ import { resolveAnthropicKey } from './keys'
 import { CandidateScoreSchema, type CandidateScore } from './schema'
 import { formatManagerPriorities } from './priorities'
 import { logAiUsage, anthropicUsageToInput } from './usage-logger'
+import type { AiOperation } from '@/db/schema/ai-usage'
 import { loadHrSkill } from '@/lib/ai/skills'
 import { getHrSkillSettings } from '@/actions/settings'
 
@@ -83,6 +84,10 @@ type ScoringInput = {
   frameworkContext?: string
   budgetContext?: string
   priorityKeywords?: readonly string[]
+  // Optional operation tag for ai_usage. Defaults to 'cv_scoring_claude'.
+  // Used by auto-match (#269) to tag scoring runs as 'auto_match_scoring'
+  // so per-feature cost reporting can attribute spend correctly.
+  operation?: AiOperation
 }
 
 export async function scoreCandidateWithClaude(input: ScoringInput): Promise<CandidateScore> {
@@ -158,7 +163,7 @@ Use the submit_candidate_score tool to return your assessment.`,
   logAiUsage({
     tenantId: input.tenantId,
     userId: null,
-    operation: 'cv_scoring_claude',
+    operation: input.operation ?? 'cv_scoring_claude',
     model: response.model,
     usage: anthropicUsageToInput(response.usage),
     durationMs: Date.now() - startedAt,

@@ -15,6 +15,7 @@
 import { eq, and, sql } from 'drizzle-orm'
 import { db, withTenant } from '@/db'
 import { candidates, roles, scores, customerFrameworks, tenantSettings } from '@/db/schema'
+import type { AiOperation } from '@/db/schema/ai-usage'
 import { scoreCandidateWithClaude } from './claude'
 import { scoreCandidateWithGemini } from './gemini'
 import { emitAudit } from '@/lib/audit-middleware'
@@ -25,7 +26,12 @@ import { loadHrSkill } from './skills'
 export async function triggerScoring(
   candidateId: string,
   roleId: string,
-  tenantId: string
+  tenantId: string,
+  // Optional operation tag forwarded into ai_usage logging. Default behaviour
+  // is unchanged ('cv_scoring_claude' or 'cv_scoring_gemini' per the model
+  // resolution below). Auto-match (#269) passes 'auto_match_scoring' so its
+  // spend can be attributed separately for the daily cost cap and reporting.
+  operation?: AiOperation
 ): Promise<void> {
   // Mark as processing
   await withTenant(tenantId, async (tx) => {
@@ -118,8 +124,8 @@ When scoring experience_level, assess specifically whether the candidate's senio
     }
 
     const result = useGemini
-      ? await scoreCandidateWithGemini({ ...scoringInput, tenantId })
-      : await scoreCandidateWithClaude({ ...scoringInput, tenantId })
+      ? await scoreCandidateWithGemini({ ...scoringInput, tenantId, operation })
+      : await scoreCandidateWithClaude({ ...scoringInput, tenantId, operation })
 
     // Write results
     await withTenant(tenantId, async (tx) => {
