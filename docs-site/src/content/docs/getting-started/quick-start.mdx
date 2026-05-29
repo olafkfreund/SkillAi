@@ -1,0 +1,159 @@
+---
+title: Quick start
+description: Get SkillAI running locally in under five minutes.
+---
+
+import { Steps, Tabs, TabItem, Aside, CardGrid, Card } from '@astrojs/starlight/components'
+
+This walks you through cloning the repo, starting the database, pushing the schema, seeding a default tenant, and logging into the dashboard. Aimed at running it on your laptop for local development; for production deployment see [AWS deployment](/SkillAi/operations/aws-deploy).
+
+## Prerequisites
+
+| Tool | Version | Notes |
+|---|---|---|
+| Node.js | 22 LTS or later | matches the `node:22-alpine` image used in Docker |
+| Docker + Docker Compose | recent | Postgres 17 + pgvector ships as a container |
+| Git | any | |
+| Anthropic API key | — | required for AI scoring (`sk-ant-...`) |
+| Google AI (Gemini) API key | — | required for embeddings and Gemini scoring |
+| `psql` client | optional | for direct database access during debugging |
+
+## Setup
+
+<Steps>
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/olafkfreund/SkillAi.git
+   cd SkillAi
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+3. **Create your env file**
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   Open `.env.local` and fill in the required values:
+
+   ```bash
+   DATABASE_URL=postgresql://skillai:skillai@localhost:5433/skillai
+
+   NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_SECRET=$(openssl rand -base64 32)
+   AUTH_SECRET=$(openssl rand -base64 32)  # same value as NEXTAUTH_SECRET
+
+   ANTHROPIC_API_KEY=sk-ant-...
+   GEMINI_API_KEY=AIza...
+
+   UPLOAD_DIR=./uploads
+   ENCRYPTION_KEY=$(openssl rand -hex 32)   # used to encrypt per-tenant API keys
+   ```
+
+   <Aside type="caution">
+   `ENCRYPTION_KEY` encrypts tenant API keys stored in the database. **If you deploy a different key in production, every tenant's stored API keys become unreadable** — keep it stable across environments.
+   </Aside>
+
+4. **Start the database**
+
+   <Tabs>
+     <TabItem label="Linux / macOS">
+
+   ```bash
+   docker compose up -d db
+   ```
+
+     </TabItem>
+     <TabItem label="Windows (PowerShell)">
+
+   ```powershell
+   docker compose up -d db
+   ```
+
+     </TabItem>
+   </Tabs>
+
+   Starts PostgreSQL 17 with `pgvector` on **port 5433** (to avoid conflicting with any local Postgres on 5432).
+
+5. **Push the schema and seed initial data**
+
+   ```bash
+   npm run db:push
+   npm run db:seed
+   ```
+
+   The seed script creates one tenant and two users. Default credentials:
+
+   | Role | Email | Password |
+   |---|---|---|
+   | Admin | `admin@skillai.internal` | `admin1234` |
+   | Recruiter | `recruiter@skillai.internal` | `recruiter1234` |
+
+   <Aside type="caution">
+   Change both passwords immediately in any non-local environment.
+   </Aside>
+
+6. **Start the dev server**
+
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000). The first visit redirects to the login page — sign in with the admin or recruiter credentials above.
+
+</Steps>
+
+## Self-contained Docker deployment
+
+If you want both the app and the database in containers (useful for trying a fresh checkout without installing Node locally):
+
+```bash
+cp .env.example .env.local
+# edit .env.local — set DATABASE_URL=postgresql://skillai:skillai@db:5432/skillai
+docker compose up --build
+```
+
+The app is available at [http://localhost:3000](http://localhost:3000). Uploaded files persist in the `uploads` Docker volume.
+
+To run migrations and seed inside the container:
+
+```bash
+docker compose exec app npm run db:push
+docker compose exec app npm run db:seed
+```
+
+## Three things to try first
+
+<Steps>
+
+1. **Upload a CV.** Sidebar → **Candidates** → **+ Add candidate**. Drop a PDF or DOCX onto the dropzone. Pick the demo agency. Hit save. The candidate appears in the list immediately; the AI profile extraction runs in the background.
+
+2. **Create a role.** Sidebar → **Roles** → **+ New role**. Paste a job description into the description field; copy the must-have requirements into the requirements field. Save. The role now exists and is ready to score candidates against.
+
+3. **Generate an interview pack.** From a candidate detail page, pick a role and click **Generate interview pack**. The pack appears within ~15 seconds with 8–12 personalised technical questions, scoring rubrics, and (for engineering roles) a code challenge. See the [in-app help](https://github.com/olafkfreund/SkillAi/tree/core-mvp-foundation/src/content/help) for tips on the prescreen vs full-pack mode.
+
+</Steps>
+
+## Where to next
+
+<CardGrid>
+  <Card title="Architecture overview" icon="puzzle">
+    The high-level boxes, the request lifecycle, and the multi-tenant story. [Read more](/SkillAi/architecture/system-overview).
+  </Card>
+  <Card title="Development workflow" icon="seti:typescript">
+    Project layout, testing, migration workflow, branch conventions. [Read more](/SkillAi/getting-started/development).
+  </Card>
+  <Card title="REST API" icon="open-book">
+    Authenticate with a bearer token, hit any of the 36 endpoints, get OpenAPI 3.1 at `/api/openapi.json`. [Read more](/SkillAi/rest-api/overview).
+  </Card>
+  <Card title="MCP server" icon="external">
+    Wire `claude-desktop` or Claude Code to your SkillAI instance via the stdio bridge or hosted HTTP endpoint. [Read more](/SkillAi/mcp-server/overview).
+  </Card>
+</CardGrid>

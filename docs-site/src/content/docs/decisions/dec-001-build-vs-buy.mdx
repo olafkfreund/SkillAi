@@ -1,0 +1,52 @@
+---
+title: "DEC-001 — Build vs buy"
+description: Build SkillAI as a focused internal recruiting tool rather than buying or forking a full ATS, to keep candidate data on-premise and ship in 6–8 weeks.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+<Aside type="note">
+**Status:** Accepted · **Category:** Product · **Date:** 2026-04-09 · **Stakeholders:** Product Owner, Tech Lead
+</Aside>
+
+## Decision
+
+Build SkillAI as a focused internal recruiting tool — not a full ATS — that uses AI (Claude + Gemini) to rank and archive candidates against job role descriptions, with multi-tenant support, agency management, and a persistent candidate archive.
+
+## Context
+
+The recruiter team is drowning in unstructured CV volume from multiple agencies across multiple open roles. Existing approaches (spreadsheets, email threads) create no searchable history and produce inconsistent evaluation. Full ATS platforms (Greenhouse, Lever, Workday) are too heavy and expensive for what is fundamentally a ranking and navigation problem. An internal, self-hosted tool is preferred because candidate data is sensitive and should not leave company infrastructure.
+
+## Alternatives Considered
+
+1. **Buy a full ATS (Greenhouse/Lever)**
+   - Pros: Feature-complete, well-supported, mobile apps
+   - Cons: $10k-$50k/year, requires IT procurement, data leaves company, massive scope beyond our needs
+
+2. **Fork an open-source ATS (OpenCATS, iKrut)**
+   - Pros: Free, some features pre-built
+   - Cons: No AI ranking, legacy codebases, PHP/outdated stacks, not built for CV-to-role scoring
+
+3. **Build a spreadsheet + GPT workflow**
+   - Pros: Zero infrastructure
+   - Cons: No archive, no multi-user, no structured scoring, brittle
+
+## Rationale
+
+The core value we need is: fast AI-powered ranking + a reusable candidate archive. Nothing off-the-shelf provides both. Building a focused tool in 6-8 weeks is feasible, delivers exactly what we need, and keeps data internal.
+
+## Consequences
+
+**Positive:**
+- Full control over data and features
+- No recurring SaaS costs beyond AI API usage
+- Can extend as needs evolve
+
+**Negative:**
+- Requires development time and ongoing maintenance
+- No mobile app initially
+- Team must manage infrastructure (Docker, backups)
+
+## Related
+
+- The data-sovereignty principle established here is invoked directly by [DEC-006 — Auth.js v5 over Clerk](/decisions/dec-006-authjs-over-clerk/) and [DEC-007 — Manual transcript upload](/decisions/dec-007-manual-transcript-upload/).

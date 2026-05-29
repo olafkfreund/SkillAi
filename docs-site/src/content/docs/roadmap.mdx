@@ -1,0 +1,126 @@
+---
+title: Roadmap
+description: What's shipped, what's open, and what's tracked on GitHub. Phases 1–4 are done; Phase 5 is largely closed; Phase 6 captures the considerable body of work delivered beyond the original v1.0.0 plan.
+---
+
+import { Aside, Badge, CardGrid, Card } from '@astrojs/starlight/components'
+
+The canonical, line-by-line roadmap with every shipped PR lives at [`.agent-os/product/roadmap.md`](https://github.com/olafkfreund/SkillAi/blob/main/.agent-os/product/roadmap.md). This page summarises it so the docs reader can get a current picture in one screen and click out for detail.
+
+<Aside type="tip">
+Status conventions on this page: <Badge text="shipped" variant="success" /> is fully released, <Badge text="partial" variant="caution" /> means scope partially delivered with a re-opened tracker, <Badge text="open" variant="note" /> means scoped but not yet started.
+</Aside>
+
+## Shipped
+
+### Phase 1 — Foundation & Core MVP <Badge text="shipped" variant="success" />
+
+End-to-end CV-upload → AI-score → ranked-list flow on Next.js 16 + TypeScript + Drizzle + PostgreSQL + pgvector + Docker. Auth.js v5 with credentials + JWT + RBAC, multi-tenant via PostgreSQL RLS. PDF / DOCX / ODT / TXT / RTF / MD parsing, Claude structured-output scoring, ranked-list UI, single candidate profile, interview question + code test generator, per-tenant API key management, PDF export of candidate / role / shortlist / interview pack.
+
+### Phase 2 — Candidate Archive & Role Library <Badge text="shipped" variant="success" />
+
+Candidates persist beyond a single hire cycle and roles become reusable templates. Includes the archive with status history, pgvector semantic candidate search ("find similar to X"), role description library, candidate-to-role history, archive filter / sort, and bulk CV upload. Duplicate detection remains deferred — see [Open work](#open-work).
+
+### Phase 3 — Agency Management & Collaboration <Badge text="shipped" variant="success" />
+
+Recruitment agencies as first-class entities. Agency CRUD, candidate-agency linkage, per-candidate notes, per-agency notes, agency performance view, multi-user collaboration per tenant, candidate status tags across the full pipeline, and a full activity / audit log.
+
+### Phase 4 — Side-by-Side Comparison & UX Polish <Badge text="shipped" variant="success" />
+
+Shortlist PDF export, dashboard home, per-tenant Gemini model toggle, score explanation modal with full AI reasoning, and the Cmd-K global command palette (closes the deferred keyboard-shortcuts item). Candidate side-by-side comparison tray is the one Phase 4 item still deferred — see [Open work](#open-work).
+
+### Phase 5 — Admin & Operational Hardening <Badge text="partial" variant="caution" />
+
+Audit log, `/api/health` endpoint, CSP headers, session guards, RLS audits, and per-tenant sliding-window rate limiting are all shipped. AI cost tracking shipped via the `ai_usage` ledger plus the `/dashboard/reports` AI spend breakdown.
+
+The **admin panel** remains partial — only the user-invite slice is in. Tenant list / create / archive, role reassignment (admin / recruiter / hiring_manager / viewer), user deactivation / reactivation, force-password-reset, and an admin-scoped audit-log surface are re-opened as Epic [#37](https://github.com/olafkfreund/SkillAi/issues/37). File-storage migration to Garage, backup runbook automation, and HTTPS via Caddy are also still open.
+
+### Phase 6 — Beyond the original roadmap <Badge text="shipped" variant="success" />
+
+A large body of work delivered mid-flight that wasn't in the original v1.0.0 plan. The headline pieces:
+
+<CardGrid>
+  <Card title="Commercial & placement">
+    Candidate day rates (pay + bill + currency), role customer day rate as budget, real-time margin calculation, soft AI budget signal ([DEC-009](/decisions/dec-009-soft-budget-signal/)), location + language fields, role deadlines with EXPIRED badge ([DEC-008](/decisions/dec-008-manual-archive/)), customer portal links.
+  </Card>
+  <Card title="Internal bench">
+    Per-tenant system "Internal" agency, orthogonal availability enum, derived bench view, INTERNAL badge, bench quick-filter — see [DEC-010](/decisions/dec-010-internal-bench/).
+  </Card>
+  <Card title="Hiring Manager persona (Epic #73)">
+    New `hiring_manager` role, `role_managers` junction, `candidate_role_approvals` table, `/dashboard/manager` landing, `audience='manager'` sanitisation extending the recruiter / customer audience pattern, per-candidate Approve / Reject UI, recruiter-side assignment + dispatch controls, four new audit actions, `notes.is_shareable` opt-in.
+  </Card>
+  <Card title="Customers as first-class entities">
+    Customer CRUD, per-customer hiring frameworks, customer-facing sanitised candidate PDFs, customer-specific role IDs alongside the SkillAI internal role ID, welcome-letter PDF in the candidate's language.
+  </Card>
+  <Card title="Help & in-app docs (PR #96)">
+    `/dashboard/help` route, 20 articles across 8 categories, audience-tagged front-matter so each persona only sees their relevant content, static markdown loader with Zod-validated front-matter.
+  </Card>
+  <Card title="Branding & UI polish (PR #97)">
+    Agency + customer logos (PNG / JPEG / WebP, 2 MB cap), consolidated bulk-select column on candidate list, agency logo at 20–32 px across candidate list / role detail / candidate profile / PDF.
+  </Card>
+  <Card title="Light/dark mode v2 (Epic #103)">
+    `next-themes` + full CSS-var token system. PRs #161–#165 completed the conversion across every page — the v1 caveat about "detail pages stay dark-only" no longer applies.
+  </Card>
+  <Card title="MCP server (Epic #105)">
+    REST API parity (36 new routes + OpenAPI 3.1 at `/api/openapi.json`), API token system (argon2-hashed, scoped `read` / `write` / `admin`), per-tenant rate limiting, MCP server at `/api/mcp` with 48 tools / 4 resources / 3 prompts, bearer auth, write tools require `confirmed: true`. Cross-platform `skillai-mcp` stdio bridge (Epic #115) shipped via Bun-compiled single-file binaries plus `.deb` / `.rpm` / Nix flake.
+  </Card>
+  <Card title="GDPR (Epic #72)">
+    Right-to-erasure UI (Article 17) with explicit transactional deletes + audit redaction — see [DEC-011](/decisions/dec-011-gdpr-erasure/). DSAR export (Article 15) streams a ZIP with 11 JSON files + the original CV + README cover letter.
+  </Card>
+  <Card title="Reporting & dashboards">
+    `/dashboard/reports` admin-only page with time-to-fill, agency hit-rate (Submission→Hire + Shortlist→Hire), AI cost trend, cycle health, top performers. Per-chart CSV export, date-range presets, three-layer admin gate. AI spend breakdown dashboard (PR #152) and tenant-scoped per-entity CSV exports.
+  </Card>
+  <Card title="Integrations">
+    Slack + Teams webhook notifications (PR #168), Cmd-K global command palette (PR #170), calendar 2-way sync (PR #133), per-tenant calendar OAuth credentials (PR #134 + #135), admin backups & data export (PRs #136 + #137).
+  </Card>
+  <Card title="Mobile + PWA (Epic #66)">
+    Sidebar drawer + top app bar + `xs:400` breakpoint, responsive candidate / role / submissions surfaces, responsive forms + modals + tap-target audit, and the PWA capstone with manifest + service worker + install prompt. Lighthouse PWA ≥90.
+  </Card>
+  <Card title="Submissions + customer share-link">
+    `/dashboard/submissions` index, per-role "sent to customer" tracking, customer-specific role IDs, recruiter email notifications on customer status updates.
+  </Card>
+</CardGrid>
+
+Plus AI cost tracking (closes [#36](https://github.com/olafkfreund/SkillAi/issues/36)), dashboard query batching + 6 perf indexes (PR #173), interview transcript analysis ([DEC-007](/decisions/dec-007-manual-transcript-upload/)), interview slot scheduling with ICS import, in-app help catch-up (PR #172), and a long tail of reliability fixes. For the full PR-by-PR list, see the [canonical roadmap](https://github.com/olafkfreund/SkillAi/blob/main/.agent-os/product/roadmap.md#phase-6-beyond-original-roadmap--shipped).
+
+## Open work
+
+The genuinely-open items from the original v1.0.0 roadmap:
+
+- **Admin panel** <Badge text="open" variant="note" /> — re-opened as Epic [#37](https://github.com/olafkfreund/SkillAi/issues/37) with reduced scope: tenant list / create / archive, role reassignment, user deactivation / reactivation, force-password-reset, admin-scoped audit-log surface. The user-invite slice has already shipped.
+- **File storage migration to Garage** <Badge text="open" variant="note" /> — Phase 5. CVs and logos currently sit on a local Docker named volume. See [DEC-005 — Storage](/decisions/dec-005-storage/) for the upgrade path.
+- **Backup runbook automation** <Badge text="open" variant="note" /> — Phase 5. Manual `pg_dump` + uploads tar is the current procedure.
+- **HTTPS via Caddy** <Badge text="open" variant="note" /> — Phase 5. Current setups use direct port exposure or a separate reverse proxy.
+- **Candidate side-by-side comparison tray** <Badge text="open" variant="note" /> — Phase 4. Select 2–5 candidates from the role detail view and open them side-by-side. Comparison view exists but the tray-based selection UX is not built yet.
+- **Duplicate candidate detection** <Badge text="open" variant="note" /> — Phase 2. Flag candidates whose CV closely matches an existing profile via vector similarity at upload time.
+
+## Future — tracked on GitHub
+
+Major pending initiatives are tracked as GitHub issues rather than expanded inline here, so progress can be followed alongside implementation commits.
+
+- **Shared folders & cloud storage integration** — tracker issue [#3](https://github.com/olafkfreund/SkillAi/issues/3) with 5 phase issues:
+  - [#4 host folders](https://github.com/olafkfreund/SkillAi/issues/4)
+  - [#5 Google Drive](https://github.com/olafkfreund/SkillAi/issues/5)
+  - [#6 OneDrive](https://github.com/olafkfreund/SkillAi/issues/6)
+  - [#7 SharePoint](https://github.com/olafkfreund/SkillAi/issues/7)
+  - [#8 webhooks](https://github.com/olafkfreund/SkillAi/issues/8)
+
+When new large initiatives are scoped, they follow the same pattern — a tracker issue + phase issues with acceptance criteria — and get linked from the canonical roadmap.
+
+## Recently closed
+
+These were on the open list as recently as a few weeks ago and have now shipped:
+
+- ✅ **AI cost tracking** — closed via [#36](https://github.com/olafkfreund/SkillAi/issues/36).
+- ✅ **Keyboard shortcuts** — closed via the Cmd-K command palette in PR [#170](https://github.com/olafkfreund/SkillAi/pull/170) (closes [#78](https://github.com/olafkfreund/SkillAi/issues/78)).
+- ✅ **Per-tenant rate limiting** — superseded and shipped as part of Epic #105 (REST + MCP entry-point rate limiting via `tenant_settings`). Per-API-cost limits are covered separately by the AI cost tracking ledger.
+
+## Design principles
+
+Every new feature should satisfy at least one of these tests:
+
+1. Does it make the recruiter **faster** at their core job (ranking and shortlisting)?
+2. Does it **reduce data loss** (candidate history, notes, decisions)?
+3. Does it improve **explainability** (why was this candidate ranked here)?
+
+Features that add complexity without satisfying one of these should be deferred. The application should remain deployable with a single `docker compose up` command. No mandatory external services beyond a PostgreSQL database and AI API keys.

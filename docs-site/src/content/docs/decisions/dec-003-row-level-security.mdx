@@ -1,0 +1,28 @@
+---
+title: "DEC-003 — Row-Level Security for multi-tenancy"
+description: PostgreSQL RLS with a tenant_id column on every table and a per-request session variable enforces isolation at the database layer, simpler than schema-per-tenant.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+<Aside type="note">
+**Status:** Accepted · **Category:** Technical · **Date:** 2026-04-09 · **Stakeholders:** Tech Lead
+</Aside>
+
+## Decision
+
+Implement multi-tenancy using PostgreSQL Row-Level Security (RLS) with a `tenant_id` column on all tables and a session variable (`SET app.tenant_id = '...'`) set at the start of each request.
+
+## Context
+
+Two common approaches: (1) schema-per-tenant (each tenant gets isolated schema) and (2) shared schema + RLS. For an internal tool with fewer than 50 tenants, RLS is simpler to operate: no schema migration complexity, single connection pool, and isolation is enforced at the database layer — impossible to bypass in application code.
+
+## Consequences
+
+**Positive:** Simple ops, single schema, isolation enforced at DB level
+**Negative:** All queries must include tenant context; RLS policies must be audited carefully
+
+## Related
+
+- [DEC-002 — Drizzle ORM over Prisma](/decisions/dec-002-drizzle-over-prisma/) — the ORM choice that made writing RLS-aware queries straightforward via the `withTenant()` helper.
+- [DEC-011 — GDPR erasure](/decisions/dec-011-gdpr-erasure/) — every explicit delete runs inside the same `withTenant()` transaction this decision establishes.

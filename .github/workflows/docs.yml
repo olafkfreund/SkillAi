@@ -1,0 +1,117 @@
+# docs.yml
+#
+# Builds and deploys the SkillAI documentation site (docs-site/) to GitHub Pages.
+#
+# Two jobs:
+#   1. build   — runs the three auto-generation scripts (OpenAPI / MCP catalogue
+#                / DB schema), then `astro build`. Uploads the dist/ as a Pages
+#                artifact.
+#   2. deploy  — publishes the artifact to GitHub Pages via the modern
+#                actions/deploy-pages flow (not the legacy gh-pages branch).
+#
+# Triggers:
+#   - push to core-mvp-foundation that touches anything affecting docs:
+#     docs-site/, docs/, src/lib/mcp/**, src/lib/api/openapi.ts,
+#     src/db/schema/**, scripts/generate-mcp-tools-doc.ts, the workflow itself
+#   - pull_request to core-mvp-foundation touching the same set (build only,
+#     does NOT deploy — preview only via the build artifact)
+#   - workflow_dispatch (manual re-run)
+#
+# Stub env vars are passed during docs:gen so the build-time OpenAPI generator
+# can import route files without a real database. The postgres driver is lazy,
+# so a placeholder DATABASE_URL is sufficient — no TCP connection is opened.
+
+name: Docs
+
+on:
+  push:
+    branches:
+      - core-mvp-foundation
+    paths:
+      - 'docs-site/**'
+      - 'docs/**'
+      - 'src/lib/mcp/**'
+      - 'src/lib/api/openapi.ts'
+      - 'src/db/schema/**'
+      - 'scripts/generate-mcp-tools-doc.ts'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches:
+      - core-mvp-foundation
+    paths:
+      - 'docs-site/**'
+      - 'docs/**'
+      - 'src/lib/mcp/**'
+      - 'src/lib/api/openapi.ts'
+      - 'src/db/schema/**'
+      - 'scripts/generate-mcp-tools-doc.ts'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+# Cancel superseded runs on the same branch / PR
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+# Required for actions/deploy-pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build docs site
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install docs-site dependencies
+        working-directory: docs-site
+        run: npm ci --no-audit --no-fund
+
+      - name: Install root dependencies (needed for tsx + parent route imports)
+        run: npm ci --no-audit --no-fund --ignore-scripts
+
+      - name: Generate auto-derived content
+        working-directory: docs-site
+        env:
+          # Stubs — postgres driver is lazy, never actually connects during gen
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+          AUTH_SECRET: docs-build-stub-secret-do-not-use
+          NEXTAUTH_SECRET: docs-build-stub-secret-do-not-use
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          SKIP_ENV_VALIDATION: '1'
+          NODE_ENV: production
+        run: npm run docs:gen
+
+      - name: Build Astro site
+        working-directory: docs-site
+        run: npx astro build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs-site/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    # Only deploy from the canonical branch — PR builds verify but don't publish
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,147 @@
+/* SkillAI documentation site — palette tuned to match the app
+   (emerald accent, zinc surfaces, OKLCH for crisp contrast). */
+
+:root {
+  /* Accent (emerald-600 family) */
+  --sl-color-accent-low: #064e3b;
+  --sl-color-accent: #059669;
+  --sl-color-accent-high: #6ee7b7;
+
+  /* Dark surface tokens — mirror src/app/globals.css */
+  --sl-color-white: #fafafa;
+  --sl-color-gray-1: #ededed;
+  --sl-color-gray-2: #c4c4c4;
+  --sl-color-gray-3: #8e8e8e;
+  --sl-color-gray-4: #4d4d4d;
+  --sl-color-gray-5: #2e2e2e;
+  --sl-color-gray-6: #1c1c1c;
+  --sl-color-black: #0e0e0e;
+}
+
+/* Force dark theme as default — light theme stays available via the toggle. */
+:root[data-theme='dark'] {
+  --sl-color-bg: #0a0a0a;
+  --sl-color-bg-nav: #111111;
+  --sl-color-bg-sidebar: #0e0e0e;
+  --sl-color-bg-inline-code: #1c1c1c;
+  --sl-color-hairline: rgba(255, 255, 255, 0.08);
+  --sl-color-hairline-light: rgba(255, 255, 255, 0.06);
+  --sl-color-text: #ededed;
+  --sl-color-text-accent: #6ee7b7;
+}
+
+/* Light theme — quieter emerald, lighter surfaces */
+:root[data-theme='light'] {
+  --sl-color-accent-low: #d1fae5;
+  --sl-color-accent: #047857;
+  --sl-color-accent-high: #064e3b;
+  --sl-color-bg: #ffffff;
+  --sl-color-bg-nav: #fafafa;
+  --sl-color-bg-sidebar: #f7f7f7;
+  --sl-color-text: #1c1c1c;
+}
+
+/* Hero card on the home page */
+.hero {
+  padding-block: 3rem;
+}
+.hero h1 {
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #6ee7b7 0%, #34d399 50%, #10b981 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero .tagline {
+  font-size: 1.15rem;
+  color: var(--sl-color-gray-2);
+  max-width: 48ch;
+}
+
+/* Cards on landing page (CardGrid) */
+.card {
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 12px;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+.card:hover {
+  border-color: var(--sl-color-accent);
+  transform: translateY(-2px);
+}
+
+/* Inline code chips look more like our app's chips */
+:not(pre) > code {
+  border-radius: 4px;
+  padding-inline: 0.35em;
+  padding-block: 0.1em;
+  background-color: var(--sl-color-bg-inline-code);
+  border: 1px solid var(--sl-color-hairline-light);
+  font-size: 0.875em;
+}
+
+/* Tables — denser, alternating zebra */
+.sl-markdown-content table {
+  border-collapse: collapse;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.sl-markdown-content thead {
+  background-color: var(--sl-color-bg-nav);
+}
+.sl-markdown-content tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.015);
+}
+.sl-markdown-content th,
+.sl-markdown-content td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--sl-color-hairline-light);
+}
+
+/* Code blocks — sharper border */
+.expressive-code {
+  border-radius: 10px;
+  margin-block: 1.25rem;
+}
+
+/* Sidebar spacing tweak */
+.sidebar-content {
+  font-size: 0.92rem;
+}
+.sidebar-content .group-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-3);
+}
+
+/* Right-edge accent strip on H2 — subtle "this is a section" cue */
+.sl-markdown-content h2 {
+  border-left: 3px solid var(--sl-color-accent);
+  padding-left: 0.75rem;
+  margin-left: -0.75rem;
+}
+
+/* Mermaid container */
+.mermaid {
+  background: var(--sl-color-bg-nav);
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-block: 1.5rem;
+  text-align: center;
+}
+
+/* "auto-generated" callout */
+.auto-gen-callout {
+  border: 1px dashed var(--sl-color-accent);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-block: 1rem;
+  font-size: 0.88rem;
+  color: var(--sl-color-gray-2);
+  background: linear-gradient(90deg, rgba(5, 150, 105, 0.06), transparent);
+}
+.auto-gen-callout strong {
+  color: var(--sl-color-text-accent);
+}

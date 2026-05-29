@@ -1,0 +1,48 @@
+---
+title: "DEC-010 — Internal bench: orthogonal availability, not a pipeline stage"
+description: Bench is a derived view from a per-tenant Internal system agency plus an orthogonal availability enum that applies to all candidates — not a stored flag or a pipeline-status value.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+<Aside type="note">
+**Status:** Accepted · **Category:** Technical · **Date:** 2026-04-14
+
+**Related feature:** Internal bench (system Internal agency + availability status)
+</Aside>
+
+## Decision
+
+Internal employees are modelled as candidates belonging to a per-tenant system agency named "Internal" (`is_internal = true`, `is_system = true`, protected from archival). Their **availability** is an orthogonal field (`available` / `on_project` / `unavailable`) plus an optional `available_from` date, applied to ALL candidates (internal or external). "Bench" is a derived concept: `agency.isInternal && candidate.availabilityStatus = 'available'` — no redundant column.
+
+Internal candidates get a visible **INTERNAL badge** on the candidate list and on ranked role results, but **no scoring boost**. Fit is fit.
+
+## Context
+
+Two naïve approaches were considered and rejected:
+
+1. **Extending the pipeline `status` enum with a `bench` value** — wrong because bench is orthogonal to pipeline position. An internal bench person can be `new`, `shortlisted`, or `interviewing` for a specific role while still being "on bench" from the hiring team's perspective.
+2. **A `bench`-specific boolean that only applies to internal candidates** — wrong because contractors also finish contracts. "When is this person free?" applies to any candidate.
+
+## Alternatives Considered
+
+1. **Pipeline enum extension** — rejected (orthogonality violation)
+2. **Bench-specific fields** — rejected (narrow applicability)
+3. **Placement FK (link candidate to their current role)** — rejected (we don't model placements as first-class entities, and this conflates "currently scored on a role" with "currently billing on a role")
+4. **Orthogonal availability enum + derived bench view (chosen)**
+
+## Rationale
+
+Availability as an orthogonal attribute is conceptually correct, works for both internal and external candidates, and requires no changes to existing pipeline logic. Making "bench" a derived view rather than a stored flag avoids denormalisation and keeps the model honest.
+
+## Implementation notes
+
+- Internal agency is **auto-provisioned** per tenant via migration backfill AND a seed-time helper (`ensureInternalAgency`). Idempotent via partial unique index `uniq_agencies_tenant_internal`.
+- `is_internal` (semantic) and `is_system` (operational, blocks archival) are kept as separate flags even though they happen to be the same rows today — cheap future-proofing.
+- Bulk action `bulkAssignToInternalAgency` lets recruiters convert a batch of existing candidates into internal employees.
+- Internal candidates do **not** receive an AI scoring boost. They are tagged in the UI (INTERNAL badge) and easily surfaced via filter, but scored identically to external candidates.
+
+## Consequences
+
+**Positive:** Clean separation of concerns (pipeline vs availability), reusable beyond internal employees, auto-provisioned for all existing and future tenants, protected from accidental deletion.
+**Negative:** Two flags (`is_internal`, `is_system`) instead of one — minor schema complexity; derived "bench" status requires a join in queries.

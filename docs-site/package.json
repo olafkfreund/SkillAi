@@ -1,0 +1,29 @@
+{
+  "name": "skillai-docs",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "npm run docs:gen && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "docs:gen": "node scripts/gen-openapi.mjs && node scripts/gen-mcp-catalogue.mjs && node scripts/gen-db-schema.mjs",
+    "docs:gen:openapi": "node scripts/gen-openapi.mjs",
+    "docs:gen:mcp": "node scripts/gen-mcp-catalogue.mjs",
+    "docs:gen:db": "node scripts/gen-db-schema.mjs"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/mdx": "^4.2.4",
+    "@astrojs/starlight": "^0.32.4",
+    "astro": "^5.7.5",
+    "sharp": "^0.34.1",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0"
+  }
+}

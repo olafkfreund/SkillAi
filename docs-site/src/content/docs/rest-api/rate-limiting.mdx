@@ -1,0 +1,96 @@
+---
+title: Rate limiting
+description: Three independent sliding-window rate limits (per-token, per-tenant, per-write), configurable per tenant via tenant_settings, with response headers and a worked example.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+The SkillAI API enforces three independent sliding-window rate limits on every authenticated request — one per token, one per tenant, and one for writes. They live in [`src/lib/api/rate-limit.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/lib/api/rate-limit.ts).
+
+## The three limits
+
+| Limit | Default | What it counts | When it trips |
+|---|---|---|---|
+| **Per token** | 60 req/min | All requests bearing the same `tokenId` | A single integration spamming the API |
+| **Per tenant** | 600 req/min | All requests across every token in the tenant | A team's combined integration footprint |
+| **Per write** | 30 req/min | Requests where `requiredScope !== 'read'` | Burst of state-mutating calls regardless of token |
+
+The three limits run in parallel — a request fails as soon as **any one** of them is exceeded. Each limit is checked *before* the bucket is incremented, so the request that would cross the threshold gets a clean rejection rather than going one over.
+
+## The sliding-window formula
+
+The limiter uses a Cloudflare-style sliding window. For each bucket the counter is stored per UTC minute. The effective count for "the last 60 seconds" is computed as:
+
+```
+effective = prevWindowCount × (1 − elapsedFraction) + currentWindowCount
+```
+
+where `elapsedFraction` is the fraction of the current minute that has already passed. At the start of a fresh minute the previous window contributes its full count; at the end it contributes zero. This smooths out the bucket-boundary cliff you'd get with a naive per-minute counter without needing per-request timestamps.
+
+Storage is in the `api_rate_limits` table, keyed by `(bucket_key, window_start)` with an `ON CONFLICT ... DO UPDATE` increment so multiple in-flight requests can't race past the limit.
+
+## Configuration
+
+Limits are read from `tenant_settings` with a 60-second in-process cache (see `getRateLimitConfig` in [`src/lib/api/rate-limit-config.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/lib/api/rate-limit-config.ts)). The keys:
+
+| Setting key | Default | Description |
+|---|---|---|
+| `mcp.rate_limit.token_per_min` | `60` | Per-token request ceiling per minute |
+| `mcp.rate_limit.tenant_per_min` | `600` | Per-tenant aggregate request ceiling |
+| `mcp.rate_limit.write_per_min` | `30` | Per-tenant write-operation ceiling |
+
+A tenant admin can raise or lower any of the three by writing to `tenant_settings`. Changes take effect on the next cache miss (within 60 seconds).
+
+<Aside type="note">
+The same three limits are enforced by the MCP server. A write detected in the MCP body (heuristic match on tool name prefixes like `update_`, `create_`, `archive_`) counts against `write_per_min` exactly as a REST write would. See [`src/app/api/mcp/route.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/app/api/mcp/route.ts).
+</Aside>
+
+## Response on 429
+
+When any limit trips, the response is HTTP 429 with this body and headers:
+
+```json
+{
+  "error": "rate_limit_exceeded",
+  "code": "rate_limited"
+}
+```
+
+```
+HTTP/1.1 429 Too Many Requests
+Content-Type: application/json
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1735689660
+Retry-After: 23
+```
+
+- `X-RateLimit-Limit` is the per-token default in the current implementation (always `60`).
+- `X-RateLimit-Remaining` is `0` on a 429 — the bucket is full.
+- `X-RateLimit-Reset` is a UNIX timestamp at which the next minute window starts.
+- `Retry-After` is the number of seconds until that point. Honour this — re-trying earlier just burns more budget and triggers another 429.
+
+Each 429 also writes an `api.rate_limit_exceeded` audit row with `{ limit, retryAfter }` metadata so a tenant admin can correlate spikes to specific tokens.
+
+## Worked example: 50/60 → 61st call
+
+Suppose a token has consumed 50 requests in the current minute and the per-token limit is the default 60.
+
+1. **Calls 51–60** — each request passes the sliding-window check (the current bucket is still under 60), the bucket increments, and the request is served. The 60th call brings the bucket to 60.
+2. **Call 61** — the sliding-window count is **≥** 60 (the check is `tokenSliding >= config.tokenPerMin`, see line 143 of `rate-limit.ts`). The limiter returns `{ ok: false, limit: 'token', retryAfter: N }` where `N` is the seconds left in the current minute. Response is 429 with `Retry-After: N`.
+3. **At the minute boundary** — the previous minute's count gets weighted down by `elapsedFraction` as the new minute progresses. So at exactly the boundary, `effective = 60 × 1.0 + 0 = 60` (still over). One second in, it's `60 × (1 − 1/60) + 0 ≈ 59`. Calls can resume within the first second or two of the new window depending on exact elapsed time.
+4. **Best client behaviour** — wait for `Retry-After`, then continue. Don't poll faster.
+
+## When you hit a write limit specifically
+
+`write_per_min` (default 30) is the most likely to bite real integrations because writes are usually the bursty operation — bulk status updates, batch candidate creates, scoring runs. A 429 on a write counts under `limit: 'write'` in the audit metadata, so you can distinguish "I'm hitting the per-write ceiling" from "I'm hitting the per-token ceiling" by reading the audit log.
+
+If your integration legitimately needs sustained write throughput beyond 30/min, raise `mcp.rate_limit.write_per_min` in tenant settings rather than burning calls against the default.
+
+## Why three independent limits
+
+- **Per-token** isolates noisy integrations — one bad script doesn't starve the rest of the tenant.
+- **Per-tenant** caps the aggregate spend a single customer can impose on the AI backends downstream (Claude / Gemini calls are not free).
+- **Per-write** specifically protects the database and audit log from runaway state churn — reads are cheap, writes generate audit rows and can cascade scoring jobs.
+
+All three need to pass for a request to be served. The first one to fail wins, and the failure reason is surfaced in the audit log so the cause is visible.

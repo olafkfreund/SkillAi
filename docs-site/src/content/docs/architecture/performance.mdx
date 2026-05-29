@@ -1,0 +1,138 @@
+---
+title: Performance baselines
+description: Where SkillAI is fast today, where it will hurt at scale, and what to flip when.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+This page is the forward-looking sizing exercise — not a current pain point. The working dataset as of the last performance audit (issue #83) is small; everything below is what to do when it grows.
+
+## Current baseline
+
+As of the most recent measurement:
+
+| Table | Rows |
+|---|---:|
+| `audit_logs` | 732 |
+| `interview_questions` | 270 |
+| `candidates` | 118 |
+| `ai_usage` | 49 |
+| `scores` | 43 |
+| `interview_packs` | 31 |
+| `roles` | 11 |
+
+## Hot pages
+
+### `/dashboard` — main dashboard
+
+**Today (~100 candidates):** server time ~50–80 ms cold, ~5–15 ms cached.
+
+**Target at 10k candidates:** &lt;500 ms p95 (issue #83 acceptance criterion — verified locally).
+
+The dashboard issues three top-level fetches in parallel, each inside a single `withTenant()` call:
+
+1. **`getForYouFeed`** — five sub-queries (interviews today/tomorrow, awaiting score, stale priorities, expired roles, manager approvals) inside one `withTenant` + `Promise.all`.
+2. **`getDashboardStats`** — five `count()` queries inside one `withTenant`, wrapped in `unstable_cache` with `revalidate: 60`. First load is one batch round-trip; subsequent loads within 60 s are zero round-trips.
+3. **List queries** — four queries (recent roles, top candidates, recent uploads, upcoming interviews) inside one `withTenant` + `Promise.all`.
+
+That's **three `withTenant` calls instead of eight sequential ones** — the change shipped in PR #173 closing issue #83. Each `withTenant` opens a transaction and runs `set_tenant_context()` for RLS; batching collapses that fixed cost.
+
+The 60 s stat cache is the highest-impact lever. After the first hit per tenant per minute, the stat-card row is effectively free.
+
+### `/dashboard/candidates` — candidates list
+
+**Today (~100 candidates):** ~30–60 ms.
+
+**Target at 10k candidates:** &lt;800 ms p95 (issue #83 acceptance criterion).
+
+Already structured as one `withTenant` + `Promise.all` across four sub-queries: rows, total count, agency list, bench count. The compound `(tenant_id, is_active, created_at DESC)` index covers the main row fetch.
+
+**Known weak spots that don't bite yet:**
+
+- **`LIMIT/OFFSET` pagination.** At page 400 of a 10 000-row table, Postgres scans 9 999 rows just to skip them. Switch to keyset (`(created_at, id)` cursor) once page 50+ becomes a common entry point. URL shape changes when this lands.
+- **`count()` on every page load.** Stays cheap up to ~50k rows with the compound index. Past that, swap for `pg_class.reltuples` and show "50k+" rather than an exact count.
+- **`ilike '%q%'` substring search.** No btree support. Cheap until ~10k candidates; install `pg_trgm` and add a GIN trigram index past that threshold.
+
+## Indexes
+
+Added in `src/db/migrations/0028_perf_indexes.sql` (PR #173):
+
+| Index | Table | Columns | Covers |
+|---|---|---|---|
+| `idx_candidates_tenant_active_created` | candidates | `(tenant_id, is_active, created_at DESC)` | Main candidates list, dashboard "Recent uploads" |
+| `idx_candidates_tenant_status_active` | candidates | `(tenant_id, status, is_active)` | Status-filtered candidate views |
+| `idx_scores_status_updated` | scores | `(score_status, updated_at DESC)` | Top candidates this week, scored this week |
+| `idx_roles_tenant_active_created` | roles | `(tenant_id, is_active, created_at DESC)` | Dashboard "Recent roles" |
+| `idx_interview_slots_scheduled_status` | interview_slots | `(scheduled_at, status)` | Dashboard "Upcoming interviews" |
+| `idx_interview_packs_status` | interview_packs | `(generation_status)` | Dashboard "Packs ready" stat |
+
+Pre-existing indexes that remain load-bearing: `idx_candidates_tenant`, `idx_candidates_agency`, `idx_candidates_agency_availability`, `idx_scores_role_overall`, `idx_scores_candidate`, `idx_audit_logs_tenant_created`, `idx_audit_logs_entity`.
+
+### Applying indexes in production
+
+The migration uses plain `CREATE INDEX IF NOT EXISTS` because Drizzle wraps each migration file in an implicit transaction, and `CREATE INDEX CONCURRENTLY` cannot run inside a transaction. For a busy production table, run manually outside the migration tool:
+
+```sql
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_candidates_tenant_active_created
+  ON candidates (tenant_id, is_active, created_at DESC);
+-- repeat per index
+```
+
+Then mark the migration as applied in `drizzle.__drizzle_migrations` so the migrator skips it. At current dev volumes the lock window is microseconds and the in-transaction approach is fine.
+
+## The AI cost cap as backpressure
+
+The auto-match orchestrator (`src/lib/auto-match/scoring.ts`) caps daily Claude spend at **$50 USD per tenant** by default. The cap is checked against today's sum of `cost_usd` in the `ai_usage` ledger filtered to `operation = 'auto_match_scoring'`. When hit, the orchestrator returns `skipped: true, reason: 'daily_cost_cap_exceeded'` and writes nothing.
+
+This is the only backpressure mechanism in the codebase — no rate limiter on the AI provider itself, no circuit breaker. Tenants override the default via `tenant_settings.auto_match_daily_cost_cap_usd`. The cap protects against runaway scoring loops and bug-induced retry storms.
+
+Per-tenant API rate limits exist separately (`src/lib/api/rate-limit.ts`) and apply at the REST + MCP entry points.
+
+## When to flip the next switch
+
+| Threshold | What to do | Why |
+|---|---|---|
+| Any table &gt; **5 000 rows** | Install `pg_stat_statements` (requires `shared_preload_libraries` + Postgres restart). Capture for 1 week. | Operational visibility into actual slow queries — until you have real data, optimisation is guesswork. |
+| Any table &gt; **5 000 rows** | Run `ANALYZE` after bulk imports + nightly via cron. | Planner stats get stale fast on growing tables; bad stats produce bad plans. |
+| candidates &gt; **10 000** | Install `pg_trgm`; add `CREATE INDEX … USING GIN (lower(first_name \|\| ' ' \|\| last_name) gin_trgm_ops)`. | `ilike '%q%'` becomes index-backed. |
+| Common entry past **page 50** of candidates | Switch from `LIMIT/OFFSET` to keyset using `(created_at DESC, id DESC)`. | Offset cost is linear with page number; keyset is O(log n). |
+| candidates &gt; **50 000** | Replace `count()` with `pg_class.reltuples` estimate. | Exact count becomes the dominant page cost; estimate is microseconds. |
+| audit_logs &gt; **1 000 000** | Partition `audit_logs` by month; expire after 24 months unless legal-hold flag set. | Single-table audit log starts to dominate vacuum + index-rebuild times. |
+| dashboard p95 &gt; **500 ms** with the current cache | Lower `revalidate: 60` to `30` or move stats to a materialised view refreshed by cron. | The 60 s cache is the load-bearing performance feature; if you're missing target, the underlying queries got expensive — investigate before extending the TTL. |
+
+## What was explicitly NOT done in #83
+
+- **`pg_stat_statements`** — operational lift outweighs value at &lt;1 000 rows per table. Defer to 5 000+.
+- **`pg_trgm` for search** — unnecessary at current scale. Defer to candidates &gt; 10 000.
+- **Keyset pagination** — page 50 is unreachable today; URL shape change isn't worth it yet.
+- **Background snapshot for stats** — `unstable_cache` with a 60 s TTL gives the same effective behaviour without scheduler infrastructure.
+- **Synthetic bulk-loading benchmarks** — ran the math against the indexed query plans; defer load tests until production has real data to compare against.
+
+## How to verify a query plan is index-backed
+
+Inside the running container:
+
+```bash
+docker exec -it skillai-db-1 psql -U skillai -d skillai
+```
+
+Then in `psql`, set the tenant variable so RLS doesn't filter you out, and `EXPLAIN ANALYZE` the query:
+
+```sql
+SET app.tenant_id = '<your-tenant-uuid>';
+
+EXPLAIN ANALYZE
+SELECT id, first_name, last_name FROM candidates
+WHERE tenant_id = '<tenant>'::uuid AND is_active = true
+ORDER BY created_at DESC
+LIMIT 25;
+```
+
+You want `Index Scan using idx_candidates_tenant_active_created` (or `Index Only Scan`) in the plan, not `Seq Scan`.
+
+## Related
+
+- Issue #83 — performance audit + caching layer (closed by PR #173).
+- Migration `0028_perf_indexes.sql` — the index additions documented above.
+- `src/app/(dashboard)/dashboard/page.tsx` — the parallel-fetch + cache pattern.
+- [Multi-tenancy & RLS](/SkillAi/architecture/multi-tenancy-rls) — why batching inside one `withTenant` matters.
