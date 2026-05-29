@@ -14,7 +14,7 @@ This page is **auto-generated** from the source-of-truth OpenAPI document. To re
 
 **35 paths**, **43 operations**. Download the raw spec: [openapi.json](/SkillAi/openapi.json).
 
-All endpoints require an `Authorization: Bearer skl_<env>_<token>` header. See [Authentication](/rest-api/authentication) for details.
+All endpoints require an `Authorization: Bearer skl_<env>_<token>` header. See [Authentication](/SkillAi/rest-api/authentication) for details.
 
 ## approvals
 

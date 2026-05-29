@@ -26,9 +26,9 @@ The first thing a recruiter sees on login. Three columns of glanceable state:
 - **Active roles + recent uploads + top candidates** — tenant-wide context
 - **Next interviews** — calendar widget pulling from the integrated calendar sync
 
-Every widget runs in a single parallel `Promise.all` inside one `withTenant()` round-trip — see [Dashboard performance + index tuning](/architecture/performance) for the optimisation history.
+Every widget runs in a single parallel `Promise.all` inside one `withTenant()` round-trip — see [Dashboard performance + index tuning](/SkillAi/architecture/performance) for the optimisation history.
 
-→ Read more: [System overview](/architecture/system-overview)
+→ Read more: [System overview](/SkillAi/architecture/system-overview)
 
 ## 2. Candidate list
 
@@ -36,9 +36,9 @@ Every widget runs in a single parallel `Promise.all` inside one `withTenant()` r
 
 The candidate archive — every CV ever uploaded, filterable by skills, agency, status, availability, score range, and date. The left-edge checkbox column drives bulk actions (change status, add to a role, send for approval). Click any row to open the profile.
 
-Each row shows the 20-px agency-logo chip with initials fallback — recruiters instantly see who sourced the candidate. Internal-bench candidates get an **INTERNAL** badge, never any AI scoring boost (see [DEC-010](/decisions/dec-010-internal-bench)).
+Each row shows the 20-px agency-logo chip with initials fallback — recruiters instantly see who sourced the candidate. Internal-bench candidates get an **INTERNAL** badge, never any AI scoring boost (see [DEC-010](/SkillAi/decisions/dec-010-internal-bench)).
 
-→ Read more: [Audience-based view sanitisation](/code-patterns/audience-sanitisation)
+→ Read more: [Audience-based view sanitisation](/SkillAi/code-patterns/audience-sanitisation)
 
 ## 3. Candidate profile
 
@@ -48,7 +48,7 @@ The single source of truth for a candidate. Top: identity + commercial fields (r
 
 The page is rendered by an `audience`-aware component — recruiters see everything, customers see no internal notes / rates / margin / agency, managers see scores + reasoning but read-only.
 
-→ Read more: [Audience-based view sanitisation](/code-patterns/audience-sanitisation), [DEC-009 — Soft budget signal](/decisions/dec-009-soft-budget-signal)
+→ Read more: [Audience-based view sanitisation](/SkillAi/code-patterns/audience-sanitisation), [DEC-009 — Soft budget signal](/SkillAi/decisions/dec-009-soft-budget-signal)
 
 ## 4. CV viewer
 
@@ -56,15 +56,15 @@ The page is rendered by an `audience`-aware component — recruiters see everyth
 
 The raw extracted CV text, plus a "Reformat with AI" button that runs Claude Haiku to clean up the text into structured markdown. Useful for legacy PDFs where the extraction was messy.
 
-→ Read more: [AI scoring pipeline](/architecture/ai-scoring-pipeline)
+→ Read more: [AI scoring pipeline](/SkillAi/architecture/ai-scoring-pipeline)
 
 ## 5. Roles list
 
 <Image src={rolesList} alt="Roles list with status badges" />
 
-All open roles, with status badges, customer linkage, target fill date, and cut-off date. Roles past their cut-off date show a **red EXPIRED badge** and a red banner on the detail view — but **never auto-archive**. The recruiter decides whether to extend the deadline or close the role (see [DEC-008](/decisions/dec-008-manual-archive)).
+All open roles, with status badges, customer linkage, target fill date, and cut-off date. Roles past their cut-off date show a **red EXPIRED badge** and a red banner on the detail view — but **never auto-archive**. The recruiter decides whether to extend the deadline or close the role (see [DEC-008](/SkillAi/decisions/dec-008-manual-archive)).
 
-→ Read more: [Roadmap](/roadmap)
+→ Read more: [Roadmap](/SkillAi/roadmap)
 
 ## 6. Role detail (the heart of the product)
 
@@ -78,17 +78,17 @@ This is where the AI ranking lives. The page shows:
 - Manager assignment + send-for-approval workflow
 - Customer share-link generator
 
-Margin is computed inline (`role.customerDayRate − candidate.candidateRate`) and shown to recruiters. Over-budget candidates aren't filtered out — Claude is told about the budget as a *soft signal* in the prompt, not a scored dimension (see [DEC-009](/decisions/dec-009-soft-budget-signal)).
+Margin is computed inline (`role.customerDayRate − candidate.candidateRate`) and shown to recruiters. Over-budget candidates aren't filtered out — Claude is told about the budget as a *soft signal* in the prompt, not a scored dimension (see [DEC-009](/SkillAi/decisions/dec-009-soft-budget-signal)).
 
-→ Read more: [AI scoring pipeline](/architecture/ai-scoring-pipeline), [REST API for scoring](/rest-api/endpoints#scoring)
+→ Read more: [AI scoring pipeline](/SkillAi/architecture/ai-scoring-pipeline), [REST API for scoring](/SkillAi/rest-api/endpoints#scoring)
 
 ## 7. Agencies
 
 <Image src={agencies} alt="Agencies management view" />
 
-Recruitment agencies are first-class entities. Each agency has contact details, notes, a logo, and a candidate list with performance metrics. The per-tenant **system "Internal" agency** is auto-provisioned and protected from archival — that's how the internal-bench model surfaces here (see [DEC-010](/decisions/dec-010-internal-bench)).
+Recruitment agencies are first-class entities. Each agency has contact details, notes, a logo, and a candidate list with performance metrics. The per-tenant **system "Internal" agency** is auto-provisioned and protected from archival — that's how the internal-bench model surfaces here (see [DEC-010](/SkillAi/decisions/dec-010-internal-bench)).
 
-→ Read more: [Logo upload pattern](/code-patterns/logo-upload)
+→ Read more: [Logo upload pattern](/SkillAi/code-patterns/logo-upload)
 
 ## 8. Settings
 
@@ -96,7 +96,7 @@ Recruitment agencies are first-class entities. Each agency has contact details, 
 
 Per-tenant configuration: API keys (Claude + Gemini, AES-256-GCM encrypted), default pack language, trusted hosts, calendar OAuth credentials, AI cost tracking dashboard, API tokens, backups, CSV exports, and the GDPR DSAR / erasure tools (admin-only).
 
-→ Read more: [DEC-006 — Auth.js over Clerk](/decisions/dec-006-authjs-over-clerk), [DEC-011 — GDPR erasure](/decisions/dec-011-gdpr-erasure)
+→ Read more: [DEC-006 — Auth.js over Clerk](/SkillAi/decisions/dec-006-authjs-over-clerk), [DEC-011 — GDPR erasure](/SkillAi/decisions/dec-011-gdpr-erasure)
 
 ## 9. Interview pack
 
@@ -106,7 +106,7 @@ Generated on demand per candidate × role. Includes personalised technical quest
 
 The pack is exportable as a polished PDF (react-pdf), as is the welcome letter that goes to the candidate in their preferred language.
 
-→ Read more: [AI scoring pipeline](/architecture/ai-scoring-pipeline)
+→ Read more: [AI scoring pipeline](/SkillAi/architecture/ai-scoring-pipeline)
 
 ---
 
@@ -122,4 +122,4 @@ A few surfaces ship today but didn't make this batch:
 - **Submissions index** (`/dashboard/submissions`) — every candidate sent to a customer with status + share-link state
 - **Command palette** (Cmd-K / `/`) — fast cross-app navigation
 
-These are tracked for the next screenshot pass — see [Live demo](/overview/live-demo) for how to capture them locally.
+These are tracked for the next screenshot pass — see [Live demo](/SkillAi/overview/live-demo) for how to capture them locally.

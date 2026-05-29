@@ -41,10 +41,10 @@ A large body of work delivered mid-flight that wasn't in the original v1.0.0 pla
 
 <CardGrid>
   <Card title="Commercial & placement">
-    Candidate day rates (pay + bill + currency), role customer day rate as budget, real-time margin calculation, soft AI budget signal ([DEC-009](/decisions/dec-009-soft-budget-signal/)), location + language fields, role deadlines with EXPIRED badge ([DEC-008](/decisions/dec-008-manual-archive/)), customer portal links.
+    Candidate day rates (pay + bill + currency), role customer day rate as budget, real-time margin calculation, soft AI budget signal ([DEC-009](/SkillAi/decisions/dec-009-soft-budget-signal/)), location + language fields, role deadlines with EXPIRED badge ([DEC-008](/SkillAi/decisions/dec-008-manual-archive/)), customer portal links.
   </Card>
   <Card title="Internal bench">
-    Per-tenant system "Internal" agency, orthogonal availability enum, derived bench view, INTERNAL badge, bench quick-filter — see [DEC-010](/decisions/dec-010-internal-bench/).
+    Per-tenant system "Internal" agency, orthogonal availability enum, derived bench view, INTERNAL badge, bench quick-filter — see [DEC-010](/SkillAi/decisions/dec-010-internal-bench/).
   </Card>
   <Card title="Hiring Manager persona (Epic #73)">
     New `hiring_manager` role, `role_managers` junction, `candidate_role_approvals` table, `/dashboard/manager` landing, `audience='manager'` sanitisation extending the recruiter / customer audience pattern, per-candidate Approve / Reject UI, recruiter-side assignment + dispatch controls, four new audit actions, `notes.is_shareable` opt-in.
@@ -65,7 +65,7 @@ A large body of work delivered mid-flight that wasn't in the original v1.0.0 pla
     REST API parity (36 new routes + OpenAPI 3.1 at `/api/openapi.json`), API token system (argon2-hashed, scoped `read` / `write` / `admin`), per-tenant rate limiting, MCP server at `/api/mcp` with 48 tools / 4 resources / 3 prompts, bearer auth, write tools require `confirmed: true`. Cross-platform `skillai-mcp` stdio bridge (Epic #115) shipped via Bun-compiled single-file binaries plus `.deb` / `.rpm` / Nix flake.
   </Card>
   <Card title="GDPR (Epic #72)">
-    Right-to-erasure UI (Article 17) with explicit transactional deletes + audit redaction — see [DEC-011](/decisions/dec-011-gdpr-erasure/). DSAR export (Article 15) streams a ZIP with 11 JSON files + the original CV + README cover letter.
+    Right-to-erasure UI (Article 17) with explicit transactional deletes + audit redaction — see [DEC-011](/SkillAi/decisions/dec-011-gdpr-erasure/). DSAR export (Article 15) streams a ZIP with 11 JSON files + the original CV + README cover letter.
   </Card>
   <Card title="Reporting & dashboards">
     `/dashboard/reports` admin-only page with time-to-fill, agency hit-rate (Submission→Hire + Shortlist→Hire), AI cost trend, cycle health, top performers. Per-chart CSV export, date-range presets, three-layer admin gate. AI spend breakdown dashboard (PR #152) and tenant-scoped per-entity CSV exports.
@@ -81,14 +81,14 @@ A large body of work delivered mid-flight that wasn't in the original v1.0.0 pla
   </Card>
 </CardGrid>
 
-Plus AI cost tracking (closes [#36](https://github.com/olafkfreund/SkillAi/issues/36)), dashboard query batching + 6 perf indexes (PR #173), interview transcript analysis ([DEC-007](/decisions/dec-007-manual-transcript-upload/)), interview slot scheduling with ICS import, in-app help catch-up (PR #172), and a long tail of reliability fixes. For the full PR-by-PR list, see the [canonical roadmap](https://github.com/olafkfreund/SkillAi/blob/main/.agent-os/product/roadmap.md#phase-6-beyond-original-roadmap--shipped).
+Plus AI cost tracking (closes [#36](https://github.com/olafkfreund/SkillAi/issues/36)), dashboard query batching + 6 perf indexes (PR #173), interview transcript analysis ([DEC-007](/SkillAi/decisions/dec-007-manual-transcript-upload/)), interview slot scheduling with ICS import, in-app help catch-up (PR #172), and a long tail of reliability fixes. For the full PR-by-PR list, see the [canonical roadmap](https://github.com/olafkfreund/SkillAi/blob/main/.agent-os/product/roadmap.md#phase-6-beyond-original-roadmap--shipped).
 
 ## Open work
 
 The genuinely-open items from the original v1.0.0 roadmap:
 
 - **Admin panel** <Badge text="open" variant="note" /> — re-opened as Epic [#37](https://github.com/olafkfreund/SkillAi/issues/37) with reduced scope: tenant list / create / archive, role reassignment, user deactivation / reactivation, force-password-reset, admin-scoped audit-log surface. The user-invite slice has already shipped.
-- **File storage migration to Garage** <Badge text="open" variant="note" /> — Phase 5. CVs and logos currently sit on a local Docker named volume. See [DEC-005 — Storage](/decisions/dec-005-storage/) for the upgrade path.
+- **File storage migration to Garage** <Badge text="open" variant="note" /> — Phase 5. CVs and logos currently sit on a local Docker named volume. See [DEC-005 — Storage](/SkillAi/decisions/dec-005-storage/) for the upgrade path.
 - **Backup runbook automation** <Badge text="open" variant="note" /> — Phase 5. Manual `pg_dump` + uploads tar is the current procedure.
 - **HTTPS via Caddy** <Badge text="open" variant="note" /> — Phase 5. Current setups use direct port exposure or a separate reverse proxy.
 - **Candidate side-by-side comparison tray** <Badge text="open" variant="note" /> — Phase 4. Select 2–5 candidates from the role detail view and open them side-by-side. Comparison view exists but the tray-based selection UX is not built yet.
