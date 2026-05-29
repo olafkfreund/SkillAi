@@ -1,0 +1,105 @@
+---
+title: REST API overview
+description: Bearer-token authenticated REST API for SkillAI — 35 unique paths, 41 operations, scope-based access, sliding-window rate limits, and a live OpenAPI document.
+---
+
+import { Aside, CardGrid, Card } from '@astrojs/starlight/components'
+
+The SkillAI REST API is the same surface the dashboard uses, exposed for machine-to-machine integration. It covers candidate management, role lifecycle, scoring, interview packs, approvals, notes, settings, and exports. Every operation that mutates state in the UI has a documented REST equivalent.
+
+## What it covers
+
+There are **41 operations across 35 unique paths** registered in the OpenAPI document. Each route file in `src/app/api/*` self-registers via `registerRoute(...)` (see [`src/lib/api/openapi.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/lib/api/openapi.ts)) at module load, so the spec is always in lock-step with the code.
+
+The full endpoint table is in [Endpoint reference](/SkillAi/rest-api/endpoints).
+
+<CardGrid>
+  <Card title="Auth model" icon="seti:lock">
+    Bearer tokens issued from Settings → API Tokens. The same token works for [REST](/SkillAi/rest-api/authentication) and the [MCP server](/SkillAi/mcp-server/overview).
+  </Card>
+  <Card title="Scope hierarchy" icon="approve-check-circle">
+    `admin` ⊃ `write` ⊃ `read`. An `admin` token can call any endpoint; `write` covers reads + writes; `read` covers reads only.
+  </Card>
+  <Card title="Rate limits" icon="warning">
+    Sliding-window per-token / per-tenant / per-write. Configurable per tenant. See [Rate limiting](/SkillAi/rest-api/rate-limiting).
+  </Card>
+  <Card title="OpenAPI 3.1" icon="document">
+    Live spec at `GET /api/openapi.json` (read scope). Schemas generated from Zod via `z.toJSONSchema()`.
+  </Card>
+</CardGrid>
+
+## Request flow
+
+Every authenticated route goes through the `withApiAuth` wrapper defined in [`src/lib/api/auth-middleware.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/lib/api/auth-middleware.ts). It validates the bearer token, enforces the scope declared by the route, runs the rate limiter, and only then calls the handler with an enriched context (`tenantId`, `userId`, `tokenId`, `scopes`).
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant M as withApiAuth
+    participant V as validateApiToken
+    participant R as checkRateLimit
+    participant T as withTenant (RLS)
+    participant H as Route handler
+
+    C->>M: Authorization: Bearer skl_prod_...
+    M->>V: argon2 verify + expiry + revocation
+    V-->>M: { tenantId, userId, scopes, tokenId }
+    M->>M: requireScope(required, granted)
+    M->>R: sliding-window check (token / tenant / write)
+    R-->>M: ok | retryAfter
+    M->>T: SET app.tenant_id = tenantId
+    T->>H: handler(req, ctx)
+    H-->>C: JSON response
+```
+
+If the token is missing or invalid → 401. If the scope is insufficient → 403. If a sliding-window bucket is full → 429 with `Retry-After`. If the handler throws → 500.
+
+## Response envelope
+
+Successful responses return a JSON object that route-specific. Errors follow a consistent two-field envelope:
+
+```json
+{
+  "error": "rate_limit_exceeded",
+  "code": "rate_limited"
+}
+```
+
+`error` is the human-readable label, `code` is a stable machine identifier safe to switch on. The full list of codes lives in the route handlers — common ones include `no_token`, `invalid_token`, `insufficient_scope`, `rate_limited`, `unhandled`.
+
+## HTTP status conventions
+
+| Status | Meaning | When |
+|---|---|---|
+| **200** | Success | Handler completed; body contains the response |
+| **401** | Unauthorized | Missing `Authorization: Bearer`, malformed token, expired, revoked |
+| **403** | Forbidden | Token is valid but the scope does not satisfy what the route requires |
+| **422** | Validation failed | Request body or query params failed Zod validation in the handler |
+| **429** | Rate limit exceeded | One of token / tenant / write sliding-window limits hit; see `Retry-After` |
+| **500** | Internal error | Unhandled exception bubbled up to `withApiAuth` |
+
+## The OpenAPI document
+
+A live OpenAPI 3.1 document is served at `GET /api/openapi.json`. The route itself is wrapped by `withApiAuth('read', ...)` (see [`src/app/api/openapi.json/route.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/app/api/openapi.json/route.ts)), so you need a valid read-scope token to fetch it.
+
+```bash
+curl -H "Authorization: Bearer skl_prod_xxxxxxxxxxxxxxxxxxxxxxxx" \
+     https://your-skillai-host/api/openapi.json
+```
+
+The document includes:
+
+- A `bearerAuth` security scheme keyed on the `skl_<env>_<random>` token format.
+- One operation per registered route, tagged by the URL segment after `/api/`.
+- Per-operation `summary`, `description`, and required scope embedded in the description (`Requires write scope (admin satisfies this)`).
+- `requestBody` and response schemas reflected from Zod via `z.toJSONSchema()` — see `toJsonSchema()` in `src/lib/api/openapi.ts`.
+
+<Aside type="tip">
+Drop the JSON into Swagger UI, Stoplight, or Insomnia to explore the surface interactively. The schemas are accurate down to the field — they come from the same Zod schemas the runtime uses.
+</Aside>
+
+## Next steps
+
+- [Authentication](/SkillAi/rest-api/authentication) — token format, scope inclusion, the mint-and-store recipe.
+- [Rate limiting](/SkillAi/rest-api/rate-limiting) — the sliding-window math, response headers, configuration keys.
+- [Endpoint reference](/SkillAi/rest-api/endpoints) — auto-generated per-endpoint table grouped by module.

@@ -1,0 +1,41 @@
+---
+title: "DEC-008 — Manual archive on role cut-off expiry"
+description: Roles past their cut-off date are flagged visually but never auto-archived. Recruiters retain control over closing a role, because cut-off dates routinely slide.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+<Aside type="note">
+**Status:** Accepted · **Category:** Product · **Date:** 2026-04-14
+</Aside>
+
+## Decision
+
+When a role's `cutoffDate` passes, the role is **flagged visually** (red EXPIRED badge on the list, red banner on the detail page) but remains `isActive = true` until a recruiter explicitly archives it. No automatic lifecycle transitions.
+
+## Context
+
+Cut-off dates are set based on the customer's stated deadline but often slide — the client extends, a late strong candidate appears, or the search is paused rather than cancelled. An auto-archive policy would routinely close roles that the recruiter still wants to work, creating either silent data loss or a constant stream of "unarchive" clicks.
+
+## Alternatives Considered
+
+1. **Auto-archive on cut-off date**
+   - Pros: Zero manual overhead; list stays tidy
+   - Cons: Hides roles the recruiter still needs; forces "unarchive" dance; loses ranked shortlist state if archive triggers cleanup
+
+2. **Auto-archive after a grace period (e.g. +7 days past cut-off)**
+   - Pros: Softer version of auto-archive
+   - Cons: Still wrong for the common "client extended" case; adds a new tunable with no clear right value
+
+3. **Prompt + manual confirm (chosen)**
+   - Pros: Recruiter retains control; visibility is preserved; zero risk of accidental closure
+   - Cons: Expired roles accumulate if recruiter ignores the prompt
+
+## Rationale
+
+Recruiters are the judgement layer. The tool surfaces the signal; the human makes the call. Two clicks (Edit to extend OR Archive to close) is a trivial cost to pay for zero risk of losing in-flight search state.
+
+## Consequences
+
+**Positive:** No data loss, no surprise archival, matches how recruiters already think about deadlines.
+**Negative:** Housekeeping is manual; an inactive tenant could accumulate hundreds of silently-expired roles. Mitigated by the list-level EXPIRED badge making them visually obvious.

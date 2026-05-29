@@ -1,0 +1,81 @@
+---
+title: Tool catalogue
+description: Every tool the SkillAI MCP server exposes — auto-generated from the live tool registry. 48 tools across 12 modules, with required scope and a one-line description for each.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+import catalogue from '../../../data/mcp-catalogue.json'
+
+<Aside type="note">
+This page is **auto-generated** from `docs-site/src/data/mcp-catalogue.json`, which is produced by `scripts/generate-mcp-tools-doc.ts` against the live tool registry. Re-run `npm run docs:mcp-tools` after changing any file under `src/lib/mcp/tools/` and rebuild the docs site to refresh this catalogue.
+</Aside>
+
+## Summary
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
+  <div style="border: 1px solid var(--sl-color-gray-5); border-radius: 0.5rem; padding: 1rem;">
+    <div style="font-size: 2rem; font-weight: 700; line-height: 1;">{catalogue.summary.totalTools}</div>
+    <div style="color: var(--sl-color-gray-3); font-size: 0.875rem;">tools total</div>
+  </div>
+  <div style="border: 1px solid var(--sl-color-gray-5); border-radius: 0.5rem; padding: 1rem;">
+    <div style="font-size: 2rem; font-weight: 700; line-height: 1;">{catalogue.summary.modules}</div>
+    <div style="color: var(--sl-color-gray-3); font-size: 0.875rem;">modules</div>
+  </div>
+  <div style="border: 1px solid var(--sl-color-gray-5); border-radius: 0.5rem; padding: 1rem;">
+    <div style="font-size: 2rem; font-weight: 700; line-height: 1;">{catalogue.summary.readTools}</div>
+    <div style="color: var(--sl-color-gray-3); font-size: 0.875rem;">read tools</div>
+  </div>
+  <div style="border: 1px solid var(--sl-color-gray-5); border-radius: 0.5rem; padding: 1rem;">
+    <div style="font-size: 2rem; font-weight: 700; line-height: 1;">{catalogue.summary.writeTools}</div>
+    <div style="color: var(--sl-color-gray-3); font-size: 0.875rem;">write tools</div>
+  </div>
+  <div style="border: 1px solid var(--sl-color-gray-5); border-radius: 0.5rem; padding: 1rem;">
+    <div style="font-size: 2rem; font-weight: 700; line-height: 1;">{catalogue.summary.resources}</div>
+    <div style="color: var(--sl-color-gray-3); font-size: 0.875rem;">resources</div>
+  </div>
+  <div style="border: 1px solid var(--sl-color-gray-5); border-radius: 0.5rem; padding: 1rem;">
+    <div style="font-size: 2rem; font-weight: 700; line-height: 1;">{catalogue.summary.prompts}</div>
+    <div style="color: var(--sl-color-gray-3); font-size: 0.875rem;">prompts</div>
+  </div>
+</div>
+
+## How to read this
+
+Every tool has a required **scope** (`read`, `write`, or `admin`). The scope hierarchy is `admin ⊃ write ⊃ read` — see [Scope hierarchy](/SkillAi/rest-api/authentication#scope-hierarchy).
+
+Every tool flagged **write** also requires an explicit `confirmed: true` argument in the call. The MCP client (Claude Code, claude-desktop) prompts you inline before sending; the server rejects writes without confirmation. See [write-confirm flow](/SkillAi/mcp-server/connecting#the-write-confirm-flow).
+
+Catalogue generated **{catalogue.generatedAt}**.
+
+{catalogue.modules.map((mod) => (
+  <section key={mod.name}>
+    <h2 id={mod.name}>{mod.name} ({mod.count})</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Tool</th>
+          <th>Scope</th>
+          <th>Write?</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {mod.tools.map((tool) => (
+          <tr key={tool.name}>
+            <td><code>{tool.name}</code></td>
+            <td><code>{tool.scope}</code></td>
+            <td>{tool.isWrite ? 'yes' : 'no'}</td>
+            <td>{tool.description}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+))}
+
+## See also
+
+- [MCP server overview](/SkillAi/mcp-server/overview) — what the server is and how it fits in.
+- [Connecting from Claude Code](/SkillAi/mcp-server/connecting) — wiring the server into Claude Code or claude-desktop.
+- [Resources](/SkillAi/mcp-server/resources) — the four URI-addressable read views.
+- [Prompts](/SkillAi/mcp-server/prompts) — the three prebuilt multi-step workflows.

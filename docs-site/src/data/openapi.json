@@ -1,0 +1,3285 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SkillAi API",
+    "version": "1.0.0",
+    "description": "Internal REST API for SkillAi — AI-powered recruiting portal. All endpoints require a Bearer API token (skl_<env>_...) issued via Settings → API Tokens."
+  },
+  "servers": [
+    {
+      "url": "https://your-skillai-host",
+      "description": "Production"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "skl_<env>_<random>",
+        "description": "API token issued from Settings → API Tokens. Format: skl_dev_... or skl_prod_..."
+      }
+    },
+    "schemas": {
+      "GET__api_approvals__roleId__response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_approvals__roleId__send_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_approvals__roleId___candidateId__approve_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "additionalProperties": false
+      },
+      "POST__api_approvals__roleId___candidateId__approve_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_approvals__roleId___candidateId__reject_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "additionalProperties": false
+      },
+      "POST__api_approvals__roleId___candidateId__reject_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_approvals__roleId__approve_all_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "additionalProperties": false
+      },
+      "POST__api_approvals__roleId__approve_all_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GET__api_roles__roleId__managers_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_roles__roleId__managers_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "primaryUserId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "userIds"
+        ],
+        "additionalProperties": false
+      },
+      "POST__api_roles__roleId__managers_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DELETE__api_roles__roleId__managers__userId__response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GET__api_candidates__candidateId__notes_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_notes_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "candidateId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "candidateId",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "POST__api_notes_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PATCH__api_notes__noteId__body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "candidateId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "candidateId",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "PATCH__api_notes__noteId__response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DELETE__api_notes__noteId__response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GET__api_users_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_users_invite_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email",
+                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+              },
+              {
+                "type": "string",
+                "const": ""
+              }
+            ]
+          },
+          "role": {
+            "default": "recruiter",
+            "type": "string",
+            "enum": [
+              "admin",
+              "recruiter",
+              "viewer"
+            ]
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "additionalProperties": false
+      },
+      "POST__api_users_invite_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PATCH__api_users__userId__role_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "recruiter",
+              "hiring_manager",
+              "viewer"
+            ]
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "additionalProperties": false
+      },
+      "PATCH__api_users__userId__role_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_users__userId__deactivate_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GET__api_settings_api_keys_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_settings_api_keys_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "anthropic_api_key",
+              "google_ai_api_key",
+              "openai_api_key",
+              "brave_search_api_key",
+              "github_token"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "POST__api_settings_api_keys_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DELETE__api_settings_api_keys__provider__response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GET__api_settings_general_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PATCH__api_settings_general_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "default_ai_model",
+              "max_upload_mb"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "PATCH__api_settings_general_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GET__api_settings_trusted_hosts_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PUT__api_settings_trusted_hosts_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "hostnames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "hostnames"
+        ],
+        "additionalProperties": false
+      },
+      "PUT__api_settings_trusted_hosts_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GET__api_settings_default_pack_language_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PUT__api_settings_default_pack_language_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 10
+          }
+        },
+        "required": [
+          "language"
+        ],
+        "additionalProperties": false
+      },
+      "PUT__api_settings_default_pack_language_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_candidates__candidateId__enrichment_trigger_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_candidates__candidateId__enrichment_confirm_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "additionalProperties": false
+      },
+      "POST__api_candidates__candidateId__enrichment_confirm_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_candidates__candidateId__enrichment_dismiss_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "additionalProperties": false
+      },
+      "POST__api_candidates__candidateId__enrichment_dismiss_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_candidates__candidateId__cv_reformat_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GET__api_customers__customerId__framework_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PUT__api_customers__customerId__framework_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "levels": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50
+                },
+                "code": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "description": {
+                  "default": "",
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "order": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "code",
+                "title",
+                "description",
+                "order"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "name",
+          "levels"
+        ],
+        "additionalProperties": false
+      },
+      "PUT__api_customers__customerId__framework_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DELETE__api_customers__customerId__framework_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_scores_rescore_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "candidateId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "roleId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "candidateId",
+          "roleId"
+        ],
+        "additionalProperties": false
+      },
+      "POST__api_scores_rescore_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DELETE__api_scores_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "scoreId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "roleId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "scoreId",
+          "roleId"
+        ],
+        "additionalProperties": false
+      },
+      "DELETE__api_scores_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PATCH__api_candidates__candidateId__body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email",
+                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+              },
+              {
+                "type": "string",
+                "const": ""
+              }
+            ]
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "agencyId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "country": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "languagesSpoken": {
+            "type": "string"
+          },
+          "willingToRelocate": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false",
+              ""
+            ]
+          },
+          "candidateRate": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "string",
+                "const": ""
+              }
+            ]
+          },
+          "customerRate": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "string",
+                "const": ""
+              }
+            ]
+          },
+          "rateCurrency": {
+            "type": "string",
+            "maxLength": 3
+          },
+          "availabilityStatus": {
+            "type": "string",
+            "enum": [
+              "available",
+              "on_project",
+              "unavailable"
+            ]
+          },
+          "availableFrom": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName"
+        ],
+        "additionalProperties": false
+      },
+      "PATCH__api_candidates__candidateId__response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_candidates__candidateId__availability_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "availabilityStatus": {
+            "type": "string",
+            "enum": [
+              "available",
+              "on_project",
+              "unavailable"
+            ]
+          },
+          "availableFrom": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "availabilityStatus"
+        ],
+        "additionalProperties": false
+      },
+      "POST__api_candidates__candidateId__availability_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_candidates__candidateId__agency_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "agencyId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "agencyId"
+        ],
+        "additionalProperties": false
+      },
+      "POST__api_candidates__candidateId__agency_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_candidates__candidateId__status_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "shortlisted",
+              "interviewing",
+              "offered",
+              "hired",
+              "rejected",
+              "rejected_by_customer"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "POST__api_candidates__candidateId__status_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_candidates__candidateId__archive_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_roles_body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "minLength": 10
+          },
+          "requirements": {
+            "type": "string",
+            "minLength": 10
+          },
+          "customerId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "customerRoleId": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "frameworkLevelId": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "frameworkLevelLabel": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "country": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "workMode": {
+            "type": "string",
+            "enum": [
+              "remote",
+              "hybrid",
+              "onsite"
+            ]
+          },
+          "languageRequirements": {
+            "type": "string"
+          },
+          "targetFillDate": {
+            "type": "string"
+          },
+          "cutoffDate": {
+            "type": "string"
+          },
+          "customerPortalPath": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "customerDayRate": {
+            "type": "number",
+            "minimum": 0
+          },
+          "rateCurrency": {
+            "type": "string",
+            "maxLength": 3
+          },
+          "priorityKeywords": {
+            "maxItems": 15,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "requirements"
+        ],
+        "additionalProperties": false
+      },
+      "POST__api_roles_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PATCH__api_roles__roleId__body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "minLength": 10
+          },
+          "requirements": {
+            "type": "string",
+            "minLength": 10
+          },
+          "customerId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "customerRoleId": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "frameworkLevelId": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "frameworkLevelLabel": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "country": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "workMode": {
+            "type": "string",
+            "enum": [
+              "remote",
+              "hybrid",
+              "onsite"
+            ]
+          },
+          "languageRequirements": {
+            "type": "string"
+          },
+          "targetFillDate": {
+            "type": "string"
+          },
+          "cutoffDate": {
+            "type": "string"
+          },
+          "customerPortalPath": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "customerDayRate": {
+            "type": "number",
+            "minimum": 0
+          },
+          "rateCurrency": {
+            "type": "string",
+            "maxLength": 3
+          },
+          "priorityKeywords": {
+            "maxItems": 15,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "requirements"
+        ],
+        "additionalProperties": false
+      },
+      "PATCH__api_roles__roleId__response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_roles__roleId__regenerate_tags_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      },
+      "POST__api_roles__roleId__archive_response": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/approvals/{roleId}": {
+      "get": {
+        "summary": "Get approvals for a role",
+        "description": "Requires read scope (write and admin satisfy this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "approvals"
+        ],
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "description": "Role UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GET__api_approvals__roleId__response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/approvals/{roleId}/send": {
+      "post": {
+        "summary": "Send shortlist for hiring manager approval",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "approvals"
+        ],
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "description": "Role UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_approvals__roleId__send_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/approvals/{roleId}/{candidateId}/approve": {
+      "post": {
+        "summary": "Approve a candidate for a role",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "approvals"
+        ],
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "description": "roleId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "in": "path",
+            "required": true,
+            "description": "candidateId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_approvals__roleId___candidateId__approve_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_approvals__roleId___candidateId__approve_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/approvals/{roleId}/{candidateId}/reject": {
+      "post": {
+        "summary": "Reject a candidate for a role",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "approvals"
+        ],
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "description": "roleId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "in": "path",
+            "required": true,
+            "description": "candidateId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_approvals__roleId___candidateId__reject_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_approvals__roleId___candidateId__reject_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/approvals/{roleId}/approve-all": {
+      "post": {
+        "summary": "Approve all remaining pending candidates for a role",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "approvals"
+        ],
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "description": "roleId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_approvals__roleId__approve_all_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_approvals__roleId__approve_all_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/roles/{roleId}/managers": {
+      "get": {
+        "summary": "Get managers assigned to a role",
+        "description": "Requires read scope (write and admin satisfy this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "roles"
+        ],
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "description": "roleId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GET__api_roles__roleId__managers_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Assign managers to a role (replaces existing set)",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "roles"
+        ],
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "description": "roleId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_roles__roleId__managers_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_roles__roleId__managers_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/roles/{roleId}/managers/{userId}": {
+      "delete": {
+        "summary": "Remove a manager from a role",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "roles"
+        ],
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "description": "roleId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "userId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DELETE__api_roles__roleId__managers__userId__response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidateId}/notes": {
+      "get": {
+        "summary": "Get notes for a candidate",
+        "description": "Requires read scope (write and admin satisfy this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "candidates",
+          "notes"
+        ],
+        "parameters": [
+          {
+            "name": "candidateId",
+            "in": "path",
+            "required": true,
+            "description": "candidateId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GET__api_candidates__candidateId__notes_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/notes": {
+      "post": {
+        "summary": "Create a note for a candidate",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "notes"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_notes_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_notes_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/notes/{noteId}": {
+      "patch": {
+        "summary": "Update a note",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "notes"
+        ],
+        "parameters": [
+          {
+            "name": "noteId",
+            "in": "path",
+            "required": true,
+            "description": "noteId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PATCH__api_notes__noteId__body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PATCH__api_notes__noteId__response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a note",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "notes"
+        ],
+        "parameters": [
+          {
+            "name": "noteId",
+            "in": "path",
+            "required": true,
+            "description": "noteId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DELETE__api_notes__noteId__response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "summary": "List all users in the tenant",
+        "description": "Requires read scope (write and admin satisfy this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "users"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GET__api_users_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/users/invite": {
+      "post": {
+        "summary": "Create a user invitation link",
+        "description": "Requires admin scope",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "users"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_users_invite_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_users_invite_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/users/{userId}/role": {
+      "patch": {
+        "summary": "Update a user role",
+        "description": "Requires admin scope",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "users"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "userId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PATCH__api_users__userId__role_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PATCH__api_users__userId__role_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/users/{userId}/deactivate": {
+      "post": {
+        "summary": "Deactivate a user account",
+        "description": "Requires admin scope",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "users"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "userId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_users__userId__deactivate_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/settings/api-keys": {
+      "get": {
+        "summary": "List which API keys have been configured (names only, no values)",
+        "description": "Requires admin scope",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GET__api_settings_api_keys_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Save or update an API key",
+        "description": "Requires admin scope",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "settings"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_settings_api_keys_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_settings_api_keys_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/settings/api-keys/{provider}": {
+      "delete": {
+        "summary": "Remove a configured API key",
+        "description": "Requires admin scope",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "settings"
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "description": "Key name, e.g. anthropic_api_key",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DELETE__api_settings_api_keys__provider__response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/settings/general": {
+      "get": {
+        "summary": "Get general (non-secret) tenant settings",
+        "description": "Requires read scope (write and admin satisfy this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GET__api_settings_general_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Save a general tenant setting",
+        "description": "Requires admin scope",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "settings"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PATCH__api_settings_general_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PATCH__api_settings_general_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/settings/trusted-hosts": {
+      "get": {
+        "summary": "Get trusted hostnames list",
+        "description": "Requires read scope (write and admin satisfy this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GET__api_settings_trusted_hosts_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace the trusted hostnames list",
+        "description": "Requires admin scope",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "settings"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PUT__api_settings_trusted_hosts_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PUT__api_settings_trusted_hosts_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/settings/default-pack-language": {
+      "get": {
+        "summary": "Get the default interview pack language",
+        "description": "Requires read scope (write and admin satisfy this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GET__api_settings_default_pack_language_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "put": {
+        "summary": "Set the default interview pack language",
+        "description": "Requires admin scope",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "settings"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PUT__api_settings_default_pack_language_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PUT__api_settings_default_pack_language_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidateId}/enrichment/trigger": {
+      "post": {
+        "summary": "Trigger web enrichment for a candidate",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "candidates"
+        ],
+        "parameters": [
+          {
+            "name": "candidateId",
+            "in": "path",
+            "required": true,
+            "description": "candidateId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_candidates__candidateId__enrichment_trigger_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidateId}/enrichment/confirm": {
+      "post": {
+        "summary": "Confirm a verified profile for a candidate",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "candidates"
+        ],
+        "parameters": [
+          {
+            "name": "candidateId",
+            "in": "path",
+            "required": true,
+            "description": "candidateId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_candidates__candidateId__enrichment_confirm_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_candidates__candidateId__enrichment_confirm_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidateId}/enrichment/dismiss": {
+      "post": {
+        "summary": "Dismiss a suggested profile for a candidate",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "candidates"
+        ],
+        "parameters": [
+          {
+            "name": "candidateId",
+            "in": "path",
+            "required": true,
+            "description": "candidateId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_candidates__candidateId__enrichment_dismiss_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_candidates__candidateId__enrichment_dismiss_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidateId}/cv/reformat": {
+      "post": {
+        "summary": "Reformat a candidate CV with AI (Claude Haiku)",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "candidates"
+        ],
+        "parameters": [
+          {
+            "name": "candidateId",
+            "in": "path",
+            "required": true,
+            "description": "candidateId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_candidates__candidateId__cv_reformat_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/customers/{customerId}/framework": {
+      "get": {
+        "summary": "Get the hiring framework for a customer",
+        "description": "Requires read scope (write and admin satisfy this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "customers"
+        ],
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "description": "customerId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GET__api_customers__customerId__framework_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "put": {
+        "summary": "Save or update the hiring framework for a customer",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "customers"
+        ],
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "description": "customerId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PUT__api_customers__customerId__framework_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PUT__api_customers__customerId__framework_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete the hiring framework for a customer",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "customers"
+        ],
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "description": "customerId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DELETE__api_customers__customerId__framework_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/scores/rescore": {
+      "post": {
+        "summary": "Re-score a candidate against a role",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "scores"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_scores_rescore_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_scores_rescore_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/scores": {
+      "delete": {
+        "summary": "Remove a candidate from a role (delete score)",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "scores"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DELETE__api_scores_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DELETE__api_scores_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidateId}": {
+      "patch": {
+        "summary": "Update candidate details",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "candidates"
+        ],
+        "parameters": [
+          {
+            "name": "candidateId",
+            "in": "path",
+            "required": true,
+            "description": "candidateId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PATCH__api_candidates__candidateId__body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PATCH__api_candidates__candidateId__response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidateId}/availability": {
+      "post": {
+        "summary": "Update candidate availability status",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "candidates"
+        ],
+        "parameters": [
+          {
+            "name": "candidateId",
+            "in": "path",
+            "required": true,
+            "description": "candidateId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_candidates__candidateId__availability_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_candidates__candidateId__availability_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidateId}/agency": {
+      "post": {
+        "summary": "Assign or remove a candidate agency",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "candidates"
+        ],
+        "parameters": [
+          {
+            "name": "candidateId",
+            "in": "path",
+            "required": true,
+            "description": "candidateId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_candidates__candidateId__agency_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_candidates__candidateId__agency_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidateId}/status": {
+      "post": {
+        "summary": "Update candidate pipeline status",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "candidates"
+        ],
+        "parameters": [
+          {
+            "name": "candidateId",
+            "in": "path",
+            "required": true,
+            "description": "candidateId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_candidates__candidateId__status_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_candidates__candidateId__status_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidateId}/archive": {
+      "post": {
+        "summary": "Archive (soft-delete) a candidate",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "candidates"
+        ],
+        "parameters": [
+          {
+            "name": "candidateId",
+            "in": "path",
+            "required": true,
+            "description": "candidateId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_candidates__candidateId__archive_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/roles": {
+      "post": {
+        "summary": "Create a new role",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "roles"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POST__api_roles_body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_roles_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/roles/{roleId}": {
+      "patch": {
+        "summary": "Update an existing role",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "roles"
+        ],
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "description": "roleId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PATCH__api_roles__roleId__body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PATCH__api_roles__roleId__response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/roles/{roleId}/regenerate-tags": {
+      "post": {
+        "summary": "Regenerate AI tags for a role",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "roles"
+        ],
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "description": "roleId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_roles__roleId__regenerate_tags_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/roles/{roleId}/archive": {
+      "post": {
+        "summary": "Archive (soft-delete) a role",
+        "description": "Requires write scope (admin satisfies this)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "roles"
+        ],
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "description": "roleId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/POST__api_roles__roleId__archive_response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden — insufficient scope"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    }
+  }
+}

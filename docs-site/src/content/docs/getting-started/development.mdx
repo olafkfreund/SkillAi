@@ -1,0 +1,243 @@
+---
+title: Development workflow
+description: Project layout, testing, migrations, branch conventions, and the project-specific rules that come up in code review.
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components'
+
+This page covers the conventions you'll touch every day. For first-time setup see [Quick start](/SkillAi/getting-started/quick-start).
+
+## Project layout
+
+```
+SkillAi/
+├── src/
+│   ├── app/                 Next.js App Router (pages + API routes)
+│   │   ├── (dashboard)/     Authenticated dashboard pages
+│   │   ├── (auth)/          Login page
+│   │   └── api/             REST API routes, polling endpoints, MCP server
+│   ├── actions/             Server actions (mutations from forms / client components)
+│   ├── components/          React components, grouped by domain
+│   ├── db/
+│   │   ├── schema/          Drizzle schema, one file per table
+│   │   ├── migrations/      Generated migration files
+│   │   └── index.ts         db client + withTenant() wrapper
+│   ├── lib/
+│   │   ├── ai/              Claude + Gemini clients, scoring, schemas
+│   │   ├── auth/            require-role, types
+│   │   ├── cv/              CV upload helpers
+│   │   ├── branding/        Logo upload helpers
+│   │   ├── mcp/             MCP server tools, resources, prompts
+│   │   ├── notifications/   Slack + Teams webhook dispatchers
+│   │   └── ...
+│   └── content/help/        In-app help articles (markdown + Zod front-matter)
+├── tests/
+│   ├── unit/                Unit tests (Vitest)
+│   ├── integration/         DB-backed integration tests
+│   └── fixtures/            Test fixtures
+├── scripts/                 Helper scripts (seed, migrate, etc.)
+├── skillai-mcp/             Standalone stdio bridge for claude-desktop
+├── docker/                  docker-compose definitions
+├── uploads/                 Local CV/logo storage (gitignored)
+├── docs/                    Internal product + ops documentation
+├── docs-site/               This documentation site (Astro Starlight)
+└── .agent-os/               Product mission, tech-stack, roadmap, decisions
+```
+
+## Running the app
+
+```bash
+# Start the database
+docker compose up -d db
+
+# Start the dev server with hot reload
+npm run dev
+
+# Type-check without building
+npx tsc --noEmit
+
+# Push schema changes after editing src/db/schema/
+npm run db:push
+
+# Open Drizzle Studio (visual DB browser)
+npm run db:studio
+```
+
+## Running tests
+
+```bash
+# Unit tests
+npm test
+
+# Integration tests (require a running DB; flag is opt-in)
+RUN_DB_INTEGRATION_TESTS=true npm test
+```
+
+Unit tests live in `tests/unit/`, integration tests in `tests/integration/`. The integration tests apply migrations to a scratch database and exercise the full server-action path including RLS — they take longer, so they're gated behind the env flag.
+
+## Migration workflow
+
+<Tabs>
+  <TabItem label="Development">
+
+After editing a file in `src/db/schema/`:
+
+```bash
+npm run db:push
+```
+
+`db:push` applies the schema directly to the local DB without generating a migration file. Fast, destructive (will drop columns), only safe for local development.
+
+  </TabItem>
+  <TabItem label="Production">
+
+```bash
+# 1. Generate a migration file
+npm run db:generate
+
+# 2. Review the generated SQL in src/db/migrations/
+#    Reject if it drops a column or rewrites a type — that needs a manual migration.
+
+# 3. Run pending migrations against the production database
+npm run db:migrate
+```
+
+  </TabItem>
+</Tabs>
+
+<Aside type="caution">
+**Never use `db:push` against a production database.** It can destructively drop columns. Always generate a migration file, review the SQL, and run `db:migrate`.
+</Aside>
+
+## Branch conventions
+
+Always branch off `core-mvp-foundation` explicitly. Never branch off whatever is currently checked out:
+
+```bash
+git checkout -b feat/my-feature core-mvp-foundation
+```
+
+Branch names follow `<type>/<short-description>`:
+
+- `feat/...` for new features
+- `fix/...` for bug fixes
+- `docs/...` for doc-only changes
+- `chore/...` for housekeeping
+
+PRs target `core-mvp-foundation`. Keep PRs focused on a single concern.
+
+## Server action template
+
+Every server action follows the same shape. Copy from an existing one in `src/actions/` rather than writing from scratch:
+
+```typescript
+'use server'
+
+import { headers } from 'next/headers'
+import { revalidatePath } from 'next/cache'
+import { withTenant } from '@/db'
+import { myTable } from '@/db/schema'
+
+const MySchema = z.object({ field: z.string().min(1) })
+
+export async function myAction(_prev: MyState | null, formData: FormData): Promise<MyState> {
+  const h = await headers()
+  const tenantId = h.get('x-tenant-id')
+  if (!tenantId) return { success: false, error: 'Unauthorized' }
+
+  const parsed = MySchema.safeParse({ field: formData.get('field') })
+  if (!parsed.success) return { success: false, error: 'Validation failed' }
+
+  await withTenant(tenantId, async (tx) => {
+    await tx.insert(myTable).values({ tenantId, ...parsed.data })
+  })
+
+  revalidatePath('/dashboard/my-page')
+  return { success: true }
+}
+```
+
+Five rules, in order:
+
+1. **Read tenant + user + role** from headers set by the auth middleware.
+2. **Validate** the input with a Zod schema. Never trust form data.
+3. **Wrap the DB call** in `withTenant(tenantId, ...)` — see [Multi-tenancy & RLS](/SkillAi/architecture/multi-tenancy-rls).
+4. **`revalidatePath()`** after mutations so the dashboard reflects the change.
+5. **Return a typed state** — never throw to the client.
+
+## Patterns to know about
+
+These patterns are load-bearing across many pages — follow them when extending the same surfaces. Each has its own documentation page under [Code patterns](/SkillAi/code-patterns/):
+
+- **Audience-based view sanitisation** ([audience-sanitisation](/SkillAi/code-patterns/audience-sanitisation)) — recruiter / customer / manager get different field visibility on the same page. Always gate new commercial / internal fields on `audience === 'recruiter'` explicitly.
+- **Logo upload pattern** ([logo-upload](/SkillAi/code-patterns/logo-upload)) — DB-path-first, derive absolute path from it. The same rule applies to any new file-storage feature.
+- **Help content pattern** ([help-content](/SkillAi/code-patterns/help-content)) — markdown + Zod-validated front-matter in `src/content/help/`. Add a file, no code change.
+- **Theme tokens** ([theme-tokens](/SkillAi/code-patterns/theme-tokens)) — use `var(--color-bg-app)` etc., not hard-coded `bg-zinc-900`. Both light and dark must render correctly.
+- **`force-dynamic` workaround** ([force-dynamic](/SkillAi/code-patterns/force-dynamic)) — Next 16.2 + React 19 has a prerender bug; new public routes need `export const dynamic = 'force-dynamic'`.
+
+## Project-specific rules
+
+These are enforced by convention and by code review:
+
+- **Never query the DB without `withTenant()`** except for truly global tables like `tenants` itself.
+- **Never store AI API keys in plain text** — use the encryption helpers in `src/lib/ai/keys.ts`.
+- **Never commit `.env.local`** or any file with real credentials. The `.gitignore` already excludes all `.env*` files.
+- **Never use raw `sql\`\`` queries** except for the RLS session variable setter and `EXPLAIN ANALYZE` debugging.
+- **Always validate AI responses** with the relevant Zod schema in `src/lib/ai/` before writing the parsed data to the DB.
+- **Never commit DB writes without explicit consent** — the SkillAI portal is in continuous live use, not a sandbox. Always ask before seeding test fixtures or running migrations.
+- **Take a backup before any runtime change** — `pg_dump` + uploads tarball. See the [backup runbook](/SkillAi/operations/backup-runbook).
+
+## Debugging
+
+### Interview pack stuck in `pending` or `processing`
+
+The background `after()` task was interrupted (most likely by a hot reload in dev). Open the pack detail page; after 3 minutes a "Force retry" button appears.
+
+To reset manually:
+
+```sql
+UPDATE interview_packs
+SET generation_status = 'failed',
+    error_message = 'Manually reset for retry',
+    updated_at = now()
+WHERE id = '<pack-id>';
+```
+
+Then use the Retry button.
+
+### AI errors
+
+Errors are logged to the server console with the pack or score ID.
+
+```bash
+# Dev server
+# (errors appear in the terminal running `npm run dev`)
+
+# Docker
+docker compose logs -f app
+```
+
+### Direct DB access
+
+```bash
+# Local
+PGPASSWORD=skillai psql -h localhost -p 5433 -U skillai -d skillai
+
+# In the Docker container
+docker compose exec db psql -U skillai -d skillai
+```
+
+To run queries that need to see tenant-scoped rows, set the tenant variable first:
+
+```sql
+SET app.tenant_id = '<your-tenant-uuid>';
+SELECT id, first_name, last_name FROM candidates LIMIT 5;
+```
+
+## Pull request guidelines
+
+- Keep PRs focused on a single concern.
+- Include a short description of what changed and why.
+- Ensure `npx tsc --noEmit` passes with no errors.
+- Manually test the feature in the browser before submitting.
+- Ensure the existing test suite still passes (`npm test`).

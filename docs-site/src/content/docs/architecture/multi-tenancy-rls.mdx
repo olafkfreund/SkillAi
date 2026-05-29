@@ -1,0 +1,128 @@
+---
+title: Multi-tenancy & RLS
+description: Two-layer tenant isolation — the withTenant wrapper plus PostgreSQL Row-Level Security policies, working in tandem.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+SkillAI runs every tenant in the same Postgres schema, isolated by a `tenant_id` column on every table and a Row-Level Security policy on every table. The policies key off a session variable that the application sets at the start of each request. This is the load-bearing pattern of the entire codebase.
+
+<Aside type="caution">
+Never query the database without `withTenant()` (except for truly global tables like `tenants` itself). The first layer of isolation is application-enforced; the second is the database-enforced policy that prevents a buggy query from leaking rows across tenants.
+</Aside>
+
+## The two layers
+
+**Layer 1 — application.** Every server action, server component, and API route call sits inside a `withTenant(tenantId, fn)` block. The wrapper opens a transaction and sets `app.tenant_id` as a session variable before running `fn`.
+
+**Layer 2 — database.** Every tenant-scoped table has Row-Level Security enabled. The policy filters every read and write to rows where `tenant_id = current_setting('app.tenant_id', true)::uuid`. If the application forgets to set the session variable, the policy returns zero rows — fail-closed.
+
+The application-layer check is convention; the database-layer check is enforced by Postgres. Together they form defence-in-depth: a buggy query, a missing `withTenant`, or a hand-written SQL string cannot read across tenant boundaries.
+
+## The wrapper
+
+The whole pattern is 10 lines of code, in `src/db/index.ts:28`:
+
+```typescript
+export async function withTenant<T>(
+  tenantId: string,
+  fn: (tx: Database) => Promise<T>
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    // SET LOCAL scopes the variable to the current transaction only
+    await tx.execute(sql`SELECT set_tenant_context(${tenantId}::uuid)`)
+    return fn(tx as unknown as Database)
+  })
+}
+```
+
+Two things to notice:
+
+- The session variable is set via `set_tenant_context()`, a Postgres function that wraps `SET LOCAL app.tenant_id`. `SET LOCAL` scopes the variable to the current transaction — it's automatically cleared when the transaction commits or rolls back.
+- The wrapper opens a transaction even for read-only queries. This is the cost of the isolation guarantee; in practice it adds ~1 ms of latency. The bigger pages amortise this by batching multiple queries inside one `Promise.all` inside one `withTenant`. See [Performance baselines](/SkillAi/architecture/performance) for the batching pattern.
+
+## A sample RLS policy
+
+Every schema file in `src/db/schema/` follows the same template. Here's the one for `agencies` (from `src/db/schema/agencies.ts:5`):
+
+```typescript
+export const agencies = pgTable(
+  'agencies',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 150 }).notNull(),
+    // ...
+    isInternal: boolean('is_internal').notNull().default(false),
+    isSystem: boolean('is_system').notNull().default(false),
+  },
+  (t) => [
+    uniqueIndex('uniq_agencies_tenant_internal')
+      .on(t.tenantId)
+      .where(sql`is_internal`),
+    pgPolicy('agencies_tenant_isolation', {
+      as: 'permissive',
+      for: 'all',
+      to: 'public',
+      using: sql`${t.tenantId} = current_setting('app.tenant_id', true)::uuid`,
+    }),
+  ]
+).enableRLS()
+```
+
+Three things to call out:
+
+1. **`tenant_id UUID NOT NULL`** with a cascade-delete FK to `tenants.id`. When a tenant is deleted, all child rows go with it.
+2. **`pgPolicy(..., for: 'all', ...)`** applies to SELECT, INSERT, UPDATE, and DELETE. The `using` clause is the filter expression.
+3. **`.enableRLS()`** on the table — without this, the policy exists but isn't enforced. Easy to forget; review checklist item.
+
+Every new schema file in `src/db/schema/` must include these three. Copy from an existing file rather than writing from scratch.
+
+## Why this beats schema-per-tenant
+
+Two common approaches to multi-tenancy: schema-per-tenant (each tenant gets an isolated PostgreSQL schema) or shared schema with RLS.
+
+For an internal tool with tens of tenants, RLS wins:
+
+- **No schema migration complexity** — one set of tables to migrate, not N.
+- **Single connection pool** — schema-per-tenant either requires N pools or N reconnects per tenant switch.
+- **Isolation enforced at the DB layer** — schema-per-tenant relies on the application setting the right `search_path`; RLS enforces it via policies that fail closed.
+- **Easier ops** — `pg_dump` produces one file, not N. Backups, monitoring, and EXPLAIN ANALYZE all work the same way as a single-tenant app.
+
+The tradeoff: every query carries a `tenant_id = ...` filter via the RLS policy, which costs an index lookup. Every tenant-scoped table has a leading `tenant_id` column in its compound indexes (`idx_candidates_tenant_active_created`, `idx_roles_tenant_active_created`, etc.) to keep this cheap.
+
+The full rationale is in [DEC-003](/SkillAi/decisions/dec-003-row-level-security).
+
+## Worked example — the Internal agency uniqueness constraint
+
+Every tenant gets exactly one auto-provisioned "Internal" agency to hold internal employees / bench candidates. Enforcing "exactly one" across tenants is the canonical use case for a tenant-scoped partial unique index.
+
+Look at the index in the snippet above:
+
+```typescript
+uniqueIndex('uniq_agencies_tenant_internal')
+  .on(t.tenantId)
+  .where(sql`is_internal`)
+```
+
+This creates a partial unique index where the index entry only exists when `is_internal = true`. The result: each `(tenant_id)` value can appear at most once with `is_internal = true`, but can appear many times with `is_internal = false`. The constraint is tenant-scoped without being cross-tenant.
+
+This same pattern works for any "exactly one per tenant" or "exactly one of these per tenant" invariant — primary manager assignments, default settings rows, the auto-provisioned admin user. Use a partial unique index keyed on `tenant_id` with a `WHERE` clause matching the predicate.
+
+## What the wrapper does NOT do
+
+`withTenant()` only sets the tenant context. It does not:
+
+- Check the user's role — use `requireRole()` from `src/lib/auth/require-role.ts` for that.
+- Validate that the tenant exists — if you pass a UUID that no tenant has, queries return zero rows.
+- Audit-log the access — separate concern, lives in `src/lib/audit-middleware.ts`.
+
+These are intentional separations. A single helper that did all four would be impossible to compose with the auto-match orchestrator (which needs to switch tenants in the middle of a cron run) or with admin-only operations (which need to bypass certain checks). Keep `withTenant()` small.
+
+## Related
+
+- [System overview](/SkillAi/architecture/system-overview) — where `withTenant()` sits in the request lifecycle.
+- [Performance baselines](/SkillAi/architecture/performance) — the batching pattern that amortises the transaction overhead.
+- [DEC-003 — Row-Level Security](/SkillAi/decisions/dec-003-row-level-security) — the full decision record.

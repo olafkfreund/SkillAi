@@ -1,0 +1,51 @@
+---
+title: "DEC-009 — Soft AI signal for day-rate budget"
+description: Budget is a textual signal in the per-candidate prompt block, never a scored dimension. The four structured scores are never reduced on budget grounds alone.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+<Aside type="note">
+**Status:** Accepted · **Category:** Technical · **Date:** 2026-04-14
+
+**Related feature:** Customer day rate per role + margin display
+</Aside>
+
+## Decision
+
+When a role has a `customerDayRate` (budget) and a candidate has a `candidateRate` in the same currency, pass a **soft budget signal** to Claude / Gemini as prompt text in the per-candidate section. Guidance: rates are negotiable; candidates within ~10% over budget get no score impact; 10–25% over gets a "may require negotiation" note in the summary; >25% over gets a "may be misaligned with seniority" note. **The four structured scoring dimensions (technical_skills, experience_level, cultural_fit, communication) are never reduced on budget grounds alone.**
+
+Currency mismatch (role in EUR, candidate in GBP, etc.) **suppresses** the AI budget context entirely — the UI still displays the margin with a warning pill.
+
+## Context
+
+Adding budget as a fifth scored dimension was considered and rejected. The existing four dimensions are carefully-chosen assessment axes that aggregate into `overall_score`. Adding a "budget" dimension would:
+- Create an invisible pull on `overall_score` that recruiters have to mentally back out
+- Require a migration on the `scores` table and changes to both Claude tool schema and Gemini response schema, plus matching PDF changes
+- Be awkward to express "don't heavily penalise over-budget" — dimensions are scalar scores that can't easily carry soft-signal semantics
+
+## Alternatives Considered
+
+1. **New scored dimension `budget_fit`** — rejected as above
+2. **Hard budget filter (exclude over-budget candidates)** — rejected because rates are commonly negotiable
+3. **Soft signal in prompt only (chosen)** — zero schema migration, margin still visible in UI, AI context is optional per-candidate
+4. **Display margin only, no AI awareness** — rejected because the AI summary then contradicts the visible margin pill
+
+## Rationale
+
+Budget matters to the recruiter (margin is prominent in the UI) but the right application is textual, not numerical. The soft signal lets Claude mention budget positioning in its summary while leaving the structured scores untouched.
+
+## Technical notes
+
+- Budget context is inserted in the **per-candidate** prompt block, NOT the role/framework block. The role block has `cache_control: ephemeral` — per-candidate rate data in the cached section would bust the prompt cache on every candidate.
+- Currency mismatch detection suppresses the AI context so the model is never asked to reason across currencies.
+- Changes to a role's `customerDayRate` do NOT trigger automatic rescoring. Recruiters use the existing per-candidate rescore button if they want updated summaries after a budget change.
+
+## Consequences
+
+**Positive:** No schema migration on scoring, no risk of inadvertent score suppression for strong over-budget candidates, margin visible where recruiters need it, AI reasoning acknowledges budget when relevant.
+**Negative:** Over-budget candidates aren't "sorted to the bottom" automatically — recruiters sort themselves.
+
+## Related
+
+- [DEC-004 — Claude as primary AI](/decisions/dec-004-claude-primary/) — the budget signal goes into both Claude and Gemini scoring prompts.

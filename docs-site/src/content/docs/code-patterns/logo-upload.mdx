@@ -1,0 +1,90 @@
+---
+title: Logo upload (agency & customer)
+description: How agency and customer logos are uploaded, stored, served over HTTP, and embedded into PDFs without write-vs-read path drift.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+Agency and customer logos share one storage pipeline implemented in [`src/lib/branding/store.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/lib/branding/store.ts). It enforces validation, computes the canonical path, persists to disk, and exposes a single helper for converting the stored web-relative path back to an absolute filesystem path. The strict invariant: **the absolute filesystem path is always derived from the DB-stored path** via the same helper, so write and read can never drift apart.
+
+## Validation
+
+`validateLogoFile` checks three things and returns a discriminated union (`{ ok: true } | { ok: false; error }`) so callers handle errors without `try/catch`:
+
+- Buffer is non-empty and under the 2 MB cap (`MAX_LOGO_SIZE`)
+- Extension is one of `.png`, `.jpg`, `.jpeg`, `.webp` — no SVG
+- Magic-byte MIME detected by `file-type` matches the same allow-list
+
+```ts
+const buf = Buffer.from(await file.arrayBuffer())
+const validation = await validateLogoFile(buf, extname(file.name))
+if (!validation.ok) return { success: false, error: validation.error }
+```
+
+The magic-byte check exists specifically to reject SVGs or other formats that someone has renamed to a permitted extension.
+
+## Path shape
+
+The DB stores a web-relative path with a leading slash:
+
+```
+/uploads/{tenantId}/logos/{uuid}.{ext}
+```
+
+The filesystem write path is **derived from that exact DB path** by stripping the leading slash and joining with `process.cwd()`:
+
+```ts
+// inside persistLogo
+const dbPath = `/uploads/${tenantId}/logos/${randomUUID()}${normExt}`
+const absolutePath = getLogoAbsolutePath(dbPath) // strips leading "/", joins cwd
+await mkdir(join(absolutePath, '..'), { recursive: true })
+await writeFile(absolutePath, buf)
+return dbPath
+```
+
+`tenantId` is always supplied by the server from the authenticated session — never accepted from client `FormData`. Regression risk on this symmetry was issue [#98](https://github.com/olafkfreund/SkillAi/issues/98): an earlier implementation computed the write path independently of the DB path, and one rename to the storage root broke reads while leaving writes happy.
+
+## Serving over HTTP
+
+The web reads logos through `/api/agencies/{agencyId}/logo` (and the matching customer route). The route auths the session, validates the UUID, fetches the agency under RLS with an explicit `tenantId` filter (belt-and-suspenders), resolves the absolute path via `getLogoAbsolutePath`, and streams the file back with a 5-minute private cache. ENOENT becomes `410 file_missing`; cross-tenant lookups are `403`. Implementation in [`src/app/api/agencies/[agencyId]/logo/route.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/app/api/agencies/%5BagencyId%5D/logo/route.ts).
+
+## Embedding in PDFs
+
+PDFs can't hit an authenticated HTTP endpoint, so they read the file directly and inline it as a base64 data URI. The pattern lives in [`src/app/api/export/candidate/[candidateId]/route.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/app/api/export/candidate/%5BcandidateId%5D/route.ts) around line 207:
+
+```ts
+if (audience === 'internal' && agency?.logoPath) {
+  try {
+    const absPath = getLogoAbsolutePath(agency.logoPath)
+    const logoBuffer = await fs.readFile(absPath)
+    const ext = agency.logoPath.split('.').pop()?.toLowerCase() ?? 'png'
+    const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+      : ext === 'webp' ? 'image/webp'
+      : 'image/png'
+    agencyLogoBase64 = `data:${mime};base64,${logoBuffer.toString('base64')}`
+  } catch {
+    // File unreadable — render without the logo
+  }
+}
+```
+
+The encoded string is handed to `react-pdf`'s `<Image>` component. Customer-facing PDF variants skip this block entirely because agency identity is one of the fields stripped for the customer audience.
+
+## Rendered sizes
+
+| Surface | Size | File |
+|---|---|---|
+| Candidate list row | 20 × 20 | `selectable-candidate-list.tsx` |
+| Role-detail candidate card | 20 × 20 | `role-candidate-card.tsx` |
+| Candidate detail header | 24 × 24 | candidate detail page |
+| Agency / customer list | 32 × 32 | list pages |
+| Agency / customer detail header | 64 × 64 | detail pages |
+| Internal candidate PDF | 32 × 32 | `CandidatePDF` component |
+
+When `agencyLogoPath` is null, the same surfaces render an initials avatar — `bg-[var(--color-bg-input)]` circle with the agency's first letter uppercased. Always set explicit `width` and `height` (both as attributes and inline `style`) plus `object-contain` so a non-square logo never stretches.
+
+<Aside type="note">
+For the broader storage architecture — why the local Docker volume rather than S3, and the planned Garage upgrade path — see [DEC-005](/decisions/dec-005-storage).
+</Aside>

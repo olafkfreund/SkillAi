@@ -1,0 +1,32 @@
+---
+title: interview_questions
+description: Schema reference for the interview_questions table.
+sidebar:
+  label: interview_questions
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+<Aside type="note">
+Auto-generated from `src/db/schema/interview-questions.ts`. **13** columns. To regenerate locally, run `npm run docs:gen:db` from `docs-site/`.
+</Aside>
+
+## Columns
+
+| Column | Type | Constraints | Default | References |
+|---|---|---|---|---|
+| `id` | `uuid` | `PRIMARY KEY` | `gen_random_uuid()` | — |
+| `pack_id` | `uuid` | `NOT NULL` | — | `interviewPacks.id` |
+| `question_type` | `questionTypeEnum` | `NOT NULL` | — | — |
+| `difficulty` | `difficultyEnum` | `NOT NULL` | — | — |
+| `question_text` | `text` | `NOT NULL` | — | — |
+| `rationale` | `text` | — | — | — |
+| `follow_ups` | `jsonb` | — | — | — |
+| `strong_answer_signals` | `text` | — | — | — |
+| `acceptable_answer_signals` | `text` | — | — | — |
+| `weak_answer_signals` | `text` | — | — | — |
+| `cv_references` | `text` | — | — | — |
+| `order_index` | `integer` | `NOT NULL` | `0` | — |
+| `notes` | `text` | — | — | — |
+
+**Drizzle name:** `interviewQuestions` (imported as `import { interviewQuestions } from '@/db/schema'`).

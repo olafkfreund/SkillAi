@@ -1,0 +1,505 @@
+{
+  "generatedAt": "2026-05-29",
+  "summary": {
+    "totalTools": 48,
+    "readTools": 27,
+    "writeTools": 21,
+    "modules": 12,
+    "resources": 4,
+    "prompts": 3
+  },
+  "modules": [
+    {
+      "name": "candidates",
+      "count": 9,
+      "tools": [
+        {
+          "module": "candidates",
+          "name": "list_candidates",
+          "title": "List candidates",
+          "description": "List candidates in the active tenant. Optional filters: substring search on name, agencyId, pipeline status, availability status. Returns id, name, email, agency, status, and (if scored) overallScore. Pagination via limit (max 200) and offset.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "candidates",
+          "name": "get_candidate",
+          "title": "Get candidate",
+          "description": "Fetch a single candidate by id with their CV text, agency, contact details, rates, and availability. Returns null if the candidate does not exist or belongs to another tenant.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "candidates",
+          "name": "find_candidate_by_email",
+          "title": "Find candidate by email",
+          "description": "Look up a candidate by their email address (case-insensitive). Returns the candidate record or null. Useful when an external system references a person by email.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "candidates",
+          "name": "update_candidate_status",
+          "title": "Update candidate pipeline status",
+          "description": "Move a candidate to a new pipeline stage (new / shortlisted / interviewing / offered / hired / rejected / rejected_by_customer). Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        },
+        {
+          "module": "candidates",
+          "name": "update_candidate_availability",
+          "title": "Update candidate availability",
+          "description": "Set a candidate's availability flag (available / on_project / unavailable) and an optional availableFrom date. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        },
+        {
+          "module": "candidates",
+          "name": "find_candidate_by_name",
+          "title": "Find candidate by name",
+          "description": "Case-insensitive substring match against `firstName + \" \" + lastName`. Returns up to 20 matches with their agency. Useful when the LLM has only a free-text name.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "candidates",
+          "name": "semantic_search_candidates",
+          "title": "Semantic candidate search",
+          "description": "Vector-similarity search for candidates against a role's description using pgvector cosine distance. Provide `roleId` (the action embeds the role text). Already-scored candidates on the role are excluded. NOTE v1: free-text `query` is accepted by the schema but returns a clear error — the underlying matching action only supports roleId-based search at present.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "candidates",
+          "name": "create_candidate",
+          "title": "Create candidate from CV",
+          "description": "Create a new candidate by uploading a CV (base64-encoded). The CV is validated, parsed, stored, and a pending score row is queued against the supplied roleId. Embedding generation runs in the background. Max 10MB per file. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        },
+        {
+          "module": "candidates",
+          "name": "archive_candidate",
+          "title": "Archive candidate",
+          "description": "Soft-archive a candidate (sets isActive = false). The candidate remains queryable for audit/history. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        }
+      ]
+    },
+    {
+      "name": "roles",
+      "count": 6,
+      "tools": [
+        {
+          "module": "roles",
+          "name": "list_roles",
+          "title": "List roles",
+          "description": "List job roles in the active tenant with their customer, location, deadlines, and budget. By default hides archived roles (set activeOnly=false to include them).",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "roles",
+          "name": "get_role",
+          "title": "Get role",
+          "description": "Fetch a single role by id with description, requirements, key skills, top requirements, language requirements, and budget. Returns null if not found.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "roles",
+          "name": "get_role_with_candidates",
+          "title": "Get role with ranked candidates",
+          "description": "Fetch a role and the candidates scored against it, sorted by overallScore descending. Includes per-dimension scores. Optional minScore filter.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "roles",
+          "name": "update_role",
+          "title": "Update role",
+          "description": "Edit an existing role. The server action does a full replace of the editable fields — title/description/requirements are always required. Optional fields default to null/empty when omitted. Tag regeneration runs after the response. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        },
+        {
+          "module": "roles",
+          "name": "regenerate_role_tags",
+          "title": "Regenerate role tags",
+          "description": "Re-run AI tag extraction (key skills + top requirements) for a role using its current description and requirements. Runs in the background after the response. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        },
+        {
+          "module": "roles",
+          "name": "archive_role",
+          "title": "Archive role",
+          "description": "Soft-archive a role (isActive=false). Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        }
+      ]
+    },
+    {
+      "name": "agencies",
+      "count": 2,
+      "tools": [
+        {
+          "module": "agencies",
+          "name": "list_agencies",
+          "title": "List agencies",
+          "description": "List recruitment agencies in the active tenant. The internal-employee bench is exposed as the system \"Internal\" agency (isInternal=true). Hides archived rows by default.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "agencies",
+          "name": "get_agency",
+          "title": "Get agency",
+          "description": "Fetch a single agency by id with its contact details and notes.",
+          "scope": "read",
+          "isWrite": false
+        }
+      ]
+    },
+    {
+      "name": "customers",
+      "count": 2,
+      "tools": [
+        {
+          "module": "customers",
+          "name": "list_customers",
+          "title": "List customers",
+          "description": "List customer entities (the companies we hire for). Archived rows hidden by default.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "customers",
+          "name": "get_customer",
+          "title": "Get customer",
+          "description": "Fetch a single customer by id with portal URL, contact details, and active status.",
+          "scope": "read",
+          "isWrite": false
+        }
+      ]
+    },
+    {
+      "name": "scoring",
+      "count": 2,
+      "tools": [
+        {
+          "module": "scoring",
+          "name": "get_candidate_score",
+          "title": "Get candidate score",
+          "description": "Fetch the score row for a candidate against a specific role, including all four dimension scores (technical, experience, cultural fit, communication), AI reasoning per dimension, and the AI summary. Returns null if no scoring run exists yet.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "scoring",
+          "name": "rescore_candidate",
+          "title": "Rescore candidate against role",
+          "description": "Re-run AI scoring for a candidate against a role. The score is reset to pending and the AI pipeline runs in the background. Poll get_candidate_score for results. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        }
+      ]
+    },
+    {
+      "name": "interviews",
+      "count": 3,
+      "tools": [
+        {
+          "module": "interviews",
+          "name": "list_interview_packs",
+          "title": "List interview packs",
+          "description": "List interview packs in the active tenant. Filter by candidateId and/or roleId. Includes generation status (pending/processing/complete/failed), packType, language, and recommended duration.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "interviews",
+          "name": "generate_interview_pack",
+          "title": "Generate interview pack",
+          "description": "Queue an interview pack generation job for a candidate × role pair. The pack is created with status=\"pending\" — actual AI generation runs in the background; the LLM should poll get_interview_pack to fetch the questions once status=\"complete\". Pre-screening packs are short, full_technical packs are longer and may include a code challenge. Recruiter/admin only. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        },
+        {
+          "module": "interviews",
+          "name": "get_interview_pack",
+          "title": "Get interview pack",
+          "description": "Fetch a full interview pack (the pack record plus all generated questions). Returns { pack: null, questions: [] } if the pack id is not found in the active tenant.",
+          "scope": "read",
+          "isWrite": false
+        }
+      ]
+    },
+    {
+      "name": "approvals",
+      "count": 5,
+      "tools": [
+        {
+          "module": "approvals",
+          "name": "get_approvals_for_role",
+          "title": "Get approvals for role",
+          "description": "Fetch the approval state for every shortlisted candidate × assigned manager combination on a role. Returns approval status (pending/approved/rejected), decided-at timestamps, and comments. Used by recruiters to track shortlist progress.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "approvals",
+          "name": "approve_candidate",
+          "title": "Approve candidate (hiring manager)",
+          "description": "Record a manager approval for a candidate on a role. Only assigned managers (or admins) may decide. Optional comment. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        },
+        {
+          "module": "approvals",
+          "name": "send_shortlist_for_approval",
+          "title": "Send shortlist for approval",
+          "description": "Mark a role's shortlist as sent to its assigned hiring managers and seed pending approval rows for every (shortlisted candidate × manager) pair. Idempotent — re-sending does not reset existing decisions. Recruiter/admin only. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        },
+        {
+          "module": "approvals",
+          "name": "approve_all_remaining",
+          "title": "Approve all remaining candidates (hiring manager)",
+          "description": "Bulk-approve every still-pending approval row owned by the calling manager on the role. Manager scope (the calling user must be assigned as a manager on the role). Optional comment is applied to every row. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        },
+        {
+          "module": "approvals",
+          "name": "reject_candidate",
+          "title": "Reject candidate (hiring manager)",
+          "description": "Record a manager rejection for a candidate on a role. Only assigned managers (or admins) may decide. Optional comment. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        }
+      ]
+    },
+    {
+      "name": "managers",
+      "count": 4,
+      "tools": [
+        {
+          "module": "managers",
+          "name": "get_my_assigned_roles",
+          "title": "Get my assigned roles (hiring manager)",
+          "description": "For the calling hiring manager, list every role that has been assigned to them with pending and decided counts. Returns an empty list if the caller is not a manager.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "managers",
+          "name": "get_role_managers",
+          "title": "Get role managers",
+          "description": "List the hiring managers currently assigned to a role, with email, name, primary flag, and added-at timestamp. Returns [] if no managers are assigned (or role does not exist).",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "managers",
+          "name": "assign_role_managers",
+          "title": "Assign role managers",
+          "description": "Replace the full set of hiring managers for a role with the supplied userIds. Non-hiring_manager users are silently dropped. If primaryUserId is supplied AND is in the valid set it is flagged as primary. Recruiter/admin only. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        },
+        {
+          "module": "managers",
+          "name": "remove_role_manager",
+          "title": "Remove role manager",
+          "description": "Detach a single hiring manager from a role. Recruiter/admin only. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        }
+      ]
+    },
+    {
+      "name": "notes",
+      "count": 3,
+      "tools": [
+        {
+          "module": "notes",
+          "name": "create_note",
+          "title": "Create candidate note",
+          "description": "Add a timestamped note to a candidate. Body is plain text up to 5000 chars. The note is attributed to the calling user. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        },
+        {
+          "module": "notes",
+          "name": "update_note",
+          "title": "Update candidate note",
+          "description": "Edit the body of an existing note. Only the original author or an admin may edit. Sets isEdited=true. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        },
+        {
+          "module": "notes",
+          "name": "delete_note",
+          "title": "Delete candidate note",
+          "description": "Permanently delete a note. Only the original author or an admin may delete. Requires write scope and confirmed: true.",
+          "scope": "write",
+          "isWrite": true
+        }
+      ]
+    },
+    {
+      "name": "users",
+      "count": 4,
+      "tools": [
+        {
+          "module": "users",
+          "name": "list_users",
+          "title": "List tenant users",
+          "description": "List all users in the active tenant. Admin scope required.",
+          "scope": "admin",
+          "isWrite": false
+        },
+        {
+          "module": "users",
+          "name": "update_user_role",
+          "title": "Update user role",
+          "description": "Change a user's product-role (admin / recruiter / hiring_manager / viewer). You cannot change your own role. Admin scope required, confirmed: true required.",
+          "scope": "admin",
+          "isWrite": true
+        },
+        {
+          "module": "users",
+          "name": "invite_user",
+          "title": "Invite user",
+          "description": "Create a single-use invitation for a new user in the active tenant. Returns the invitation id, raw token, and a fully-qualified invite URL the admin can share. The role can be any of admin/recruiter/hiring_manager/viewer. Note: createInvitation server action reads its tenant from HTTP headers, so we mirror its (small) logic here against withTenant — same pattern used by update_user_role and deactivate_user. Admin scope and confirmed: true required.",
+          "scope": "admin",
+          "isWrite": true
+        },
+        {
+          "module": "users",
+          "name": "deactivate_user",
+          "title": "Deactivate user",
+          "description": "Soft-deactivate a user (sets isActive=false). You cannot deactivate yourself. Admin scope and confirmed: true required.",
+          "scope": "admin",
+          "isWrite": true
+        }
+      ]
+    },
+    {
+      "name": "settings",
+      "count": 1,
+      "tools": [
+        {
+          "module": "settings",
+          "name": "list_configured_keys",
+          "title": "List configured API keys",
+          "description": "List which AI provider keys (anthropic / google / openai) are configured for the active tenant. Returns just the key NAMES, never the secret values. Admin scope required.",
+          "scope": "admin",
+          "isWrite": false
+        }
+      ]
+    },
+    {
+      "name": "exports",
+      "count": 7,
+      "tools": [
+        {
+          "module": "exports",
+          "name": "export_candidate_cv_pdf",
+          "title": "Export candidate CV (raw file)",
+          "description": "Return the candidate's stored CV file as a base64 attachment. The file is whatever format was uploaded (PDF/DOCX/ODT/RTF/TXT/MD) — not necessarily PDF. Returns null attachment if the candidate has no stored file.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "exports",
+          "name": "export_candidate_internal_pdf",
+          "title": "Export candidate profile PDF (internal)",
+          "description": "Render the full internal candidate profile PDF — includes scores, agency, rates, recruiter notes, transcript red flags, and recommended decision. If roleId is supplied the PDF's \"active role\" section uses that role's score; otherwise the most recent complete score is used.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "exports",
+          "name": "export_candidate_customer_pdf",
+          "title": "Export candidate profile PDF (customer-safe)",
+          "description": "Render the customer-facing candidate profile PDF — strips recruiter notes, candidate rate, margin, red flags, recommended decision, and blanks low-confidence transcript reasoning. Safe to forward outside the company.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "exports",
+          "name": "export_role_brief_pdf",
+          "title": "Export role brief PDF",
+          "description": "Render a one-role-brief PDF with title, customer, location, work mode, language requirements, key skills, top requirements, budget, and the full description + requirements.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "exports",
+          "name": "export_shortlist_pdf",
+          "title": "Export shortlist PDF",
+          "description": "Render the ranked shortlist for a role as a single PDF. audience=\"recruiter\" includes agency + margin per candidate; audience=\"customer\" suppresses the margin column.",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "exports",
+          "name": "export_interview_pack_pdf",
+          "title": "Export interview pack PDF",
+          "description": "Render a fully-generated interview pack (questions + optional code challenge) as a PDF. Returns null attachment if the pack does not exist or has not finished generating (generationStatus must be \"complete\").",
+          "scope": "read",
+          "isWrite": false
+        },
+        {
+          "module": "exports",
+          "name": "compose_candidate_email_attachments",
+          "title": "Compose candidate email attachments",
+          "description": "Killer-workflow tool. Returns everything an LLM needs to draft an email about a candidate-on-a-role in a single call: { candidate, role, attachments: { cv, interviewPack?, scoreSummary } }. Sub-fetches: (1) the raw CV file from disk, (2) the most recent interview pack for this candidate × role pair (omitted if none exists or the latest is not yet complete), (3) the structured score record (overall, dimensions, reasoning, summary). Read-only; no confirm.",
+          "scope": "read",
+          "isWrite": false
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "uri": "skillai://candidates/{id}",
+      "name": "candidate",
+      "description": "A single candidate record with their agency name and contact details."
+    },
+    {
+      "uri": "skillai://roles/{id}",
+      "name": "role",
+      "description": "A role record together with all candidates scored against it, sorted by overallScore."
+    },
+    {
+      "uri": "skillai://interview-packs/{id}",
+      "name": "interview-pack",
+      "description": "An interview pack with all generated questions."
+    },
+    {
+      "uri": "skillai://my-shortlists",
+      "name": "my-shortlists",
+      "description": "For the calling user, the roles where you have approvals to make."
+    }
+  ],
+  "prompts": [
+    {
+      "name": "prepare-interview-brief",
+      "description": "Assemble everything an interviewer needs to walk into a conversation with a specific candidate against a specific role: CV summary, dimension scores with reasoning, the generated interview pack, and any prior notes or transcript analyses."
+    },
+    {
+      "name": "weekly-shortlist-review",
+      "description": "For a hiring manager, summarise the current state of approvals on a role and surface the top candidates still awaiting a decision."
+    },
+    {
+      "name": "email-candidate-introduction",
+      "description": "Draft an introduction email to a third party (typically a hiring manager) about a specific candidate against a specific role. Pulls the CV summary and score so the narrative is grounded in actual SkillAi data."
+    }
+  ]
+}
