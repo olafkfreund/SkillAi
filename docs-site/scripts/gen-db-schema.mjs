@@ -237,7 +237,7 @@ function renderTablePage(table) {
   // Tenant note
   if (table.columns.some((c) => c.field === 'tenantId' || c.columnName === 'tenant_id')) {
     front.push(
-      '**Tenant-scoped.** This table includes `tenant_id` and is enforced by Row-Level Security. All queries must run inside `withTenant(tenantId, ...)`. See [Multi-tenancy & RLS](/architecture/multi-tenancy-rls).'
+      '**Tenant-scoped.** This table includes `tenant_id` and is enforced by Row-Level Security. All queries must run inside `withTenant(tenantId, ...)`. See [Multi-tenancy & RLS](/SkillAi/architecture/multi-tenancy-rls).'
     )
     front.push('')
   }
@@ -308,7 +308,7 @@ function renderOverviewPage(allTables) {
   lines.push('')
   lines.push('<Aside type="tip">')
   lines.push(
-    `**${allTables.length} tables**, all multi-tenant via PostgreSQL Row-Level Security. Every tenant-scoped table includes \`tenant_id UUID NOT NULL\` and is filtered by an RLS policy that reads \`app.tenant_id\` from the session. See [DEC-003](/decisions/dec-003-row-level-security) for the rationale.`
+    `**${allTables.length} tables**, all multi-tenant via PostgreSQL Row-Level Security. Every tenant-scoped table includes \`tenant_id UUID NOT NULL\` and is filtered by an RLS policy that reads \`app.tenant_id\` from the session. See [DEC-003](/SkillAi/decisions/dec-003-row-level-security) for the rationale.`
   )
   lines.push('</Aside>')
   lines.push('')
@@ -324,7 +324,7 @@ function renderOverviewPage(allTables) {
     lines.push('|---|---|---|')
     for (const t of found) {
       lines.push(
-        `| [\`${t.tableName}\`](/database/tables/${t.tableName.replace(/_/g, '-')}) | ${t.columns.length} | \`src/db/schema/${t.sourceFile}\` |`
+        `| [\`${t.tableName}\`](/SkillAi/database/tables/${t.tableName.replace(/_/g, '-')}) | ${t.columns.length} | \`src/db/schema/${t.sourceFile}\` |`
       )
     }
     lines.push('')
@@ -340,7 +340,7 @@ function renderOverviewPage(allTables) {
     lines.push('|---|---|---|')
     for (const t of ungrouped) {
       lines.push(
-        `| [\`${t.tableName}\`](/database/tables/${t.tableName.replace(/_/g, '-')}) | ${t.columns.length} | \`src/db/schema/${t.sourceFile}\` |`
+        `| [\`${t.tableName}\`](/SkillAi/database/tables/${t.tableName.replace(/_/g, '-')}) | ${t.columns.length} | \`src/db/schema/${t.sourceFile}\` |`
       )
     }
     lines.push('')

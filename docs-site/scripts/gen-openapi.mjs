@@ -123,7 +123,7 @@ function renderEndpointPage(spec) {
   )
   lines.push('')
   lines.push(
-    'All endpoints require an `Authorization: Bearer skl_<env>_<token>` header. See [Authentication](/rest-api/authentication) for details.'
+    'All endpoints require an `Authorization: Bearer skl_<env>_<token>` header. See [Authentication](/SkillAi/rest-api/authentication) for details.'
   )
   lines.push('')
 

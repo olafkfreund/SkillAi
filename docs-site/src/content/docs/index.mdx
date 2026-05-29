@@ -9,11 +9,11 @@ hero:
     file: ../../assets/screenshots/dashboard.png
   actions:
     - text: Get started
-      link: /getting-started/quick-start
+      link: /SkillAi/getting-started/quick-start
       icon: right-arrow
       variant: primary
     - text: REST API reference
-      link: /rest-api/overview
+      link: /SkillAi/rest-api/overview
       icon: document
     - text: View on GitHub
       link: https://github.com/olafkfreund/SkillAi
@@ -50,7 +50,7 @@ import { Card, CardGrid } from '@astrojs/starlight/components'
   <Card title="GDPR-ready" icon="approve-check-circle">
     Right-to-erasure (Article 17) with audit-log redaction, DSAR export
     (Article 15) as a streamed ZIP, per-tenant audit retention. See
-    [DEC-011](/decisions/dec-011-gdpr-erasure).
+    [DEC-011](/SkillAi/decisions/dec-011-gdpr-erasure).
   </Card>
   <Card title="Self-hosted, no external SaaS" icon="seti:lock">
     Postgres + pgvector + Docker — that's the stack. No data leaves your
@@ -63,22 +63,22 @@ import { Card, CardGrid } from '@astrojs/starlight/components'
 <CardGrid>
   <Card title="🚀 Try it locally" icon="laptop">
     `docker compose up` and you're running in five minutes. See
-    [Quick start](/getting-started/quick-start).
+    [Quick start](/SkillAi/getting-started/quick-start).
   </Card>
   <Card title="🔌 Integrate via REST" icon="seti:code-search">
     77 routes, 41 documented in the OpenAPI spec. Bearer-token auth,
     sliding-window rate limits, scope-based authorization. Start at
-    [REST API overview](/rest-api/overview).
+    [REST API overview](/SkillAi/rest-api/overview).
   </Card>
   <Card title="🤖 Drive it from Claude" icon="comment-alt">
     The MCP server lets Claude Code create roles, score candidates, send
     interview packs, and approve shortlists end-to-end. See
-    [Connecting from Claude Code](/mcp-server/connecting).
+    [Connecting from Claude Code](/SkillAi/mcp-server/connecting).
   </Card>
   <Card title="🏛️ Read the decisions" icon="document">
     Why Drizzle over Prisma. Why RLS over schema-per-tenant. Why manual
     transcript upload over Zoom OAuth. All 11 decisions are
-    [logged with rationale](/decisions/).
+    [logged with rationale](/SkillAi/decisions/).
   </Card>
 </CardGrid>
 
@@ -96,9 +96,9 @@ import { Card, CardGrid } from '@astrojs/starlight/components'
 
 ## Quick links
 
-- [What is SkillAI](/overview/what-is-skillai) — the elevator pitch and the problem space
-- [Product tour](/overview/product-tour) — annotated screenshots of every major surface
-- [System overview](/architecture/system-overview) — boxes-and-arrows, request lifecycle, AI pipeline
-- [Endpoint reference](/rest-api/endpoints) — auto-generated from the OpenAPI spec
-- [Tool catalogue](/mcp-server/tools) — auto-generated from the MCP registry
-- [Roadmap](/roadmap) — what shipped, what's next
+- [What is SkillAI](/SkillAi/overview/what-is-skillai) — the elevator pitch and the problem space
+- [Product tour](/SkillAi/overview/product-tour) — annotated screenshots of every major surface
+- [System overview](/SkillAi/architecture/system-overview) — boxes-and-arrows, request lifecycle, AI pipeline
+- [Endpoint reference](/SkillAi/rest-api/endpoints) — auto-generated from the OpenAPI spec
+- [Tool catalogue](/SkillAi/mcp-server/tools) — auto-generated from the MCP registry
+- [Roadmap](/SkillAi/roadmap) — what shipped, what's next

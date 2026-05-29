@@ -11,7 +11,7 @@ import { Aside } from '@astrojs/starlight/components'
 Auto-generated from `src/db/schema/candidates.ts`. **41** columns. To regenerate locally, run `npm run docs:gen:db` from `docs-site/`.
 </Aside>
 
-**Tenant-scoped.** This table includes `tenant_id` and is enforced by Row-Level Security. All queries must run inside `withTenant(tenantId, ...)`. See [Multi-tenancy & RLS](/architecture/multi-tenancy-rls).
+**Tenant-scoped.** This table includes `tenant_id` and is enforced by Row-Level Security. All queries must run inside `withTenant(tenantId, ...)`. See [Multi-tenancy & RLS](/SkillAi/architecture/multi-tenancy-rls).
 
 ## Columns
 
