@@ -4,7 +4,8 @@
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: SkillAi
+  name: skillai
+  title: SkillAi
   description: "Self-hosted AI-powered recruiting portal. Rank, compare, and archive candidates using Claude and Gemini. GPL-3."
   annotations:
     backstage.io/techdocs-ref: dir:.
