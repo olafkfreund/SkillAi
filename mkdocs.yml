@@ -1,19 +1,97 @@
-# mkdocs.yml — Backstage TechDocs configuration for SkillAI.
-#
-# GENERATED FILE — do not edit by hand. Regenerate with: npm run techdocs:sync
-# The nav + page content mirror the public GitHub Pages site (docs-site/).
-# Backstage builds this via the TechDocs generator (techdocs-ref: dir:. in
-# catalog-info.yaml), which runs `mkdocs build` against this repo.
-
 site_name: SkillAI
-site_description: Internal AI-powered recruiting portal — ranks candidates fast, archives them forever, integrates with Claude.
-docs_dir: techdocs
+site_description: >-
+  Internal AI-powered recruiting portal — ranks candidates fast, archives them
+  forever, integrates with Claude.
 repo_url: https://github.com/olafkfreund/SkillAi
 edit_uri: edit/core-mvp-foundation/docs-site/src/content/docs/
-
+docs_dir: techdocs
+nav:
+  - Home: index.md
+  - Overview:
+      - What is SkillAI: overview/what-is-skillai.md
+      - Product tour: overview/product-tour.md
+      - Live demo: overview/live-demo.md
+  - Getting started:
+      - Quick start: getting-started/quick-start.md
+      - Development workflow: getting-started/development.md
+  - Architecture:
+      - System overview: architecture/system-overview.md
+      - Tech stack: architecture/tech-stack.md
+      - Multi-tenancy & RLS: architecture/multi-tenancy-rls.md
+      - AI scoring pipeline: architecture/ai-scoring-pipeline.md
+      - File storage: architecture/file-storage.md
+      - Performance baselines: architecture/performance.md
+  - REST API:
+      - Overview: rest-api/overview.md
+      - Authentication: rest-api/authentication.md
+      - Rate limiting: rest-api/rate-limiting.md
+      - Endpoint reference: rest-api/endpoints.md
+  - MCP server:
+      - Overview: mcp-server/overview.md
+      - Connecting from Claude Code: mcp-server/connecting.md
+      - Tool catalogue: mcp-server/tools.md
+      - Resources: mcp-server/resources.md
+      - Prompts: mcp-server/prompts.md
+  - Database:
+      - Table reference:
+          - agencies: database/tables/agencies.md
+          - ai usage: database/tables/ai-usage.md
+          - api tokens: database/tables/api-tokens.md
+          - audit logs: database/tables/audit-logs.md
+          - calendar connections: database/tables/calendar-connections.md
+          - candidate enrichments: database/tables/candidate-enrichments.md
+          - candidate role approvals: database/tables/candidate-role-approvals.md
+          - candidates: database/tables/candidates.md
+          - code challenges: database/tables/code-challenges.md
+          - customer frameworks: database/tables/customer-frameworks.md
+          - customers: database/tables/customers.md
+          - cv profiles: database/tables/cv-profiles.md
+          - email templates: database/tables/email-templates.md
+          - interview packs: database/tables/interview-packs.md
+          - interview questions: database/tables/interview-questions.md
+          - interview slots: database/tables/interview-slots.md
+          - interview transcripts: database/tables/interview-transcripts.md
+          - notes: database/tables/notes.md
+          - role managers: database/tables/role-managers.md
+          - role submissions: database/tables/role-submissions.md
+          - roles: database/tables/roles.md
+          - scores: database/tables/scores.md
+          - sent emails: database/tables/sent-emails.md
+          - tenant settings: database/tables/tenant-settings.md
+          - tenants: database/tables/tenants.md
+          - transcript analyses: database/tables/transcript-analyses.md
+          - user invitations: database/tables/user-invitations.md
+          - users: database/tables/users.md
+      - Schema overview: database/overview.md
+  - Code patterns:
+      - Agency logo: code-patterns/agency-logo.md
+      - Audience sanitisation: code-patterns/audience-sanitisation.md
+      - Force dynamic: code-patterns/force-dynamic.md
+      - Help content: code-patterns/help-content.md
+      - Logo upload: code-patterns/logo-upload.md
+      - Theme tokens: code-patterns/theme-tokens.md
+  - Operations:
+      - AWS deployment: operations/aws-deploy.md
+      - Backup & recovery: operations/backup-runbook.md
+      - Health & monitoring: operations/health-monitoring.md
+  - Design decisions:
+      - Index: decisions/index.md
+      - DEC-001 — Build vs buy: decisions/dec-001-build-vs-buy.md
+      - DEC-002 — Drizzle over Prisma: decisions/dec-002-drizzle-over-prisma.md
+      - DEC-003 — Row-Level Security: decisions/dec-003-row-level-security.md
+      - DEC-004 — Claude as primary AI: decisions/dec-004-claude-primary.md
+      - DEC-005 — Local storage + Garage: decisions/dec-005-storage.md
+      - DEC-006 — Auth.js over Clerk: decisions/dec-006-authjs-over-clerk.md
+      - DEC-007 — Manual transcript upload: decisions/dec-007-manual-transcript-upload.md
+      - DEC-008 — Manual archive on expiry: decisions/dec-008-manual-archive.md
+      - DEC-009 — Soft budget signal: decisions/dec-009-soft-budget-signal.md
+      - DEC-010 — Internal bench model: decisions/dec-010-internal-bench.md
+      - DEC-011 — GDPR erasure pattern: decisions/dec-011-gdpr-erasure.md
+  - Roadmap: roadmap.md
 theme:
   name: material
-
+plugins:
+  - techdocs-core
 markdown_extensions:
   - admonition
   - pymdownx.details
@@ -21,90 +99,3 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
-
-plugins:
-  - techdocs-core
-
-nav:
-  - Home: index.md
-  - Overview:
-    - What is SkillAI: overview/what-is-skillai.md
-    - Product tour: overview/product-tour.md
-    - Live demo: overview/live-demo.md
-  - Getting started:
-    - Quick start: getting-started/quick-start.md
-    - Development workflow: getting-started/development.md
-  - Architecture:
-    - System overview: architecture/system-overview.md
-    - Tech stack: architecture/tech-stack.md
-    - Multi-tenancy & RLS: architecture/multi-tenancy-rls.md
-    - AI scoring pipeline: architecture/ai-scoring-pipeline.md
-    - File storage: architecture/file-storage.md
-    - Performance baselines: architecture/performance.md
-  - REST API:
-    - Overview: rest-api/overview.md
-    - Authentication: rest-api/authentication.md
-    - Rate limiting: rest-api/rate-limiting.md
-    - Endpoint reference: rest-api/endpoints.md
-  - MCP server:
-    - Overview: mcp-server/overview.md
-    - Connecting from Claude Code: mcp-server/connecting.md
-    - Tool catalogue: mcp-server/tools.md
-    - Resources: mcp-server/resources.md
-    - Prompts: mcp-server/prompts.md
-  - Database:
-    - Table reference:
-      - agencies: database/tables/agencies.md
-      - ai usage: database/tables/ai-usage.md
-      - api tokens: database/tables/api-tokens.md
-      - audit logs: database/tables/audit-logs.md
-      - calendar connections: database/tables/calendar-connections.md
-      - candidate enrichments: database/tables/candidate-enrichments.md
-      - candidate role approvals: database/tables/candidate-role-approvals.md
-      - candidates: database/tables/candidates.md
-      - code challenges: database/tables/code-challenges.md
-      - customer frameworks: database/tables/customer-frameworks.md
-      - customers: database/tables/customers.md
-      - cv profiles: database/tables/cv-profiles.md
-      - email templates: database/tables/email-templates.md
-      - interview packs: database/tables/interview-packs.md
-      - interview questions: database/tables/interview-questions.md
-      - interview slots: database/tables/interview-slots.md
-      - interview transcripts: database/tables/interview-transcripts.md
-      - notes: database/tables/notes.md
-      - role managers: database/tables/role-managers.md
-      - role submissions: database/tables/role-submissions.md
-      - roles: database/tables/roles.md
-      - scores: database/tables/scores.md
-      - sent emails: database/tables/sent-emails.md
-      - tenant settings: database/tables/tenant-settings.md
-      - tenants: database/tables/tenants.md
-      - transcript analyses: database/tables/transcript-analyses.md
-      - user invitations: database/tables/user-invitations.md
-      - users: database/tables/users.md
-    - Schema overview: database/overview.md
-  - Code patterns:
-    - Agency logo: code-patterns/agency-logo.md
-    - Audience sanitisation: code-patterns/audience-sanitisation.md
-    - Force dynamic: code-patterns/force-dynamic.md
-    - Help content: code-patterns/help-content.md
-    - Logo upload: code-patterns/logo-upload.md
-    - Theme tokens: code-patterns/theme-tokens.md
-  - Operations:
-    - AWS deployment: operations/aws-deploy.md
-    - Backup & recovery: operations/backup-runbook.md
-    - Health & monitoring: operations/health-monitoring.md
-  - Design decisions:
-    - Index: decisions/index.md
-    - DEC-001 — Build vs buy: decisions/dec-001-build-vs-buy.md
-    - DEC-002 — Drizzle over Prisma: decisions/dec-002-drizzle-over-prisma.md
-    - DEC-003 — Row-Level Security: decisions/dec-003-row-level-security.md
-    - DEC-004 — Claude as primary AI: decisions/dec-004-claude-primary.md
-    - DEC-005 — Local storage + Garage: decisions/dec-005-storage.md
-    - DEC-006 — Auth.js over Clerk: decisions/dec-006-authjs-over-clerk.md
-    - DEC-007 — Manual transcript upload: decisions/dec-007-manual-transcript-upload.md
-    - DEC-008 — Manual archive on expiry: decisions/dec-008-manual-archive.md
-    - DEC-009 — Soft budget signal: decisions/dec-009-soft-budget-signal.md
-    - DEC-010 — Internal bench model: decisions/dec-010-internal-bench.md
-    - DEC-011 — GDPR erasure pattern: decisions/dec-011-gdpr-erasure.md
-  - Roadmap: roadmap.md

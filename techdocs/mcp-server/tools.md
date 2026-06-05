@@ -1,6 +1,6 @@
 # Tool catalogue
 
-_Every tool the SkillAI MCP server exposes — auto-generated from the live tool registry on 2026-05-29._
+_Every tool the SkillAI MCP server exposes — auto-generated from the live tool registry on 2026-06-05._
 
 > **ℹ️ Note** — This page is generated from `docs-site/src/data/mcp-catalogue.json` by `scripts/sync-techdocs.mjs`. Do not edit it by hand; re-run `npm run techdocs:sync`.
 
