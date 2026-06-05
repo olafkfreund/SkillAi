@@ -7,6 +7,7 @@ metadata:
   name: SkillAi
   description: "Self-hosted AI-powered recruiting portal. Rank, compare, and archive candidates using Claude and Gemini. GPL-3."
   annotations:
+    backstage.io/techdocs-ref: dir:.
     github.com/project-slug: olafkfreund/SkillAi
   tags: []
 spec:
