@@ -1,0 +1,113 @@
+# Prompts
+
+_Three prebuilt multi-step workflows the SkillAI MCP server exposes — prepare-interview-brief, weekly-shortlist-review, email-candidate-introduction._
+
+MCP prompts are opinionated, parameterised templates that suggest a sequence of tool and resource calls to the LLM. They don't *execute* the work — they render into the user's chat as a structured instruction the model then follows.
+
+SkillAI ships three. The source is in [`src/lib/mcp/prompts/index.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/lib/mcp/prompts/index.ts).
+
+## How prompts work
+
+The LLM client (Claude Code, claude-desktop) lists available prompts via `prompts/list` and surfaces them in the UI — usually as slash-commands or a picker. The user fills in the prompt's arguments, and the server returns a list of messages the client renders into the conversation. The LLM then drives the tool/resource calls described in the rendered messages.
+
+Prompts are the right primitive when you have a workflow that:
+
+- Always touches the same handful of tools/resources in a known order.
+- Has a small, stable set of inputs the user wants to fill in.
+- Produces a structured output (a brief, a review, a draft) rather than a single value.
+
+## `prepare-interview-brief`
+
+**What it does.** Assembles everything an interviewer needs to walk into a conversation with a candidate against a specific role: CV summary, dimension scores with reasoning, the generated interview pack, and any prior notes or transcript analyses.
+
+**Arguments.**
+
+```ts
+{
+  candidateId: z.string().uuid(),
+  roleId:      z.string().uuid(),
+}
+```
+
+**What it orchestrates.** The prompt walks the LLM through a five-step sequence: `get_candidate` → `get_role` → `get_candidate_score` (with attention to per-dimension reasoning) → `list_interview_packs` filtered by both ids → `get_interview_pack` for the most recent complete one. It also suggests dereferencing `skillai://candidates/{id}` for a richer snapshot.
+
+**Sample output structure.** A one-page interviewer brief in en-GB English with the sections:
+
+- *At a glance* — overall score, location, availability, agency.
+- *Strengths* — drawn from per-dimension reasoning above ~75.
+- *Risks / things to probe* — drawn from per-dimension reasoning below ~65.
+- *Recommended questions* — the top 5–7 from the interview pack.
+- *Open questions for the candidate* — model-generated based on context gaps.
+
+The LLM is explicitly told not to invent skills the data doesn't support — strengths and risks both anchor to the dimension reasoning text.
+
+## `weekly-shortlist-review`
+
+**What it does.** For a hiring manager, summarises the current state of approvals on a role and surfaces the candidates still awaiting a decision.
+
+**Arguments.**
+
+```ts
+{
+  roleId: z.string().uuid(),
+}
+```
+
+**What it orchestrates.** Three tool calls: `get_role` (title, customer, deadlines, budget) → `get_role_with_candidates` (ranked shortlist) → `get_approvals_for_role` (pending decisions). The manager flow is the primary use case, and this prompt pairs naturally with the [`skillai://my-shortlists`](./resources.md#skillaimy-shortlists) resource for picking the roleId.
+
+**Sample output structure.** A markdown document with:
+
+- A 2–3 sentence headline — role title, days until `cutoffDate`, count pending, count decided.
+- A *still to decide* table — one row per pending candidate with `overallScore`, status, and a one-sentence rationale.
+- An *already decided* appendix — name + decision + comment.
+
+The output is deterministic in structure but the rationale text is model-generated, so the manager gets a consistent format with reasoning grounded in the score data.
+
+## `email-candidate-introduction`
+
+**What it does.** Drafts an introduction email to a third party — typically a hiring manager — about a specific candidate against a specific role. Pulls the CV summary and score so the narrative is grounded in actual SkillAI data rather than the model's imagination.
+
+**Arguments.**
+
+```ts
+{
+  candidateId:    z.string().uuid(),
+  roleId:         z.string().uuid(),
+  recipientEmail: z.string().email(),
+}
+```
+
+**What it orchestrates.** Three reads: `get_candidate` (name, location, availability) → `get_role` (title, customer, location) → `get_candidate_score` (AI summary plus per-dimension reasoning above 75). Note the explicit threshold — the prompt tells the LLM to only surface dimensions where the model has actual signal, not to fish for things to say.
+
+**Sample output structure.** A single-paragraph subject line plus 4–6 short body paragraphs in en-GB English:
+
+- *Why this candidate* — one sentence drawn from the AI summary.
+- *Relevant strengths* — max three bullets, grounded in dimension reasoning.
+- *Availability and location* — from the candidate record.
+- *Next-step ask* — a 30-minute call, a CV download from the dashboard, etc.
+- *Sign-off* — references SkillAI and the calling user.
+
+> **ℹ️ Note**
+>
+> The prompt explicitly tells the model: "Do not invent skills or experience the data does not support. If a dimension is below 60, do not mention it in the email — flag it back to me separately." That's a guardrail against the AI confabulating positives the candidate doesn't actually have.
+
+## Common pattern
+
+All three prompts:
+
+- Validate their arguments with Zod (UUIDs and emails) so a malformed call fails fast on the client.
+- Return a single user-message in the response — the LLM treats it as if the user typed it.
+- Hard-code the language (`en-GB English`) to keep the output consistent.
+- Tell the model exactly which tools to call and in what order, by tool name, so the model doesn't have to guess.
+- Anchor every assertion to a specific tool result, not the model's prior beliefs about the candidate.
+
+## Where this lives in code
+
+- Registry function: `registerAllPrompts(server, _ctx)` in [`src/lib/mcp/prompts/index.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/lib/mcp/prompts/index.ts).
+- Args schemas (`PrepareBriefArgs`, `ShortlistReviewArgs`, `EmailIntroArgs`) are exported alongside each prompt for client-side validation if needed.
+- The prompts don't carry any per-call audit overhead — they're pure templates. The tools they tell the LLM to call carry their own audit entries as usual.
+
+## See also
+
+- [Tool catalogue](./tools.md) — the tools each prompt orchestrates.
+- [Resources](./resources.md) — `skillai://my-shortlists` pairs naturally with `weekly-shortlist-review`.

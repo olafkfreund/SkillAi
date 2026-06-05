@@ -1,0 +1,81 @@
+# Agency logo on candidate displays
+
+_How an agency logo is shown alongside candidate identity across lists, role cards, candidate detail headers, and PDF exports — with an initials fallback when no logo is set._
+
+Every candidate surface that shows the candidate's name also shows the originating agency's logo (or an initials avatar fallback) so the source of every candidate is visible at a glance. The visual treatment is consistent across web and PDF: a small rounded-full image with explicit width/height, `object-contain`, and a tinted-background placeholder when the image is unavailable.
+
+## Sizes by surface
+
+| Surface | Size | File |
+|---|---|---|
+| Candidate list | 20 × 20 | [`src/components/candidates/selectable-candidate-list.tsx`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/components/candidates/selectable-candidate-list.tsx) |
+| Role-detail candidate card | 20 × 20 | [`src/components/roles/role-candidate-card.tsx`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/components/roles/role-candidate-card.tsx) |
+| Candidate detail header | 24 × 24 | candidate detail page |
+| Candidate PDF export | 32 × 32 | [`src/app/api/export/candidate/[candidateId]/route.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/app/api/export/candidate/%5BcandidateId%5D/route.ts) |
+
+The agency-logo-on-candidate surfaces are deliberately smaller than the logos on the agency list or detail pages (32 / 64 px) — at candidate scale the logo is identification, not branding.
+
+## Web pattern — conditional render with initials fallback
+
+The canonical snippet appears in `selectable-candidate-list.tsx:20` and `role-candidate-card.tsx:168`. Both components do exactly the same thing:
+
+```tsx
+{agencyLogoPath ? (
+  <img
+    src={`/api/agencies/${agencyId}/logo`}
+    alt=""
+    width={20}
+    height={20}
+    style={{ width: 20, height: 20 }}
+    className="rounded-full border border-[var(--color-border)]
+               bg-[var(--color-bg-input)] object-contain shrink-0"
+  />
+) : (
+  <div
+    className="flex items-center justify-center rounded-full
+               bg-[var(--color-bg-input)] text-[var(--color-fg-muted)]
+               text-xs font-semibold shrink-0"
+    style={{ width: 20, height: 20 }}
+    aria-hidden="true"
+  >
+    {agencyName?.charAt(0).toUpperCase() ?? '?'}
+  </div>
+)}
+```
+
+A few rules baked in:
+
+- **`alt=""`** on the image — the agency name is rendered as a sibling `<span>`, so the logo is decorative and screen readers don't need to repeat it. The initials fallback is `aria-hidden="true"` for the same reason.
+- **Both `width`/`height` attributes and inline `style`** — the attributes prevent layout shift before CSS loads; the inline style locks the size against any inherited `img { max-width: 100% }` rules.
+- **`object-contain`** so a non-square logo letterboxes inside the circle rather than stretching.
+- **`shrink-0`** so a long candidate name in the adjacent flex item doesn't compress the logo.
+- **`bg-[var(--color-bg-input)]` placeholder** — gives the rounded shape mass before the image loads and serves as the tinted background for both states.
+
+The image source is `/api/agencies/{agencyId}/logo`, which is auth-gated and tenant-scoped. Files are served with a 5-minute private cache header.
+
+## PDF pattern — base64 data URI
+
+`react-pdf` runs server-side without browser networking, so PDFs can't fetch the logo over HTTP. The candidate PDF route reads the file from disk once via `getLogoAbsolutePath`, encodes it as a base64 data URI, and hands the string to react-pdf's `<Image>` component. Implementation at `route.ts:205`:
+
+```ts
+let agencyLogoBase64: string | undefined
+if (audience === 'internal' && agency?.logoPath) {
+  try {
+    const absPath = getLogoAbsolutePath(agency.logoPath)
+    const logoBuffer = await fs.readFile(absPath)
+    const ext = agency.logoPath.split('.').pop()?.toLowerCase() ?? 'png'
+    const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+      : ext === 'webp' ? 'image/webp'
+      : 'image/png'
+    agencyLogoBase64 = `data:${mime};base64,${logoBuffer.toString('base64')}`
+  } catch {
+    // File unreadable — render the PDF without the logo
+  }
+}
+```
+
+The `audience === 'internal'` gate matters: customer-facing PDF variants never embed the agency logo because the originating agency is one of the fields stripped for the customer audience.
+
+> **💡 Tip**
+>
+> The full storage + serving pipeline (validation, path symmetry, the storage helper) is documented on the [logo upload page](./logo-upload.md). This page covers only the candidate-side rendering surfaces.

@@ -1,0 +1,72 @@
+# Resources
+
+_Four URI-addressable read views exposed by the SkillAI MCP server — candidate snapshots, role + ranked shortlist, interview packs, and the manager-only "my shortlists" view._
+
+MCP resources are URI-addressable read views. Where a tool is an explicit function call (`get_candidate(...)`), a resource is a handle the LLM can reference inline (`skillai://candidates/<id>`) and the MCP client knows how to materialise into JSON.
+
+SkillAI exposes four. The full source is in [`src/lib/mcp/resources/index.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/lib/mcp/resources/index.ts).
+
+## When to use a resource vs a tool
+
+A resource is the right primitive when:
+
+- The LLM only needs to **read** the entity (resources are read-only by design).
+- You'd rather the model embed the URI as a reference than call a tool and round-trip the result through chat.
+- You want a stable, addressable identity for the entity that survives across conversations.
+
+A tool is the right primitive when you need filtering, pagination, parameters beyond the URI itself, or any mutation. The resource handlers below all delegate to the same query helpers a tool would use — they're optimised for "give me everything you know about *this exact thing*".
+
+## `skillai://candidates/{id}`
+
+**What's in it.** A single candidate row joined with the candidate's agency name. Returned as JSON with shape `{ candidate, agencyName }`. Fields on `candidate` include identity (`firstName`, `lastName`, `email`), CV text, rates, availability, and the agency FK.
+
+**When to use it.** When the LLM has a candidate id (from a list, a score, an approval) and wants the full record without negotiating filters. Cheaper than `get_candidate` for the LLM because the URI is self-documenting.
+
+**How it differs from `get_candidate`.** The tool version supports lookup by id and returns the same data, but takes a function-call-shaped argument structure. The resource is read-only and addressable — the LLM can drop the URI into prose ("see `skillai://candidates/9f1e...`") and the client knows how to dereference it.
+
+```ts
+new ResourceTemplate('skillai://candidates/{id}', { list: undefined })
+```
+
+## `skillai://roles/{id}`
+
+**What's in it.** The role record plus all candidates that have been scored against it, sorted by `overallScore` descending. Shape: `{ role, candidates: [{ candidateId, firstName, lastName, overallScore, scoreStatus }, ...] }`. If the role doesn't exist or is in another tenant, `role` is `null` and `candidates` is `[]`.
+
+**When to use it.** For any "give me the current state of this role" question — preparing for a hiring discussion, looking up the top of the pile, generating a status update. The ranked-candidate join is done server-side so the LLM doesn't need to call `list_candidates` + cross-reference scores.
+
+**How it differs from `get_role` + `get_role_with_candidates`.** The two tools return the same data when called in succession; the resource bundles both in one snapshot and exposes it under a URI. Use the resource when you want the snapshot; use the tools when you need additional filtering on either side.
+
+## `skillai://interview-packs/{id}`
+
+**What's in it.** An interview pack header plus all of its generated questions. Shape: `{ pack, questions: [...] }`. The pack header includes the candidate / role link, type (full technical / pre-screening), language, and generation status. Questions include text, dimension, expected difficulty, and ordering.
+
+**When to use it.** When an interviewer (or the LLM acting for them) needs the full pack inline — for example, the `prepare-interview-brief` prompt dereferences this resource to render the recommended questions section. Faster than calling `list_interview_packs` + `get_interview_pack` separately.
+
+**How it differs from the tool equivalents.** `list_interview_packs` filters across packs; `get_interview_pack` fetches one. The resource is the "single pack, fully expanded" snapshot — same effect as `get_interview_pack`, but addressable by URI and embeddable in prompt templates.
+
+## `skillai://my-shortlists`
+
+**What's in it.** For the calling user, the roles where they have outstanding approval decisions to make. Shape: `{ assignedRoles: [...] }`. The list is per-user, derived from the `role_managers` junction; it returns the roles the calling user is assigned to as a manager along with each role's pending-decision state.
+
+**When to use it.** Hiring-manager workflow. The `weekly-shortlist-review` prompt uses this to find the roles a manager needs to review without making them remember role ids. A no-argument URI makes it perfect for "what's on my plate?" prompts.
+
+**How it differs from the other three.** This one is a **static URI** (no `{id}` template) because the answer is always "for me, right now". It internally calls [`getMyAssignedRoles()`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/actions/role-managers.ts) inside a `runWithActionContext` so the server action sees the correct caller identity. There is no `list` capability for templated resources, so the LLM can't enumerate candidates / roles / packs via resource listing — this URI is the only "tell me about me" resource.
+
+> **ℹ️ Note**
+>
+> A non-manager calling this resource gets an empty `assignedRoles` array. The resource doesn't error on role mismatch; the prompt templates assume the LLM will degrade gracefully if there's nothing on the plate.
+
+## Subscribe semantics
+
+The MCP SDK supports resource subscriptions, but SkillAI's resources are **point-in-time** reads — there is no server-side change notification. Calling `resources/read` re-runs the query against current state; the client gets a fresh snapshot each time. This is fine for the conversational use case where the LLM re-fetches as needed during a session.
+
+## Where this lives in code
+
+- Registry function: `registerAllResources(server, ctx)` in [`src/lib/mcp/resources/index.ts`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/lib/mcp/resources/index.ts).
+- Each handler runs inside `withTenant(ctx.tenantId, ...)` so RLS is enforced — no resource can ever leak data across tenants regardless of the URI provided.
+- The `my-shortlists` handler additionally wraps the call in `runWithActionContext` so downstream server actions see the calling user's role.
+
+## See also
+
+- [Tool catalogue](./tools.md) — the full 48-tool surface, including the `get_*` tools that overlap with these resources.
+- [Prompts](./prompts.md) — pre-authored workflows that orchestrate resources + tools together.

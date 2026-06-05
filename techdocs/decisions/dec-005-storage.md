@@ -1,0 +1,25 @@
+# DEC-005 — Local Docker volume + Garage for file storage
+
+_CVs and logos live on a local Docker named volume in development and small production deployments; Garage (self-hosted S3-compatible) is the upgrade path for larger deployments._
+
+> **ℹ️ Note**
+>
+> **Status:** Accepted · **Category:** Technical · **Date:** 2026-04-09 · **Stakeholders:** Tech Lead
+
+## Decision
+
+Store uploaded CVs in a local Docker named volume for development and small production deployments. Garage (self-hosted S3-compatible) is the defined upgrade path for larger production deployments.
+
+## Context
+
+MinIO (the previously popular self-hosted S3 option) moved to AGPL in 2024 and is now effectively archived for most self-hosted use cases. Garage is a purpose-built self-hosted object store, S3-compatible, runs as a single Docker container, and is designed for modest hardware. Since all CV files are internal and sensitive, no external storage (S3, GCS) is used.
+
+## Consequences
+
+**Positive:** Zero external dependencies, data stays on-premise, simple Docker setup
+**Negative:** Volume backup must be managed manually; Garage adds complexity if adopted
+
+## Related
+
+- [DEC-001 — Build vs buy](./dec-001-build-vs-buy.md) — the data-sovereignty principle established here is what rules out S3 / GCS as defaults.
+- The Garage migration is an open roadmap item — see [Roadmap → Open work](../roadmap.md#open-work).
