@@ -1,0 +1,199 @@
+# Health & monitoring
+
+_The /api/health endpoint, the audit log table, and the AI usage ledger — what SkillAI exposes for operational visibility._
+
+SkillAI exposes three observability surfaces, all built into the application — no Prometheus scrape endpoint, no metrics push to Datadog. Operators monitor it the way they monitor any Postgres-backed Node app: a liveness endpoint, a structured action history in the database, and an AI spend ledger surfaced as a dashboard.
+
+> **ℹ️ Note**
+>
+> There is no `/metrics` endpoint and no built-in tracing exporter. If you need Prometheus-style metrics, scrape `/api/health` for liveness and tail `docker compose logs app` (or the EKS pod logs) for structured request logs. Adding a real metrics endpoint is on the roadmap but not built.
+
+## `/api/health` — liveness probe
+
+`src/app/api/health/route.ts` exposes an unauthenticated health endpoint for Docker healthchecks, EKS readiness probes, and external monitors.
+
+### Shape
+
+```bash
+curl -s http://localhost:3000/api/health
+```
+
+```json
+{
+  "status": "ok",
+  "db": "ok",
+  "uptime": 42.3,
+  "timestamp": "2026-05-29T12:00:00.000Z"
+}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `status` | `'ok' \| 'unhealthy'` | overall liveness — `unhealthy` whenever any sub-check fails |
+| `db` | `'ok' \| 'error'` | result of a trivial `SELECT 1` against the connection pool |
+| `uptime` | number (seconds) | `process.uptime()` since the Node process started — useful for spotting unexpected restarts |
+| `timestamp` | ISO 8601 string | `new Date().toISOString()` at the moment the response was generated |
+
+### HTTP status
+
+- **200** when `status === 'ok'`
+- **503** when the DB query throws (connection refused, pool exhausted, RDS failover in progress, etc.)
+
+`Cache-Control: no-store` is set on both responses — monitors must always get a live result.
+
+### What it does NOT check
+
+Intentionally minimal. The endpoint does not verify:
+
+- Anthropic / Gemini API reachability (would burn AI quota on every poll)
+- File storage writability (would require disk I/O on every poll)
+- Auth session validity (the endpoint is unauthenticated by design)
+- Migration freshness or schema integrity
+
+If any of those are critical to your monitoring, add separate probes against specific routes. Don't bloat `/api/health` — it's polled every few seconds by Docker.
+
+## The audit log
+
+`src/db/schema/audit-logs.ts` defines `audit_logs` as the canonical action history.
+
+### Schema
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID PK | |
+| `tenant_id` | UUID NOT NULL | FK to `tenants.id`, RLS-scoped |
+| `user_id` | UUID nullable | nullable — system actions (cron, `after()` jobs) have no user |
+| `user_email` | varchar(200) | denormalised for fast read |
+| `action` | varchar(100) NOT NULL | dotted convention, e.g. `score.completed`, `candidate.deleted_gdpr` |
+| `entity_type` | varchar(50) NOT NULL | `candidate`, `role`, `score`, `interview_slot`, etc. |
+| `entity_id` | UUID nullable | nullable for bulk / list actions |
+| `entity_label` | varchar(200) | human-readable label, e.g. `"John Smith"` |
+| `metadata` | jsonb nullable | extra context — role title, score value, error message |
+| `created_at` | timestamptz NOT NULL | indexed alongside `tenant_id` |
+
+Indexed by `(tenant_id, created_at)` and `(entity_type, entity_id)` for the two common query shapes: per-tenant timeline and per-entity history.
+
+### What gets logged
+
+Every server action that mutates tenant data emits an audit row via `emitAudit()` from `src/lib/audit-middleware.ts`. Concrete action names live in the code; representative ones:
+
+- **Lifecycle:** `candidate.created`, `role.created`, `role.updated`, `user.created`, `email_template.created`, `email_template.updated`, `email_template.deleted`
+- **AI pipeline:** `score.completed`, `score.failed`, `transcript_analysis.completed`, `transcript_analysis.failed`
+- **Manager workflow:** `shortlist.sent`, `candidate.approved_by_manager`, `candidate.rejected_by_manager`, `role.manager_assigned`
+- **Calendar:** `interview_slot.created`, `interview_slot.updated`, `interview_slot.rescheduled_external`, `interview_slot.cancelled_external`, `calendar.sync_failed`
+- **GDPR:** `candidate.deleted_gdpr`, `candidate.dsar_exported`
+- **Tenant export:** `tenant.exported`, `tenant.csv_exported`
+- **API tokens:** `api_token.created`
+- **OAuth credentials:** `settings.oauth_credentials_updated`, `settings.oauth_credentials_removed`
+
+The action enum is **not** constrained in the DB — it's `varchar(100)`. Adding a new action means writing the string at the `emitAudit` call site; no migration required.
+
+### How to export the audit log
+
+The audit log is queryable via the dashboard (Settings → Audit Log surface, per role) and via the REST API. The simplest export path:
+
+```bash
+# Direct SQL (set the tenant context first so RLS doesn't filter you out)
+docker exec -it skillai-db-1 psql -U skillai -d skillai
+```
+
+```sql
+SET app.tenant_id = '<your-tenant-uuid>';
+
+\COPY (
+  SELECT created_at, user_email, action, entity_type, entity_label, metadata
+  FROM audit_logs
+  ORDER BY created_at DESC
+) TO '/tmp/audit.csv' WITH CSV HEADER;
+```
+
+```bash
+docker cp skillai-db-1:/tmp/audit.csv ./audit.csv
+```
+
+The per-tenant JSON export from the Settings UI also includes `audit-log.json` as one of the tables in the ZIP. See the [backup runbook](./backup-runbook.md) for the distinction between the JSON export and a full backup.
+
+### Audit log retention
+
+No automatic pruning. The schema includes both compound indexes that stay cheap up to ~1 M rows. Past that, partition `audit_logs` by month and expire after 24 months unless a legal-hold flag is set — see [Performance baselines](../architecture/performance.md) for the threshold.
+
+GDPR erasure ([DEC-011](../decisions/dec-011-gdpr-erasure.md)) redacts PII from existing audit rows but **does not delete them** — the action history is preserved for accountability under Article 5(2) / Article 30 while the personal data fields (`entity_label`, `metadata`) get replaced with `[redacted-gdpr]`.
+
+## The AI usage ledger
+
+`src/db/schema/ai-usage.ts` defines `ai_usage`, the per-call ledger for every Claude and Gemini request.
+
+### Schema
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID PK | |
+| `tenant_id` | UUID NOT NULL | RLS-scoped |
+| `user_id` | UUID nullable | nullable — background `after()` jobs have no user context |
+| `operation` | varchar(64) NOT NULL | from `AI_OPERATIONS` const in code, see below |
+| `model` | varchar(100) NOT NULL | e.g. `claude-sonnet-4-6`, `models/gemini-2.0-flash` |
+| `input_tokens` | integer NOT NULL | |
+| `output_tokens` | integer NOT NULL | |
+| `cache_creation_tokens` | integer nullable | Anthropic prompt-cache writes |
+| `cache_read_tokens` | integer nullable | Anthropic prompt-cache reads |
+| `cost_usd` | decimal(10, 6) NOT NULL | computed at log time from per-model unit prices |
+| `duration_ms` | integer nullable | wall-clock API duration |
+| `metadata` | jsonb nullable | `{ candidateName, roleTitle, ... }` |
+| `created_at` | timestamptz NOT NULL | indexed alongside `tenant_id` |
+
+### Operation tags
+
+The `operation` field is constrained at the **application layer** via the `AI_OPERATIONS` const + `AiOperation` type — kept out of the DB schema so adding a new AI surface doesn't require a migration. Current operations:
+
+`cv_scoring_claude`, `cv_scoring_gemini`, `cv_profile_extract`, `interview_pack_generate`, `transcript_analysis`, `cv_reformat`, `synechron_extract`, `profile_match`, `role_fit`, `shortlist_summary`, `role_tag_extract`, `embedding`, `personal_site_summary`, `welcome_letter_generate`, `auto_match_scoring`.
+
+This is why the auto-match cost cap can query `WHERE operation = 'auto_match_scoring'` and get a clean per-feature spend total without touching unrelated calls.
+
+### The cost dashboard
+
+`/dashboard/reports` surfaces the ledger as:
+
+- **AI cost trend** — line chart with month-over-month delta. Component: `src/components/reports/ai-cost-trend-chart.tsx`.
+- **AI spend breakdown** — per-model, per-operation, per-user drill-down (PR #152 closing issue #151).
+- **Per-tenant usage panel** — current month + recent calls. Component: `src/components/settings/ai-usage-panel.tsx`. Lives on the Settings page.
+
+Admins also get a CSV export of the AI cost trend via `/api/reports/ai-cost-trend/csv`.
+
+### Per-call cost computation
+
+`cost_usd` is computed at log time from per-model unit prices in `src/lib/ai/pricing.ts`. The price table is hand-maintained; bump it when Anthropic / Google publish a new rate card.
+
+## Application logs
+
+Standard `console.log` / `console.error` to stdout. Pick them up via:
+
+```bash
+# Local dev
+# (logs appear in the terminal running `npm run dev`)
+
+# Docker
+docker compose logs -f app
+
+# EKS
+kubectl logs deployment/skillai-app -n skillai --tail=100 --follow
+```
+
+Scoring failures, interview pack failures, calendar sync failures, and AI API errors all log with the relevant entity ID and the error message. There is no structured log format (JSON lines) — adding one is on the roadmap.
+
+## Notifications — Slack + Teams webhooks
+
+Separate from health monitoring, but worth knowing about. Tenants configure per-tenant Slack and Teams webhook URLs (encrypted in `tenant_settings`); the dispatcher in `src/lib/notifications/dispatcher.ts` fans out on specific audit-log events:
+
+- Candidate scored ≥ 85 (configurable threshold)
+- Interview scheduled
+- Stale priorities
+- Manager approved / rejected a shortlist
+- Daily digest: "N awaiting score, M interviews this week"
+
+Per-user preferences let recruiters opt out of noisy channels. See PR #168 for the implementation.
+
+## Related
+
+- [System overview](../architecture/system-overview.md) — where the health endpoint sits in the request lifecycle.
+- [Performance baselines](../architecture/performance.md) — when to start worrying about the audit_logs table size.
+- [AI scoring pipeline](../architecture/ai-scoring-pipeline.md) — how the AI cost cap uses the `ai_usage` ledger as backpressure.

@@ -1,0 +1,24 @@
+# DEC-002 — Drizzle ORM over Prisma
+
+_Drizzle was chosen for native first-class pgvector support, a lighter footprint with no query-engine binary, and a type-safe SQL-like query builder that suits our schema._
+
+> **ℹ️ Note**
+>
+> **Status:** Accepted · **Category:** Technical · **Date:** 2026-04-09 · **Stakeholders:** Tech Lead
+
+## Decision
+
+Use Drizzle ORM instead of Prisma for database access.
+
+## Context
+
+Both ORMs are viable for Next.js + PostgreSQL. Drizzle was chosen because it has native, first-class pgvector support built into its schema types (`vector()` column type, `cosineDistance`, `l2Distance` helpers). Prisma only added pgvector support in v6.13 (early 2026) and the DX is still maturing. Drizzle is also significantly lighter (no query engine binary) which simplifies Docker images.
+
+## Consequences
+
+**Positive:** Native pgvector, lighter Docker images, type-safe SQL-like query builder
+**Negative:** Smaller ecosystem, fewer examples online vs Prisma
+
+## Related
+
+- The pgvector advantage here is what makes semantic candidate search practical — see [DEC-003 — Row-Level Security](./dec-003-row-level-security.md) for how RLS interacts with the schema choices.

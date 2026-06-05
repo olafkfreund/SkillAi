@@ -17,7 +17,10 @@
     "test:coverage": "NODE_ENV=test vitest run --coverage",
     "test:e2e": "NODE_ENV=test playwright test",
     "docs:mcp-tools": "npx tsx scripts/generate-mcp-tools-doc.ts",
-    "mcp:smoke": "npx tsx scripts/mcp-smoke.ts"
+    "mcp:smoke": "npx tsx scripts/mcp-smoke.ts",
+    "techdocs:gen": "npm --prefix docs-site run docs:gen",
+    "techdocs:sync": "npm run techdocs:gen && node scripts/sync-techdocs.mjs",
+    "techdocs:serve": "techdocs-cli serve"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",

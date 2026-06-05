@@ -1,0 +1,107 @@
+# catalog-info.yaml — Backstage Software Catalog descriptor for SkillAI.
+#
+# Registers SkillAI as a Component with TechDocs (techdocs-ref: dir:.), plus the
+# REST API it exposes and the PostgreSQL resource it depends on. TechDocs is
+# built from `mkdocs.yml` + `techdocs/` at the repo root, which is kept in sync
+# with the public GitHub Pages site by scripts/sync-techdocs.mjs (see the Docs
+# CI workflow). Source branch is `core-mvp-foundation` (the repo default).
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: skillai
+  title: SkillAI
+  description: Internal AI-powered recruiting portal — ranks and archives candidates against job roles using Claude and Gemini, with explainable per-dimension scoring.
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    backstage.io/source-location: url:https://github.com/olafkfreund/SkillAi/tree/core-mvp-foundation/
+    github.com/project-slug: olafkfreund/SkillAi
+  tags:
+    - nextjs
+    - typescript
+    - postgres
+    - pgvector
+    - drizzle
+    - docker
+    - ai
+    - llm
+    - claude
+    - mcp
+    - recruiting
+  links:
+    - url: https://olafkfreund.github.io/SkillAi
+      title: Documentation site (GitHub Pages)
+      icon: docs
+    - url: https://github.com/olafkfreund/SkillAi
+      title: Source repository
+      icon: github
+spec:
+  type: service
+  lifecycle: production
+  owner: olafkfreund
+  providesApis:
+    - skillai-rest-api
+    - skillai-mcp
+  dependsOn:
+    - resource:skillai-db
+---
+# REST API parity layer — 36 HTTP routes wrapping the server actions, described
+# by the OpenAPI 3.1 spec served at /api/openapi.json.
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: skillai-rest-api
+  title: SkillAI REST API
+  description: Bearer-token REST API (OpenAPI 3.1) covering candidate, role, agency, customer, scoring, interview and export operations. Auth via skl_* API tokens with read/write/admin scopes and per-tenant rate limiting.
+  annotations:
+    github.com/project-slug: olafkfreund/SkillAi
+  tags:
+    - rest
+    - openapi
+spec:
+  type: openapi
+  lifecycle: production
+  owner: olafkfreund
+  definition:
+    $text: https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/docs-site/src/data/openapi.json
+---
+# Model Context Protocol server exposed at /api/mcp (streamable-HTTP) plus the
+# standalone skillai-mcp stdio bridge. 48 tools / 4 resources / 3 prompts.
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: skillai-mcp
+  title: SkillAI MCP Server
+  description: Model Context Protocol server (48 tools across 12 modules, 4 resources, 3 prompts) hosted at /api/mcp and via the skillai-mcp stdio bridge. Bearer-token auth, scope checks, per-call audit log.
+  annotations:
+    github.com/project-slug: olafkfreund/SkillAi
+  tags:
+    - mcp
+    - claude
+spec:
+  type: grpc
+  lifecycle: production
+  owner: olafkfreund
+  definition: |
+    SkillAI MCP server — streamable-HTTP transport at /api/mcp.
+    Tools: candidates, roles, agencies, customers, scoring, interviews,
+    approvals, managers, notes, users, settings, exports.
+    See https://olafkfreund.github.io/SkillAi/mcp-server/overview for the
+    full catalogue and connection instructions.
+---
+# Primary datastore — PostgreSQL 17 + pgvector (HNSW), multi-tenant via RLS.
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: skillai-db
+  title: SkillAI PostgreSQL
+  description: PostgreSQL 17 with the pgvector extension (HNSW index for candidate semantic search). Multi-tenant isolation enforced via Row-Level Security and a per-request app.tenant_id session variable.
+  annotations:
+    github.com/project-slug: olafkfreund/SkillAi
+  tags:
+    - postgres
+    - pgvector
+    - database
+spec:
+  type: database
+  lifecycle: production
+  owner: olafkfreund

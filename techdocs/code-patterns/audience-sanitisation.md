@@ -1,0 +1,61 @@
+# Audience-based view sanitisation
+
+_How the audience prop strips commercially-sensitive and internal data per persona without forking the underlying components._
+
+SkillAI renders the same role and candidate components for three personas. Each page and shared component takes an `audience: 'recruiter' | 'customer' | 'manager'` prop and conditionally strips fields rather than duplicating the component tree. Recruiters see everything. Customers see no internal notes, day rates, margin, or originating agency. Managers see the score breakdown, AI reasoning, and the interview pack — but no rates, margin, or agency — and every edit control becomes read-only.
+
+## Surfaces that thread `audience`
+
+The prop is threaded end-to-end from the page server component into each child:
+
+- Role detail page and candidate detail page (top-level entry points)
+- [`src/components/roles/role-candidate-card.tsx`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/src/components/roles/role-candidate-card.tsx)
+- `EditDetailsForm` (edit controls disabled when not `recruiter`)
+- `NotesPanel` (also filters by `note.is_shareable`)
+- `RoleTagsPanel`, `PriorityKeywordsPanel` (read-only for managers)
+
+## Worked example — the margin pill
+
+`RoleCandidateCard` shows day-rate margin to recruiters but hides it from managers. The component aliases the audience check once at the top of the render body:
+
+```tsx
+const isManagerView = audience === 'manager'
+
+// …later, inside the score row:
+{!isManagerView && (
+  <MarginPill
+    roleRate={roleDayRate}
+    roleCurrency={roleCurrency}
+    candRate={candidateRate}
+    candCurrency={candidateCurrency}
+  />
+)}
+```
+
+The same flag also hides the destructive "Remove from role" button so managers can read but never mutate (`role-candidate-card.tsx:220`). Customers never reach this component at all — the customer share page renders a different sanitised tree.
+
+## Notes panel — the extra `is_shareable` rule
+
+Notes have a second layer on top of `audience`. Each `notes` row carries an `is_shareable` boolean that defaults to `false`. For the manager audience the panel filters to `audience === 'manager' ? notes.filter(n => n.is_shareable) : notes`. Recruiters opt-in per note when they want a manager to see it; nothing leaks by accident.
+
+## Adding a new field
+
+When you add a field that contains commercial or internal data, gate it on `audience === 'recruiter'` **explicitly**. Default-visible-and-then-hidden is the wrong direction — a missing audience check on a new field is the failure mode this pattern exists to prevent.
+
+```tsx
+type Props = {
+  audience?: 'recruiter' | 'customer' | 'manager'
+  internalNotes: string | null
+  // …
+}
+
+export function Panel({ audience = 'recruiter', internalNotes }: Props) {
+  if (audience !== 'recruiter') return null
+  if (!internalNotes) return null
+  return <section className="text-[var(--color-fg-muted)]">{internalNotes}</section>
+}
+```
+
+> **⚠️ Caution**
+>
+> Day rates and margin are the canonical example of internal-only data — see [DEC-009](../decisions/dec-009-soft-budget-signal.md) for why budget context is rendered as a margin pill for recruiters while being deliberately invisible to customers and managers.

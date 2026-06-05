@@ -1,0 +1,130 @@
+# Live demo
+
+_How to try SkillAI locally in five minutes — Docker quick-start, demo data seeding, and a recipe for capturing screenshots and demo GIFs._
+
+> **⚠️ Caution — No public demo instance**
+>
+> SkillAI is an **internal tool**. There is no public-facing demo URL — every deployment lives behind a recruiter's own infrastructure. The fastest way to see it is to run it locally against the seed data. Five minutes from `git clone` to "ranked shortlist".
+
+## Five-minute local demo
+
+1. **Clone the repo and start the stack**
+
+   ```bash
+   git clone https://github.com/olafkfreund/SkillAi.git
+   cd SkillAi
+   docker compose up -d
+   ```
+
+   This brings up Postgres 17 (with pgvector), the Next.js app, and the local upload volume. First build takes ~3 min; subsequent starts are ~5 sec.
+
+2. **Run the database migrations and seed**
+
+   ```bash
+   docker compose exec app npm run db:push
+   docker compose exec app npm run db:seed
+   ```
+
+   The seed creates one tenant, an admin user, ten realistic candidates with embeddings, and three open roles. None of the data is real — every name, email, and CV is synthetic.
+
+3. **Open the portal**
+
+   ```
+   http://localhost:3000
+   ```
+
+   Log in with the credentials printed by the seed script (e.g. `admin@demo.local` / a generated password). You'll land on the dashboard.
+
+4. **Try the ranking flow**
+
+   - Open one of the seeded roles
+   - Watch the ranked shortlist populate (AI runs in the background, polled via TanStack Query)
+   - Open a candidate; click "Generate interview pack"
+   - Export the pack as PDF
+
+5. **Try the MCP integration** (optional)
+
+   In a separate terminal:
+
+   ```bash
+   claude mcp add --transport http --scope user skillai \
+     http://localhost:3000/api/mcp \
+     --header "Authorization: Bearer $(curl -s -X POST http://localhost:3000/api/api-tokens \
+        -H 'Cookie: <your session cookie>' | jq -r .token)"
+   ```
+
+   Now in Claude Code you can run `/mcp` and call any of the 48 SkillAI tools.
+
+→ Full step-by-step: [Quick start](../getting-started/quick-start.md)
+
+## Demo video
+
+> **💡 Tip — Coming soon**
+>
+> A 90-second narrated walkthrough is on the to-do list. Drop a `demo.gif` or `demo.mp4` into `docs-site/src/assets/` and add an `` / HTML `<video>` block below this callout when ready.
+
+{/* Placeholder for future demo video:
+<video controls width="100%" poster="../../../assets/screenshots/01-dashboard.png">
+  <source src="../../../assets/demo.mp4" type="video/mp4" />
+</video>
+*/}
+
+## Capturing your own screenshots
+
+The existing screenshots in `docs/screenshots/` were captured against a development instance with the seed data. To refresh them or add new ones:
+
+**Single screen**
+
+1. Start the dev server: `npm run dev` (not Docker — faster reload)
+2. Use a 1440×900 viewport (matches the existing set)
+3. Hide the browser chrome (F11) and the Next.js dev overlay
+4. Use Cmd+Shift+4 (macOS) or `gnome-screenshot -a` (Linux) for a precise selection
+5. Save as `docs/screenshots/NN-name.png` — the numeric prefix controls tour order
+6. Run `cp docs/screenshots/*.png docs-site/src/assets/screenshots/` to refresh the docs site
+
+**Animated GIF**
+
+For demo GIFs, use [`peek`](https://github.com/phw/peek) (Linux) or [`Gifski`](https://gif.ski) (macOS):
+
+```bash
+# Linux, with peek
+sudo apt install peek
+peek  # draw a rectangle, hit "Record"
+# Save as demo.gif into docs-site/src/assets/
+```
+
+Keep GIFs under 5 MB — the docs site is gzipped on GitHub Pages but huge assets still hurt LCP.
+
+**Full demo video**
+
+For a narrated walkthrough, use OBS Studio:
+
+1. Record at 1080p30, max 8 Mbps bitrate
+2. Export to MP4 (H.264, AAC audio)
+3. Convert to a web-friendly size:
+   ```bash
+   ffmpeg -i raw.mp4 -vf "scale=1280:-2" -c:v libx264 -crf 28 -preset slow \
+     -c:a aac -b:a 96k -movflags +faststart demo.mp4
+   ```
+4. Drop into `docs-site/src/assets/demo.mp4` and embed via `<video>` above.
+
+## Hosting your own instance
+
+Want to skip Docker and run on real infrastructure?
+
+- **AWS** — see [AWS deployment](../operations/aws-deploy.md) (EKS + RDS + S3 via Garage adapter)
+- **Generic VPS** — `docker compose up -d` on any host with Postgres 17 + pgvector
+- **Nix / NixOS** — the MCP bridge ships a Nix flake at `skillai-mcp/`; the main app is plain Next.js standalone (`next build` produces a self-contained server)
+
+The platform-agnostic answer: anywhere Node 22 + Postgres 17 + pgvector + a writeable volume can run, SkillAI can run.
+
+## Telemetry & data isolation
+
+The local demo is **completely offline by default**:
+
+- No external analytics
+- No telemetry pings
+- No external auth — Auth.js with local credentials, no SSO call-out
+- AI calls (Claude / Gemini) only fire if you've configured API keys in **Settings → API Keys** — they're stored encrypted per-tenant
+
+You can run the full feature set against the seed data without ever connecting to the internet (AI features will degrade gracefully when keys are absent — scoring jobs queue but never fire).

@@ -1,0 +1,47 @@
+# DEC-007 — Manual file upload for interview transcripts
+
+_Transcripts are imported via manual file upload (VTT / SRT / DOCX / TXT) or paste. Zoom / Teams / Meet API adapters are deferred to avoid OAuth complexity and external SaaS dependencies._
+
+> **ℹ️ Note**
+>
+> **Status:** Accepted · **Category:** Product · **Date:** 2026-04-10 · **Stakeholders:** Tech Lead, Product Owner
+>
+> **Related spec:** `@.agent-os/specs/2026-04-10-interview-transcript-scoring/`
+
+## Decision
+
+Implement interview transcript import via manual file upload (VTT, SRT, DOCX, TXT) and text paste only. Do not integrate with Zoom, Teams, or Google Meet APIs in the initial spec.
+
+## Context
+
+All three platforms have API access to transcripts (Zoom API, Teams Graph API, Google Meet API), but each requires: OAuth app registration with corporate admin consent, platform-specific credential management, webhook/token refresh infrastructure, and significant integration testing. That is 3–6 weeks of work per platform, introducing external SaaS dependencies and ongoing maintenance. Manual file upload covers 100% of use cases immediately — every platform allows transcript export as a file, and users can upload it in seconds.
+
+## Alternatives Considered
+
+1. **Build Zoom/Teams/Google Meet API adapters first**
+   - Pros: Smoother UX (one-click import without leaving SkillAI)
+   - Cons: 3–6 weeks additional effort, requires corporate admin OAuth consent in user's org, creates external dependency per platform, significant maintenance burden
+
+2. **Use a third-party aggregator (Recall.ai)**
+   - Pros: Single API for all platforms
+   - Cons: External SaaS dependency, cost per meeting, data leaves infrastructure (violates data sovereignty principle)
+
+## Rationale
+
+Data sovereignty principle (DEC-001, DEC-006) and speed-to-value both favour manual upload. Platform API integration can be added as a Phase 2 enhancement once manual upload validates recruiter demand for the feature.
+
+## Consequences
+
+**Positive:**
+- Ships in ~1 week vs 3–6 weeks for API integration
+- Zero new external dependencies or OAuth complexity
+- Consistent with data sovereignty principle — transcript data never transits third-party services
+
+**Negative:**
+- Slightly more friction for users (download file → upload to SkillAI vs one-click)
+- Speaker attribution quality depends on platform export quality
+
+## Related
+
+- [DEC-001 — Build vs buy](./dec-001-build-vs-buy.md) — the on-premise principle invoked here.
+- [DEC-006 — Auth.js v5 over Clerk](./dec-006-authjs-over-clerk.md) — same data-sovereignty reasoning, applied to auth.

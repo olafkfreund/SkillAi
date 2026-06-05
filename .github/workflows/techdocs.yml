@@ -1,0 +1,127 @@
+# techdocs.yml
+#
+# Keeps Backstage TechDocs in sync with the public GitHub Pages documentation.
+#
+# The canonical docs source is the Astro/Starlight site under `docs-site/`. This
+# workflow regenerates the auto-derived content (OpenAPI / MCP catalogue / DB
+# schema) and runs scripts/sync-techdocs.mjs to mirror everything into MkDocs
+# markdown (`techdocs/` + `mkdocs.yml`) that Backstage's TechDocs generator
+# consumes via `techdocs-ref: dir:.` in catalog-info.yaml.
+#
+# Behaviour:
+#   - pull_request : regenerate + a `techdocs-cli build` validation, then a DRIFT
+#                    GATE — fails if the committed `techdocs/` is stale, telling
+#                    the author to run `npm run techdocs:sync`.
+#   - push / manual: regenerate + build-validate, then AUTO-COMMIT any drift back
+#                    to the branch so Backstage always serves current docs.
+#
+# Loop-safety: the auto-commit touches `techdocs/**` + `mkdocs.yml`, neither of
+# which is a trigger path, and the commit carries `[skip ci]`.
+
+name: TechDocs
+
+on:
+  push:
+    branches:
+      - core-mvp-foundation
+    paths:
+      - 'docs-site/**'
+      - 'docs/**'
+      - 'src/lib/mcp/**'
+      - 'src/lib/api/openapi.ts'
+      - 'src/db/schema/**'
+      - 'scripts/sync-techdocs.mjs'
+      - 'scripts/generate-mcp-tools-doc.ts'
+      - 'catalog-info.yaml'
+      - '.github/workflows/techdocs.yml'
+  pull_request:
+    branches:
+      - core-mvp-foundation
+    paths:
+      - 'docs-site/**'
+      - 'docs/**'
+      - 'src/lib/mcp/**'
+      - 'src/lib/api/openapi.ts'
+      - 'src/db/schema/**'
+      - 'scripts/sync-techdocs.mjs'
+      - 'scripts/generate-mcp-tools-doc.ts'
+      - 'catalog-info.yaml'
+      - '.github/workflows/techdocs.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: techdocs-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write # auto-commit synced TechDocs on push
+
+jobs:
+  sync:
+    name: Sync & validate TechDocs
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Check out the branch head (not the detached merge ref) so we can push.
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Setup Node 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install root dependencies (for parent route imports + tsx walker)
+        run: npm ci --no-audit --no-fund --ignore-scripts
+
+      - name: Install docs-site dependencies
+        working-directory: docs-site
+        run: npm ci --no-audit --no-fund
+
+      - name: Install TechDocs MkDocs toolchain
+        run: pip install mkdocs-techdocs-core==1.* mkdocs-material
+
+      - name: Regenerate + sync TechDocs from GitHub Pages source
+        env:
+          # Stubs — the postgres driver is lazy and never connects during gen.
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+          AUTH_SECRET: docs-build-stub-secret-do-not-use
+          NEXTAUTH_SECRET: docs-build-stub-secret-do-not-use
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          SKIP_ENV_VALIDATION: '1'
+          NODE_ENV: production
+        run: npm run techdocs:sync
+
+      - name: Validate TechDocs build (techdocs-cli, no Docker)
+        run: npx -y @techdocs/cli@1 build --no-docker --output-dir /tmp/techdocs-site
+
+      - name: Drift gate (pull requests)
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ -n "$(git status --porcelain techdocs mkdocs.yml)" ]; then
+            echo "::error::TechDocs is out of sync with docs-site/. Run 'npm run techdocs:sync' locally and commit techdocs/ + mkdocs.yml."
+            git --no-pager diff --stat -- techdocs mkdocs.yml
+            exit 1
+          fi
+          echo "TechDocs is in sync."
+
+      - name: Auto-commit synced TechDocs (push / manual)
+        if: github.event_name != 'pull_request'
+        run: |
+          if [ -n "$(git status --porcelain techdocs mkdocs.yml)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add techdocs mkdocs.yml
+            git commit -m "docs(techdocs): sync from GitHub Pages source [skip ci]"
+            git push
+            echo "Committed synced TechDocs."
+          else
+            echo "TechDocs already in sync — nothing to commit."
+          fi

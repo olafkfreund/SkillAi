@@ -1,0 +1,137 @@
+# Connecting from Claude Code
+
+_Wire the SkillAI MCP server into Claude Code via HTTP transport, or into claude-desktop via the skillai-mcp stdio bridge. Covers tokens, scopes, and the write-confirm flow._
+
+There are two ways to talk to the SkillAI MCP server: directly over HTTP (recommended for Claude Code) or via a small stdio bridge binary (recommended for claude-desktop, which doesn't speak HTTP transports yet). Both use the same bearer token.
+
+## Pick your transport
+
+| Client | Recommended transport | Why |
+|---|---|---|
+| **Claude Code** (`claude` CLI) | HTTP — `--transport http` | Fewer moving parts, direct connection, easy to debug with curl |
+| **claude-desktop** | stdio bridge — `skillai-mcp` binary | claude-desktop spawns MCP servers as subprocesses; HTTP isn't supported there |
+| **Custom MCP client** | HTTP | Standard `@modelcontextprotocol/sdk` clients connect over HTTP |
+
+## Mint a token first
+
+Before connecting either client, mint an API token from the SkillAI dashboard under **Settings → API Tokens**. The raw token is shown exactly once — copy it now. See [Authentication](../rest-api/authentication.md) for the full token model.
+
+## Connecting Claude Code (HTTP)
+
+This is the path from the project's `CLAUDE.md`:
+
+```bash
+claude mcp add --transport http --scope user skillai \
+  http://localhost:3000/api/mcp \
+  --header "Authorization: Bearer skl_prod_your_token_here"
+```
+
+Swap `http://localhost:3000` for your deployed host. The `--scope user` registers the server globally for your Claude Code user (not per-project) so you only do this once.
+
+After the add, restart any open Claude Code session — it picks up new MCP servers on startup. Then in chat:
+
+```
+> /mcp
+```
+
+…to see `skillai` listed with its tool / resource / prompt counts. Or just ask Claude something like `list the top 5 candidates for role <id>` and it will discover and call the right tool.
+
+## Connecting claude-desktop (stdio bridge)
+
+claude-desktop spawns each MCP server as a subprocess on launch and talks to it over stdio. SkillAI ships a small stdio bridge called `skillai-mcp` that proxies stdio JSON-RPC to the hosted HTTP endpoint, so claude-desktop can connect to the same server Claude Code uses.
+
+1. **Install the `skillai-mcp` binary.**
+
+   Standalone binaries are published on GitHub Releases for Linux (x64, arm64), macOS (x64, arm64), and Windows (x64), plus `.deb`, `.rpm`, and a Nix flake. See the project's releases page.
+
+2. **Add the entry to `claude_desktop_config.json`.**
+
+   ```json
+   {
+     "mcpServers": {
+       "skillai": {
+         "command": "skillai-mcp",
+         "env": {
+           "SKILLAI_URL": "http://localhost:3000",
+           "SKILLAI_TOKEN": "skl_prod_your_token_here"
+         }
+       }
+     }
+   }
+   ```
+
+3. **Restart claude-desktop.**
+
+   It re-reads the config on launch and spawns `skillai-mcp` as a subprocess. The bridge then proxies every JSON-RPC message to `${SKILLAI_URL}/api/mcp` with the bearer header set.
+
+You can also wire the bridge into Claude Code if you prefer stdio for any reason:
+
+```bash
+claude mcp add --transport stdio --scope user skillai skillai-mcp \
+  -e SKILLAI_URL=http://localhost:3000 \
+  -e SKILLAI_TOKEN=skl_prod_your_token_here
+```
+
+## Pick the right scope for the work
+
+The token scope governs which tools the LLM can call.
+
+| Scope | What you can do | Pick this when |
+|---|---|---|
+| `read` | List candidates, roles, agencies; read scores; read interview packs; query notes | You're plugging in a dashboard, building a report, or letting Claude *analyse* without changing data |
+| `write` | All reads, plus state changes — update candidate status, create candidates, generate interview packs, send shortlists | The most common scope; covers normal recruiter workflow from Claude |
+| `admin` | Everything in `write`, plus user / settings / tenant-level operations | Reserve for genuinely administrative integrations; rare in day-to-day use |
+
+Scope inclusion is `admin ⊃ write ⊃ read`. See [Authentication → Scope hierarchy](../rest-api/authentication.md#scope-hierarchy).
+
+> **⚠️ Caution**
+>
+> A token scoped wider than the integration needs is a needless blast radius. Pick the lowest scope that makes the work possible, and rotate to a narrower token once you're past initial exploration.
+
+## The write-confirm flow
+
+Every write tool's input schema requires `confirmed: true`. When the LLM tries to call one, the MCP client surfaces an inline confirmation prompt and won't dispatch the JSON-RPC request until you OK it.
+
+In Claude Code that looks like:
+
+```
+> Mark candidate Jane Doe as shortlisted on role "Staff SWE — HSBC"?
+
+Tool: skillai.update_candidate_status
+  candidateId: 9f1e8c4d-...
+  status:      shortlisted
+  confirmed:   true   ← I'll set this when you approve
+
+[y / n / always allow this tool]
+```
+
+Hit `y` and the call goes through. Hit `n` and the LLM is told the tool was refused and adjusts course. This gate exists *on top of* the token scope check — even a `write` token can't make changes without a per-call human approval.
+
+## Verifying the connection
+
+The fastest sanity check is to ask Claude to list resources:
+
+```
+> List all SkillAi MCP resources
+```
+
+It should return four entries: `skillai://candidates/{id}`, `skillai://roles/{id}`, `skillai://interview-packs/{id}`, and `skillai://my-shortlists`. If you get an auth error instead, the token is wrong or expired — re-mint and re-add.
+
+For a deeper test, try a curl directly against the HTTP endpoint to make sure the host is reachable:
+
+```bash
+curl -X POST http://localhost:3000/api/mcp \
+  -H "Authorization: Bearer skl_prod_your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+You should get back a JSON-RPC response listing all 48 tools. A `401` means the token is wrong; a `429` means you've hit a rate limit (see [Rate limiting](../rest-api/rate-limiting.md)).
+
+## Troubleshooting
+
+- **`401 Unauthorized`** — token missing, malformed, expired, or revoked. Re-check the `Authorization` header and re-mint if needed.
+- **`403 Forbidden`** — token is valid but the scope doesn't cover the tool you tried to call. Mint a higher-scoped token, or pick a different tool.
+- **`429 Too Many Requests`** — sliding-window rate limit hit. Honour `Retry-After`. See [Rate limiting](../rest-api/rate-limiting.md).
+- **`skillai-mcp` exits immediately** — the bridge needs both `SKILLAI_URL` and `SKILLAI_TOKEN` in the environment. Check the env block of your client config.
+- **Claude Code doesn't see the server** — restart the CLI after `claude mcp add`. Server registrations are read at startup.
