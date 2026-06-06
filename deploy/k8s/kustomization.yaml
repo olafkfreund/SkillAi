@@ -24,6 +24,6 @@ resources:
 # pin to an immutable :<sha> for production rollouts.
 images:
   - name: ghcr.io/olafkfreund/skillai
-    newTag: main
+    newTag: core-mvp-foundation
   - name: ghcr.io/olafkfreund/skillai-migrator
-    newTag: main
+    newTag: core-mvp-foundation

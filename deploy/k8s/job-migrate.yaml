@@ -42,7 +42,7 @@ spec:
               done
       containers:
         - name: migrate
-          image: ghcr.io/olafkfreund/skillai-migrator:main
+          image: ghcr.io/olafkfreund/skillai-migrator:core-mvp-foundation
           imagePullPolicy: Always
           envFrom:
             # Provides DATABASE_URL (and the rest of the app env — harmless here).
