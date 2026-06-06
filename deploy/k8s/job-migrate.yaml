@@ -1,0 +1,57 @@
+# Drizzle migrations — runs the Dockerfile `migrator` image (node scripts/migrate.mjs).
+#
+# Modelled as an ArgoCD Sync-phase hook at wave 1 so that:
+#   * it runs AFTER the DB StatefulSet (wave 0) is healthy on a first deploy
+#     (a PreSync hook would deadlock — it'd wait for a DB the main sync hasn't
+#     created yet), and
+#   * BeforeHookCreation delete policy re-creates it on every sync, so schema
+#     migrations re-run on each release (Drizzle migrate is idempotent).
+# An init-container double-checks the DB is accepting connections first.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: skillai-migrate
+  labels:
+    app.kubernetes.io/name: skillai-migrate
+    app.kubernetes.io/part-of: skillai
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  backoffLimit: 5
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: skillai-migrate
+        app.kubernetes.io/part-of: skillai
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-db
+          image: pgvector/pgvector:pg17
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h skillai-db -p 5432; do
+                echo "waiting for skillai-db..."; sleep 2;
+              done
+      containers:
+        - name: migrate
+          image: ghcr.io/olafkfreund/skillai-migrator:main
+          imagePullPolicy: Always
+          envFrom:
+            # Provides DATABASE_URL (and the rest of the app env — harmless here).
+            - secretRef:
+                name: skillai-app
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

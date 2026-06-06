@@ -1,0 +1,90 @@
+# PostgreSQL 17 + pgvector — mirrors the compose `db` service.
+# Sync-wave 0: comes up (and reports healthy) before the migration hook (wave 1)
+# and the app (wave 2). Storage is the k3d default local-path provisioner,
+# node-bound RWO — fine for a single DB replica.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: skillai-db
+  labels:
+    app.kubernetes.io/name: skillai-db
+    app.kubernetes.io/part-of: skillai
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  serviceName: skillai-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: skillai-db
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: skillai-db
+        app.kubernetes.io/part-of: skillai
+    spec:
+      securityContext:
+        # Debian postgres image runs as uid/gid 999; make the local-path PV
+        # writable by that group.
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: pgvector/pgvector:pg17
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          envFrom:
+            # Provides POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB.
+            # Seeded out-of-band (see deploy/k8s/README.md).
+            - secretRef:
+                name: skillai-db
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: init
+          configMap:
+            name: skillai-db-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 8Gi

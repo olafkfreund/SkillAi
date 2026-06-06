@@ -91,6 +91,7 @@ nav:
     - Logo upload: code-patterns/logo-upload.md
     - Theme tokens: code-patterns/theme-tokens.md
   - Operations:
+    - Kubernetes (k3d @ p510): operations/k3d-p510-deploy.md
     - AWS deployment: operations/aws-deploy.md
     - Backup & recovery: operations/backup-runbook.md
     - Health & monitoring: operations/health-monitoring.md

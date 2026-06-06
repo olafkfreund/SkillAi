@@ -1,0 +1,18 @@
+# Headless service giving the StatefulSet a stable in-cluster DNS name.
+# The app + migrate job connect to host `skillai-db` (resolves to
+# skillai-db.factory.svc.cluster.local) on 5432.
+apiVersion: v1
+kind: Service
+metadata:
+  name: skillai-db
+  labels:
+    app.kubernetes.io/name: skillai-db
+    app.kubernetes.io/part-of: skillai
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: skillai-db
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432

@@ -15,6 +15,10 @@ metadata:
     backstage.io/techdocs-ref: dir:.
     backstage.io/source-location: url:https://github.com/olafkfreund/SkillAi/tree/core-mvp-foundation/
     github.com/project-slug: olafkfreund/SkillAi
+    # Deployed to the k3d cluster on p510 via ArgoCD (factory-gitops apps/skillai).
+    argocd/app-name: skillai
+    # Backstage Kubernetes plugin selects all workloads carrying this label.
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/part-of=skillai
   tags:
     - nextjs
     - typescript
@@ -28,6 +32,12 @@ metadata:
     - mcp
     - recruiting
   links:
+    - url: https://skillai.tail833f7.ts.net
+      title: Live app (tailnet, k3d @ p510)
+      icon: dashboard
+    - url: https://argocd.tail833f7.ts.net/applications/skillai
+      title: ArgoCD application
+      icon: dashboard
     - url: https://olafkfreund.github.io/SkillAi
       title: Documentation site (GitHub Pages)
       icon: docs
@@ -94,9 +104,11 @@ kind: Resource
 metadata:
   name: skillai-db
   title: SkillAI PostgreSQL
-  description: PostgreSQL 17 with the pgvector extension (HNSW index for candidate semantic search). Multi-tenant isolation enforced via Row-Level Security and a per-request app.tenant_id session variable.
+  description: PostgreSQL 17 with the pgvector extension (HNSW index for candidate semantic search). Multi-tenant isolation enforced via Row-Level Security and a per-request app.tenant_id session variable. Runs in-cluster as a StatefulSet (k3d @ p510) with local-path persistence.
   annotations:
     github.com/project-slug: olafkfreund/SkillAi
+    # In-cluster StatefulSet pods on p510.
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/name=skillai-db
   tags:
     - postgres
     - pgvector

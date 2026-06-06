@@ -1,0 +1,121 @@
+# SkillAi Next.js app (standalone) + Tailscale sidecar.
+# Sync-wave 2: rolls out after DB (0) and migrations (1).
+# Recreate strategy because the uploads PVC is RWO (single-node bound).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skillai-app
+  labels:
+    app.kubernetes.io/name: skillai-app
+    app.kubernetes.io/part-of: skillai
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: skillai-app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: skillai-app
+        app.kubernetes.io/part-of: skillai
+    spec:
+      containers:
+        # ── App ───────────────────────────────────────────────────────────
+        - name: app
+          image: ghcr.io/olafkfreund/skillai:main
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: UPLOAD_DIR
+              value: /app/uploads
+            - name: HOSTNAME
+              value: 0.0.0.0
+            - name: PORT
+              value: "3000"
+            # Auth.js v5 sits behind the Tailscale hostname, not localhost.
+            - name: NEXTAUTH_URL
+              value: https://skillai.tail833f7.ts.net
+            - name: AUTH_TRUST_HOST
+              value: "true"
+          envFrom:
+            # DATABASE_URL, NEXTAUTH_SECRET, ANTHROPIC_API_KEY, ENCRYPTION_KEY,
+            # BRAVE_SEARCH_API_KEY, GITHUB_TOKEN — seeded out-of-band.
+            - secretRef:
+                name: skillai-app
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 4
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 45
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+        # ── Tailscale sidecar (factory-gitops docs/sidecar-pattern.md) ─────
+        - name: tailscale
+          image: ghcr.io/tailscale/tailscale:v1.74.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TS_AUTHKEY
+              valueFrom:
+                secretKeyRef:
+                  name: tailscale-auth-key
+                  key: TS_AUTHKEY
+            - name: TS_HOSTNAME
+              value: "skillai"
+            - name: TS_USERSPACE
+              value: "true"
+            - name: TS_STATE_DIR
+              value: "/tmp/tsstate"
+            - name: TS_EXTRA_ARGS
+              value: "--accept-dns=false"
+            - name: TS_SERVE_CONFIG
+              value: "/etc/tsconfig/serve.json"
+          volumeMounts:
+            - name: ts-serve-config
+              mountPath: /etc/tsconfig
+              readOnly: true
+          securityContext:
+            runAsUser: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: skillai-uploads
+        - name: ts-serve-config
+          configMap:
+            name: skillai-tailscale-serve-config
