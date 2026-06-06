@@ -9,6 +9,13 @@ metadata:
   labels:
     app.kubernetes.io/name: skillai-app
     app.kubernetes.io/part-of: skillai
+  annotations:
+    # Same wave as the app Deployment. local-path is WaitForFirstConsumer, so
+    # this PVC stays Pending until a pod mounts it — keeping it in wave 0 would
+    # deadlock ArgoCD (it waits for the PVC to be Healthy/Bound before creating
+    # the app that would bind it). Applying both together in wave 2 lets the
+    # app pod schedule and bind the volume.
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: local-path
