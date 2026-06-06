@@ -75,12 +75,20 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 5
           resources:
+            # The p510 node reserves 2Mi huge pages (HugePages_Total=1024) and
+            # Postgres defaults to huge_pages=try. Without a hugepages allocation
+            # the container's hugetlb cgroup limit is 0: MAP_HUGETLB succeeds but
+            # the first page access SIGBUSes ("Bus error" during initdb) and
+            # 'try' never falls back. Granting hugepages-2Mi raises the cgroup
+            # limit so Postgres can actually use them. (See deploy/k8s/README.md.)
             requests:
               cpu: 100m
               memory: 256Mi
+              hugepages-2Mi: 512Mi
             limits:
               cpu: "1"
               memory: 1Gi
+              hugepages-2Mi: 512Mi
       volumes:
         - name: init
           configMap:
