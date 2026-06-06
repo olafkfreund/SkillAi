@@ -26,7 +26,7 @@ spec:
       containers:
         # ── App ───────────────────────────────────────────────────────────
         - name: app
-          image: ghcr.io/olafkfreund/skillai:main
+          image: ghcr.io/olafkfreund/skillai:core-mvp-foundation
           imagePullPolicy: Always
           ports:
             - name: http
