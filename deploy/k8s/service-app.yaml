@@ -1,0 +1,18 @@
+# In-cluster service for the app (used for ArgoCD health + any internal callers).
+# External/tailnet access is via the Tailscale sidecar (serve :443 -> :3000),
+# not this Service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: skillai-app
+  labels:
+    app.kubernetes.io/name: skillai-app
+    app.kubernetes.io/part-of: skillai
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: skillai-app
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000

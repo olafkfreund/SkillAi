@@ -1,0 +1,23 @@
+# Tailscale serve config for the SkillAi app pod's sidecar.
+# Terminates HTTPS on :443 using a cert issued for the tailnet hostname and
+# proxies to the Next.js app on localhost:3000 (shared pod netns).
+# Exposes the app at https://skillai.tail833f7.ts.net
+# See factory-gitops docs/sidecar-pattern.md.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skillai-tailscale-serve-config
+  labels:
+    app.kubernetes.io/name: skillai-app
+    app.kubernetes.io/part-of: skillai
+data:
+  serve.json: |
+    {
+      "TCP": { "443": { "HTTPS": true } },
+      "Web": {
+        "${TS_CERT_DOMAIN}:443": {
+          "Handlers": { "/": { "Proxy": "http://127.0.0.1:3000" } }
+        }
+      },
+      "AllowFunnel": {}
+    }

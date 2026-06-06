@@ -1,0 +1,17 @@
+# Persistent storage for uploaded CVs + tenant/agency logos (compose: uploads_data).
+# local-path is node-bound RWO, so the app runs single-replica with a Recreate
+# strategy. Restore the backup tarball into this volume — see
+# deploy/migration/RUNBOOK.md.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: skillai-uploads
+  labels:
+    app.kubernetes.io/name: skillai-app
+    app.kubernetes.io/part-of: skillai
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi

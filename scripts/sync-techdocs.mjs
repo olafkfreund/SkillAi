@@ -108,6 +108,7 @@ const NAV = [
   {
     label: 'Operations',
     items: [
+      ['Kubernetes (k3d @ p510)', 'operations/k3d-p510-deploy'],
       ['AWS deployment', 'operations/aws-deploy'],
       ['Backup & recovery', 'operations/backup-runbook'],
       ['Health & monitoring', 'operations/health-monitoring'],

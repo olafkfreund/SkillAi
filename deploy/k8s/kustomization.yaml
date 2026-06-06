@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# SkillAi is deployed to the k3d cluster on p510 by ArgoCD (factory-gitops
+# apps/skillai/application.yaml points its source.path here). Nothing here is
+# applied by hand — commit to git and ArgoCD reconciles onto p510.
+#
+# Target namespace is injected by ArgoCD (destination.namespace: factory), but
+# we pin it here too so `kubectl kustomize deploy/k8s` renders identically.
+namespace: factory
+
+resources:
+  - configmap-db-init.yaml
+  - configmap-tailscale-serve.yaml
+  - service-db.yaml
+  - statefulset-db.yaml
+  - job-migrate.yaml
+  - pvc-uploads.yaml
+  - service-app.yaml
+  - deployment-app.yaml
+
+# Single place to bump the deployed image. The GHCR build workflow
+# (.github/workflows/deploy-image.yml) publishes :<branch> and :<sha> tags;
+# pin to an immutable :<sha> for production rollouts.
+images:
+  - name: ghcr.io/olafkfreund/skillai
+    newTag: main
+  - name: ghcr.io/olafkfreund/skillai-migrator
+    newTag: main
