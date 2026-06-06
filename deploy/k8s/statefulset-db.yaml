@@ -48,6 +48,12 @@ spec:
             - name: init
               mountPath: /docker-entrypoint-initdb.d
               readOnly: true
+            # Postgres uses POSIX shared memory under /dev/shm. The container's
+            # default /dev/shm is only 64Mi on this k3d node, which makes initdb
+            # bootstrap die with "Bus error (core dumped)". Back it with a
+            # Memory emptyDir so shared_buffers/parallel workers have room.
+            - name: dshm
+              mountPath: /dev/shm
           readinessProbe:
             exec:
               command:
@@ -79,6 +85,10 @@ spec:
         - name: init
           configMap:
             name: skillai-db-init
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
   volumeClaimTemplates:
     - metadata:
         name: data
