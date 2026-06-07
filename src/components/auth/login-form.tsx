@@ -80,6 +80,10 @@ export function LoginForm({ callbackUrl, error }: Props) {
           autoComplete="email"
           required
           disabled={pending}
+          // Password managers (1Password/LastPass/etc.) inject attributes like
+          // data-com-onepassword-filled before React hydrates; suppress the
+          // resulting attribute-mismatch warning on this input.
+          suppressHydrationWarning
           className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                      placeholder:text-[var(--color-fg-subtle)]
                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
@@ -102,6 +106,8 @@ export function LoginForm({ callbackUrl, error }: Props) {
           autoComplete="current-password"
           required
           disabled={pending}
+          // See email input above — suppress password-manager hydration noise.
+          suppressHydrationWarning
           className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-fg)] px-3 py-2 text-sm
                      placeholder:text-[var(--color-fg-subtle)]
                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
