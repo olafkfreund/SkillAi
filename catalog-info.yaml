@@ -1,45 +1,64 @@
 # catalog-info.yaml — Backstage Software Catalog descriptor for SkillAI.
 #
-# Registers SkillAI as a Component with TechDocs (techdocs-ref: dir:.), plus the
-# REST API it exposes and the PostgreSQL resource it depends on. TechDocs is
-# built from `mkdocs.yml` + `techdocs/` at the repo root, which is kept in sync
-# with the public GitHub Pages site by scripts/sync-techdocs.mjs (see the Docs
-# CI workflow). Source branch is `core-mvp-foundation` (the repo default).
+# Models SkillAI as a System grouping a Component (the app), two APIs (REST +
+# MCP) and a Resource (PostgreSQL). The Component carries:
+#   * backstage.io/techdocs-ref  -> Docs tab (built from mkdocs.yml + techdocs/,
+#     kept in sync with the GitHub Pages site by scripts/sync-techdocs.mjs)
+#   * argocd/app-name            -> ArgoCD tab (live sync/health on p510)
+#   * backstage.io/kubernetes-*  -> Kubernetes tab (pods/health in ns factory)
+#   * links                      -> one-click to the live app, ArgoCD, docs, repo
+# Source branch is core-mvp-foundation (the repo default).
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: skillai
+  title: SkillAI
+  description: AI-powered recruiting portal platform — the app, its REST + MCP APIs, and its PostgreSQL/pgvector datastore. Runs on the p510 k3d cluster (ArgoCD GitOps), public at https://skillai.freundcloud.org.uk via Cloudflare Tunnel.
+  links:
+    - url: https://skillai.freundcloud.org.uk
+      title: Live app
+      icon: dashboard
+spec:
+  owner: olafkfreund
+---
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: skillai
   title: SkillAI
-  description: Internal AI-powered recruiting portal — ranks and archives candidates against job roles using Claude and Gemini, with explainable per-dimension scoring.
+  description: Internal AI-powered recruiting portal — ranks and archives candidates against job roles using Claude and Gemini, with explainable per-dimension scoring. Deployed on k3d (p510) via ArgoCD GitOps; served publicly at https://skillai.freundcloud.org.uk through a Cloudflare Tunnel.
   annotations:
     backstage.io/techdocs-ref: dir:.
     backstage.io/source-location: url:https://github.com/olafkfreund/SkillAi/tree/core-mvp-foundation/
     github.com/project-slug: olafkfreund/SkillAi
-    # Deployed to the k3d cluster on p510 via ArgoCD (factory-gitops apps/skillai).
+    # ArgoCD plugin — live sync/health for the skillai Application on p510.
     argocd/app-name: skillai
-    # Backstage Kubernetes plugin selects all workloads carrying this label.
+    # Kubernetes plugin — surfaces the workloads in namespace factory.
     backstage.io/kubernetes-label-selector: app.kubernetes.io/part-of=skillai
+    backstage.io/kubernetes-namespace: factory
   tags:
     - nextjs
     - typescript
     - postgres
     - pgvector
     - drizzle
-    - docker
     - ai
     - llm
     - claude
     - mcp
     - recruiting
+    - k3d
+    - argocd
+    - cloudflare-tunnel
   links:
-    - url: https://skillai.tail833f7.ts.net
-      title: Live app (tailnet, k3d @ p510)
+    - url: https://skillai.freundcloud.org.uk
+      title: Live app (public)
       icon: dashboard
     - url: https://argocd.tail833f7.ts.net/applications/skillai
       title: ArgoCD application
       icon: dashboard
-    - url: https://olafkfreund.github.io/SkillAi
-      title: Documentation site (GitHub Pages)
+    - url: https://olafkfreund.github.io/SkillAi/operations/k3d-p510-deploy/
+      title: Deployment runbook (TechDocs)
       icon: docs
     - url: https://github.com/olafkfreund/SkillAi
       title: Source repository
@@ -48,6 +67,7 @@ spec:
   type: service
   lifecycle: production
   owner: olafkfreund
+  system: skillai
   providesApis:
     - skillai-rest-api
     - skillai-mcp
@@ -71,6 +91,7 @@ spec:
   type: openapi
   lifecycle: production
   owner: olafkfreund
+  system: skillai
   definition:
     $text: https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/docs-site/src/data/openapi.json
 ---
@@ -91,6 +112,7 @@ spec:
   type: grpc
   lifecycle: production
   owner: olafkfreund
+  system: skillai
   definition: |
     SkillAI MCP server — streamable-HTTP transport at /api/mcp.
     Tools: candidates, roles, agencies, customers, scoring, interviews,
@@ -109,6 +131,7 @@ metadata:
     github.com/project-slug: olafkfreund/SkillAi
     # In-cluster StatefulSet pods on p510.
     backstage.io/kubernetes-label-selector: app.kubernetes.io/name=skillai-db
+    backstage.io/kubernetes-namespace: factory
   tags:
     - postgres
     - pgvector
@@ -117,3 +140,4 @@ spec:
   type: database
   lifecycle: production
   owner: olafkfreund
+  system: skillai
