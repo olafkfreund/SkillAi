@@ -1,121 +1,171 @@
 # Kubernetes deployment (k3d @ p510)
 
-_How SkillAI runs on the homelab k3d cluster on host p510 — ArgoCD GitOps via factory-gitops, in-cluster pgvector StatefulSet, Tailscale sidecar exposure, and data migration from the docker-compose stack._
+_How SkillAI runs in production on the homelab k3d cluster on host p510 — ArgoCD GitOps via factory-gitops, in-cluster pgvector StatefulSet, and public access at https://skillai.freundcloud.org.uk via Cloudflare Tunnel._
 
-This is the production-style internal deployment: SkillAI on a **k3d** cluster
-hosted on **p510**, driven entirely by **ArgoCD** GitOps. The manifests live in
-the SkillAI repo under [`deploy/k8s/`](https://github.com/olafkfreund/SkillAi/tree/core-mvp-foundation/deploy/k8s);
+SkillAI's production deployment: it runs on a **k3d** cluster hosted on **p510**,
+managed entirely by **ArgoCD** GitOps, and is reachable on the public internet at
+**https://skillai.freundcloud.org.uk** through a **Cloudflare Tunnel**. The
+Kubernetes manifests live in this repo under
+[`deploy/k8s/`](https://github.com/olafkfreund/SkillAi/tree/core-mvp-foundation/deploy/k8s);
 the [`factory-gitops`](https://github.com/olafkfreund/factory-gitops) repo points
 ArgoCD at them.
 
 > **⚠️ Caution**
 >
 > Nothing here is `kubectl apply`-ed by hand. You change the cluster by committing
-> to git — ArgoCD on p510 pulls and reconciles (~3 min). Applying manifests
-> manually fights the GitOps loop (`selfHeal: true`).
+> to git — ArgoCD on p510 reconciles (~3 min). Manual changes are reverted by
+> `selfHeal: true`.
 
 ## Topology
 
 ```
- GitHub                          p510 (k3d cluster)
- ├─ SkillAi/deploy/k8s ──────▶  ArgoCD ──▶ namespace: factory
- └─ factory-gitops/             │           ├─ StatefulSet skillai-db (pgvector pg17)
-    apps/skillai/               │           ├─ Job skillai-migrate (drizzle, Sync hook)
-    application.yaml ───────────┘           └─ Deployment skillai-app + tailscale sidecar
-                                                       │
-                                            https://skillai.tail833f7.ts.net
+                       Internet
+                          │  https://skillai.freundcloud.org.uk
+                          ▼
+                   Cloudflare edge (DNS + TLS)
+                          │  Cloudflare Tunnel (no inbound ports on p510)
+                          ▼
+ p510 (k3d cluster, namespace: factory)
+   cloudflared ──▶ Service skillai-app:3000 ──▶ Deployment skillai-app (Next.js)
+                                                      │
+                                                      ▼
+                                          StatefulSet skillai-db (pgvector pg17)
+
+ GitHub                         ArgoCD (App-of-Apps)
+  ├─ SkillAi/deploy/k8s ───────▶ reconciles ns factory
+  └─ factory-gitops/apps/skillai/application.yaml
 ```
 
-## How ArgoCD finds it
+## How it's wired
 
-`factory-gitops/apps/skillai/application.yaml` is an ArgoCD `Application` that
-points at this repo:
+**ArgoCD** discovers `factory-gitops/apps/skillai/application.yaml`, which points at
+this repo: `source.path: deploy/k8s`, `targetRevision: core-mvp-foundation`,
+`destination.namespace: factory`, automated prune + selfHeal.
 
-- `source.repoURL: https://github.com/olafkfreund/SkillAi`
-- `source.path: deploy/k8s`
-- `source.targetRevision: core-mvp-foundation`
-- `destination.namespace: factory`
-- `syncPolicy.automated: { prune: true, selfHeal: true }`, `CreateNamespace=true`
+**What's deployed** (kustomize, ordered by ArgoCD sync-waves):
 
-The factory root app discovers it automatically (directory-recurse over
-`apps/**/application.yaml`).
-
-## What's deployed
-
-| Object | Kind | Sync wave | Notes |
+| Object | Kind | Wave | Notes |
 | --- | --- | --- | --- |
 | `skillai-db` | StatefulSet + headless Service | 0 | `pgvector/pgvector:pg17`, 8Gi `local-path` PVC |
-| `skillai-migrate` | Job (ArgoCD `Sync` hook) | 1 | Drizzle migrations; re-runs each sync; waits for DB |
-| `skillai-app` | Deployment + Service | 2 | Next.js standalone + Tailscale sidecar; 5Gi uploads PVC |
+| `skillai-migrate` | Job (ArgoCD `Sync` hook) | 1 | Drizzle migrations; re-runs each sync; waits for the DB |
+| `skillai-app` | Deployment + Service | 2 | Next.js standalone; 5Gi uploads PVC |
 
-Sync waves guarantee DB → migrations → app ordering on a fresh cluster. The
-migration Job is a `Sync`-phase hook (not `PreSync`) so it runs *after* the DB is
-healthy rather than deadlocking on a DB that doesn't exist yet, and the
-`BeforeHookCreation` delete policy re-runs it on every release.
+## Public ingress — Cloudflare Tunnel (not an Ingress controller)
+
+The cluster bootstrap disables traefik and servicelb, so there is **no ingress
+controller**. Public traffic instead flows through a **Cloudflare Tunnel**:
+
+- An in-cluster `cloudflared` deployment (namespace `factory`, its own ArgoCD app,
+  config at `factory-gitops/infra/cloudflared`) holds an outbound tunnel to
+  Cloudflare — **no inbound ports are opened on the home network**.
+- Its `config.yaml` maps the hostname to the in-cluster Service:
+
+  ```yaml
+  ingress:
+    - hostname: skillai.freundcloud.org.uk
+      service: http://skillai-app.factory.svc.cluster.local:3000
+  ```
+
+- DNS is a **proxied CNAME** `skillai.freundcloud.org.uk → <tunnel-id>.cfargotunnel.com`
+  in the Cloudflare zone, created with
+  `cloudflared tunnel route dns <tunnel-id> skillai.freundcloud.org.uk`.
+- TLS is terminated at Cloudflare's edge. cloudflared forwards plain HTTP to the
+  Service on the loopback hop and sets `X-Forwarded-*` headers.
+
+> **ℹ️ Note**
+>
+> SkillAI previously ran behind a Tailscale sidecar (`*.ts.net`). That sidecar was
+> removed on 2026-06-07 in favour of the public Cloudflare Tunnel — the app is no
+> longer on the tailnet.
+
+### Auth.js and the public URL
+
+Because the app is reached at a public hostname (and TLS is terminated upstream),
+the Deployment sets:
+
+```yaml
+- name: NEXTAUTH_URL
+  value: https://skillai.freundcloud.org.uk
+- name: AUTH_TRUST_HOST
+  value: "true"
+```
+
+`NEXTAUTH_URL` makes Auth.js build correct callback/redirect URLs;
+`AUTH_TRUST_HOST` tells it to trust the `X-Forwarded-*` headers cloudflared sets.
+Both are required for login to work over the tunnel.
 
 ## Images
 
-Built and pushed to GHCR by `.github/workflows/deploy-image.yml`:
+Built + pushed to GHCR by `.github/workflows/deploy-image.yml`:
 
 - `ghcr.io/olafkfreund/skillai` — the app (Dockerfile `runner` target)
 - `ghcr.io/olafkfreund/skillai-migrator` — drizzle migrations (`migrator` target)
 
-Bump the deployed tag in `deploy/k8s/kustomization.yaml` (`images:`). Pin an
-immutable `:<sha>` for production rollouts.
-
-## Networking
-
-No Ingress. A **Tailscale sidecar** (`ghcr.io/tailscale/tailscale`, userspace)
-runs in the app pod and `tailscale serve`s HTTPS `:443` → the app on
-`127.0.0.1:3000`, publishing it as `https://skillai.tail833f7.ts.net`. This is
-the standard factory pattern (`factory-gitops/docs/sidecar-pattern.md`).
+Tagged by branch (`core-mvp-foundation`) + commit SHA; the packages are public.
+The deployed tag is set in `deploy/k8s/kustomization.yaml`. Because the branch tag
+is mutable and `imagePullPolicy: Always`, a `kubectl rollout restart deploy/skillai-app`
+pulls the latest build; pin a `:<sha>` for reproducible rollouts.
 
 ## Secrets
 
-Namespace-scoped, seeded out-of-band (agenix / `manage-secrets.sh` in
-`nixos_config`) — never committed. Required in `factory`:
+Namespace-scoped, seeded out-of-band — never committed. Required in `factory`:
 
 - `skillai-db` — `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB`
-- `skillai-app` — `DATABASE_URL`, `NEXTAUTH_SECRET`, `ANTHROPIC_API_KEY`, `ENCRYPTION_KEY`, `BRAVE_SEARCH_API_KEY`, `GITHUB_TOKEN`
-- `tailscale-auth-key` — `TS_AUTHKEY` (often seeded cluster-wide at bootstrap)
+- `skillai-app` — `DATABASE_URL` (host `skillai-db:5432`), `NEXTAUTH_SECRET`, `ANTHROPIC_API_KEY`, `ENCRYPTION_KEY`, `BRAVE_SEARCH_API_KEY`, `GITHUB_TOKEN`
 
-See [`deploy/k8s/README.md`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/deploy/k8s/README.md).
-
-## Data migration from docker-compose
-
-The live data starts in the docker-compose stack on **p620**. Back up, copy to
-p510, and restore the DB dump + uploads tarball into the in-cluster volumes.
-
-> **💡 Tip**
+> **⚠️ Caution**
 >
-> Always take a fresh backup at cutover. The full step-by-step (with verification
-> and rollback) is in [`deploy/migration/RUNBOOK.md`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/deploy/migration/RUNBOOK.md).
+> These secrets are not yet part of the cluster bootstrap, so a full cluster
+> **delete + recreate** wipes them (the DB then reports `CreateContainerConfigError`).
+> For durability across recreates, seed them via the same agenix/bootstrap path that
+> seeds `tailscale-auth-key`. Normal host reboots preserve them.
+
+## Storage & persistence
+
+`local-path` PVs live on the host at `/mnt/img_pool/k3d/storage`, so DB data and
+uploads **survive host reboots and `k3d cluster start`**. State is only lost on a
+full cluster delete + recreate.
+
+## Data migration / restore
+
+Production data originated in a docker-compose stack on **p620**. Back up, copy to
+p510, restore into the in-cluster volumes — full step-by-step (with verification +
+rollback) in
+[`deploy/migration/RUNBOOK.md`](https://github.com/olafkfreund/SkillAi/blob/core-mvp-foundation/deploy/migration/RUNBOOK.md).
 
 ```bash
-# 1. dump on p620
+# dump on p620
 docker exec skillai-db-1 pg_dump -U skillai -d skillai -Fc -f /tmp/skillai.dump
 docker cp skillai-db-1:/tmp/skillai.dump ./skillai.dump
-docker exec skillai-app-1 tar -czf /tmp/uploads.tgz -C /app uploads
-docker cp skillai-app-1:/tmp/uploads.tgz ./uploads.tgz
-
-# 2. restore on p510 (kubectl context = p510)
+# restore on p510 (kubectl context = p510)
 kubectl -n factory cp skillai.dump skillai-db-0:/tmp/restore.dump
 kubectl -n factory exec skillai-db-0 -- \
   pg_restore -U skillai -d skillai --clean --if-exists --no-owner /tmp/restore.dump
 ```
 
-## Verify
+## Operate
 
 ```bash
-kubectl -n factory get pods
-kubectl -n factory exec skillai-db-0 -- psql -U skillai -d skillai -tA \
-  -c "select count(*) from candidates;"
-kubectl -n factory logs deploy/skillai-app -c tailscale | grep -iE 'register|success'
-# then browse https://skillai.tail833f7.ts.net
+# health (public)
+curl https://skillai.freundcloud.org.uk/api/health
+
+# pods / sync status
+kubectl -n factory get pods -l app.kubernetes.io/part-of=skillai
+kubectl -n argocd get application skillai
+
+# ship a new image build
+kubectl -n factory rollout restart deploy/skillai-app
+
+# tunnel origin errors (502 → origin unreachable)
+kubectl -n factory logs deploy/cloudflared --tail=50 | grep -i skillai
 ```
 
-## Rollback
+## Troubleshooting quick reference
 
-The p620 compose stack and its volumes are left intact until cutover —
-`docker compose up -d` brings the old environment straight back, and the
-pre-migration backup restores either side.
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| Cloudflare `502` | tunnel can't reach origin (Service has no Ready endpoints) | check `kubectl -n factory get endpoints skillai-app`; ensure the app pod is Ready |
+| `404` from tunnel | hostname not in cloudflared `config.yaml`, or pod predates the rule | add the ingress rule; `kubectl -n factory rollout restart deploy/cloudflared` |
+| DB `Bus error` on init | huge pages | `hugepages-2Mi` request + `/dev/shm` emptyDir (already in `statefulset-db.yaml`) |
+| DB `CreateContainerConfigError` | `skillai-db`/`skillai-app` secret missing | re-seed the secrets in `factory` |
+| login redirects to wrong host | `NEXTAUTH_URL` mismatch | must equal `https://skillai.freundcloud.org.uk` |
