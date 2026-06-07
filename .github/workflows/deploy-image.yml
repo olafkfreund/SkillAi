@@ -45,11 +45,16 @@ jobs:
   build-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # contents: write so the job can commit the pinned image tag back to git
+      # (GitOps image promotion — ArgoCD then auto-syncs the new SHA).
+      contents: write
       packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # full history so the rebase-before-push in the pin step is reliable
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -94,13 +99,42 @@ jobs:
           cache-from: type=gha,scope=skillai-migrator
           cache-to: type=gha,mode=max,scope=skillai-migrator
 
+      # GitOps image promotion: pin the freshly-built immutable SHA tag into
+      # deploy/k8s/kustomization.yaml and commit it back. ArgoCD watches git,
+      # sees the changed tag, and rolls out the new image automatically — no
+      # mutable-tag guessing, no manual `kubectl rollout restart`.
+      #
+      # Loop-safety: this commit only touches deploy/k8s/kustomization.yaml,
+      # which is NOT in this workflow's trigger paths, and it carries [skip ci],
+      # so it cannot retrigger any workflow.
+      - name: Pin image tag in kustomization + commit
+        env:
+          SHA: ${{ steps.tags.outputs.sha }}
+        run: |
+          set -euo pipefail
+          yq -i '(.images[] | select(.name == "ghcr.io/olafkfreund/skillai").newTag) = strenv(SHA)' deploy/k8s/kustomization.yaml
+          yq -i '(.images[] | select(.name == "ghcr.io/olafkfreund/skillai-migrator").newTag) = strenv(SHA)' deploy/k8s/kustomization.yaml
+
+          if git diff --quiet -- deploy/k8s/kustomization.yaml; then
+            echo "kustomization already at ${SHA}; nothing to commit"
+            exit 0
+          fi
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add deploy/k8s/kustomization.yaml
+          git commit -m "chore(deploy): pin image to ${SHA} [skip ci]"
+          # rebase onto any concurrent pushes before pushing back
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
       - name: Summary
         run: |
           {
-            echo "### Images pushed"
+            echo "### Images pushed & pinned"
             echo ""
-            echo "- \`${IMAGE_APP}:${{ steps.tags.outputs.branch }}\` / \`:${{ steps.tags.outputs.sha }}\`"
-            echo "- \`${IMAGE_MIGRATOR}:${{ steps.tags.outputs.branch }}\` / \`:${{ steps.tags.outputs.sha }}\`"
+            echo "- \`${IMAGE_APP}:${{ steps.tags.outputs.sha }}\` (+ \`:${{ steps.tags.outputs.branch }}\`)"
+            echo "- \`${IMAGE_MIGRATOR}:${{ steps.tags.outputs.sha }}\` (+ \`:${{ steps.tags.outputs.branch }}\`)"
             echo ""
-            echo "Bump \`deploy/k8s/kustomization.yaml\` images to \`:${{ steps.tags.outputs.sha }}\` for a pinned rollout."
+            echo "Pinned \`deploy/k8s/kustomization.yaml\` → \`:${{ steps.tags.outputs.sha }}\`; ArgoCD will sync the rollout."
           } >> "$GITHUB_STEP_SUMMARY"

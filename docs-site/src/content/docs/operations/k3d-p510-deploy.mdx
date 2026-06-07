@@ -104,10 +104,16 @@ Built + pushed to GHCR by `.github/workflows/deploy-image.yml`:
 - `ghcr.io/olafkfreund/skillai` — the app (Dockerfile `runner` target)
 - `ghcr.io/olafkfreund/skillai-migrator` — drizzle migrations (`migrator` target)
 
-Tagged by branch (`core-mvp-foundation`) + commit SHA; the packages are public.
-The deployed tag is set in `deploy/k8s/kustomization.yaml`. Because the branch tag
-is mutable and `imagePullPolicy: Always`, a `kubectl rollout restart deploy/skillai-app`
-pulls the latest build; pin a `:<sha>` for reproducible rollouts.
+Each build is tagged with the immutable commit `:<sha>` (plus the mutable
+`:core-mvp-foundation` pointer); the packages are public.
+
+**GitOps image promotion** — after pushing, the same workflow writes the new
+`:<sha>` into `deploy/k8s/kustomization.yaml` (`images[].newTag`) and commits it
+back to `core-mvp-foundation` (`[skip ci]`). ArgoCD sees the changed tag in git
+and rolls out the new image **automatically** — no manual `kubectl rollout
+restart`, and every deployed revision is pinned to an exact commit. The commit
+touches only `kustomization.yaml` (outside the workflow's trigger paths), so it
+can't loop.
 
 ## Secrets
 
@@ -156,7 +162,9 @@ curl https://skillai.freundcloud.org.uk/api/health
 kubectl -n factory get pods -l app.kubernetes.io/part-of=skillai
 kubectl -n argocd get application skillai
 
-# ship a new image build
+# shipping a new build is automatic: push to core-mvp-foundation → CI builds,
+# pins the :<sha> in kustomization.yaml, ArgoCD rolls it out. Manual restart is
+# only a fallback:
 kubectl -n factory rollout restart deploy/skillai-app
 
 # tunnel origin errors (502 → origin unreachable)
