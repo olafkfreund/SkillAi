@@ -1,0 +1,51 @@
+#!/bin/sh
+# SkillAI base-branch commit guard  (issue #216)
+#
+# Refuses a commit made directly on the protected base branch
+# `core-mvp-foundation` in a working checkout, which is almost always a
+# background agent that meant to be on a feature branch / worktree but is
+# actually sitting in the main checkout. Accidental commits there corrupt the
+# shared dev server (wrong branch, stale .next, root-owned cache).
+#
+# Opt out for a deliberate base-branch commit:
+#     ALLOW_BASE_COMMIT=1 git commit ...
+#
+# This hook is intentionally dependency-free POSIX sh, fast, and a no-op in CI.
+#
+# Enable it once per checkout (it is NOT active until you point git at it):
+#     git config core.hooksPath .githooks
+# See docs/agent-worktree-recovery.md for the full rationale + recovery steps.
+
+# Never block automation in CI.
+if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+  exit 0
+fi
+
+# Explicit opt-out for an intentional base-branch commit.
+if [ "$ALLOW_BASE_COMMIT" = "1" ]; then
+  exit 0
+fi
+
+PROTECTED_BRANCH="core-mvp-foundation"
+
+# Resolve the current branch; tolerate detached HEAD (symbolic-ref fails -> allow).
+current_branch=$(git symbolic-ref --short -q HEAD) || exit 0
+
+if [ "$current_branch" = "$PROTECTED_BRANCH" ]; then
+  echo "" >&2
+  echo "✋ pre-commit blocked: you are committing directly on '$PROTECTED_BRANCH'." >&2
+  echo "" >&2
+  echo "   This is the protected base branch. Background agents and feature work" >&2
+  echo "   must commit on their own branch / worktree, not the main checkout." >&2
+  echo "   (See issue #216 — base-branch commits corrupt the shared dev server.)" >&2
+  echo "" >&2
+  echo "   Fix: move your work to a feature branch, e.g." >&2
+  echo "       git switch -c feat/my-change" >&2
+  echo "" >&2
+  echo "   If this commit on the base branch is genuinely intended, re-run with:" >&2
+  echo "       ALLOW_BASE_COMMIT=1 git commit ..." >&2
+  echo "" >&2
+  exit 1
+fi
+
+exit 0
