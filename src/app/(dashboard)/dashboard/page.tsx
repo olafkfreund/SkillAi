@@ -16,7 +16,9 @@ import { roles, candidates, scores, interviewPacks, agencies, interviewSlots, us
 import { NextInterviewsCard } from '@/components/dashboard/next-interviews-card'
 import { ForYouSection } from '@/components/dashboard/for-you-section'
 import { AwaitingCustomerFeedbackWidget } from '@/components/dashboard/awaiting-customer-feedback-widget'
+import { OnboardingChecklist } from '@/components/dashboard/onboarding-checklist'
 import { getForYouFeed } from '@/actions/dashboard-tasks'
+import { getOnboardingState } from '@/actions/onboarding'
 
 export const metadata = { title: 'Dashboard — SkillAI' }
 
@@ -85,7 +87,7 @@ export default async function DashboardPage() {
   // withTenant opens a transaction and sets the RLS session variable, so each
   // is one round-trip to Postgres. Collapsing to three top-level fetches
   // (parallel), one of which batches four queries, removes ~7 round-trips.
-  const [feed, stats, lists] = await Promise.all([
+  const [feed, stats, lists, onboarding] = await Promise.all([
     getForYouFeed(
       session.user.id,
       session.user.role as 'admin' | 'recruiter' | 'hiring_manager' | 'viewer',
@@ -170,6 +172,7 @@ export default async function DashboardPage() {
           .limit(5),
       ])
     ),
+    getOnboardingState(),
   ])
 
   const { roleCount, candidateCount, scoredCount, packsCount, missingCvCount } = stats
@@ -185,6 +188,9 @@ export default async function DashboardPage() {
           <span className="font-medium text-[var(--color-fg-muted)]">{session?.user.name}</span>.
         </p>
       </div>
+
+      {/* ── First-run onboarding checklist (new tenants only) ───────────── */}
+      {onboarding.visible && <OnboardingChecklist steps={onboarding.steps} />}
 
       {/* ── For You section ────────────────────────────────────────────── */}
       <ForYouSection feed={feed} />
