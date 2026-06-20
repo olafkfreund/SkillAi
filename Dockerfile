@@ -33,6 +33,16 @@ COPY src/db/migrations ./migrations
 COPY scripts/migrate.mjs ./scripts/migrate.mjs
 CMD ["node", "scripts/migrate.mjs"]
 
+# ── Stage 4b: Host-folder inbox worker (used by the 'worker' Compose service) ──
+# Runs the TS worker directly via tsx (an explicit devDependency, so no network
+# fetch at runtime). Needs full source + node_modules. See issue #4 / Epic #3.
+FROM base AS worker
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+CMD ["npm", "run", "worker"]
+
 # ── Stage 5: Production runner ─────────────────────────────────────────────────
 FROM base AS runner
 WORKDIR /app
