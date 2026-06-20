@@ -57,6 +57,36 @@ services:
       - skillai_net
     restart: unless-stopped
 
+  # Host-folder inbox worker (issue #4 / Epic #3, Phase 1). Polls
+  # INBOX_ROOT/<tenantId>/ for dropped CVs and ingests them. Shares the
+  # uploads_data volume with `app` so persisted CV files land where the app
+  # reads them. Run as a single instance (scale=1) — no leader election yet.
+  worker:
+    build:
+      context: .
+      target: worker
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-skillai}:${POSTGRES_PASSWORD:-skillai}@db:5432/${POSTGRES_DB:-skillai}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      UPLOAD_DIR: /app/uploads
+      INBOX_ROOT: /app/inbox
+      INGEST_POLL_MS: ${INGEST_POLL_MS:-30000}
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    volumes:
+      - uploads_data:/app/uploads
+      - inbox_data:/app/inbox
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - skillai_net
+    restart: unless-stopped
+
   db:
     image: pgvector/pgvector:pg17
     environment:
@@ -79,6 +109,7 @@ services:
 volumes:
   postgres_data:
   uploads_data:
+  inbox_data:
 
 networks:
   skillai_net:

@@ -110,6 +110,33 @@ docker compose exec app npm run db:push
 docker compose exec app npm run db:seed
 ```
 
+### Host-folder inbox worker (optional)
+
+The `worker` Compose service watches a host-mounted folder and auto-ingests CVs
+dropped into it — no web upload needed (issue #4 / Epic #3, Phase 1).
+
+- Layout: drop CVs into `INBOX_ROOT/<tenantId>/`. Each tenant gets its own
+  subfolder (named by its UUID). Supported: PDF, DOCX, ODT, RTF, TXT, MD.
+- Handled files are moved into `<tenantId>/.processed/` (success) or
+  `<tenantId>/.failed/` (rejected) so nothing is ingested twice.
+- Ingested CVs land in the candidate archive (role-less) and get embedding +
+  CV-profile extraction automatically.
+
+```bash
+docker compose up -d worker         # start it
+docker compose logs -f worker       # watch ingestion
+```
+
+Run it locally without Docker via `npm run worker`. Configuration:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `INBOX_ROOT` | `<cwd>/inbox` (Docker: `/app/inbox`) | Root folder scanned for per-tenant subfolders |
+| `INGEST_POLL_MS` | `30000` (floor 5000) | How often the folder is polled |
+
+Run a single worker instance (the Compose service is `scale=1`); multi-replica
+leader election is not yet implemented.
+
 ---
 
 ## Production Considerations
