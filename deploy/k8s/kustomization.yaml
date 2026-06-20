@@ -20,6 +20,6 @@ resources:
 # pin to an immutable :<sha> for production rollouts.
 images:
   - name: ghcr.io/olafkfreund/skillai
-    newTag: abe99c4f3759
+    newTag: 97c1b06eefa1
   - name: ghcr.io/olafkfreund/skillai-migrator
-    newTag: abe99c4f3759
+    newTag: 97c1b06eefa1
