@@ -4,7 +4,7 @@ _Auto-generated REST endpoint reference for SkillAI. All endpoints require a Bea
 
 > **ℹ️ Note**
 >
-> This page is **auto-generated** from the source-of-truth OpenAPI document. To regenerate locally, run `npm run docs:gen:openapi` from `docs-site/`. Last generated: **2026-06-07**.
+> This page is **auto-generated** from the source-of-truth OpenAPI document. To regenerate locally, run `npm run docs:gen:openapi` from `docs-site/`. Last generated: **2026-06-20**.
 
 **35 paths**, **43 operations**. Download the raw spec: [openapi.json](https://olafkfreund.github.io/SkillAi/openapi.json).
 
