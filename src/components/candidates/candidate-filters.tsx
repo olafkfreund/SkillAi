@@ -6,7 +6,7 @@ import { SearchIcon, XIcon, FileXIcon } from 'lucide-react'
 
 type Props = {
   agencies: { id: string; name: string }[]
-  currentFilters: { q?: string; status?: string; agencyId?: string; availability?: string; missingCv?: boolean }
+  currentFilters: { q?: string; status?: string; agencyId?: string; availability?: string; missingCv?: boolean; skills?: string[] }
 }
 
 const STATUS_OPTIONS = [
@@ -47,6 +47,7 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
       if (currentFilters.agencyId) params.set('agencyId', currentFilters.agencyId)
       if (currentFilters.availability) params.set('availability', currentFilters.availability)
       if (currentFilters.missingCv) params.set('missingCv', '1')
+      if (currentFilters.skills?.length) params.set('skills', currentFilters.skills.join(','))
       // Reset page on any filter change
       params.delete('page')
 
@@ -89,12 +90,18 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
     updateParams({ availability: value })
   }
 
+  const removeSkill = (skill: string) => {
+    const remaining = (currentFilters.skills ?? []).filter((s) => s !== skill)
+    updateParams({ skills: remaining.join(',') })
+  }
+
   const hasActiveFilters =
     !!currentFilters.q ||
     !!currentFilters.status ||
     !!currentFilters.agencyId ||
     !!currentFilters.availability ||
-    !!currentFilters.missingCv
+    !!currentFilters.missingCv ||
+    (currentFilters.skills?.length ?? 0) > 0
 
   const clearFilters = () => {
     setSearchValue('')
@@ -104,8 +111,31 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-3
-                    sm:flex-row sm:items-center sm:flex-wrap">
+    <div className="flex flex-col gap-3">
+      {/* Active skill chips (from the Skills Explorer) */}
+      {(currentFilters.skills?.length ?? 0) > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-[var(--color-fg-subtle)]">Skills:</span>
+          {currentFilters.skills!.map((skill) => (
+            <button
+              key={skill}
+              onClick={() => removeSkill(skill)}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium
+                         bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300
+                         border border-blue-300 dark:border-blue-800
+                         hover:bg-blue-200 dark:hover:bg-blue-900 transition-colors"
+              aria-label={`Remove skill filter ${skill}`}
+            >
+              {skill}
+              <XIcon className="h-3 w-3 opacity-70" aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Filter controls */}
+      <div className="flex flex-col gap-3
+                      sm:flex-row sm:items-center sm:flex-wrap">
       {/* Search input */}
       <div className="relative flex-1 min-w-0
                       sm:min-w-[240px] sm:max-w-sm">
@@ -207,6 +237,7 @@ export function CandidateFilters({ agencies, currentFilters }: Props) {
           Clear
         </button>
       )}
+      </div>
     </div>
   )
 }
