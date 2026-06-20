@@ -15,6 +15,7 @@ import {
   HelpCircleIcon,
   BarChart3Icon,
   SendIcon,
+  SparklesIcon,
 } from 'lucide-react'
 import type { UserRole } from '@/lib/auth/types'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
@@ -52,6 +53,13 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Candidates',
     icon: UsersIcon,
     minRole: 'viewer',
+    hideForRoles: ['hiring_manager'],
+  },
+  {
+    href: '/dashboard/skills',
+    label: 'Skills',
+    icon: SparklesIcon,
+    minRole: 'recruiter',
     hideForRoles: ['hiring_manager'],
   },
   {

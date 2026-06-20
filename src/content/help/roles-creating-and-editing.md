@@ -57,8 +57,11 @@ Click **Edit** on the role detail page. Anything is editable, but be aware:
 - **Don't put the same skills twice.** The AI weights them, not counts them. Listing "Python" five times doesn't make it more important; it just makes the JD harder to read.
 - **Keep one role per req.** Don't bundle "Senior backend OR mid-level full-stack" into one role — you'll get confused rankings. Two roles, two shortlists.
 
+After saving a new role, SkillAi automatically scans your archive for the top 3 candidate matches — see [Auto-match & Skills Explorer](/dashboard/help/auto-match-and-skills).
+
 ## See also
 
+- [Auto-match & Skills Explorer](/dashboard/help/auto-match-and-skills)
 - [Tips for getting better rankings](/dashboard/help/tips-getting-better-rankings)
 - [Customers and frameworks](/dashboard/help/customers-and-frameworks)
 - [Uploading CVs](/dashboard/help/candidates-uploading-cvs)

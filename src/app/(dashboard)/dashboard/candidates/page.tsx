@@ -22,6 +22,7 @@ interface PageProps {
     availability?: string
     page?: string
     missingCv?: string
+    skills?: string
   }>
 }
 
@@ -29,10 +30,18 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
   const session = await auth()
   const tenantId = session?.user.tenantId
 
-  const { q, status, agencyId, availability, page: pageParam, missingCv: missingCvParam } = await searchParams
+  const { q, status, agencyId, availability, page: pageParam, missingCv: missingCvParam, skills: skillsParam } = await searchParams
   const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1)
   const offset = (page - 1) * PAGE_SIZE
   const missingCvFilter = missingCvParam === '1'
+
+  // Skills filter (from the Skills Explorer): comma-separated, case-insensitive,
+  // ANDed (a candidate must have ALL listed skills). Next has already URL-decoded
+  // the value, so we only split + trim here.
+  const skillsFilter = (skillsParam ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
 
   // Validate status is a known enum value
   const validStatuses: CandidateStatus[] = [
@@ -77,6 +86,23 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
 
     if (missingCvFilter) {
       conditions.push(isNull(candidates.filePath))
+    }
+
+    // One EXISTS per skill so multiple skills AND together. The cv_profiles
+    // subquery is tenant-scoped automatically by RLS (app.tenant_id) inside
+    // withTenant. Skill values are bound params — never interpolated.
+    for (const skill of skillsFilter) {
+      conditions.push(
+        sql`EXISTS (
+          SELECT 1 FROM cv_profiles cp
+          WHERE cp.candidate_id = ${candidates.id}
+            AND cp.extraction_status = 'complete'
+            AND EXISTS (
+              SELECT 1 FROM jsonb_array_elements_text(cp.technical_skills) AS s
+              WHERE lower(trim(s)) = lower(trim(${skill}))
+            )
+        )`
+      )
     }
 
     return and(...conditions)
@@ -162,7 +188,7 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
   const rangeFrom = totalCount === 0 ? 0 : offset + 1
   const rangeTo = Math.min(offset + PAGE_SIZE, totalCount)
 
-  const currentFilters = { q, status, agencyId, availability, missingCv: missingCvFilter }
+  const currentFilters = { q, status, agencyId, availability, missingCv: missingCvFilter, skills: skillsFilter }
 
   // Build pagination URL helper
   const buildPageUrl = (p: number) => {
@@ -172,6 +198,7 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
     if (agencyId) params.set('agencyId', agencyId)
     if (availability) params.set('availability', availability)
     if (missingCvFilter) params.set('missingCv', '1')
+    if (skillsFilter.length) params.set('skills', skillsFilter.join(','))
     params.set('page', String(p))
     return `?${params.toString()}`
   }
@@ -224,7 +251,7 @@ export default async function CandidatesPage({ searchParams }: PageProps) {
         <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed
                         border-[var(--color-border)] bg-[var(--color-bg-app)] px-6 py-16 text-center">
           <UsersIcon className="h-10 w-10 text-[var(--color-fg-subtle)] mb-3" />
-          {totalCount === 0 && !q && !status && !agencyId && !availability && !missingCvFilter ? (
+          {totalCount === 0 && !q && !status && !agencyId && !availability && !missingCvFilter && skillsFilter.length === 0 ? (
             <>
               <p className="text-[var(--color-fg-muted)] font-medium">No candidates yet</p>
               <p className="text-[var(--color-fg-subtle)] text-sm mt-1">
