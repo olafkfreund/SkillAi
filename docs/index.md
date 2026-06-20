@@ -177,6 +177,7 @@ See [`docs/mcp-tools.md`](docs/mcp-tools.md) for the full tool / resource / prom
 - [Architecture](docs/architecture.md)
 - [Development Guide](docs/development.md)
 - [Roadmap](docs/roadmap.md)
+- [Agent Worktree Recovery](docs/agent-worktree-recovery.md)
 
 ---
 
