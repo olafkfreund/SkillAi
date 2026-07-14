@@ -47,7 +47,7 @@ If the model returns anything that doesn't match this shape, the run fails and t
 ## Claude is the default; Gemini is the fallback
 
 - **Primary:** Anthropic Claude (`claude-sonnet-4-6`). Higher reasoning quality on nuanced judgement, structured-output guarantees baked into the API. This is what you get unless your tenant has switched.
-- **Secondary:** Google Gemini (`gemini-2.0-flash`). Cheaper for high-volume runs. Available as a per-tenant toggle in **Settings → AI**.
+- **Secondary:** Google Gemini (`gemini-3.5-flash`). Cheaper for high-volume runs. Available as a per-tenant toggle in **Settings → AI**.
 
 You don't pick the model per candidate. The choice is per-tenant — once an admin flips the toggle, every new score uses the selected model. Existing scores are not retroactively rerun.
 

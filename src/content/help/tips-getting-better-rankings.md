@@ -53,7 +53,7 @@ Two candidates can both score 78 overall and be wildly different — one strong 
 
 ## Compare Claude vs Gemini
 
-The model toggle (per-tenant, in settings) lets you switch the scoring engine. Claude (`claude-sonnet-4-6`) is the default and produces the most consistent rankings; Gemini (`gemini-2.0-flash`) is faster and cheaper for bulk runs. If you're unsure about a particular candidate, run them through both — disagreement is itself a signal.
+The model toggle (per-tenant, in settings) lets you switch the scoring engine. Claude (`claude-sonnet-4-6`) is the default and produces the most consistent rankings; Gemini (`gemini-3.5-flash`) is faster and cheaper for bulk runs. If you're unsure about a particular candidate, run them through both — disagreement is itself a signal.
 
 ## Don't fight the four dimensions
 
