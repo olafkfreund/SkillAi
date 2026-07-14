@@ -1,7 +1,7 @@
 /**
  * Gemini API client for CV scoring
  *
- * Uses Gemini 2.0 Flash (gemini-2.0-flash) with structured JSON output
+ * Uses Gemini 3.5 Flash (gemini-3.5-flash) with structured JSON output
  * to return a CandidateScore matching the same schema used by Claude scoring.
  *
  * Falls back to tenant API key → GEMINI_API_KEY env var.
@@ -14,7 +14,10 @@ import { formatManagerPriorities } from './priorities'
 import { logAiUsage, geminiUsageToInput } from './usage-logger'
 import type { AiOperation } from '@/db/schema/ai-usage'
 
-const GEMINI_MODEL = 'models/gemini-2.0-flash'
+// gemini-2.0-flash retired Jul 2026 (404 no-longer-available); 3.5-flash is the
+// current cost-tier flash model. ponytail: hardcoded — make it a tenant setting
+// only if model churn becomes frequent.
+const GEMINI_MODEL = 'models/gemini-3.5-flash'
 
 const SCORE_RESPONSE_SCHEMA: Schema = {
   type: SchemaType.OBJECT,
