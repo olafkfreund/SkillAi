@@ -40,6 +40,23 @@ env:
   REGISTRY: ghcr.io
   IMAGE_APP: ghcr.io/${{ github.repository_owner }}/skillai
   IMAGE_MIGRATOR: ghcr.io/${{ github.repository_owner }}/skillai-migrator
+  # The exact signer identity the cluster's `verify-factory-image-signatures`
+  # ClusterPolicy asserts at admission for these two images. Defined once so
+  # the self-test below cannot drift from the gate it models.
+  #
+  # Anchored at BOTH ends and naming the workflow and the ref. A prefix-only
+  # pattern (`^https://github\.com/olafkfreund/SkillAi/`) is scoped to owner
+  # and repo but accepts ANY workflow in this repo on ANY ref, including one
+  # added on an attacker branch with `id-token: write`. Factory#430 lost
+  # exactly that anchor and spent weeks accepting any GitHub Actions signature
+  # from any repo.
+  #
+  # The ref is `core-mvp-foundation`, NOT main: that is this repository's
+  # default branch and the only branch this workflow publishes from (see the
+  # `on.push.branches` trigger above), and it is what ArgoCD tracks. A run
+  # from any other branch WILL fail the self-test, which is the self-test
+  # working -- admission would reject that image too.
+  SIGNER_IDENTITY: '^https://github\.com/${{ github.repository_owner }}/SkillAi/\.github/workflows/deploy-image\.yml@refs/heads/core-mvp-foundation$'
 
 jobs:
   build-push:
@@ -49,6 +66,7 @@ jobs:
       # (GitOps image promotion — ArgoCD then auto-syncs the new SHA).
       contents: write
       packages: write
+      id-token: write   # cosign keyless via GitHub OIDC (Factory#564)
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,6 +94,7 @@ jobs:
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
 
       - name: Build & push app image (runner)
+        id: build_app
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -88,6 +107,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=skillai-runner
 
       - name: Build & push migrator image
+        id: build_migrator
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -98,6 +118,52 @@ jobs:
             ${{ env.IMAGE_MIGRATOR }}:${{ steps.tags.outputs.sha }}
           cache-from: type=gha,scope=skillai-migrator
           cache-to: type=gha,mode=max,scope=skillai-migrator
+
+      # ----------------------------------------------------------------------
+      # Factory#564 — cosign keyless signing.
+      #
+      # skillai runs in the `factory` namespace and was matched by NO rule in
+      # the cluster's verify-factory-image-signatures ClusterPolicy, so it
+      # produced no admission result at all: not a pass, not a fail, nothing.
+      # The board read "65 pass / 0 fail" because nothing had ever looked at
+      # this image. It was in fact used as the known-UNSIGNED control in the
+      # Factory#522 deny experiment, while running in production.
+      #
+      # Signing is the prerequisite for an admission rule; the rule is added in
+      # factory-gitops only after a signature is confirmed against the live
+      # registry, never before — a rule in front of unsigned images produces
+      # nothing but Audit noise.
+      #
+      # BOTH images are signed. `skillai-migrator` runs as a Job in the same
+      # namespace, and the admission glob `ghcr.io/olafkfreund/skillai:*` does
+      # NOT match `skillai-migrator:*` — the literal `:` stops it — so the two
+      # need separate coverage and therefore separate signatures.
+      #
+      # Sign by DIGEST, not tag: cosign signatures are digest-keyed, so one
+      # signature per image covers both :<sha> and :<branch>.
+      # ----------------------------------------------------------------------
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.7.0
+
+      - name: Sign both images (cosign keyless via Sigstore + GitHub OIDC)
+        run: |
+          cosign sign --yes "${IMAGE_APP}@${{ steps.build_app.outputs.digest }}"
+          cosign sign --yes "${IMAGE_MIGRATOR}@${{ steps.build_migrator.outputs.digest }}"
+
+      # Not decoration: without it a broken signing step fails open and we are
+      # back to unverifiable images that look shipped. This is the same
+      # assertion Kyverno makes at admission, run at build time against the
+      # live registry, with the identity anchored exactly as the rule anchors it.
+      - name: Verify signatures (self-test)
+        run: |
+          for REF in \
+            "${IMAGE_APP}@${{ steps.build_app.outputs.digest }}" \
+            "${IMAGE_MIGRATOR}@${{ steps.build_migrator.outputs.digest }}"; do
+            cosign verify \
+              --certificate-identity-regexp "${SIGNER_IDENTITY}" \
+              --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+              "$REF"
+          done
 
       # GitOps image promotion: pin the freshly-built immutable SHA tag into
       # deploy/k8s/kustomization.yaml and commit it back. ArgoCD watches git,
