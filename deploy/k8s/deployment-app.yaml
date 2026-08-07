@@ -28,11 +28,47 @@ spec:
         app.kubernetes.io/name: skillai-app
         app.kubernetes.io/part-of: skillai
     spec:
+      # Factory#624. This Deployment was the last one in the cluster's `factory`
+      # namespace on pure container-runtime defaults: pod and container
+      # securityContext both {}, all 14 default capabilities, unconfined
+      # seccomp. The hardening sweep that fixed everything else (Factory#521)
+      # could not reach it, because those manifests live in factory-gitops and
+      # these do not -- ArgoCD syncs this path straight from this repo.
+      #
+      # No fsGroup, deliberately. The uploads PVC is ALREADY owned 1001:1001
+      # (measured across the whole tree, /app/uploads is drwxrwxrwx 1001:1001
+      # and every existing upload is 1001:1001), so there is nothing for a
+      # recursive fsGroup pass to fix, and adding one would mean a recursive
+      # chown of a user-data volume on every pod start for no benefit.
+      #
+      # readOnlyRootFilesystem is NOT set here, and that is a considered gap
+      # rather than an oversight. Measured: with it on, the app starts clean
+      # and serves /api/health 200, / 307, /login 200, /favicon.ico 200 with
+      # no EROFS in the logs. What was NOT exercised is the upload-and-parse
+      # path, which needs an authenticated session -- and this is a
+      # document-upload app, so that is exactly the path most likely to want a
+      # scratch write. Recorded so the next person starts from evidence
+      # instead of repeating the easy half.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         # ── App ───────────────────────────────────────────────────────────
         - name: app
           image: ghcr.io/olafkfreund/skillai:core-mvp-foundation
           imagePullPolicy: Always
+          # REQUIRES the image from #306. Until that entrypoint change is in
+          # the tag above, `drop: ["ALL"]` kills this pod on every start with
+          # `su-exec: setgroups: Operation not permitted` -- su-exec needs
+          # CAP_SETGID to drop privileges, and dropping ALL takes it away.
+          # Measured on the live cluster, twice, in both failure directions.
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           ports:
             - name: http
               containerPort: 3000
