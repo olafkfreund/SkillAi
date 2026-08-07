@@ -31,7 +31,13 @@ spec:
       restartPolicy: Never
       initContainers:
         - name: wait-for-db
-          image: pgvector/pgvector:pg17
+          # Same digest as statefulset-db.yaml, and pinned for the same reason
+          # (Factory#573 / Factory#588). This one is only here for `pg_isready`,
+          # so the version matters less -- but it is a second unpinned entry
+          # point for the same floating tag, and leaving it would mean the tag
+          # could still be repointed under the cluster through a Job Pod.
+          # Keep the two in step when bumping.
+          image: pgvector/pgvector:pg17@sha256:be400b50812ab2cc908ed78593fda2e51e3b45fe774fa637f1c7b16e68531d95
           imagePullPolicy: IfNotPresent
           command:
             - sh
