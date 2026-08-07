@@ -67,6 +67,8 @@ spec:
           # Measured on the live cluster, twice, in both failure directions.
           securityContext:
             allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           ports:
             - name: http
               containerPort: 3000
