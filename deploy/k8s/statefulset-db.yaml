@@ -29,7 +29,23 @@ spec:
         fsGroup: 999
       containers:
         - name: postgres
-          image: pgvector/pgvector:pg17
+          # Pinned by digest: a tag is a pointer, and `pg17` is a floating
+          # major-line tag that moves on every PostgreSQL 17 patch release and
+          # every pgvector rebuild. Unpinned, any restart or reschedule of this
+          # Pod silently swaps the bytes under a live data directory, with no
+          # record. Factory#573 / Factory#588.
+          #
+          # This digest is the one ALREADY RUNNING on the cluster (measured
+          # 2026-08-07), not registry HEAD, so pinning re-pulls nothing and
+          # moves no version. Both carry PG_VERSION 17.10-1.pgdg12+1 and
+          # pgvector 0.8.2; HEAD (sha256:7ae6051e) is a later Debian base
+          # rebuild and adopting it is a deliberate upgrade of a live database,
+          # not a side effect of pinning.
+          #
+          # The tag is kept alongside the digest so the version stays legible
+          # without a registry round-trip. Bump both together; nothing
+          # refreshes this automatically (factory-gitops#139).
+          image: pgvector/pgvector:pg17@sha256:be400b50812ab2cc908ed78593fda2e51e3b45fe774fa637f1c7b16e68531d95
           imagePullPolicy: IfNotPresent
           ports:
             - name: postgres
