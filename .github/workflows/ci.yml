@@ -177,3 +177,34 @@ jobs:
           ENCRYPTION_KEY: 'ci-stub-encryption-key-placeholder'
           NEXT_TELEMETRY_DISABLED: '1'
         run: npm run build
+
+  # ---------------------------------------------------------------------------
+  # 5. k8s-hardening — pod securityContext ratchet for deploy/k8s
+  #
+  # ArgoCD syncs deploy/k8s straight from this repo, so factory-gitops' own
+  # hardening ratchet structurally cannot see these manifests. It reported
+  # "18/18 banked workloads" green for as long as skillai-app ran with no
+  # securityContext at all -- invisible, not passing (Factory#624).
+  #
+  # Kyverno admission in that cluster is Audit for all but one narrow rule, so
+  # it will ADMIT an unhardened pod too. This job is the only thing that
+  # refuses one, which is why it is here rather than there.
+  #
+  # Independent of the Node jobs, so it still reports on a manifest-only PR.
+  # ---------------------------------------------------------------------------
+  k8s-hardening:
+    name: Pod hardening (deploy/k8s)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Install PyYAML
+        # Pinned deliberately: the assertion script exits 1 when it cannot
+        # import yaml, so a silent resolution change turns into a red build
+        # rather than a gate that parses nothing.
+        run: python3 -m pip install --upgrade 'PyYAML==6.0.2'
+
+      - name: Assert deploy/k8s workloads are still hardened
+        run: python3 scripts/assert-k8s-hardening.py deploy/k8s
