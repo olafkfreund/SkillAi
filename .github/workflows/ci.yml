@@ -2,7 +2,7 @@
 #
 # Continuous integration gate for pull requests targeting core-mvp-foundation.
 #
-# Runs four jobs in parallel where possible:
+# Runs six jobs in parallel where possible:
 #   1. lint      — ESLint with --max-warnings=99999 (errors block, warnings allowed)
 #                  Baseline established in PR #178 ci/eslint-baseline:
 #                    • 0 errors required; warnings are non-blocking for v1
@@ -13,6 +13,11 @@
 #   4. build     — next build with stub env vars to catch compile-time errors
 #                  (depends on test + typecheck so we don't waste build minutes
 #                  on a branch that's already red)
+#   5. k8s-hardening  — securityContext ratchet for deploy/k8s (Factory#624)
+#   6. k8s-manifests  — deploy/k8s builds, schema-checks and stays digest-pinned
+#                       (#305). ArgoCD syncs that directory straight onto the
+#                       cluster, so these two jobs are the only thing between a
+#                       commit and production.
 #
 # Why stub env vars for build:
 #   next.config.ts uses `output: 'standalone'` and all routes carry
@@ -208,3 +213,75 @@ jobs:
 
       - name: Assert deploy/k8s workloads are still hardened
         run: python3 scripts/assert-k8s-hardening.py deploy/k8s
+
+  # ---------------------------------------------------------------------------
+  # 6. k8s-manifests — does deploy/k8s render, parse, and stay pinned (#305)
+  #
+  # deploy/k8s is a live production deployment target: factory-gitops
+  # apps/skillai/application.yaml points ArgoCD at this repo, branch
+  # core-mvp-foundation, path deploy/k8s, with automated prune + selfHeal. There
+  # is nothing between a commit here and the cluster. The k8s-hardening job
+  # above reads the source files for securityContext only; it does not build the
+  # kustomization, does not schema-check anything, and does not look at images.
+  # So until this job, a manifest that fails `kustomize build` or carries a
+  # typo'd key reached ArgoCD and surfaced as a sync error after the fact.
+  #
+  # That got more expensive on 2026-08-07, when the cluster's signature
+  # ClusterPolicy went to Enforce: a manifest that degraded quietly yesterday is
+  # a denied admission today.
+  #
+  # Separate job from k8s-hardening on purpose -- different failure, different
+  # red X, and it still reports if the hardening ratchet is what broke.
+  # ---------------------------------------------------------------------------
+  k8s-manifests:
+    name: Manifest validation (deploy/k8s)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Install kustomize, kubeconform and PyYAML
+        run: |
+          set -euo pipefail
+          curl -sfL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.8.1/kustomize_v5.8.1_linux_amd64.tar.gz \
+            | tar -xz -C /usr/local/bin kustomize
+          curl -sfL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz \
+            | tar -xz -C /usr/local/bin kubeconform
+          python3 -m pip install --upgrade 'PyYAML==6.0.2'
+          # Rule 4.7: prove the tools are usable before claiming anything
+          # passed. A download that 404s into a 0-byte file still leaves a file
+          # behind, and `set -e` alone will not notice a gate that then runs
+          # nothing.
+          kustomize version
+          kubeconform -v
+
+      - name: Build, schema-check and assert digest pins
+        # `set -e` deliberately, matching the shell GitHub uses, but WITHOUT a
+        # pipeline that can swallow a failure: each stage writes a file and is
+        # checked on its own line. factory-gitops#140's gate broke on exactly
+        # this -- a step that looked sequential but lost an exit code in a pipe.
+        run: |
+          set -euo pipefail
+
+          # 1. It must build at all. This is the failure ArgoCD reports after
+          #    the fact today, on the only branch that matters.
+          kustomize build deploy/k8s > rendered.yaml
+
+          # 2. An empty build is not a passing build. kustomize exits 0 for a
+          #    kustomization that resources its way to nothing, and zero
+          #    documents then sail through every check below.
+          if [ ! -s rendered.yaml ]; then
+            echo "::error file=deploy/k8s/kustomization.yaml::kustomize build produced no output -- this gate validated nothing"
+            exit 1
+          fi
+
+          # 3. -strict rejects unknown fields, which is what catches a typo'd
+          #    key that Kubernetes would otherwise silently drop.
+          #    -ignore-missing-schemas skips KINDS with no upstream schema; every
+          #    core kind here is still checked strictly.
+          kubeconform -strict -ignore-missing-schemas -summary rendered.yaml
+
+          # 4. Digest pins, read from the RENDERED output rather than the source
+          #    files, because the `images:` transformer sits between them.
+          python3 scripts/assert-k8s-images-pinned.py < rendered.yaml
